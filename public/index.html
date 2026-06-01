@@ -1317,6 +1317,152 @@ function initMobileUI() {
 }
 
 try { initMobileUI(); } catch (e) { /* ignore on older browsers */ }
+
+// --- Minimal word rendering + input handling ---
+let currentWord = '';
+let maskedChars = [];
+let wrongCount = 0;
+
+function isLetter(ch) {
+  return /^[A-Z]$/.test(ch);
+}
+
+function newGame() {
+  wrongCount = 0;
+  // pick from visible list first, fallback to ALL_WORDS
+  const pool = Array.isArray(VISIBLE_WORDS) && VISIBLE_WORDS.length ? VISIBLE_WORDS : (Array.isArray(ALL_WORDS) ? ALL_WORDS : []);
+  const choice = pool.length ? pool[Math.floor(Math.random() * pool.length)] : { word: 'HANGMAN' };
+  currentWord = String(choice.word || '').toUpperCase();
+  prepareMasked(currentWord);
+  renderWordRow();
+  buildKeyboard();
+  updateHangmanParts();
+  hideOverlay();
+}
+
+function prepareMasked(word) {
+  maskedChars = Array.from(word).map(ch => {
+    const c = String(ch || '');
+    const upper = c.toUpperCase();
+    // reveal non A-Z characters (symbols, punctuation, spaces) immediately
+    const symbol = !isLetter(upper);
+    return { char: upper, revealed: symbol, symbol };
+  });
+}
+
+function renderWordRow() {
+  const row = document.getElementById('word-row');
+  if (!row) return;
+  row.innerHTML = '';
+  maskedChars.forEach((m, idx) => {
+    const box = document.createElement('div');
+    box.className = 'letter-box';
+    const ch = document.createElement('div');
+    ch.className = 'letter-char';
+    ch.textContent = m.revealed ? m.char : '';
+    const line = document.createElement('div');
+    line.className = 'letter-line';
+    if (m.revealed) line.style.visibility = 'hidden';
+    box.appendChild(ch);
+    box.appendChild(line);
+    row.appendChild(box);
+  });
+}
+
+function buildKeyboard() {
+  const keys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const kb = document.getElementById('keyboard');
+  if (!kb) return;
+  kb.innerHTML = '';
+  // layout in rows
+  const rows = [keys.slice(0,10), keys.slice(10,19), keys.slice(19)];
+  rows.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'kb-row';
+    r.forEach(k => {
+      const btn = document.createElement('button');
+      btn.className = 'kb-key';
+      btn.textContent = k;
+      btn.addEventListener('click', () => handleGuess(k));
+      row.appendChild(btn);
+    });
+    kb.appendChild(row);
+  });
+}
+
+function handleGuess(letter) {
+  if (!letter || !isLetter(letter)) return;
+  const buttons = Array.from(document.querySelectorAll('.kb-key'));
+  const btn = buttons.find(b => b.textContent === letter);
+  if (btn && btn.disabled) return;
+  let found = false;
+  maskedChars.forEach(m => {
+    if (!m.revealed && m.char === letter) {
+      m.revealed = true;
+      found = true;
+    }
+  });
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add(found ? 'correct' : 'wrong');
+  }
+  if (!found) {
+    wrongCount = Math.min(MAX_WRONG, wrongCount + 1);
+    updateHangmanParts();
+  } else {
+    renderWordRow();
+  }
+  checkWinLose();
+}
+
+function updateHangmanParts() {
+  const parts = ['hm-head','hm-body','hm-la','hm-ra','hm-ll','hm-rl'];
+  parts.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (i < wrongCount) el.classList.add('show'); else el.classList.remove('show');
+  });
+}
+
+function checkWinLose() {
+  const allRevealed = maskedChars.every(m => m.revealed);
+  if (allRevealed) {
+    // reveal win
+    showWin();
+  } else if (wrongCount >= MAX_WRONG) {
+    showGameOver();
+  }
+}
+
+function showWin() {
+  const overlay = document.getElementById('overlay');
+  const winSection = document.getElementById('win-section');
+  const revival = document.getElementById('revival-section');
+  if (overlay) overlay.classList.add('show');
+  if (winSection) winSection.style.display = '';
+  if (revival) revival.style.display = 'none';
+}
+
+function showGameOver() {
+  const overlay = document.getElementById('overlay');
+  const winSection = document.getElementById('win-section');
+  const revival = document.getElementById('revival-section');
+  const reveal = document.getElementById('reveal-word');
+  if (overlay) overlay.classList.add('show');
+  if (winSection) winSection.style.display = 'none';
+  if (revival) revival.style.display = '';
+  if (reveal) reveal.textContent = currentWord;
+}
+
+function hideOverlay() {
+  const overlay = document.getElementById('overlay');
+  if (overlay) overlay.classList.remove('show');
+}
+
+function revive() { newGame(); }
+
+// start initial game once words are loaded
+setTimeout(() => { try { newGame(); } catch(e){} }, 600);
 </script>
 </body>
 </html>
