@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>HangStream — Interactive Viewer for Streamers</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fbfdff;--card:#ffffff;--muted:#546e7a;--accent:#0ea5a3;--accent-2:#06b6d4;--glass:rgba(2,6,23,0.04)}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:linear-gradient(180deg,#f8fafc 0%,#f1f5f9 100%);color:#0f1724;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+    .site{max-width:1100px;margin:48px auto;padding:28px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:56px;height:56px;background:linear-gradient(180deg,var(--accent),var(--accent-2));border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-family:Bebas Neue, sans-serif;font-size:18px}
+    h1{margin:0;font-size:28px}
+    nav{display:flex;gap:12px}
+    a.nav{padding:8px 12px;border-radius:8px;text-decoration:none;color:var(--muted);font-weight:600}
+    a.primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white}
+
+    .hero{display:grid;grid-template-columns:1fr 360px;gap:28px;margin-top:28px;align-items:center}
+    .card{background:var(--card);border-radius:12px;padding:28px;box-shadow:0 6px 30px rgba(16,24,40,0.06);border:1px solid var(--glass)}
+    p.lead{color:var(--muted);margin-top:10px}
+    .features{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:18px}
+    .f{background:linear-gradient(180deg,rgba(14,165,163,0.04),transparent);padding:12px;border-radius:8px;font-weight:600;color:#094246}
+
+    .side{display:flex;flex-direction:column;gap:12px}
+    .side .meta{font-size:13px;color:var(--muted)}
+    pre.cmd{background:#0f1724;color:#dff6f6;padding:12px;border-radius:8px;overflow:auto;font-size:13px}
+
+    footer{margin-top:28px;color:var(--muted);font-size:13px;text-align:center}
+
+    @media (max-width:900px){.hero{grid-template-columns:1fr}.side{order:-1}}
+  </style>
+</head>
+<body>
+  <div class="site">
+    <header>
+      <div class="brand">
+        <div class="logo">HS</div>
+        <div>
+          <h1>HangStream</h1>
+          <div style="color:var(--muted);font-size:13px">Interactive hangman for live chat & stream overlays</div>
+        </div>
+      </div>
+      <nav>
+        <a class="nav" href="/streamer">Streamer Settings</a>
+        <a class="nav" href="/viewer">Open Viewer</a>
+        <a class="nav" href="/viewer?login=1">Log in</a>
+        <a class="nav primary" href="/viewer">Launch</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="card">
+        <h2>Stream-driven engagement, simplified</h2>
+        <p class="lead">Invite viewers to play directly from chat. Scales across platforms, with configurable rules, timers, and a streamlined streamer settings page.</p>
+
+        <div class="features">
+          <div class="f">Multi-platform chat (Twitch, TikTok)</div>
+          <div class="f">Configurable revival & timers</div>
+          <div class="f">Difficulty filtering & categories</div>
+          <div class="f">Lightweight, self-hosted viewer</div>
+        </div>
+      </div>
+
+      <aside class="side">
+        <div class="card">
+          <div class="meta">For viewers</div>
+          <div style="color:var(--muted);font-size:13px;margin-top:8px">Visit the deployed site and click <strong>Launch</strong> or go to <strong>/viewer</strong> to join the game.</div>
+          <div class="meta" style="margin-top:10px">For streamers</div>
+          <div style="color:var(--muted);font-size:13px;margin-top:8px">Manage streaming integrations and OAuth tokens on the <a href="/streamer">Streamer Settings</a> page.</div>
+        </div>
+      </aside>
+    </section>
+    <footer>
+      <div>© HangStream — lightweight viewer for community-driven streams</div>
+      <div style="margin-top:8px;color:#64748b;font-size:13px"><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · Discord · © 2026 HangStream</div>
+    </footer>
+
+  </div>
+</body>
+</html>

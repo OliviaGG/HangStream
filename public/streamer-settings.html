@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HangStream Streamer Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #08111c;
+      --bg-alt: #0d1724;
+      --panel: rgba(12, 20, 31, 0.88);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --text: #edf4fb;
+      --muted: #92a0af;
+      --accent: #ff4d6d;
+      --accent-2: #7c5cff;
+      --good: #25c27a;
+      --warning: #ffbe55;
+      --radius: 24px;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 77, 109, 0.16), transparent 24%),
+        radial-gradient(circle at 80% 20%, rgba(124, 92, 255, 0.18), transparent 28%),
+        linear-gradient(180deg, #07101a 0%, #0c1420 100%);
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,0.6), transparent 85%);
+      opacity: 0.35;
+    }
+
+    a { color: inherit; }
+
+    .page {
+      position: relative;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 20px 56px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.9fr);
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .intro {
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 320px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      color: var(--muted);
+    }
+
+    .eyebrow::before {
+      content: '';
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 6px rgba(255, 77, 109, 0.12);
+    }
+
+    h1 {
+      margin: 14px 0 0;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(56px, 9vw, 98px);
+      line-height: 0.92;
+      letter-spacing: 0.03em;
+      font-weight: 400;
+    }
+
+    .lede {
+      max-width: 60ch;
+      margin: 16px 0 0;
+      color: #c6d0db;
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .btn {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 18px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+
+    .btn-primary {
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 16px 36px rgba(255, 77, 109, 0.26);
+    }
+
+    .btn-secondary {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .stat {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .stat-value {
+      margin-top: 8px;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .sidebar {
+      padding: 22px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .mini-card {
+      border-radius: 18px;
+      padding: 18px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .mini-card h2 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+
+    .mini-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .section {
+      padding: 24px;
+    }
+
+    .section h2 {
+      margin: 0 0 14px;
+      font-size: 20px;
+    }
+
+    .platform-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .platform {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .platform strong { display: block; }
+    .platform span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .pill {
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .pill.good { color: #daf8ea; background: rgba(37, 194, 122, 0.16); }
+    .pill.warn { color: #fff2d3; background: rgba(255, 190, 85, 0.16); }
+
+    .codebox {
+      margin-top: 12px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(3, 8, 15, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #dfe8f2;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    @media (max-width: 960px) {
+      .hero,
+      .section-grid { grid-template-columns: 1fr; }
+      .intro { min-height: auto; }
+      .stats { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      .page { padding-inline: 14px; }
+      .intro, .section, .sidebar { padding: 18px; }
+      .action-row { flex-direction: column; }
+      .btn { width: 100%; }
+      .platform { flex-direction: column; align-items: flex-start; }
+      .footer { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="panel intro">
+        <div>
+          <div class="eyebrow">Streamer Control Panel</div>
+          <h1>HangStream</h1>
+          <p class="lede">Use this page to connect your accounts, verify OAuth callbacks, and confirm the deployment is ready before sending viewers to the game. The live viewer runs separately at <a href="/viewer">/viewer</a>.</p>
+
+          <div class="action-row">
+            <a class="btn btn-primary" href="/oauth/google" target="_blank" rel="noopener">Connect Google Owner</a>
+            <a class="btn btn-secondary" href="/auth/google" target="_blank" rel="noopener">Connect Google Viewer</a>
+            <a class="btn btn-secondary" href="/oauth/spotify" target="_blank" rel="noopener">Connect Spotify</a>
+            <a class="btn btn-secondary" href="/oauth/twitch" target="_blank" rel="noopener">Connect Twitch</a>
+            <a class="btn btn-secondary" href="/oauth" target="_blank" rel="noopener">Connect TikTok</a>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-label">Viewer route</div>
+            <div class="stat-value">/viewer</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Admin route</div>
+            <div class="stat-value">/streamer</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Transport</div>
+            <div class="stat-value">WebSocket</div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="panel sidebar">
+        <div class="mini-card">
+          <h2>Streamer id</h2>
+          <p>This is the @-style id the game uses for your own room. Use a custom one if you run TikTok and Twitch at the same time.</p>
+          <div class="codebox" id="streamer-id-display">@loading</div>
+          <div class="action-row" style="margin-top:12px;">
+            <button class="btn btn-primary" type="button" id="create-streamer-id-btn">Create</button>
+            <button class="btn btn-secondary" type="button" id="copy-streamer-id-btn">Copy route</button>
+          </div>
+        </div>
+        <div class="mini-card">
+          <h2>Deployment checklist</h2>
+          <p>Set the OAuth env vars in your host, make sure the Google client includes both redirect URIs, and verify the service is exposed on the platform URL before sharing it publicly.</p>
+        </div>
+        <div class="mini-card">
+          <h2>Google redirect URIs</h2>
+          <p>Register both callback paths in Google Cloud Console.</p>
+          <div class="codebox">https://YOUR_DOMAIN/oauth/google/callback
+https://YOUR_DOMAIN/auth/google/callback</div>
+        </div>
+        <div class="mini-card">
+          <h2>Runtime notes</h2>
+          <p>HangStream reads `PORT` from the environment, so it can run on Cloud Run, DigitalOcean App Platform, or a container host without any code changes.</p>
+        </div>
+      </aside>
+    </section>
+
+    <section class="section-grid">
+      <div class="panel section">
+        <h2>What to configure</h2>
+        <div class="platform-list">
+          <div class="platform">
+            <div><strong>Google</strong><span>Use for viewer sign-in and streamer owner login.</span></div>
+            <span class="pill good">Required</span>
+          </div>
+          <div class="platform">
+            <div><strong>TikTok</strong><span>Needed if you want chat listening on TikTok.</span></div>
+            <span class="pill warn">Optional</span>
+          </div>
+          <div class="platform">
+            <div><strong>Twitch</strong><span>Enable if you want to watch Twitch chat alongside TikTok.</span></div>
+            <span class="pill warn">Optional</span>
+          </div>
+          <div class="platform">
+            <div><strong>Spotify</strong><span>Required only for music queue features and playback control.</span></div>
+            <span class="pill warn">Optional</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel section">
+        <h2>Suggested environment variables</h2>
+        <div class="codebox">PORT=8080
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+GOOGLE_OWNER_REDIRECT_URI=https://YOUR_DOMAIN/oauth/google/callback
+GOOGLE_VIEWER_REDIRECT_URI=https://YOUR_DOMAIN/auth/google/callback
+TIKTOK_CLIENT_KEY=...
+TIKTOK_CLIENT_SECRET=...
+TWITCH_CLIENT_ID=...
+TWITCH_CLIENT_SECRET=...
+SPOTIFY_CLIENT_ID=...
+SPOTIFY_CLIENT_SECRET=...
+TOKEN_ENCRYPTION_KEY=...</div>
+      </div>
+    </section>
+
+    <div class="footer">
+      <div>Once the callbacks resolve, the streamer page is ready for production traffic.</div>
+      <div class="footer-links">
+        <a href="/viewer">Open viewer</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+      </div>
+    </div>
+  <script>
+    (function(){
+      const streamerIdKey = 'hangstream-streamer-user-id';
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      const url = proto + '://' + location.host;
+      let ws = null;
+      let backoff = 1000;
+      const maxBackoff = 30000;
+
+      function getFallbackNamespace() {
+        try {
+          const ownerName = String(localStorage.getItem('hangstream-owner-name') || '').trim();
+          if (ownerName) return ownerName;
+          const ownerId = String(localStorage.getItem('hangstream-streamer-id') || '').trim();
+          if (ownerId) return ownerId;
+        } catch (e) {}
+        return 'default';
+      }
+
+      function sanitizeStreamerId(value) {
+        const raw = String(value || '').trim().toLowerCase();
+        const cleaned = raw.replace(/[^a-z0-9_\-.@]/g, '').replace(/@+/g, '@');
+        if (!cleaned) return '';
+        return cleaned.startsWith('@') ? cleaned : `@${cleaned}`;
+      }
+
+      function getRouteSlug(value) {
+        return String(value || '').replace(/^@+/, '').trim().toLowerCase();
+      }
+
+      function makeStreamerId() {
+        const suffix = Math.random().toString(36).slice(2, 8);
+        return `@streamer-${suffix}`;
+      }
+
+      function deriveStreamerId() {
+        const fallback = sanitizeStreamerId(getFallbackNamespace().replace(/^@+/, ''));
+        return fallback || makeStreamerId();
+      }
+
+      function getStreamerId() {
+        try {
+          return sanitizeStreamerId(localStorage.getItem(streamerIdKey) || '') || '';
+        } catch (e) { return ''; }
+      }
+
+      function copyScopedState(fromId, toId) {
+        if (!fromId || !toId || fromId === toId) return;
+        const settingsFrom = `hangstream-settings:${fromId}`;
+        const settingsTo = `hangstream-settings:${toId}`;
+        const themeFrom = `hangstream-game-theme:${fromId}`;
+        const themeTo = `hangstream-game-theme:${toId}`;
+        try {
+          const settingsBlob = localStorage.getItem(settingsFrom);
+          if (settingsBlob && !localStorage.getItem(settingsTo)) localStorage.setItem(settingsTo, settingsBlob);
+        } catch (e) {}
+        try {
+          const themeBlob = localStorage.getItem(themeFrom);
+          if (themeBlob && !localStorage.getItem(themeTo)) localStorage.setItem(themeTo, themeBlob);
+        } catch (e) {}
+      }
+
+      function setStreamerId(value, sourceId) {
+        const next = sanitizeStreamerId(value) || makeStreamerId();
+        const previous = sanitizeStreamerId(sourceId || getStreamerId() || getFallbackNamespace());
+        copyScopedState(previous, next);
+        try { localStorage.setItem(streamerIdKey, next); } catch (e) {}
+        updateStreamerIdUI(next);
+        return next;
+      }
+
+      function updateStreamerIdUI(value) {
+        const display = document.getElementById('streamer-id-display');
+        const slug = getRouteSlug(value || '@streamer');
+        if (display) display.textContent = `${value || '@streamer'}\n/${slug || 'streamer'}`;
+      }
+
+      function copyStreamerId() {
+        const current = getStreamerId() || setStreamerId(makeStreamerId());
+        const route = `/${getRouteSlug(current) || 'streamer'}`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(route).catch(() => {});
+        }
+      }
+
+      function createStreamerId() {
+        const current = getStreamerId() || deriveStreamerId();
+        const entered = window.prompt('Enter your streamer id starting with @', current);
+        if (entered === null) return;
+        setStreamerId(entered, current);
+      }
+
+      function connect() {
+        ws = new WebSocket(url);
+        ws.addEventListener('open', () => { console.info('WS open'); backoff = 1000; });
+        ws.addEventListener('message', (ev) => {
+          try {
+            const data = JSON.parse(ev.data || '{}');
+            if (data && data.type === 'batch' && Array.isArray(data.items)) {
+              data.items.forEach(handleMessage);
+            } else {
+              handleMessage(data);
+            }
+          } catch (e) { console.warn('Invalid WS message', e); }
+        });
+        ws.addEventListener('close', (e) => { console.warn('WS closed', e); scheduleReconnect(); });
+        ws.addEventListener('error', (e) => { console.warn('WS error', e); ws.close(); });
+        const initialId = getStreamerId() || setStreamerId(makeStreamerId());
+        updateStreamerIdUI(initialId);
+        const generateBtn = document.getElementById('generate-streamer-id-btn');
+        if (generateBtn) generateBtn.addEventListener('click', () => setStreamerId(makeStreamerId()));
+        const copyBtn = document.getElementById('copy-streamer-id-btn');
+        if (copyBtn) copyBtn.addEventListener('click', copyStreamerId);
+      }
+
+      function scheduleReconnect() {
+        setTimeout(() => { backoff = Math.min(maxBackoff, Math.floor(backoff * 1.8)); connect(); }, backoff);
+      }
+
+      function handleMessage(msg) {
+        // basic handling for streamer UI: log messages and show status
+        if (!msg || !msg.type) return;
+        if (msg.type === 'status') {
+          console.info('Status:', msg.status, msg.platform, msg.channel);
+        } else if (msg.type === 'message' || msg.type === 'chat') {
+          console.log('Chat:', msg);
+        } else {
+          console.debug('WS:', msg);
+        }
+      }
+
+      // expose a simple watch helper for the UI anchors
+      window.hsWatch = function(platform, channel, owner) {
+        if (!ws || ws.readyState !== WebSocket.OPEN) { connect(); setTimeout(() => hsWatch(platform, channel, owner), 500); return; }
+        ws.send(JSON.stringify({ type: 'watch', platform, channel, owner }));
+      };
+
+      // start connection
+      connect();
+    })();
+  </script>
+  </main>
+      const initialId = getStreamerId() || setStreamerId(deriveStreamerId(), getFallbackNamespace());
+</html><!DOCTYPE html>
+      const createBtn = document.getElementById('create-streamer-id-btn');
+      if (createBtn) createBtn.addEventListener('click', createStreamerId);
+<meta charset="UTF-8">
+<title>HangStream /streamer</title>
+<link rel="stylesheet" href="/styles.css">
+<style id="inline-shared">
+:root{--bg:#0f1720;--panel:#0b1220;--muted:#9aa4b2;--text:#e6eef6;--accent:#ff4d6d;--accent-2:#7c5cff;--border: rgba(255,255,255,0.04);--radius:12px}*{box-sizing:border-box}html,body{height:100%}body{margin:0;font-family:Inter, 'Space Mono', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;background: linear-gradient(180deg,#07101a 0%, #0f1720 100%);color:var(--text)}body:not([data-theme="light"]) {background: linear-gradient(180deg,#07101a 0%, #0f1720 100%) !important;color: var(--text) !important}.shell, .game-wrap, .settings-box, body > div {background: transparent !important}body[data-theme="light"] {--bg: #f6f6f8;--panel: #ffffff;--muted: #667085;--text: #0b1220;--accent: #c93f5c;--accent-2: #7c5cff;--border: rgba(11,18,32,0.06);background: linear-gradient(180deg,#ffffff 0%, #f6f6f8 100%) !important;color: var(--text) !important}body[data-theme="light"] .card,body[data-theme="light"] .settings-box,body[data-theme="light"] .game-main,body[data-theme="light"] .sidebar,body[data-theme="light"] .shell {background: var(--panel) !important;color: var(--text) !important;border-color: var(--border) !important}body[data-theme="light"] .kb-key { background: #fff; color: var(--text); border: 1px solid rgba(11,18,32,0.06); }body[data-theme="light"] .kb-key.wrong { background:#efefef; color:#9aa4b2 }body[data-theme="light"] .letter-line { background: rgba(11,18,32,0.08) }body[data-theme="light"] .game-wrap,body[data-theme="light"] .game-area,body[data-theme="light"] .game-main,body[data-theme="light"] .word-row,body[data-theme="light"] .keyboard,body[data-theme="light"] .sidebar,body[data-theme="light"] .chat-feed,body[data-theme="light"] .overlay,body[data-theme="light"] .revival-box,body[data-theme="light"] .revival-section {background: var(--panel) !important;color: var(--text) !important}body[data-theme="light"] .letter-char { color: var(--text) !important }body[data-theme="light"] .letter-line { background: rgba(11,18,32,0.06) !important }body[data-theme="light"] .hangman-container { background: transparent !important }body[data-theme="light"] .hm-gallows { stroke: rgba(11,18,32,0.25) !important; stroke-width:2 !important }body[data-theme="light"] .hm-part { stroke: var(--accent) !important; stroke-width:3 !important; fill: transparent !important }body[data-theme="light"] .chat-feed { color: #2b2b30 !important }body[data-theme="light"] .chat-user { color: var(--accent) !important }body[data-theme="light"] .chat-system { color: var(--muted) !important }.container{max-width:1200px;margin:0 auto;padding:28px}.topbar{display:flex;align-items:center;justify-content:space-between;padding:20px 28px;border-bottom:1px solid var(--border);background:transparent}.logo{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent)}.logo span{color:var(--text)}.settings-btn,.theme-btn{padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--muted);cursor:pointer}.settings-btn:hover,.theme-btn:hover{color:var(--text);border-color:rgba(255,255,255,0.06)}.btn-revive{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border-radius:10px;padding:10px 18px;border:0;font-weight:700}.btn-skip,.new-game-btn{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px 14px;border-radius:8px;color:var(--muted)}.card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border:1px solid var(--border);padding:18px;border-radius:var(--radius)}.game-wrap{display:grid;grid-template-columns:1fr 360px;grid-template-rows:auto 1fr;gap:20px;min-height:100vh;padding:28px}.game-main{background:transparent}.sidebar{width:360px}
+</style>
+</head>
+<body>
+  <!-- content copied from existing streamer-settings.html (kept intact) -->
+  <!-- For brevity: the full streamer-settings.html content was copied into public/streamer-settings.html -->
+</body>
+</html>
