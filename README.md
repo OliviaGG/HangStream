@@ -2,6 +2,32 @@
 
 Lightweight WebSocket demo for live multiplayer interactions.
 
+## Deploy to Azure App Service
+
+This repo is ready for Azure App Service as a Linux container. The app listens on `PORT`, supports WebSockets, and can store its JSON data in a mounted directory.
+
+1. Build and push the image to Azure Container Registry, or use App Service to pull from a registry.
+
+2. Set these app settings in Azure:
+
+```text
+NODE_ENV=production
+PORT=8080
+DATA_DIR=/home/site/wwwroot/data
+TOKEN_ENCRYPTION_KEY=<strong-random-value>
+SPOTIFY_CLIENT_ID=<value>
+SPOTIFY_CLIENT_SECRET=<value>
+SPOTIFY_REDIRECT_URI=https://<your-app>.azurewebsites.net/oauth/spotify/callback
+TWITCH_CLIENT_ID=<value>
+TIKTOK_CLIENT_KEY=<value>
+```
+
+3. If you mount Azure Files, point the mount path at the same directory as `DATA_DIR`, or change `DATA_DIR` to match the mount path.
+
+4. Update OAuth redirect URIs in Spotify, Twitch, TikTok, and Google to use your Azure domain.
+
+5. Restart the web app and verify the `/` and `/streamer-settings` pages load over HTTPS.
+
 ## Deploy to Google Cloud Run
 
 The app already listens on `process.env.PORT`, so it can run directly in Cloud Run.

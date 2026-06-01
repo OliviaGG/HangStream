@@ -5,6 +5,16 @@ const { URL } = require('url');
 const crypto = require('crypto');
 const querystring = require('querystring');
 const https = require('https');
+const {
+  loadTokens,
+  saveTokens,
+  loadMusicQueue,
+  saveMusicQueue,
+  loadViewerProfiles,
+  saveViewerProfiles,
+  loadViewerScores,
+  saveViewerScores,
+} = require('./storage');
 
 const port = process.env.PORT || 8080;
 const viewerPath = path.join(__dirname, '..', 'public', 'index.html');
@@ -12,9 +22,6 @@ const homepagePath = path.join(__dirname, '..', 'public', 'homepage.html');
 const settingsPath = path.join(__dirname, '..', 'public', 'streamer-settings.html');
 const termsPath = path.join(__dirname, '..', 'public', 'terms.html');
 const privacyPath = path.join(__dirname, '..', 'public', 'privacy.html');
-const musicQueuePath = path.join(__dirname, 'music-queue.json');
-const viewerProfilesPath = path.join(__dirname, 'viewer-profiles.json');
-const viewerScoresPath = path.join(__dirname, 'viewer-scores.json');
 
 const CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY || '';
 const CLIENT_SECRET = process.env.TIKTOK_CLIENT_SECRET || '';
@@ -88,90 +95,6 @@ function buildViewerLoginSuccessPage(viewerId, viewerName, provider) {
       })();
     </script>
   </body></html>`;
-}
-
-function loadTokens() {
-  try {
-    const raw = fs.readFileSync(TOKEN_STORE, 'utf8');
-    // try parse plain JSON first
-    try { return JSON.parse(raw || '{}'); } catch (e) {
-      // if encryption key available try decrypt
-      if (!ENCRYPTION_KEY) return {};
-      try {
-        const blob = JSON.parse(raw);
-        if (blob && blob.v === 1 && blob.data) {
-          const b = Buffer.from(blob.data, 'base64');
-          const iv = b.slice(0, 12);
-          const tag = b.slice(12, 28);
-          const ct = b.slice(28);
-          const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
-          const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
-          decipher.setAuthTag(tag);
-          const dec = Buffer.concat([decipher.update(ct), decipher.final()]);
-          return JSON.parse(dec.toString('utf8'));
-        }
-      } catch (e) { return {}; }
-    }
-  } catch { return {}; }
-}
-
-function saveTokens(tokens) {
-  try {
-    if (!ENCRYPTION_KEY) {
-      fs.writeFileSync(TOKEN_STORE, JSON.stringify(tokens, null, 2), 'utf8');
-      return;
-    }
-    const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
-    const iv = crypto.randomBytes(12);
-    const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-    const pt = Buffer.from(JSON.stringify(tokens), 'utf8');
-    const ct = Buffer.concat([cipher.update(pt), cipher.final()]);
-    const tag = cipher.getAuthTag();
-    const out = Buffer.concat([iv, tag, ct]).toString('base64');
-    fs.writeFileSync(TOKEN_STORE, JSON.stringify({ v: 1, data: out }), 'utf8');
-  } catch (e) { console.warn('Failed to save tokens', e); }
-}
-
-function loadMusicQueue() {
-  try {
-    const raw = fs.readFileSync(musicQueuePath, 'utf8');
-    const parsed = JSON.parse(raw || '{}');
-    return (parsed && typeof parsed === 'object') ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function loadViewerProfiles() {
-  try {
-    const raw = fs.readFileSync(viewerProfilesPath, 'utf8');
-    const parsed = JSON.parse(raw || '{}');
-    return (parsed && typeof parsed === 'object') ? parsed : {};
-  } catch (e) { return {}; }
-}
-
-function saveViewerProfiles(profiles) {
-  try { fs.writeFileSync(viewerProfilesPath, JSON.stringify(profiles || {}, null, 2), 'utf8'); } catch (e) { console.warn('Failed to save viewer profiles', e); }
-}
-
-function loadViewerScores() {
-  try {
-    const raw = fs.readFileSync(viewerScoresPath, 'utf8');
-    const parsed = JSON.parse(raw || '{}');
-    return (parsed && typeof parsed === 'object') ? parsed : {};
-  } catch (e) { return {}; }
-}
-
-function saveViewerScores(scores) {
-  try { fs.writeFileSync(viewerScoresPath, JSON.stringify(scores || {}, null, 2), 'utf8'); } catch (e) { console.warn('Failed to save viewer scores', e); }
-}
-
-function saveMusicQueue(queue) {
-  try {
-    fs.writeFileSync(musicQueuePath, JSON.stringify(queue, null, 2), 'utf8');
-  } catch (e) {
-    console.warn('Failed to save music queue', e);
-  }
 }
 
 // Create a music request programmatically (used by HTTP endpoint and chat commands)
