@@ -481,7 +481,7 @@
 
     footer {
       border-top: 1px solid var(--card-border);
-      padding-top: 32px;
+      padding: 40px 20px 60px;
       margin-top: 80px;
       text-align: center;
     }
@@ -550,7 +550,7 @@
   <div class="site">
     <header>
       <div class="brand">
-        <div class="logo">HS</div>
+        <a href="/" class="logo" style="text-decoration:none;">HS</a>
         <div>
           <h1>HangStream</h1>
           <div class="tagline">Interactive Games for Live Streams</div>
@@ -730,8 +730,47 @@
         <a href="/privacy">Privacy</a>
         <a href="/terms">Terms</a>
         <a href="https://github.com/hangstream/hangstream" target="_blank" rel="noopener">GitHub</a>
+        <a href="#" onclick="openDonationModal();return false;">❤ Donate</a>
       </div>
     </footer>
+  </div>
+
+  <!-- Thank You Overlay -->
+  <div id="thank-you-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:2000;align-items:center;justify-content:center;">
+    <div style="background:var(--panel);padding:48px;border-radius:24px;max-width:500px;width:90%;text-align:center;position:relative;border:1px solid var(--border);box-shadow:0 24px 80px rgba(0,0,0,0.5);">
+      <button onclick="closeThankYou()" style="position:absolute;top:20px;right:20px;background:none;border:none;color:var(--text-muted);font-size:24px;cursor:pointer;">&times;</button>
+      <div style="font-size:64px;margin-bottom:24px;">❤</div>
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:36px;margin:0 0 16px 0;color:var(--text);">Thank You!</h2>
+      <p style="margin:0 0 32px 0;color:var(--text-muted);font-size:16px;line-height:1.6;">Your donation means the world to us! Your support helps keep HangStream running and improving for all streamers.</p>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <a href="/" class="btn btn-primary" style="padding:14px 32px;border-radius:12px;background:var(--accent);color:white;text-decoration:none;font-weight:600;">Return Home</a>
+        <a href="/viewer" class="btn btn-secondary" style="padding:14px 32px;border-radius:12px;background:var(--bg-elevated);color:var(--text);border:1px solid var(--border);text-decoration:none;font-weight:600;">Play Game</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Donation Modal -->
+  <div id="donation-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:var(--panel);padding:32px;border-radius:24px;max-width:400px;width:90%;border:1px solid var(--border);">
+      <h2 style="margin:0 0 16px 0;font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text);">❤ Support HangStream</h2>
+      <p style="margin:0 0 20px 0;color:var(--text-muted);">Enter the amount you'd like to donate (minimum $1 USD)</p>
+      
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
+        <button class="donation-amount-btn" data-amount="5" style="padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;transition:all 0.2s;">$5</button>
+        <button class="donation-amount-btn" data-amount="10" style="padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;transition:all 0.2s;">$10</button>
+        <button class="donation-amount-btn" data-amount="20" style="padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;transition:all 0.2s;">$20</button>
+        <button class="donation-amount-btn" data-amount="50" style="padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;transition:all 0.2s;">$50</button>
+        <button class="donation-amount-btn" data-amount="100" style="padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;transition:all 0.2s;">$100</button>
+        <button class="donation-amount-btn" data-amount="custom" style="padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;transition:all 0.2s;">Custom</button>
+      </div>
+      
+      <input type="number" id="donation-amount-input" placeholder="Custom amount" min="1" step="1" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg-elevated);color:var(--text);margin-bottom:16px;">
+      
+      <div style="display:flex;gap:12px;">
+        <button id="cancel-donation" style="flex:1;padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;">Cancel</button>
+        <button id="confirm-donation" style="flex:1;padding:12px;border-radius:12px;background:var(--accent);border:none;color:white;cursor:pointer;font-weight:600;">Donate</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -757,6 +796,109 @@
       document.documentElement.setAttribute('data-theme', savedTheme);
       updateThemeToggle(savedTheme);
     })();
+
+    // Check for donation success and show thank you overlay
+    (function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('donation_success') === 'true') {
+        const overlay = document.getElementById('thank-you-overlay');
+        if (overlay) {
+          overlay.style.display = 'flex';
+          // Remove the parameter from URL without reloading
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
+    })();
+
+    function closeThankYou() {
+      const overlay = document.getElementById('thank-you-overlay');
+      if (overlay) {
+        overlay.style.display = 'none';
+      }
+    }
+
+    // Donation functionality
+    let selectedAmount = 5;
+
+    function openDonationModal() {
+      const modal = document.getElementById('donation-modal');
+      modal.style.display = 'flex';
+      document.getElementById('donation-amount-input').value = selectedAmount;
+    }
+
+    function closeDonationModal() {
+      const modal = document.getElementById('donation-modal');
+      modal.style.display = 'none';
+    }
+
+    document.getElementById('cancel-donation').addEventListener('click', closeDonationModal);
+
+    document.querySelectorAll('.donation-amount-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const amount = e.target.dataset.amount;
+        if (amount === 'custom') {
+          document.getElementById('donation-amount-input').focus();
+        } else {
+          selectedAmount = parseInt(amount);
+          document.getElementById('donation-amount-input').value = selectedAmount;
+        }
+      });
+    });
+
+    document.getElementById('donation-amount-input').addEventListener('input', (e) => {
+      selectedAmount = parseFloat(e.target.value) || 0;
+    });
+
+    document.getElementById('confirm-donation').addEventListener('click', async () => {
+      const amount = selectedAmount;
+      if (amount < 1) {
+        alert('Please enter at least $1');
+        return;
+      }
+      
+      const cookies = parseCookies(document.cookie);
+      const viewerId = cookies.viewer_id || null;
+      const viewerName = 'Homepage Visitor';
+      
+      try {
+        const configRes = await fetch('/donate/config');
+        const config = await configRes.json();
+        
+        if (!config.publishableKey) {
+          alert('Donations are not currently available. Please check back later.');
+          return;
+        }
+        
+        const res = await fetch('/donate/create-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount,
+            viewerId,
+            viewerName
+          })
+        });
+        
+        const data = await res.json();
+        
+        if (data.error) {
+          alert('Error: ' + data.error);
+          return;
+        }
+        
+        window.location.href = data.url;
+        closeDonationModal();
+      } catch (error) {
+        console.error('Donation error:', error);
+        alert('Failed to create donation. Please try again.');
+      }
+    });
+
+    function parseCookies(cookieHeader) {
+      return (cookieHeader || '').split(';').map(s => s.trim()).reduce((acc, cur) => {
+        const [k, v] = cur.split('='); if (k) acc[k] = v; return acc;
+      }, {});
+    }
   </script>
 </body>
 </html>

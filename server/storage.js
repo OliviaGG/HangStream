@@ -20,6 +20,7 @@ const tokenStorePath = dataPath('oauth-tokens.json');
 const musicQueuePath = dataPath('music-queue.json');
 const viewerProfilesPath = dataPath('viewer-profiles.json');
 const viewerScoresPath = dataPath('viewer-scores.json');
+const donationsPath = dataPath('donations.json');
 
 ensureDataDir();
 
@@ -132,6 +133,24 @@ function saveViewerScores(scores) {
   }
 }
 
+function loadDonations() {
+  try {
+    const raw = fs.readFileSync(donationsPath, 'utf8');
+    const parsed = JSON.parse(raw.trim() || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function saveDonations(donations) {
+  try {
+    fs.writeFileSync(donationsPath, JSON.stringify(donations || [], null, 2), 'utf8');
+  } catch (err) {
+    console.warn('Failed to save donations', err);
+  }
+}
+
 module.exports = {
   loadTokens,
   saveTokens,
@@ -141,4 +160,6 @@ module.exports = {
   saveViewerProfiles,
   loadViewerScores,
   saveViewerScores,
+  loadDonations,
+  saveDonations,
 };

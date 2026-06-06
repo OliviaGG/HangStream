@@ -1,4 +1,5 @@
 // @CodeScene(disable:"Lines of Code in a Single File")
+require('dotenv').config();
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -21,6 +22,8 @@ const {
   saveViewerScoresForOwner,
   loadGlobalViewerScores,
   saveGlobalViewerScores,
+  loadDonations,
+  saveDonations,
 } = require('./storage');
 
 const port = process.env.PORT || 8080;
@@ -45,6 +48,10 @@ const GOOGLE_VIEWER_REDIRECT = process.env.GOOGLE_VIEWER_REDIRECT_URI || GOOGLE_
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '';
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || '';
 const SPOTIFY_REDIRECT = process.env.SPOTIFY_REDIRECT_URI || `http://localhost:${port}/oauth/spotify/callback`;
+
+// Stripe initialization
+const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
+const stripePublishableKey = process.env.STRIPE_PUBLISHABLE_KEY || '';
 
 // Environment validation
 function validateEnvironment() {
@@ -1239,6 +1246,136 @@ const server = http.createServer((req, res) => {
       roomScores,
       globalScores
     }));
+    return;
+  }
+
+  // Stripe donation checkout
+  if (pathname === '/donate/create-checkout' && req.method === 'POST') {
+    if (!stripe) {
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Stripe not configured' }));
+      return;
+    }
+
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const { amount, viewerId, viewerName } = JSON.parse(body);
+
+        if (!amount || amount < 1) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Invalid amount' }));
+          return;
+        }
+
+        const session = await stripe.checkout.sessions.create({
+          payment_method_types: ['card'],
+          line_items: [{
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: 'Donation to HangStream',
+                description: `Support the streamer!`,
+              },
+              unit_amount: amount * 100, // Convert to cents
+            },
+            quantity: 1,
+          }],
+          mode: 'payment',
+          success_url: `${req.headers.origin || `http://localhost:${port}`}/?donation_success=true`,
+          cancel_url: `${req.headers.origin || `http://localhost:${port}`}/donate/cancel`,
+          metadata: {
+            viewerId: viewerId || '',
+            viewerName: viewerName || '',
+            amount: amount.toString(),
+          },
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ url: session.url, sessionId: session.id }));
+      } catch (error) {
+        console.error('Stripe checkout error:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: error.message }));
+      }
+    });
+    return;
+  }
+
+  // Stripe webhook handler
+  if (pathname === '/donate/webhook' && req.method === 'POST') {
+    if (!stripe) {
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Stripe not configured' }));
+      return;
+    }
+
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      const sig = req.headers['stripe-signature'];
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+      if (!webhookSecret) {
+        console.warn('Stripe webhook secret not set, skipping signature verification');
+      }
+
+      let event;
+      try {
+        if (webhookSecret) {
+          event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+        } else {
+          event = JSON.parse(body);
+        }
+      } catch (err) {
+        console.error('Webhook signature verification failed:', err.message);
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: 'Invalid signature' }));
+        return;
+      }
+
+      // Handle checkout.session.completed event
+      if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+        const metadata = session.metadata;
+
+        const donation = {
+          id: session.id,
+          viewerId: metadata.viewerId,
+          viewerName: metadata.viewerName || 'Anonymous',
+          amount: parseFloat(metadata.amount),
+          currency: session.currency,
+          status: session.payment_status,
+          createdAt: new Date().toISOString(),
+          sessionId: session.id,
+        };
+
+        const donations = loadDonations();
+        donations.push(donation);
+        saveDonations(donations);
+
+        console.log(`Donation received: $${donation.amount} from ${donation.viewerName}`);
+      }
+
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ received: true }));
+    });
+    return;
+  }
+
+  // Get donation history
+  if (pathname === '/donate/history' && req.method === 'GET') {
+    const donations = loadDonations();
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(donations));
+    return;
+  }
+
+  // Get Stripe publishable key (public)
+  if (pathname === '/donate/config' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ publishableKey: stripePublishableKey }));
     return;
   }
 
