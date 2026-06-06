@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Apply to Stream - HangStream</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0e0e12;
+      --bg-elevated: #0b0b0f;
+      --bg-alt: #0b0b0f;
+      --card: #1a1a22;
+      --card-border: #2a2a35;
+      --panel: #1a1a22;
+      --panel-border: #2a2a35;
+      --text: #f0ede8;
+      --text-muted: #92a0af;
+      --muted: #92a0af;
+      --accent: #ff4d6d;
+      --accent-2: #7c5cff;
+      --accent-3: #7c5cff;
+      --good: #25c27a;
+      --warning: #ffbe55;
+      --bad: #ff4d4d;
+      --glass: rgba(255,255,255,0.05);
+      --radius: 24px;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+    }
+
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --bg-elevated: #ffffff;
+      --bg-alt: #ffffff;
+      --card: #ffffff;
+      --card-border: #e2e8f0;
+      --panel: #ffffff;
+      --panel-border: #e2e8f0;
+      --text: #0f1724;
+      --text-muted: #64748b;
+      --muted: #64748b;
+      --glass: rgba(0,0,0,0.04);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(255, 77, 109, 0.15), transparent 28%),
+        radial-gradient(circle at top right, rgba(124, 92, 255, 0.12), transparent 24%),
+        radial-gradient(circle at bottom left, rgba(37, 194, 122, 0.08), transparent 20%),
+        linear-gradient(180deg, color-mix(in srgb, var(--bg) 95%, #000), var(--bg));
+    }
+
+    [data-theme="light"] body {
+      background:
+        radial-gradient(circle at top left, rgba(255, 77, 109, 0.08), transparent 28%),
+        radial-gradient(circle at top right, rgba(124, 92, 255, 0.06), transparent 24%),
+        radial-gradient(circle at bottom left, rgba(37, 194, 122, 0.04), transparent 20%),
+        linear-gradient(180deg, #f8fafc, #ffffff);
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .logo {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      margin: 0 auto 20px;
+      box-shadow: 0 8px 24px rgba(255, 77, 109, 0.3);
+    }
+
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      margin-bottom: 8px;
+      letter-spacing: 0.02em;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    .back-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: inline-block;
+    }
+
+    .back-link:hover { color: var(--text); }
+
+    .form-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow: var(--shadow);
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      background: var(--bg-alt);
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .form-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    textarea.form-input {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .btn {
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      box-shadow: 0 4px 16px rgba(255, 77, 109, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(255, 77, 109, 0.4);
+    }
+
+    .message {
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .message.success {
+      background: rgba(37, 194, 122, 0.1);
+      border: 1px solid var(--good);
+      color: var(--good);
+    }
+
+    .message.error {
+      background: rgba(255, 77, 109, 0.1);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .message.info {
+      background: rgba(124, 92, 255, 0.1);
+      border: 1px solid var(--accent-2);
+      color: var(--accent-2);
+    }
+
+    .info-text {
+      color: var(--text-muted);
+      font-size: 14px;
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    .theme-toggle {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: all 0.2s;
+    }
+
+    .theme-toggle:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    @media (max-width: 600px) {
+      .form-row { grid-template-columns: 1fr; }
+      .container { padding: 24px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <a href="/" class="back-link">← Back to Home</a>
+      <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle" aria-label="Toggle theme">🌙</button>
+    </div>
+
+    <div class="header">
+      <div class="logo">HS</div>
+      <h1>Apply to Stream</h1>
+      <div class="subtitle">Submit your application to become a HangStream streamer</div>
+    </div>
+
+    <div class="form-card">
+      <div id="message-container"></div>
+
+      <form id="application-form">
+        <div class="form-group">
+          <label class="form-label" for="name">Full Name *</label>
+          <input type="text" class="form-input" id="name" name="name" required placeholder="Your full name">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="email">Email *</label>
+            <input type="email" class="form-input" id="email" name="email" required placeholder="your@email.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="password">Password *</label>
+            <input type="password" class="form-input" id="password" name="password" required placeholder="Min. 8 characters" minlength="8">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="twitchHandle">Twitch Handle</label>
+            <input type="text" class="form-input" id="twitchHandle" name="twitchHandle" placeholder="@yourtwitch">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="tiktokHandle">TikTok Handle</label>
+            <input type="text" class="form-input" id="tiktokHandle" name="tiktokHandle" placeholder="@yourtiktok">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="note">Why do you want to stream HangStream? *</label>
+          <textarea class="form-input" id="note" name="note" required placeholder="Tell us about your streaming plans, audience, and why you're excited about HangStream..."></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit Application</button>
+      </form>
+
+      <div class="info-text">
+        Your application will be reviewed by our team. Once approved, you'll receive an API key to access the streamer dashboard.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('application-form');
+    const messageContainer = document.getElementById('message-container');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = {
+        name: document.getElementById('name').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+        twitchHandle: document.getElementById('twitchHandle').value.trim(),
+        tiktokHandle: document.getElementById('tiktokHandle').value.trim(),
+        note: document.getElementById('note').value.trim()
+      };
+
+      // Validate
+      if (!formData.name || !formData.email || !formData.password || !formData.note) {
+        showMessage('error', 'Please fill in all required fields.');
+        return;
+      }
+
+      if (formData.password.length < 8) {
+        showMessage('error', 'Password must be at least 8 characters.');
+        return;
+      }
+
+      if (!formData.email.includes('@') || !formData.email.includes('.')) {
+        showMessage('error', 'Please enter a valid email address.');
+        return;
+      }
+
+      try {
+        const response = await fetch('/streamer/apply', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          showMessage('success', 'Application submitted successfully! We\'ll review your application and get back to you via email.');
+          form.reset();
+        } else {
+          const error = await response.json();
+          showMessage('error', error.error || 'Failed to submit application. Please try again.');
+        }
+      } catch (err) {
+        showMessage('error', 'Failed to submit application. Please try again.');
+      }
+    });
+
+    function showMessage(type, text) {
+      messageContainer.innerHTML = `<div class="message ${type}">${text}</div>`;
+      setTimeout(() => {
+        messageContainer.innerHTML = '';
+      }, 5000);
+    }
+
+    // Theme toggle with localStorage persistence
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeToggle(newTheme);
+    }
+
+    function updateThemeToggle(theme) {
+      const toggle = document.getElementById('theme-toggle');
+      if (toggle) {
+        toggle.textContent = theme === 'light' ? '🌙' : '☀️';
+      }
+    }
+
+    // Load saved theme on page load
+    (function() {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateThemeToggle(savedTheme);
+    })();
+  </script>
+</body>
+</html>

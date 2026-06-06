@@ -1,3 +1,4 @@
+// @CodeScene(disable:"Lines of Code in a Single File")
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -12,8 +13,14 @@ const {
   saveMusicQueue,
   loadViewerProfiles,
   saveViewerProfiles,
+  loadViewerProfilesForOwner,
+  saveViewerProfilesForOwner,
   loadViewerScores,
   saveViewerScores,
+  loadViewerScoresForOwner,
+  saveViewerScoresForOwner,
+  loadGlobalViewerScores,
+  saveGlobalViewerScores,
 } = require('./storage');
 
 const port = process.env.PORT || 8080;
@@ -38,6 +45,81 @@ const GOOGLE_VIEWER_REDIRECT = process.env.GOOGLE_VIEWER_REDIRECT_URI || GOOGLE_
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '';
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || '';
 const SPOTIFY_REDIRECT = process.env.SPOTIFY_REDIRECT_URI || `http://localhost:${port}/oauth/spotify/callback`;
+
+// Environment validation
+function validateEnvironment() {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const errors = [];
+  const warnings = [];
+
+  // Required variables
+  if (!GOOGLE_CLIENT_ID) errors.push('GOOGLE_CLIENT_ID is required');
+  if (!GOOGLE_CLIENT_SECRET) errors.push('GOOGLE_CLIENT_SECRET is required');
+
+  // Production-specific requirements
+  if (isProduction) {
+    if (!ENCRYPTION_KEY) warnings.push('TOKEN_ENCRYPTION_KEY is recommended in production for secure token storage');
+    if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0') {
+      warnings.push('NODE_TLS_REJECT_UNAUTHORIZED=0 disables SSL verification and should not be used in production');
+    }
+  }
+
+  // Optional integrations - warn if partially configured
+  if (CLIENT_KEY && !CLIENT_SECRET) warnings.push('TIKTOK_CLIENT_SECRET is missing when TIKTOK_CLIENT_KEY is set');
+  if (CLIENT_SECRET && !CLIENT_KEY) warnings.push('TIKTOK_CLIENT_KEY is missing when TIKTOK_CLIENT_SECRET is set');
+  if (TWITCH_CLIENT_ID && !TWITCH_CLIENT_SECRET) warnings.push('TWITCH_CLIENT_SECRET is missing when TWITCH_CLIENT_ID is set');
+  if (TWITCH_CLIENT_SECRET && !TWITCH_CLIENT_ID) warnings.push('TWITCH_CLIENT_ID is missing when TWITCH_CLIENT_SECRET is set');
+  if (SPOTIFY_CLIENT_ID && !SPOTIFY_CLIENT_SECRET) warnings.push('SPOTIFY_CLIENT_SECRET is missing when SPOTIFY_CLIENT_ID is set');
+  if (SPOTIFY_CLIENT_SECRET && !SPOTIFY_CLIENT_ID) warnings.push('SPOTIFY_CLIENT_ID is missing when SPOTIFY_CLIENT_SECRET is set');
+
+  // Log validation results
+  if (errors.length > 0) {
+    console.error('❌ Environment validation failed:');
+    errors.forEach(err => console.error(`  - ${err}`));
+    console.error('Please set the required environment variables and restart the server.');
+    process.exit(1);
+  }
+
+  if (warnings.length > 0) {
+    console.warn('⚠️  Environment warnings:');
+    warnings.forEach(warn => console.warn(`  - ${warn}`));
+  }
+
+  if (errors.length === 0 && warnings.length === 0) {
+    console.log('✅ Environment validation passed');
+  }
+}
+
+// Run validation at startup
+validateEnvironment();
+
+// Security headers middleware
+function addSecurityHeaders(res) {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  // Only add HSTS in production
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+}
+
+// Standardized error response function
+function sendErrorResponse(res, statusCode, message, error = null) {
+  const errorResponse = {
+    error: message,
+    statusCode,
+    timestamp: new Date().toISOString()
+  };
+  
+  if (error && process.env.NODE_ENV !== 'production') {
+    errorResponse.details = error.message || String(error);
+  }
+
+  res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
+  res.end(JSON.stringify(errorResponse));
+}
 
 function parseCookies(cookieHeader) {
   return (cookieHeader || '').split(';').map(s => s.trim()).reduce((acc, cur) => {
@@ -338,11 +420,13 @@ const server = http.createServer((req, res) => {
   const reqUrl = new URL(req.url, `http://${req.headers.host}`);
   const pathname = reqUrl.pathname;
 
+  // Apply security headers to all responses
+  addSecurityHeaders(res);
+
   // OAuth entry: redirect to TikTok
   if (pathname === '/oauth') {
     if (!CLIENT_KEY) {
-      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('TIKTOK_CLIENT_KEY not configured on server.');
+      sendErrorResponse(res, 500, 'TIKTOK_CLIENT_KEY not configured on server.');
       return;
     }
     const state = crypto.randomBytes(16).toString('hex');
@@ -362,8 +446,7 @@ const server = http.createServer((req, res) => {
   // Viewer Google OAuth entry (for viewers to sign in)
   if (pathname === '/auth/google') {
     if (!GOOGLE_CLIENT_ID) {
-      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('GOOGLE_CLIENT_ID not configured on server.');
+      sendErrorResponse(res, 500, 'GOOGLE_CLIENT_ID not configured on server.');
       return;
     }
     const state = crypto.randomBytes(16).toString('hex');
@@ -384,8 +467,7 @@ const server = http.createServer((req, res) => {
   // Google owner login entry
   if (pathname === '/oauth/google') {
     if (!GOOGLE_CLIENT_ID) {
-      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('GOOGLE_CLIENT_ID not configured on server.');
+      sendErrorResponse(res, 500, 'GOOGLE_CLIENT_ID not configured on server.');
       return;
     }
     const state = crypto.randomBytes(16).toString('hex');
@@ -405,8 +487,7 @@ const server = http.createServer((req, res) => {
   // Spotify owner login entry
   if (pathname === '/oauth/spotify') {
     if (!SPOTIFY_CLIENT_ID) {
-      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('SPOTIFY_CLIENT_ID not configured on server.');
+      sendErrorResponse(res, 500, 'SPOTIFY_CLIENT_ID not configured on server.');
       return;
     }
     const state = crypto.randomBytes(16).toString('hex');
@@ -426,8 +507,7 @@ const server = http.createServer((req, res) => {
   // Twitch OAuth entry
   if (pathname === '/oauth/twitch') {
     if (!TWITCH_CLIENT_ID) {
-      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('TWITCH_CLIENT_ID not configured on server.');
+      sendErrorResponse(res, 500, 'TWITCH_CLIENT_ID not configured on server.');
       return;
     }
     const state = crypto.randomBytes(16).toString('hex');
@@ -836,7 +916,7 @@ const server = http.createServer((req, res) => {
     const params = reqUrl.searchParams;
     const code = params.get('code');
     const state = params.get('state');
-    const cookies = (req.headers.cookie || '').split(';').map(s => s.trim()).reduce((acc, cur) => { const [k, v] = cur.split('='); if (k) acc[k] = v; return acc; }, {});
+    const cookies = parseCookies(req.headers.cookie);
     if (!state || cookies.csrfState !== state) { res.writeHead(403); res.end('Invalid state'); return; }
     if (!code) { res.writeHead(400); res.end('Missing code'); return; }
     if (!TWITCH_CLIENT_ID || !TWITCH_CLIENT_SECRET) { res.writeHead(500); res.end('Twitch OAuth not configured'); return; }
@@ -905,7 +985,7 @@ const server = http.createServer((req, res) => {
       try {
         const parsed = JSON.parse(body || '{}');
         const id = parsed.id;
-        const cookies = (req.headers.cookie || '').split(';').map(s => s.trim()).reduce((acc, cur) => { const [k, v] = cur.split('='); if (k) acc[k] = v; return acc; }, {});
+        const cookies = parseCookies(req.headers.cookie);
         if (!id) { res.writeHead(400); res.end('missing id'); return; }
         const tokens = loadTokens();
         if (!tokens[id]) { res.writeHead(404); res.end('not found'); return; }
@@ -941,16 +1021,13 @@ const server = http.createServer((req, res) => {
           res.end(JSON.stringify(item));
         } catch (e) {
           if (e && (e.code === 'RATE_LIMIT_OWNER' || e.code === 'RATE_LIMIT_USER')) {
-            res.writeHead(429, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(JSON.stringify({ error: 'rate_limited', code: e.code }));
+            sendErrorResponse(res, 429, 'rate_limited', e);
           } else {
-            res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(JSON.stringify({ error: 'failed to add music request' }));
+            sendErrorResponse(res, 500, 'failed to add music request', e);
           }
         }
       } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ error: 'failed to add music request' }));
+        sendErrorResponse(res, 500, 'failed to add music request', e);
       }
     });
     return;
@@ -973,8 +1050,7 @@ const server = http.createServer((req, res) => {
         res.writeHead(ok ? 200 : 502, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ ok }));
       } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ error: 'failed to skip track' }));
+        sendErrorResponse(res, 500, 'failed to skip track', e);
       }
     });
     return;
@@ -998,8 +1074,7 @@ const server = http.createServer((req, res) => {
         res.writeHead(ok ? 200 : 502, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ ok, action: action === 'resume' ? 'resume' : 'pause' }));
       } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ error: 'failed to update playback' }));
+        sendErrorResponse(res, 500, 'failed to update playback', e);
       }
     });
     return;
@@ -1061,10 +1136,10 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Viewer profile endpoints (GET by id, POST to save)
+  // Viewer profile endpoints (GET by id, POST to save) - now using global profiles
   if (pathname === '/viewer/profile' && req.method === 'GET') {
     const id = reqUrl.searchParams.get('id');
-    const profiles = loadViewerProfiles();
+    const profiles = loadViewerProfiles(); // Global profiles (shared across all streamers)
     if (id) {
       const p = profiles[id] || null;
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -1092,14 +1167,14 @@ const server = http.createServer((req, res) => {
         }
         // ensure clients cannot impersonate other viewers: use sessionViewer as authoritative id
         const id = sessionViewer;
-        const profiles = loadViewerProfiles();
+        const profiles = loadViewerProfiles(); // Global profiles (shared across all streamers)
         profiles[id] = profiles[id] || {};
         profiles[id].id = id;
         profiles[id].name = parsed.name || parsed.viewerName || profiles[id].name || '';
         profiles[id].avatar = parsed.avatar || parsed.viewerAvatar || profiles[id].avatar || '';
         profiles[id].provider = parsed.provider || profiles[id].provider || null;
         profiles[id].updatedAt = Date.now();
-        saveViewerProfiles(profiles);
+        saveViewerProfiles(profiles); // Save to global profiles
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify(profiles[id]));
       } catch (e) {
@@ -1111,6 +1186,7 @@ const server = http.createServer((req, res) => {
   }
 
   // Score endpoints - require authenticated viewer session via cookie
+  // Updates both per-room scores and global scores
   if (pathname === '/score' && req.method === 'POST') {
     let body = '';
     req.on('data', (c) => body += c);
@@ -1122,14 +1198,30 @@ const server = http.createServer((req, res) => {
         const parsed = JSON.parse(body || '{}');
         const points = Number(parsed.points || 0);
         if (!Number.isFinite(points)) { res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ error: 'invalid points' })); return; }
-        const scores = loadViewerScores();
+        const owner = getOwnerKey(req, '');
+
+        // Update per-room scores
+        const scores = loadViewerScoresForOwner(owner);
         scores[sessionViewer] = scores[sessionViewer] || { id: sessionViewer, total: 0, history: [] };
         scores[sessionViewer].total = (scores[sessionViewer].total || 0) + points;
         scores[sessionViewer].history = scores[sessionViewer].history || [];
         scores[sessionViewer].history.push({ ts: Date.now(), points, reason: parsed.reason || '' });
-        saveViewerScores(scores);
+        saveViewerScoresForOwner(owner, scores);
+
+        // Update global scores (across all streamers)
+        const globalScores = loadGlobalViewerScores();
+        globalScores[sessionViewer] = globalScores[sessionViewer] || { id: sessionViewer, total: 0, history: [] };
+        globalScores[sessionViewer].total = (globalScores[sessionViewer].total || 0) + points;
+        globalScores[sessionViewer].history = globalScores[sessionViewer].history || [];
+        globalScores[sessionViewer].history.push({ ts: Date.now(), points, reason: parsed.reason || '', owner });
+        saveGlobalViewerScores(globalScores);
+
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ id: sessionViewer, total: scores[sessionViewer].total }));
+        res.end(JSON.stringify({
+          id: sessionViewer,
+          roomTotal: scores[sessionViewer].total,
+          globalTotal: globalScores[sessionViewer].total
+        }));
       } catch (e) {
         res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ error: 'failed to save score' }));
@@ -1139,9 +1231,14 @@ const server = http.createServer((req, res) => {
   }
 
   if (pathname === '/scores' && req.method === 'GET') {
-    const scores = loadViewerScores();
+    const owner = getOwnerKey(req, '');
+    const roomScores = loadViewerScoresForOwner(owner);
+    const globalScores = loadGlobalViewerScores();
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify(scores));
+    res.end(JSON.stringify({
+      roomScores,
+      globalScores
+    }));
     return;
   }
 

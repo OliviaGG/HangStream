@@ -9,18 +9,39 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #08111c;
-      --bg-alt: #0d1724;
-      --panel: rgba(12, 20, 31, 0.88);
-      --panel-border: rgba(255, 255, 255, 0.08);
-      --text: #edf4fb;
+      --bg: #0e0e12;
+      --bg-elevated: #0b0b0f;
+      --bg-alt: #0b0b0f;
+      --card: #1a1a22;
+      --card-border: #2a2a35;
+      --panel: #1a1a22;
+      --panel-border: #2a2a35;
+      --text: #f0ede8;
+      --text-muted: #92a0af;
       --muted: #92a0af;
       --accent: #ff4d6d;
       --accent-2: #7c5cff;
+      --accent-3: #7c5cff;
       --good: #25c27a;
       --warning: #ffbe55;
+      --bad: #ff4d4d;
+      --glass: rgba(255,255,255,0.05);
       --radius: 24px;
       --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+    }
+
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --bg-elevated: #ffffff;
+      --bg-alt: #ffffff;
+      --card: #ffffff;
+      --card-border: #e2e8f0;
+      --panel: #ffffff;
+      --panel-border: #e2e8f0;
+      --text: #0f1724;
+      --text-muted: #64748b;
+      --muted: #64748b;
+      --glass: rgba(0,0,0,0.04);
     }
 
     * { box-sizing: border-box; }
@@ -30,9 +51,18 @@
       font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at top left, rgba(255, 77, 109, 0.16), transparent 24%),
-        radial-gradient(circle at 80% 20%, rgba(124, 92, 255, 0.18), transparent 28%),
-        linear-gradient(180deg, #07101a 0%, #0c1420 100%);
+        radial-gradient(circle at top left, rgba(255, 77, 109, 0.15), transparent 28%),
+        radial-gradient(circle at top right, rgba(124, 92, 255, 0.12), transparent 24%),
+        radial-gradient(circle at bottom left, rgba(37, 194, 122, 0.08), transparent 20%),
+        linear-gradient(180deg, color-mix(in srgb, var(--bg) 95%, #000), var(--bg));
+    }
+
+    [data-theme="light"] body {
+      background:
+        radial-gradient(circle at top left, rgba(255, 77, 109, 0.08), transparent 28%),
+        radial-gradient(circle at top right, rgba(124, 92, 255, 0.06), transparent 24%),
+        radial-gradient(circle at bottom left, rgba(37, 194, 122, 0.04), transparent 20%),
+        linear-gradient(180deg, #f8fafc, #ffffff);
     }
 
     body::before {
@@ -252,6 +282,26 @@
     .pill.good { color: #daf8ea; background: rgba(37, 194, 122, 0.16); }
     .pill.warn { color: #fff2d3; background: rgba(255, 190, 85, 0.16); }
 
+    .theme-toggle {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: all 0.2s;
+    }
+
+    .theme-toggle:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
     .codebox {
       margin-top: 12px;
       padding: 14px 16px;
@@ -304,9 +354,21 @@
     <section class="hero">
       <div class="panel intro">
         <div>
-          <div class="eyebrow">Streamer Control Panel</div>
-          <h1>HangStream</h1>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div>
+              <div class="eyebrow">Streamer Control Panel</div>
+              <h1>HangStream</h1>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle" aria-label="Toggle theme">🌙</button>
+          </div>
           <p class="lede">Use this page to connect your accounts, verify OAuth callbacks, and confirm the deployment is ready before sending viewers to the game. The live viewer runs separately at <a href="/viewer">/viewer</a>.</p>
+
+          <div style="background: rgba(255, 77, 109, 0.1); border: 1px solid var(--accent); border-radius: 16px; padding: 16px; margin-bottom: 16px;">
+            <div style="font-weight: 700; color: var(--accent); margin-bottom: 8px;">🔐 Required to Stream</div>
+            <div style="color: var(--text-muted); font-size: 13px;">Sign in as a Streamer Owner to manage your game settings and connect your Twitch/TikTok accounts.</div>
+          </div>
+
+          <div id="approval-status" style="margin-bottom: 16px;"></div>
 
           <div class="action-row">
             <a class="btn btn-primary" href="/oauth/google" target="_blank" rel="noopener">Connect Google Owner</a>
@@ -339,8 +401,37 @@
           <p>This is the @-style id the game uses for your own room. Use a custom one if you run TikTok and Twitch at the same time.</p>
           <div class="codebox" id="streamer-id-display">@loading</div>
           <div class="action-row" style="margin-top:12px;">
-            <button class="btn btn-primary" type="button" id="create-streamer-id-btn">Create</button>
+            <button class="btn btn-primary" type="button" id="generate-streamer-id-btn">Create</button>
             <button class="btn btn-secondary" type="button" id="copy-streamer-id-btn">Copy route</button>
+          </div>
+        </div>
+        <div class="mini-card">
+          <h2>Your Game Link</h2>
+          <p>Share this link with viewers so they can join your game directly.</p>
+          <div class="codebox" id="game-link-display">https://loading</div>
+          <div class="action-row" style="margin-top:12px;">
+            <a class="btn btn-primary" id="open-game-link-btn" target="_blank" rel="noopener">Open Link</a>
+            <button class="btn btn-secondary" type="button" id="copy-game-link-btn">Copy Link</button>
+          </div>
+        </div>
+        <div class="mini-card">
+          <h2>Stream Overlay</h2>
+          <p>Use this clean overlay in OBS or streaming software as a browser source.</p>
+          <div class="codebox" id="overlay-link-display">https://loading</div>
+          <div class="action-row" style="margin-top:12px;">
+            <a class="btn btn-primary" id="open-overlay-link-btn" target="_blank" rel="noopener">Open Overlay</a>
+            <button class="btn btn-secondary" type="button" id="copy-overlay-link-btn">Copy Link</button>
+          </div>
+        </div>
+        <div class="mini-card">
+          <h2>Viewer Participation</h2>
+          <p>Control how viewers can participate in your game.</p>
+          <div style="margin-top:16px;">
+            <label style="display:flex; align-items:center; gap:12px; cursor:pointer;">
+              <input type="checkbox" id="website-play-toggle" style="width:18px; height:18px; accent-color:var(--accent);">
+              <span style="font-size:14px;">Allow website play (viewers can play via this interface)</span>
+            </label>
+            <p style="margin-top:8px; color:var(--muted); font-size:13px;">When disabled, viewers can only play via your live stream chat.</p>
           </div>
         </div>
         <div class="mini-card">
@@ -404,6 +495,8 @@ TOKEN_ENCRYPTION_KEY=...</div>
       <div>Once the callbacks resolve, the streamer page is ready for production traffic.</div>
       <div class="footer-links">
         <a href="/viewer">Open viewer</a>
+        <a href="/profile">Viewer profile</a>
+        <a href="/leaderboard">Leaderboard</a>
         <a href="/privacy">Privacy</a>
         <a href="/terms">Terms</a>
       </div>
@@ -483,6 +576,92 @@ TOKEN_ENCRYPTION_KEY=...</div>
         const display = document.getElementById('streamer-id-display');
         const slug = getRouteSlug(value || '@streamer');
         if (display) display.textContent = `${value || '@streamer'}\n/${slug || 'streamer'}`;
+        updateGameLinkUI(value);
+      }
+
+      function updateGameLinkUI(value) {
+        const display = document.getElementById('game-link-display');
+        const slug = getRouteSlug(value || '@streamer');
+        const fullUrl = `${location.protocol}//${location.host}/${slug || 'streamer'}`;
+        if (display) display.textContent = fullUrl;
+
+        // Update the open link button href
+        const openBtn = document.getElementById('open-game-link-btn');
+        if (openBtn) openBtn.href = fullUrl;
+
+        // Update overlay link
+        updateOverlayLinkUI(value);
+      }
+
+      function updateOverlayLinkUI(value) {
+        const display = document.getElementById('overlay-link-display');
+        const slug = getRouteSlug(value || '@streamer');
+        const overlayUrl = `${location.protocol}//${location.host}/${slug || 'streamer'}/overlay`;
+        if (display) display.textContent = overlayUrl;
+
+        // Update the open overlay button href
+        const openBtn = document.getElementById('open-overlay-link-btn');
+        if (openBtn) openBtn.href = overlayUrl;
+      }
+
+      function copyOverlayLink() {
+        const current = getStreamerId() || setStreamerId(makeStreamerId());
+        const slug = getRouteSlug(current);
+        const overlayUrl = `${location.protocol}//${location.host}/${slug}/overlay`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(overlayUrl).then(() => {
+            const copyBtn = document.getElementById('copy-overlay-link-btn');
+            if (copyBtn) {
+              const originalText = copyBtn.textContent;
+              copyBtn.textContent = 'Copied!';
+              setTimeout(() => { copyBtn.textContent = originalText; }, 1500);
+            }
+          }).catch(() => {});
+        }
+      }
+
+      function copyGameLink() {
+        const current = getStreamerId() || setStreamerId(makeStreamerId());
+        const slug = getRouteSlug(current);
+        const fullUrl = `${location.protocol}//${location.host}/${slug}`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(fullUrl).then(() => {
+            // Brief visual feedback
+            const copyBtn = document.getElementById('copy-game-link-btn');
+            if (copyBtn) {
+              const originalText = copyBtn.textContent;
+              copyBtn.textContent = 'Copied!';
+              setTimeout(() => { copyBtn.textContent = originalText; }, 1500);
+            }
+          }).catch(() => {});
+        }
+      }
+
+      function getWebsitePlayEnabled() {
+        const streamerId = getStreamerId() || '';
+        const key = `hangstream-website-play:${streamerId}`;
+        try {
+          const value = localStorage.getItem(key);
+          return value === null ? true : value === 'true';
+        } catch (e) {
+          return true; // Default to enabled
+        }
+      }
+
+      function setWebsitePlayEnabled(enabled) {
+        const streamerId = getStreamerId() || '';
+        const key = `hangstream-website-play:${streamerId}`;
+        try {
+          localStorage.setItem(key, String(enabled));
+          // Send to server if WebSocket is connected
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: 'settings',
+              streamerId: getStreamerId(),
+              websitePlayEnabled: enabled
+            }));
+          }
+        } catch (e) {}
       }
 
       function copyStreamerId() {
@@ -521,6 +700,19 @@ TOKEN_ENCRYPTION_KEY=...</div>
         if (generateBtn) generateBtn.addEventListener('click', () => setStreamerId(makeStreamerId()));
         const copyBtn = document.getElementById('copy-streamer-id-btn');
         if (copyBtn) copyBtn.addEventListener('click', copyStreamerId);
+        const copyGameLinkBtn = document.getElementById('copy-game-link-btn');
+        if (copyGameLinkBtn) copyGameLinkBtn.addEventListener('click', copyGameLink);
+        const copyOverlayLinkBtn = document.getElementById('copy-overlay-link-btn');
+        if (copyOverlayLinkBtn) copyOverlayLinkBtn.addEventListener('click', copyOverlayLink);
+
+        // Initialize website play toggle
+        const websitePlayToggle = document.getElementById('website-play-toggle');
+        if (websitePlayToggle) {
+          websitePlayToggle.checked = getWebsitePlayEnabled();
+          websitePlayToggle.addEventListener('change', (e) => {
+            setWebsitePlayEnabled(e.target.checked);
+          });
+        }
       }
 
       function scheduleReconnect() {
@@ -545,24 +737,82 @@ TOKEN_ENCRYPTION_KEY=...</div>
         ws.send(JSON.stringify({ type: 'watch', platform, channel, owner }));
       };
 
+      // Theme toggle with localStorage persistence
+      function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeToggle(newTheme);
+      }
+
+      function updateThemeToggle(theme) {
+        const toggle = document.getElementById('theme-toggle');
+        if (toggle) {
+          toggle.textContent = theme === 'light' ? '🌙' : '☀️';
+        }
+      }
+
+      // Load saved theme on page load
+      (function() {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        updateThemeToggle(savedTheme);
+      })();
+
+      // Check streamer approval status
+      (function() {
+        checkApprovalStatus();
+      })();
+
+      async function checkApprovalStatus() {
+        try {
+          const response = await fetch('/streamer/status');
+          const data = await response.json();
+          const statusDiv = document.getElementById('approval-status');
+
+          if (data.status === 'not_found') {
+            statusDiv.innerHTML = `
+              <div style="background: rgba(255, 190, 85, 0.1); border: 1px solid var(--warning); border-radius: 16px; padding: 16px;">
+                <div style="font-weight: 700; color: var(--warning); margin-bottom: 8px;">📝 Application Required</div>
+                <div style="color: var(--text-muted); font-size: 13px;">You need to submit a streamer application to access the dashboard. <a href="/apply" style="color: var(--accent); font-weight: 600;">Apply now</a></div>
+              </div>
+            `;
+          } else if (data.status === 'pending') {
+            statusDiv.innerHTML = `
+              <div style="background: rgba(255, 190, 85, 0.1); border: 1px solid var(--warning); border-radius: 16px; padding: 16px;">
+                <div style="font-weight: 700; color: var(--warning); margin-bottom: 8px;">⏳ Application Pending</div>
+                <div style="color: var(--text-muted); font-size: 13px;">Your application is under review. You'll receive an email once it's approved.</div>
+              </div>
+            `;
+          } else if (data.status === 'approved') {
+            statusDiv.innerHTML = `
+              <div style="background: rgba(37, 194, 122, 0.1); border: 1px solid var(--good); border-radius: 16px; padding: 16px;">
+                <div style="font-weight: 700; color: var(--good); margin-bottom: 8px;">✅ Application Approved</div>
+                <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">Your application has been approved! Here's your API key:</div>
+                <div style="background: var(--bg-alt); padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; word-break: break-all; color: var(--good); margin-bottom: 8px;">
+                  ${data.apiKey}
+                </div>
+                <div style="color: var(--text-muted); font-size: 12px;">Use this key to authenticate your dashboard connection.</div>
+              </div>
+            `;
+          } else if (data.status === 'rejected') {
+            statusDiv.innerHTML = `
+              <div style="background: rgba(255, 77, 77, 0.1); border: 1px solid #ff4d4d; border-radius: 16px; padding: 16px;">
+                <div style="font-weight: 700; color: #ff4d4d; margin-bottom: 8px;">❌ Application Rejected</div>
+                <div style="color: var(--text-muted); font-size: 13px;">Unfortunately, your application was not approved. Please contact support for more information.</div>
+              </div>
+            `;
+          }
+        } catch (err) {
+          console.error('Error checking approval status', err);
+        }
+      }
+
       // start connection
       connect();
     })();
   </script>
   </main>
-      const initialId = getStreamerId() || setStreamerId(deriveStreamerId(), getFallbackNamespace());
-</html><!DOCTYPE html>
-      const createBtn = document.getElementById('create-streamer-id-btn');
-      if (createBtn) createBtn.addEventListener('click', createStreamerId);
-<meta charset="UTF-8">
-<title>HangStream /streamer</title>
-<link rel="stylesheet" href="/styles.css">
-<style id="inline-shared">
-:root{--bg:#0f1720;--panel:#0b1220;--muted:#9aa4b2;--text:#e6eef6;--accent:#ff4d6d;--accent-2:#7c5cff;--border: rgba(255,255,255,0.04);--radius:12px}*{box-sizing:border-box}html,body{height:100%}body{margin:0;font-family:Inter, 'Space Mono', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;background: linear-gradient(180deg,#07101a 0%, #0f1720 100%);color:var(--text)}body:not([data-theme="light"]) {background: linear-gradient(180deg,#07101a 0%, #0f1720 100%) !important;color: var(--text) !important}.shell, .game-wrap, .settings-box, body > div {background: transparent !important}body[data-theme="light"] {--bg: #f6f6f8;--panel: #ffffff;--muted: #667085;--text: #0b1220;--accent: #c93f5c;--accent-2: #7c5cff;--border: rgba(11,18,32,0.06);background: linear-gradient(180deg,#ffffff 0%, #f6f6f8 100%) !important;color: var(--text) !important}body[data-theme="light"] .card,body[data-theme="light"] .settings-box,body[data-theme="light"] .game-main,body[data-theme="light"] .sidebar,body[data-theme="light"] .shell {background: var(--panel) !important;color: var(--text) !important;border-color: var(--border) !important}body[data-theme="light"] .kb-key { background: #fff; color: var(--text); border: 1px solid rgba(11,18,32,0.06); }body[data-theme="light"] .kb-key.wrong { background:#efefef; color:#9aa4b2 }body[data-theme="light"] .letter-line { background: rgba(11,18,32,0.08) }body[data-theme="light"] .game-wrap,body[data-theme="light"] .game-area,body[data-theme="light"] .game-main,body[data-theme="light"] .word-row,body[data-theme="light"] .keyboard,body[data-theme="light"] .sidebar,body[data-theme="light"] .chat-feed,body[data-theme="light"] .overlay,body[data-theme="light"] .revival-box,body[data-theme="light"] .revival-section {background: var(--panel) !important;color: var(--text) !important}body[data-theme="light"] .letter-char { color: var(--text) !important }body[data-theme="light"] .letter-line { background: rgba(11,18,32,0.06) !important }body[data-theme="light"] .hangman-container { background: transparent !important }body[data-theme="light"] .hm-gallows { stroke: rgba(11,18,32,0.25) !important; stroke-width:2 !important }body[data-theme="light"] .hm-part { stroke: var(--accent) !important; stroke-width:3 !important; fill: transparent !important }body[data-theme="light"] .chat-feed { color: #2b2b30 !important }body[data-theme="light"] .chat-user { color: var(--accent) !important }body[data-theme="light"] .chat-system { color: var(--muted) !important }.container{max-width:1200px;margin:0 auto;padding:28px}.topbar{display:flex;align-items:center;justify-content:space-between;padding:20px 28px;border-bottom:1px solid var(--border);background:transparent}.logo{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent)}.logo span{color:var(--text)}.settings-btn,.theme-btn{padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--muted);cursor:pointer}.settings-btn:hover,.theme-btn:hover{color:var(--text);border-color:rgba(255,255,255,0.06)}.btn-revive{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border-radius:10px;padding:10px 18px;border:0;font-weight:700}.btn-skip,.new-game-btn{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px 14px;border-radius:8px;color:var(--muted)}.card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border:1px solid var(--border);padding:18px;border-radius:var(--radius)}.game-wrap{display:grid;grid-template-columns:1fr 360px;grid-template-rows:auto 1fr;gap:20px;min-height:100vh;padding:28px}.game-main{background:transparent}.sidebar{width:360px}
-</style>
-</head>
-<body>
-  <!-- content copied from existing streamer-settings.html (kept intact) -->
-  <!-- For brevity: the full streamer-settings.html content was copied into public/streamer-settings.html -->
 </body>
 </html>

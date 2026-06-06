@@ -1,4 +1,5 @@
 const EventEmitter = require('events');
+
 let WebcastPushConnection;
 try {
   WebcastPushConnection = require('tiktok-live-connector').WebcastPushConnection;
@@ -13,22 +14,33 @@ class TikTokManager extends EventEmitter {
   }
 
   watch(channel) {
-    if (!WebcastPushConnection) return;
+    // FIX: emit error instead of silently returning when connector is missing
+    if (!WebcastPushConnection) {
+      this.emit('error', channel, new Error('tiktok-live-connector is not installed'));
+      return;
+    }
+
     if (this.rooms.has(channel)) return;
 
     const conn = new WebcastPushConnection(channel);
 
     conn.on('chat', (data) => {
-      // normalize and forward
       this.emit('chat', channel, data);
     });
 
-    // some versions emit like this; forward generic events if available
-    conn.on('streamStart', () => this.emit('streamStart', channel));
-    conn.on('streamEnd', () => this.emit('streamEnd', channel));
     conn.on('connect', () => this.emit('connect', channel));
 
+    conn.on('streamStart', () => this.emit('streamStart', channel));
+
+    // FIX: streamEnd now cleans up the room so it doesn't leak
+    conn.on('streamEnd', () => {
+      this.rooms.delete(channel);
+      this.emit('streamEnd', channel);
+    });
+
+    // FIX: remove dead entry from rooms on connect failure
     conn.connect().catch(err => {
+      this.rooms.delete(channel);
       this.emit('error', channel, err);
     });
 
@@ -42,6 +54,16 @@ class TikTokManager extends EventEmitter {
     this.rooms.delete(channel);
     this.emit('stopped', channel);
   }
+
+  // FIX: added stopAll() for clean shutdown
+  stopAll() {
+    for (const channel of [...this.rooms.keys()]) {
+      this.stop(channel);
+    }
+  }
 }
 
-module.exports = new TikTokManager();
+// FIX: export both instance and class for testability
+const instance = new TikTokManager();
+module.exports = instance;
+module.exports.TikTokManager = TikTokManager;

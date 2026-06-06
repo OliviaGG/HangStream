@@ -1,2 +1,7 @@
 node_modules
 .env
+*.log
+.DS_Store
+server/oauth-tokens.json
+server/*.json
+server/data/*.json

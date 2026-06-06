@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Dashboard - HangStream</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0e0e12;
+      --bg-elevated: #0b0b0f;
+      --bg-alt: #0b0b0f;
+      --card: #1a1a22;
+      --card-border: #2a2a35;
+      --panel: #1a1a22;
+      --panel-border: #2a2a35;
+      --text: #f0ede8;
+      --text-muted: #92a0af;
+      --muted: #92a0af;
+      --accent: #ff4d6d;
+      --accent-2: #7c5cff;
+      --accent-3: #7c5cff;
+      --good: #25c27a;
+      --warning: #ffbe55;
+      --bad: #ff4d4d;
+      --danger: #ff4d4d;
+      --glass: rgba(255,255,255,0.05);
+      --radius: 24px;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+    }
+
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --bg-elevated: #ffffff;
+      --bg-alt: #ffffff;
+      --card: #ffffff;
+      --card-border: #e2e8f0;
+      --panel: #ffffff;
+      --panel-border: #e2e8f0;
+      --text: #0f1724;
+      --text-muted: #64748b;
+      --muted: #64748b;
+      --glass: rgba(0,0,0,0.04);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(255, 77, 109, 0.15), transparent 28%),
+        radial-gradient(circle at top right, rgba(124, 92, 255, 0.12), transparent 24%),
+        radial-gradient(circle at bottom left, rgba(37, 194, 122, 0.08), transparent 20%),
+        linear-gradient(180deg, color-mix(in srgb, var(--bg) 95%, #000), var(--bg));
+    }
+
+    [data-theme="light"] body {
+      background:
+        radial-gradient(circle at top left, rgba(255, 77, 109, 0.08), transparent 28%),
+        radial-gradient(circle at top right, rgba(124, 92, 255, 0.06), transparent 24%),
+        radial-gradient(circle at bottom left, rgba(37, 194, 122, 0.04), transparent 20%),
+        linear-gradient(180deg, #f8fafc, #ffffff);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-left h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      letter-spacing: 0.02em;
+    }
+
+    .header-left .subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .back-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      margin-right: 20px;
+    }
+
+    .back-link:hover { color: var(--text); }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(255, 77, 109, 0.4);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .stat-card .label {
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .stat-card .value {
+      font-size: 32px;
+      font-weight: 800;
+      font-family: 'Bebas Neue', sans-serif;
+    }
+
+    .stat-card .value.good { color: var(--good); }
+    .stat-card .value.warning { color: var(--warning); }
+
+    .applications-section {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 32px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 12px;
+    }
+
+    .filter-tab {
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: var(--bg-alt);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-tab:hover { border-color: var(--accent); color: var(--text); }
+    .filter-tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+    .applications-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .application-card {
+      background: var(--bg-alt);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+    }
+
+    .app-info h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .app-info .email {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .app-info .handles {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+
+    .app-info .handles span {
+      color: var(--text-muted);
+    }
+
+    .app-info .note {
+      background: var(--card);
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .app-info .dates {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .app-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 140px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .status-badge.pending {
+      background: rgba(255, 190, 85, 0.15);
+      color: var(--warning);
+      border: 1px solid var(--warning);
+    }
+
+    .status-badge.approved {
+      background: rgba(37, 194, 122, 0.15);
+      color: var(--good);
+      border: 1px solid var(--good);
+    }
+
+    .status-badge.rejected {
+      background: rgba(255, 77, 77, 0.15);
+      color: var(--danger);
+      border: 1px solid var(--danger);
+    }
+
+    .btn-action {
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .btn-approve {
+      background: var(--good);
+      color: white;
+    }
+
+    .btn-approve:hover { background: #1ea86b; }
+
+    .btn-reject {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-reject:hover { background: #ff3333; }
+
+    .btn-view-key {
+      background: var(--accent-2);
+      color: white;
+    }
+
+    .btn-view-key:hover { background: #6a4ce6; }
+
+    .btn-view-key:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .login-section {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 48px;
+      max-width: 400px;
+      margin: 100px auto;
+      text-align: center;
+    }
+
+    .login-section h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .login-section p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      background: var(--bg-alt);
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+      margin-bottom: 16px;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .message {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .message.success {
+      background: rgba(37, 194, 122, 0.1);
+      border: 1px solid var(--good);
+      color: var(--good);
+    }
+
+    .message.error {
+      background: rgba(255, 77, 77, 0.1);
+      border: 1px solid var(--danger);
+      color: var(--danger);
+    }
+
+    .api-key-display {
+      background: var(--card);
+      padding: 12px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      word-break: break-all;
+      margin-top: 8px;
+      color: var(--good);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .application-card { grid-template-columns: 1fr; }
+      .app-actions { flex-direction: row; }
+    }
+
+    .theme-toggle {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: all 0.2s;
+    }
+
+    .theme-toggle:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="login-container" style="display:none;">
+    <div class="login-section">
+      <h2>Admin Login</h2>
+      <p>Enter the admin password to access the dashboard</p>
+      <div id="login-message"></div>
+      <input type="password" class="form-input" id="admin-password" placeholder="Admin password">
+      <button class="btn btn-primary" style="width:100%" onclick="login()">Login</button>
+    </div>
+  </div>
+
+  <div class="container" id="dashboard-container" style="display:none;">
+    <div class="header">
+      <div class="header-left">
+        <a href="/" class="back-link">← Back to Home</a>
+        <h1>Admin Dashboard</h1>
+        <div class="subtitle">Review and manage streamer applications</div>
+      </div>
+      <div class="header-right">
+        <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle" aria-label="Toggle theme">🌙</button>
+        <button class="btn btn-primary" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">Total Applications</div>
+        <div class="value" id="stat-total">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Pending Review</div>
+        <div class="value warning" id="stat-pending">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Approved</div>
+        <div class="value good" id="stat-approved">0</div>
+      </div>
+    </div>
+
+    <div class="applications-section">
+      <div class="section-header">
+        <div class="section-title">Applications</div>
+        <div class="filter-tabs">
+          <div class="filter-tab active" onclick="filterApps('all')" data-filter="all">All</div>
+          <div class="filter-tab" onclick="filterApps('pending')" data-filter="pending">Pending</div>
+          <div class="filter-tab" onclick="filterApps('approved')" data-filter="approved">Approved</div>
+          <div class="filter-tab" onclick="filterApps('rejected')" data-filter="rejected">Rejected</div>
+        </div>
+      </div>
+      <div class="applications-grid" id="applications-grid">
+        <div class="empty-state">Loading applications...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let adminToken = localStorage.getItem('admin_token');
+    let currentFilter = 'all';
+    let allApplications = [];
+
+    // Check if already logged in
+    if (adminToken) {
+      document.getElementById('login-container').style.display = 'none';
+      document.getElementById('dashboard-container').style.display = 'block';
+      loadApplications();
+    } else {
+      document.getElementById('login-container').style.display = 'block';
+      document.getElementById('dashboard-container').style.display = 'none';
+    }
+
+    function login() {
+      const password = document.getElementById('admin-password').value;
+      if (!password) {
+        showMessage('error', 'Please enter a password');
+        return;
+      }
+
+      // Set the token (in a real app, this would be a JWT or session)
+      adminToken = password;
+      localStorage.setItem('admin_token', password);
+
+      // Verify by loading applications
+      loadApplications().then(success => {
+        if (success) {
+          document.getElementById('login-container').style.display = 'none';
+          document.getElementById('dashboard-container').style.display = 'block';
+        } else {
+          localStorage.removeItem('admin_token');
+          adminToken = null;
+          showMessage('error', 'Invalid password');
+        }
+      });
+    }
+
+    function logout() {
+      localStorage.removeItem('admin_token');
+      adminToken = null;
+      document.getElementById('login-container').style.display = 'block';
+      document.getElementById('dashboard-container').style.display = 'none';
+      document.getElementById('admin-password').value = '';
+    }
+
+    function showMessage(type, text) {
+      const container = document.getElementById('login-message');
+      container.innerHTML = `<div class="message ${type}">${text}</div>`;
+      setTimeout(() => container.innerHTML = '', 3000);
+    }
+
+    async function loadApplications() {
+      try {
+        const response = await fetch('/admin/applications', {
+          headers: {
+            'Authorization': `Bearer ${adminToken}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          allApplications = data.applications || [];
+          renderApplications();
+          updateStats();
+          return true;
+        } else if (response.status === 401) {
+          return false;
+        } else {
+          console.error('Failed to load applications');
+          return false;
+        }
+      } catch (err) {
+        console.error('Error loading applications', err);
+        return false;
+      }
+    }
+
+    function filterApps(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.filter === filter);
+      });
+      renderApplications();
+    }
+
+    function renderApplications() {
+      const grid = document.getElementById('applications-grid');
+      const filtered = currentFilter === 'all' 
+        ? allApplications 
+        : allApplications.filter(app => app.status === currentFilter);
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="empty-state">No applications found</div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(app => `
+        <div class="application-card">
+          <div class="app-info">
+            <h3>${escapeHtml(app.name)}</h3>
+            <div class="email">${escapeHtml(app.email)}</div>
+            <div class="handles">
+              <span>Twitch: ${app.twitchHandle ? escapeHtml(app.twitchHandle) : 'Not provided'}</span>
+              <span>TikTok: ${app.tiktokHandle ? escapeHtml(app.tiktokHandle) : 'Not provided'}</span>
+            </div>
+            <div class="note">${escapeHtml(app.note)}</div>
+            <div class="dates">
+              Applied: ${new Date(app.createdAt).toLocaleString()}
+              ${app.reviewedAt ? ` • Reviewed: ${new Date(app.reviewedAt).toLocaleString()}` : ''}
+            </div>
+          </div>
+          <div class="app-actions">
+            <span class="status-badge ${app.status}">${app.status}</span>
+            ${app.status === 'pending' ? `
+              <button class="btn-action btn-approve" onclick="approveApp('${app.id}')">Approve</button>
+              <button class="btn-action btn-reject" onclick="rejectApp('${app.id}')">Reject</button>
+            ` : ''}
+            ${app.status === 'approved' ? `
+              <button class="btn-action btn-view-key" onclick="viewApiKey('${app.id}')">View API Key</button>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateStats() {
+      const total = allApplications.length;
+      const pending = allApplications.filter(app => app.status === 'pending').length;
+      const approved = allApplications.filter(app => app.status === 'approved').length;
+
+      document.getElementById('stat-total').textContent = total;
+      document.getElementById('stat-pending').textContent = pending;
+      document.getElementById('stat-approved').textContent = approved;
+    }
+
+    async function approveApp(id) {
+      if (!confirm('Are you sure you want to approve this application? This will generate an API key.')) return;
+
+      try {
+        const response = await fetch('/admin/applications/approve', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          alert(`Application approved! API Key: ${data.apiKey}`);
+          loadApplications();
+        } else {
+          const error = await response.json();
+          alert(error.error || 'Failed to approve application');
+        }
+      } catch (err) {
+        alert('Failed to approve application');
+      }
+    }
+
+    async function rejectApp(id) {
+      if (!confirm('Are you sure you want to reject this application?')) return;
+
+      try {
+        const response = await fetch('/admin/applications/reject', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id })
+        });
+
+        if (response.ok) {
+          alert('Application rejected');
+          loadApplications();
+        } else {
+          const error = await response.json();
+          alert(error.error || 'Failed to reject application');
+        }
+      } catch (err) {
+        alert('Failed to reject application');
+      }
+    }
+
+    async function viewApiKey(id) {
+      const app = allApplications.find(a => a.id === id);
+      if (!app) return;
+
+      // Need to fetch the API key from the server
+      try {
+        const response = await fetch(`/admin/applications/approve`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          prompt('Copy this API key:', data.apiKey);
+        } else {
+          alert('Failed to fetch API key');
+        }
+      } catch (err) {
+        alert('Failed to fetch API key');
+      }
+    }
+
+    function escapeHtml(text) {
+      return String(text).replace(/[&<>"']/g, m => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[m]));
+    }
+
+    // Theme toggle with localStorage persistence
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeToggle(newTheme);
+    }
+
+    function updateThemeToggle(theme) {
+      const toggle = document.getElementById('theme-toggle');
+      if (toggle) {
+        toggle.textContent = theme === 'light' ? '🌙' : '☀️';
+      }
+    }
+
+    // Load saved theme on page load
+    (function() {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateThemeToggle(savedTheme);
+    })();
+  </script>
+</body>
+</html>

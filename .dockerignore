@@ -1,9 +1,0 @@
-node_modules
-npm-debug.log
-Dockerfile
-.git
-.gitignore
-README.md
-HangStream.code-workspace
-**/*.log
-**/.DS_Store

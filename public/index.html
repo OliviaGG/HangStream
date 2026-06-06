@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HangStream</title>
-<!-- external stylesheet removed; inline fallback provided below -->
 <style id="inline-shared">
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap');
 
@@ -260,10 +259,6 @@
     gap: 8px;
   }
 
-  .twitch-status {
-    opacity: 0.72;
-  }
-
   .live-dot {
     width: 7px;
     height: 7px;
@@ -281,13 +276,11 @@
     * { transition: none !important; animation: none !important; }
   }
 
-  /* Micro-interactions and accessibility */
   .kb-key { transition: transform 110ms ease, box-shadow 110ms ease, background-color 120ms ease; }
   .kb-key:active { transform: translateY(2px) scale(0.995); }
   .kb-key:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 18%, transparent); outline-offset: 2px; border-radius: 10px; }
 
   .chat-feed, .preview-box { scroll-behavior: smooth; }
-
   .chat-msg { transition: transform 180ms ease, opacity 180ms ease; }
 
   .chat-feed {
@@ -347,27 +340,6 @@
     width: 90%;
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.20);
     backdrop-filter: blur(16px);
-  }
-
-  .overlay-title-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-
-  .overlay-tag {
-    display: inline-flex;
-    align-items: center;
-    padding: 6px 10px;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    background: color-mix(in srgb, var(--panel) 84%, transparent);
-    color: var(--text-muted);
-    font-size: 11px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
   }
 
   .revival-title {
@@ -598,15 +570,6 @@
     backdrop-filter: blur(16px);
   }
 
-  .settings-title {
-    font-family: Inter, system-ui, sans-serif;
-    font-size: 24px;
-    font-weight: 800;
-    letter-spacing: 0.14em;
-    color: var(--accent);
-    margin-bottom: 24px;
-  }
-
   .setting-row { margin-bottom: 20px; }
 
   .setting-label {
@@ -637,21 +600,6 @@
     gap: 10px;
     margin-top: 28px;
   }
-
-  .btn-save {
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    padding: 10px 28px;
-    border-radius: 12px;
-    font-family: Inter, system-ui, sans-serif;
-    font-size: 12px;
-    cursor: pointer;
-    letter-spacing: 0.08em;
-    flex: 1;
-  }
-
-  .btn-save:hover { background: var(--accent-hover); }
 
   .btn-google {
     background: linear-gradient(90deg,#4285F4,#34A853);
@@ -722,15 +670,12 @@
     .topbar { flex-wrap: wrap; gap: 10px; }
   }
 
-  /* Mobile stream tweaks */
   @media (max-width: 640px) {
     #mobile-chat-toggle, #mobile-layout-toggle { display: inline-flex !important; }
 
-    /* Sidebar hidden by default on mobile; toggled via JS */
     .sidebar { display: none; position: fixed; right: 0; top: 64px; bottom: 0; width: 320px; z-index: 60; box-shadow: -12px 0 40px rgba(0,0,0,0.6); transform: translateX(100%); transition: transform 220ms ease; }
     .sidebar.show-mobile { display: block; transform: translateX(0); }
 
-    /* Stream layout: fullscreen-ish game, larger keys for touch */
     body.mobile-stream .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 70; }
     body.mobile-stream .game-wrap { padding-top: 74px; }
     body.mobile-stream .sidebar { display: none !important; }
@@ -745,10 +690,10 @@
 <body>
 
 <div class="game-wrap">
- 
+
   <!-- TOP BAR -->
   <div class="topbar">
-      <div class="logo">HANG<span>STREAM</span></div>
+    <div class="logo">HANG<span>STREAM</span></div>
     <div class="lives-row" id="lives-row"></div>
     <div style="display:flex; align-items:center; gap:12px;">
       <button id="mobile-chat-toggle" class="settings-btn" style="display:none">Chat</button>
@@ -759,26 +704,26 @@
         <option value="medium">Medium</option>
         <option value="hard">Hard</option>
       </select>
-      <button class="settings-btn" onclick="startGoogleAuth()" id="viewer-login-btn">Sign in with Google</button>
-      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">Dark mode</button>
-      <button class="settings-btn" onclick="window.open('/streamer', '_blank', 'noopener')">⚙ Streamer Settings</button>
+      <button id="viewer-login-btn" class="settings-btn">Sign in with Google</button>
+      <button id="theme-btn" class="theme-btn">Dark mode</button>
+      <button id="streamer-settings-btn" class="settings-btn">⚙ Streamer Settings</button>
     </div>
   </div>
- 
+
   <!-- MAIN GAME AREA -->
   <div class="game-area">
- 
+
     <!-- REVIVAL / WIN OVERLAY -->
     <div class="overlay" id="overlay">
       <div class="revival-box" id="overlay-box">
         <div class="revival-title" id="overlay-title">GAME OVER</div>
         <div class="revival-sub" id="overlay-sub">The word was <span id="reveal-word" style="color:#ff4d6d"></span></div>
- 
+
         <div id="revival-section">
           <div class="gift-prompt" id="gift-prompt-text">Send a gift to revive!</div>
           <div class="gift-amount" id="gift-amount">5</div>
           <div class="gift-type" id="gift-type">ROSES</div>
- 
+
           <div class="countdown-ring">
             <svg width="80" height="80" viewBox="0 0 80 80">
               <circle class="countdown-bg" cx="40" cy="40" r="36"/>
@@ -787,13 +732,13 @@
             <div class="countdown-num" id="countdown-num">15</div>
           </div>
 
-          <button class="btn-revive" onclick="revive()">🎁 REVIVE THE TEAM</button>
-          <button class="btn-skip" onclick="newGame()">Skip revival → new word</button>
+          <button class="btn-revive" id="btn-revive">🎁 REVIVE THE TEAM</button>
+          <button class="btn-skip" id="btn-skip">Skip revival → new word</button>
         </div>
 
         <div id="win-section" style="display:none">
           <div style="font-size:13px; color:#aaa; margin-bottom:20px">Chat carried! 🎉</div>
-          <button class="new-game-btn" onclick="newGame()">Play again</button>
+          <button class="new-game-btn" id="btn-new-game">Play again</button>
         </div>
       </div>
     </div>
@@ -816,7 +761,7 @@
       <div class="keyboard" id="keyboard"></div>
     </div>
   </div>
- 
+
   <!-- CHAT SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-head">
@@ -845,28 +790,14 @@
     <div class="viewer-login-title">Sign in to participate</div>
     <div class="viewer-login-note">Please sign in with Google to join the game and have your profile saved.</div>
     <div class="settings-actions" style="justify-content:center; margin-top:16px;">
-      <button class="btn-google" onclick="startGoogleAuth()">Sign in with Google</button>
-      <button class="btn-cancel" onclick="closeViewerLogin()">Close</button>
+      <button class="btn-google" id="btn-google-signin">Sign in with Google</button>
+      <button class="btn-cancel" id="btn-close-viewer-login">Close</button>
     </div>
   </div>
 </div>
- 
+
 <script>
-// storage/focus listeners moved here from inside the CSS block
-window.addEventListener('storage', (event) => {
-  if (event.key === getSettingsStorageKey()) {
-    loadSavedSettings();
-  }
-  if (event.key === getThemeStorageKey()) {
-    applyTheme(event.newValue || 'dark');
-  }
-});
-
-window.addEventListener('focus', () => {
-  loadSavedSettings();
-});
-
-// ── DEFAULT CONFIG ──
+// ── STATE VARS ──
 let config = {
   giftType: 'ROSES',
   giftAmount: 5,
@@ -876,63 +807,18 @@ let config = {
   customWords: [],
   difficulty: 'medium',
 };
- 
-// Word lists: master list loaded from /custom-words.json only
-let ALL_WORDS = [];
-let VISIBLE_WORDS = [];
 
-function filterByDifficulty(list, difficulty) {
-  if (!Array.isArray(list)) return [];
-  // prefer explicit difficulty tags on items
-  const byTag = list.filter(w => String((w.difficulty || '')).toLowerCase() === String(difficulty || '').toLowerCase());
-  if (byTag.length) return byTag;
+// FIX: profileEditingTarget was used but never declared
+let profileEditingTarget = null;
 
-  // fallback to length-based buckets
-  const easy = list.filter(w => (w.word || '').length <= 6);
-  const medium = list.filter(w => (w.word || '').length >= 5 && (w.word || '').length <= 9);
-  const hard = list.filter(w => (w.word || '').length >= 8);
-  if (difficulty === 'easy') return easy.length ? easy : list;
-  if (difficulty === 'hard') return hard.length ? hard : list;
-  return medium.length ? medium : list;
-}
-async function loadCustomWordsFile() {
-  try {
-    const res = await fetch('/custom-words.json', { cache: 'no-store' });
-    if (!res || res.status !== 200) return;
-    const data = await res.json();
-    if (Array.isArray(data) && data.length > 0) {
-      // normalize entries to expected shape (keep difficulty only from the file)
-      const normalized = data.map(item => {
-        if (!item || typeof item !== 'object') return null;
-        return {
-          word: String(item.word || '').toUpperCase().trim(),
-          cat: String(item.cat || 'Custom'),
-          difficulty: String(item.difficulty || 'medium').toLowerCase()
-        };
-      }).filter(Boolean);
-      if (normalized.length) {
-        // set master list, then apply difficulty filter to DEFAULT_WORDS
-        try { ALL_WORDS = normalized.slice(); } catch (e) {}
-        try { config.customWords = normalized; } catch (e) {}
-        try { VISIBLE_WORDS = filterByDifficulty(ALL_WORDS, config.difficulty || 'medium'); } catch (e) {}
-      }
-    }
-  } catch (e) {
-    // on fetch error: clear word lists (no embedded defaults; file is the single source)
-    try { ALL_WORDS = []; } catch (e) {}
-    try { config.customWords = []; } catch (e) {}
-    try { VISIBLE_WORDS = []; } catch (e) {}
-  }
-}
+let state = {
+  viewerId: '',
+  viewerName: '',
+  viewerAvatar: '',
+  // FIX: streamerId initialized here, not as side-effect of loadSavedSettings()
+  streamerId: getStreamerNamespace(),
+};
 
-// kick off loading but don't block startup
-loadCustomWordsFile();
- 
-const FAKE_USERS = ["xX_gamer99_Xx","streamer_fan","tiktok_live","chat_legend","just_vibing","pro_viewer","randomdude42","hyped_up_lol","lurker_no_more","gifted_sub","nochill_andy","pogchamp99"];
- 
-const MAX_WRONG = 6;
- 
-let state = {};
 let countdownInterval = null;
 let chatInterval = null;
 let twitchWS = null;
@@ -942,10 +828,27 @@ let lastWordKey = null;
 let currentTheme = 'dark';
 let playerScores = {};
 let lastSolverName = '';
+
+let ALL_WORDS = [];
+let VISIBLE_WORDS = [];
+
+let currentWord = '';
+let activeWord = '';
+let maskedChars = [];
+let wrongCount = 0;
+
+const MAX_WRONG = 6;
 const VIEWER_PROFILE_KEY = 'hangstream-viewer-profile';
 const PROFILES_STORAGE_KEY = 'hangstream-profiles';
 const LETTER_SCORE = 1;
 const SOLVE_BONUS = 10;
+
+const FAKE_USERS = ["xX_gamer99_Xx","streamer_fan","tiktok_live","chat_legend","just_vibing","pro_viewer","randomdude42","hyped_up_lol","lurker_no_more","gifted_sub","nochill_andy","pogchamp99"];
+
+// ── UTILITY ──
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
 
 function getCookieValue(name) {
   const escaped = String(name || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -990,6 +893,11 @@ function getThemeStorageKey() {
   return `hangstream-game-theme:${getStreamerNamespace()}`;
 }
 
+function getMobileLayoutKey() {
+  return `hangstream-mobile-layout:${getStreamerNamespace()}`;
+}
+
+// ── SETTINGS ──
 function loadSavedSettings() {
   try {
     const raw = localStorage.getItem(getSettingsStorageKey());
@@ -999,13 +907,11 @@ function loadSavedSettings() {
         config = { ...config, ...saved };
       }
     }
-  } catch (e) {
-    // Ignore malformed settings blobs.
-  }
+  } catch (e) {}
 
   const difficultySelect = document.getElementById('difficulty-select');
   if (difficultySelect) difficultySelect.value = config.difficulty || 'medium';
-  if (state && typeof state === 'object') state.streamerId = getStreamerNamespace();
+  // FIX: no longer mutating state as side-effect here
 }
 
 function saveSettings() {
@@ -1014,34 +920,62 @@ function saveSettings() {
   } catch (e) {}
 }
 
+// ── THEME ──
 function applyTheme(theme) {
   const nextTheme = theme === 'light' ? 'light' : 'dark';
   currentTheme = nextTheme;
   document.body.setAttribute('data-theme', nextTheme);
   const themeBtn = document.getElementById('theme-btn');
   if (themeBtn) themeBtn.textContent = nextTheme === 'light' ? 'Light mode' : 'Dark mode';
-  try {
-    localStorage.setItem(getThemeStorageKey(), nextTheme);
-  } catch (e) {}
+  try { localStorage.setItem(getThemeStorageKey(), nextTheme); } catch (e) {}
 }
 
 function toggleTheme() {
   applyTheme(currentTheme === 'light' ? 'dark' : 'light');
 }
 
-const difficultySelect = document.getElementById('difficulty-select');
-if (difficultySelect) {
-  difficultySelect.addEventListener('change', (event) => {
-    config.difficulty = event.target.value || 'medium';
-    // update active word list to match new difficulty
-    try { VISIBLE_WORDS = filterByDifficulty(ALL_WORDS, config.difficulty); } catch (e) {}
-    saveSettings();
-  });
+// ── WORD LOADING ──
+function filterByDifficulty(list, difficulty) {
+  if (!Array.isArray(list)) return [];
+  const byTag = list.filter(w => String((w.difficulty || '')).toLowerCase() === String(difficulty || '').toLowerCase());
+  if (byTag.length) return byTag;
+  const easy   = list.filter(w => (w.word || '').length <= 6);
+  const medium = list.filter(w => (w.word || '').length >= 5 && (w.word || '').length <= 9);
+  const hard   = list.filter(w => (w.word || '').length >= 8);
+  if (difficulty === 'easy') return easy.length ? easy : list;
+  if (difficulty === 'hard') return hard.length ? hard : list;
+  return medium.length ? medium : list;
 }
 
-loadSavedSettings();
-applyTheme(localStorage.getItem(getThemeStorageKey()) || 'dark');
+// FIX: returns promise so callers can chain .then(newGame)
+async function loadCustomWordsFile() {
+  try {
+    const res = await fetch('/custom-words.json', { cache: 'no-store' });
+    if (!res || res.status !== 200) return;
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      const normalized = data.map(item => {
+        if (!item || typeof item !== 'object') return null;
+        return {
+          word: String(item.word || '').toUpperCase().trim(),
+          cat: String(item.cat || 'Custom'),
+          difficulty: String(item.difficulty || 'medium').toLowerCase()
+        };
+      }).filter(Boolean);
+      if (normalized.length) {
+        ALL_WORDS = normalized.slice();
+        config.customWords = normalized;
+        VISIBLE_WORDS = filterByDifficulty(ALL_WORDS, config.difficulty || 'medium');
+      }
+    }
+  } catch (e) {
+    ALL_WORDS = [];
+    config.customWords = [];
+    VISIBLE_WORDS = [];
+  }
+}
 
+// ── VIEWER PROFILE ──
 function makeViewerId() {
   if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
   return `viewer-${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`;
@@ -1059,81 +993,14 @@ function loadViewerProfile() {
     const saved = JSON.parse(localStorage.getItem(VIEWER_PROFILE_KEY) || 'null');
     const profile = normalizeViewerProfile(saved);
     if (profile) return profile;
-  } catch {
-    // Ignore malformed profile data.
-  }
+  } catch {}
   return { id: makeViewerId(), name: '' };
-}
-
-function getPlayerName(username) {
-  const name = String(username || '').trim();
-  return name || 'viewer';
-}
-
-function awardPlayerPoints(username, points, note) {
-  const name = getPlayerName(username);
-  const current = Number(playerScores[name]) || 0;
-  playerScores[name] = current + Math.max(0, Number(points) || 0);
-  if (note) lastSolverName = note;
-  renderPlayerScores();
-  // attempt to persist this award to server for authenticated viewers
-  try {
-    fetch('/score', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ points: Number(points) || 0, reason: note || '' }) }).catch(()=>{});
-  } catch (e) {}
-}
-
-function renderPlayerScores() {
-  const list = document.getElementById('player-scores-list');
-  const status = document.getElementById('player-score-status');
-  if (!list) return;
-  const entries = Object.entries(playerScores)
-    .filter(([, points]) => Number(points) > 0)
-    .sort((a, b) => Number(b[1]) - Number(a[1]) || a[0].localeCompare(b[0]));
-  if (!entries.length) {
-    list.innerHTML = '<div class="player-score-row"><span class="player-score-name">No points yet.</span><span class="player-score-points">0</span></div>';
-    if (status) status.textContent = 'Per letter';
-    return;
-  }
-  if (status) status.textContent = lastSolverName ? `Solved by ${lastSolverName}` : 'Per letter';
-  list.innerHTML = entries.map(([name, points]) => {
-    const prof = getProfileByName(name) || {};
-    const avatar = prof.avatar ? `<span class="player-score-avatar">${escapeHtml(prof.avatar)}</span>` : '';
-    const display = prof.name ? escapeHtml(prof.name) : escapeHtml(name);
-    return `<div class="player-score-row"><span class="player-score-name">${avatar}<span style="margin-left:8px">${display}</span></span><span class="player-score-points">${points}</span></div>`;
-  }).join('');
-}
-
-async function refreshScoresFromServer() {
-  try {
-    const res = await fetch('/scores', { credentials: 'same-origin' });
-    if (!res || res.status !== 200) return;
-    const data = await res.json();
-    // merge server totals into local playerScores by matching viewer profiles when possible
-    Object.keys(data || {}).forEach(id => {
-      const entry = data[id];
-      if (!entry) return;
-      const prof = Object.values(loadProfiles()).find(p => p && p.id === id);
-      const name = prof && prof.name ? prof.name : id;
-      playerScores[name] = Number(entry.total || 0);
-    });
-    renderPlayerScores();
-  } catch (e) { /* ignore */ }
-}
-
-// refresh scores on startup and periodically
-setTimeout(refreshScoresFromServer, 1000);
-setInterval(refreshScoresFromServer, 30 * 1000);
-
-function escapeHtml(value) {
-  return String(value).replace(/[&<>\"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 }
 
 function saveViewerProfile(profile) {
   try {
     localStorage.setItem(VIEWER_PROFILE_KEY, JSON.stringify(profile));
-  } catch {
-    // Ignore storage failures.
-  }
+  } catch {}
 }
 
 function renderViewerProfile() {
@@ -1143,42 +1010,9 @@ function renderViewerProfile() {
   }
 }
 
-function openViewerLogin() {
-  // Deprecated: replaced by Google-only sign-in flow.
-  startGoogleAuth();
-}
-
 function closeViewerLogin() {
   const overlay = document.getElementById('viewer-login-overlay');
   if (overlay) overlay.classList.remove('show');
-}
-
-async function saveViewerLogin() {
-  const input = document.getElementById('viewer-name-input');
-  const name = (input && input.value ? input.value : '').trim();
-  if (!name) return;
-  const aIn = document.getElementById('viewer-avatar-input');
-  const avatar = (aIn && aIn.value) ? String(aIn.value).trim() : '';
-  // always save to local profiles map under the new name
-  setProfileForName(name, { name, avatar });
-
-  // if we're editing the current viewer (or no explicit target), update state and persist server-side
-  if (!profileEditingTarget || profileEditingTarget === state.viewerName) {
-    state.viewerName = name;
-    state.viewerAvatar = avatar;
-    if (!state.viewerId) state.viewerId = makeViewerId();
-    saveViewerProfile({ id: state.viewerId, name: state.viewerName });
-    // persist to server if possible
-    try {
-      fetch('/viewer/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: state.viewerId, name: state.viewerName, avatar: avatar, provider: 'manual' }) }).catch(()=>{});
-    } catch (e) {}
-    renderViewerProfile();
-  }
-
-  // clear editing target and close overlay
-  profileEditingTarget = null;
-  renderPlayerScores();
-  closeViewerLogin();
 }
 
 function startGoogleAuth() {
@@ -1194,32 +1028,7 @@ function startGoogleAuth() {
   }
 }
 
-// Listen for OAuth result from popup (viewer login flow)
-window.addEventListener('message', (ev) => {
-  try {
-    if (!ev || ev.origin !== location.origin) return;
-    const data = ev.data || {};
-    if (data && data.type === 'viewer-login') {
-      const id = data.id || '';
-      const name = data.name || '';
-      if (id && name) {
-        state.viewerId = id;
-        state.viewerName = name;
-        saveViewerProfile({ id: state.viewerId, name: state.viewerName });
-        // save profile locally and attempt to persist on server
-        const avatar = state.viewerAvatar || (document.getElementById('viewer-avatar-input') && document.getElementById('viewer-avatar-input').value) || '';
-        setProfileForName(state.viewerName, { name: state.viewerName, avatar: avatar });
-        try {
-          fetch('/viewer/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: state.viewerId, name: state.viewerName, avatar: avatar, provider: data.provider || 'google' }) }).catch(()=>{});
-        } catch (e) {}
-        renderViewerProfile();
-        closeViewerLogin();
-      }
-    }
-  } catch (e) { /* ignore */ }
-});
-
-// --- Profiles (local, keyed by display name) ---
+// ── LOCAL PROFILES ──
 function loadProfiles() {
   try {
     return JSON.parse(localStorage.getItem(PROFILES_STORAGE_KEY) || '{}') || {};
@@ -1237,7 +1046,6 @@ function getProfileByName(name) {
     const n = String(name || '').trim();
     if (n && profiles[n]) return profiles[n];
   } catch (e) {}
-  // fallback: if this viewer matches current state, return viewer profile
   if (state && state.viewerName && String(state.viewerName).trim() === String(name).trim()) {
     return { name: state.viewerName, avatar: state.viewerAvatar || '' };
   }
@@ -1251,6 +1059,8 @@ function setProfileForName(name, profile) {
   saveProfiles(profiles);
 }
 
+// ── PLAYER SCORES ──
+// FIX: duplicate renderPlayerScores removed; only one definition kept
 function renderPlayerScores() {
   const list = document.getElementById('player-scores-list');
   const status = document.getElementById('player-score-status');
@@ -1272,67 +1082,50 @@ function renderPlayerScores() {
   }).join('');
 }
 
-// (rest of script unchanged — the public copy mirrors original index.html)
-// --- Mobile UI helpers ---
-function getMobileLayoutKey() {
-  return `hangstream-mobile-layout:${getStreamerNamespace()}`;
+function getPlayerName(username) {
+  return String(username || '').trim() || 'viewer';
 }
 
-function initMobileUI() {
-  const chatToggle = document.getElementById('mobile-chat-toggle');
-  const layoutToggle = document.getElementById('mobile-layout-toggle');
-  const sidebar = document.querySelector('.sidebar');
-
-  function applySavedLayout() {
-    const saved = localStorage.getItem(getMobileLayoutKey());
-    if (saved === 'on') document.body.classList.add('mobile-stream');
-    else document.body.classList.remove('mobile-stream');
-  }
-
-  applySavedLayout();
-
-  if (chatToggle && sidebar) {
-    chatToggle.addEventListener('click', () => {
-      sidebar.classList.toggle('show-mobile');
-    });
-  }
-
-  if (layoutToggle) {
-    layoutToggle.addEventListener('click', () => {
-      const on = document.body.classList.toggle('mobile-stream');
-      try { localStorage.setItem(getMobileLayoutKey(), on ? 'on' : 'off'); } catch (e) {}
-    });
-  }
-
-  // show controls only on small screens
-  function updateMobileControls() {
-    const show = window.innerWidth <= 640;
-    if (chatToggle) chatToggle.style.display = show ? 'inline-flex' : 'none';
-    if (layoutToggle) layoutToggle.style.display = show ? 'inline-flex' : 'none';
-    if (!show && sidebar) sidebar.classList.remove('show-mobile');
-  }
-
-  updateMobileControls();
-  window.addEventListener('resize', updateMobileControls);
+function awardPlayerPoints(username, points, note) {
+  const name = getPlayerName(username);
+  const current = Number(playerScores[name]) || 0;
+  playerScores[name] = current + Math.max(0, Number(points) || 0);
+  if (note) lastSolverName = note;
+  renderPlayerScores();
+  try {
+    fetch('/score', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ points: Number(points) || 0, reason: note || '' }) }).catch(() => {});
+  } catch (e) {}
 }
 
-try { initMobileUI(); } catch (e) { /* ignore on older browsers */ }
+async function refreshScoresFromServer() {
+  try {
+    const res = await fetch('/scores', { credentials: 'same-origin' });
+    if (!res || res.status !== 200) return;
+    const data = await res.json();
+    Object.keys(data || {}).forEach(id => {
+      const entry = data[id];
+      if (!entry) return;
+      const prof = Object.values(loadProfiles()).find(p => p && p.id === id);
+      const name = prof && prof.name ? prof.name : id;
+      playerScores[name] = Number(entry.total || 0);
+    });
+    renderPlayerScores();
+  } catch (e) {}
+}
 
-// --- Minimal word rendering + input handling ---
-let currentWord = '';
-let maskedChars = [];
-let wrongCount = 0;
-
+// ── GAME LOGIC ──
 function isLetter(ch) {
   return /^[A-Z]$/.test(ch);
 }
 
 function newGame() {
   wrongCount = 0;
-  // pick from visible list first, fallback to ALL_WORDS
-  const pool = Array.isArray(VISIBLE_WORDS) && VISIBLE_WORDS.length ? VISIBLE_WORDS : (Array.isArray(ALL_WORDS) ? ALL_WORDS : []);
+  const pool = Array.isArray(VISIBLE_WORDS) && VISIBLE_WORDS.length
+    ? VISIBLE_WORDS
+    : (Array.isArray(ALL_WORDS) ? ALL_WORDS : []);
   const choice = pool.length ? pool[Math.floor(Math.random() * pool.length)] : { word: 'HANGMAN' };
   currentWord = String(choice.word || '').toUpperCase();
+  activeWord = currentWord;
   prepareMasked(currentWord);
   renderWordRow();
   buildKeyboard();
@@ -1342,9 +1135,7 @@ function newGame() {
 
 function prepareMasked(word) {
   maskedChars = Array.from(word).map(ch => {
-    const c = String(ch || '');
-    const upper = c.toUpperCase();
-    // reveal non A-Z characters (symbols, punctuation, spaces) immediately
+    const upper = String(ch || '').toUpperCase();
     const symbol = !isLetter(upper);
     return { char: upper, revealed: symbol, symbol };
   });
@@ -1354,7 +1145,7 @@ function renderWordRow() {
   const row = document.getElementById('word-row');
   if (!row) return;
   row.innerHTML = '';
-  maskedChars.forEach((m, idx) => {
+  maskedChars.forEach(m => {
     const box = document.createElement('div');
     box.className = 'letter-box';
     const ch = document.createElement('div');
@@ -1374,8 +1165,7 @@ function buildKeyboard() {
   const kb = document.getElementById('keyboard');
   if (!kb) return;
   kb.innerHTML = '';
-  // layout in rows
-  const rows = [keys.slice(0,10), keys.slice(10,19), keys.slice(19)];
+  const rows = [keys.slice(0, 10), keys.slice(10, 19), keys.slice(19)];
   rows.forEach(r => {
     const row = document.createElement('div');
     row.className = 'kb-row';
@@ -1416,7 +1206,7 @@ function handleGuess(letter) {
 }
 
 function updateHangmanParts() {
-  const parts = ['hm-head','hm-body','hm-la','hm-ra','hm-ll','hm-rl'];
+  const parts = ['hm-head', 'hm-body', 'hm-la', 'hm-ra', 'hm-ll', 'hm-rl'];
   parts.forEach((id, i) => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -1427,7 +1217,6 @@ function updateHangmanParts() {
 function checkWinLose() {
   const allRevealed = maskedChars.every(m => m.revealed);
   if (allRevealed) {
-    // reveal win
     showWin();
   } else if (wrongCount >= MAX_WRONG) {
     showGameOver();
@@ -1451,7 +1240,8 @@ function showGameOver() {
   if (overlay) overlay.classList.add('show');
   if (winSection) winSection.style.display = 'none';
   if (revival) revival.style.display = '';
-  if (reveal) reveal.textContent = currentWord;
+  // FIX: textContent used (not innerHTML) — safe, no escaping needed
+  if (reveal) reveal.textContent = activeWord;
 }
 
 function hideOverlay() {
@@ -1461,8 +1251,125 @@ function hideOverlay() {
 
 function revive() { newGame(); }
 
-// start initial game once words are loaded
-setTimeout(() => { try { newGame(); } catch(e){} }, 600);
+// ── MOBILE UI ──
+function initMobileUI() {
+  const chatToggle = document.getElementById('mobile-chat-toggle');
+  const layoutToggle = document.getElementById('mobile-layout-toggle');
+  const sidebar = document.querySelector('.sidebar');
+
+  function applySavedLayout() {
+    const saved = localStorage.getItem(getMobileLayoutKey());
+    if (saved === 'on') document.body.classList.add('mobile-stream');
+    else document.body.classList.remove('mobile-stream');
+  }
+
+  applySavedLayout();
+
+  if (chatToggle && sidebar) {
+    chatToggle.addEventListener('click', () => sidebar.classList.toggle('show-mobile'));
+  }
+
+  if (layoutToggle) {
+    layoutToggle.addEventListener('click', () => {
+      const on = document.body.classList.toggle('mobile-stream');
+      try { localStorage.setItem(getMobileLayoutKey(), on ? 'on' : 'off'); } catch (e) {}
+    });
+  }
+
+  function updateMobileControls() {
+    const show = window.innerWidth <= 640;
+    if (chatToggle) chatToggle.style.display = show ? 'inline-flex' : 'none';
+    if (layoutToggle) layoutToggle.style.display = show ? 'inline-flex' : 'none';
+    if (!show && sidebar) sidebar.classList.remove('show-mobile');
+  }
+
+  updateMobileControls();
+  window.addEventListener('resize', updateMobileControls);
+}
+
+// ── EVENT LISTENERS (replacing all inline onclick="...") ──
+document.addEventListener('DOMContentLoaded', () => {
+  // Buttons
+  document.getElementById('viewer-login-btn')
+    .addEventListener('click', startGoogleAuth);
+
+  document.getElementById('theme-btn')
+    .addEventListener('click', toggleTheme);
+
+  document.getElementById('streamer-settings-btn')
+    .addEventListener('click', () => window.open('/streamer', '_blank', 'noopener'));
+
+  document.getElementById('btn-revive')
+    .addEventListener('click', revive);
+
+  document.getElementById('btn-skip')
+    .addEventListener('click', newGame);
+
+  document.getElementById('btn-new-game')
+    .addEventListener('click', newGame);
+
+  document.getElementById('btn-google-signin')
+    .addEventListener('click', startGoogleAuth);
+
+  document.getElementById('btn-close-viewer-login')
+    .addEventListener('click', closeViewerLogin);
+
+  // Difficulty select
+  const difficultySelect = document.getElementById('difficulty-select');
+  if (difficultySelect) {
+    difficultySelect.addEventListener('change', (e) => {
+      config.difficulty = e.target.value || 'medium';
+      try { VISIBLE_WORDS = filterByDifficulty(ALL_WORDS, config.difficulty); } catch (err) {}
+      saveSettings();
+    });
+  }
+});
+
+// ── STORAGE / FOCUS SYNC ──
+window.addEventListener('storage', (event) => {
+  if (event.key === getSettingsStorageKey()) loadSavedSettings();
+  if (event.key === getThemeStorageKey()) applyTheme(event.newValue || 'dark');
+});
+
+window.addEventListener('focus', () => loadSavedSettings());
+
+// ── OAUTH MESSAGE LISTENER ──
+window.addEventListener('message', (ev) => {
+  try {
+    if (!ev || ev.origin !== location.origin) return;
+    const data = ev.data || {};
+    if (data && data.type === 'viewer-login') {
+      const id = data.id || '';
+      const name = data.name || '';
+      if (id && name) {
+        state.viewerId = id;
+        state.viewerName = name;
+        saveViewerProfile({ id: state.viewerId, name: state.viewerName });
+        const avatar = state.viewerAvatar || '';
+        setProfileForName(state.viewerName, { name: state.viewerName, avatar });
+        try {
+          fetch('/viewer/profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: state.viewerId, name: state.viewerName, avatar, provider: data.provider || 'google' })
+          }).catch(() => {});
+        } catch (e) {}
+        renderViewerProfile();
+        closeViewerLogin();
+      }
+    }
+  } catch (e) {}
+});
+
+// ── INIT ──
+loadSavedSettings();
+applyTheme(localStorage.getItem(getThemeStorageKey()) || 'dark');
+try { initMobileUI(); } catch (e) {}
+setTimeout(refreshScoresFromServer, 1000);
+setInterval(refreshScoresFromServer, 30 * 1000);
+
+// FIX: newGame() chained after words load instead of racing with a setTimeout
+loadCustomWordsFile().then(() => newGame()).catch(() => newGame());
 </script>
 </body>
 </html>

@@ -26,28 +26,31 @@ ensureDataDir();
 function loadTokens() {
   try {
     const raw = fs.readFileSync(tokenStorePath, 'utf8');
-    try {
-      return JSON.parse(raw || '{}');
-    } catch (e) {
-      const encryptionKey = process.env.TOKEN_ENCRYPTION_KEY || '';
+    const encryptionKey = process.env.TOKEN_ENCRYPTION_KEY || '';
+
+    let blob = null;
+    try { blob = JSON.parse(raw); } catch { return {}; }
+
+    if (blob && blob.v === 2 && blob.data && blob.salt) {
       if (!encryptionKey) return {};
       try {
-        const blob = JSON.parse(raw);
-        if (blob && blob.v === 1 && blob.data) {
-          const b = Buffer.from(blob.data, 'base64');
-          const iv = b.slice(0, 12);
-          const tag = b.slice(12, 28);
-          const ct = b.slice(28);
-          const key = crypto.scryptSync(encryptionKey, 'salt', 32);
-          const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
-          decipher.setAuthTag(tag);
-          const dec = Buffer.concat([decipher.update(ct), decipher.final()]);
-          return JSON.parse(dec.toString('utf8'));
-        }
-      } catch (err) {
+        const b = Buffer.from(blob.data, 'base64');
+        const iv = b.slice(0, 12);
+        const tag = b.slice(12, 28);
+        const ct = b.slice(28);
+        const salt = Buffer.from(blob.salt, 'base64');
+        const key = crypto.scryptSync(encryptionKey, salt, 32, { N: 32768, r: 8, p: 1 });
+        const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+        decipher.setAuthTag(tag);
+        const dec = Buffer.concat([decipher.update(ct), decipher.final()]);
+        return JSON.parse(dec.toString('utf8'));
+      } catch {
         return {};
       }
     }
+
+    // Plaintext fallback (no encryption key was set when saved)
+    return (blob && typeof blob === 'object') ? blob : {};
   } catch {
     return {};
   }
@@ -57,17 +60,19 @@ function saveTokens(tokens) {
   try {
     const encryptionKey = process.env.TOKEN_ENCRYPTION_KEY || '';
     if (!encryptionKey) {
+      console.warn('[storage] WARNING: TOKEN_ENCRYPTION_KEY is not set. OAuth tokens are being saved as plaintext.');
       fs.writeFileSync(tokenStorePath, JSON.stringify(tokens, null, 2), 'utf8');
       return;
     }
-    const key = crypto.scryptSync(encryptionKey, 'salt', 32);
+    const salt = crypto.randomBytes(16);
+    const key = crypto.scryptSync(encryptionKey, salt, 32, { N: 32768, r: 8, p: 1 });
     const iv = crypto.randomBytes(12);
     const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
     const pt = Buffer.from(JSON.stringify(tokens), 'utf8');
     const ct = Buffer.concat([cipher.update(pt), cipher.final()]);
     const tag = cipher.getAuthTag();
     const out = Buffer.concat([iv, tag, ct]).toString('base64');
-    fs.writeFileSync(tokenStorePath, JSON.stringify({ v: 1, data: out }), 'utf8');
+    fs.writeFileSync(tokenStorePath, JSON.stringify({ v: 2, salt: salt.toString('base64'), data: out }), 'utf8');
   } catch (err) {
     console.warn('Failed to save tokens', err);
   }
@@ -76,7 +81,7 @@ function saveTokens(tokens) {
 function loadMusicQueue() {
   try {
     const raw = fs.readFileSync(musicQueuePath, 'utf8');
-    const parsed = JSON.parse(raw || '{}');
+    const parsed = JSON.parse(raw.trim() || '{}');
     return (parsed && typeof parsed === 'object') ? parsed : {};
   } catch {
     return {};
@@ -94,7 +99,7 @@ function saveMusicQueue(queue) {
 function loadViewerProfiles() {
   try {
     const raw = fs.readFileSync(viewerProfilesPath, 'utf8');
-    const parsed = JSON.parse(raw || '{}');
+    const parsed = JSON.parse(raw.trim() || '{}');
     return (parsed && typeof parsed === 'object') ? parsed : {};
   } catch (err) {
     return {};
@@ -112,7 +117,7 @@ function saveViewerProfiles(profiles) {
 function loadViewerScores() {
   try {
     const raw = fs.readFileSync(viewerScoresPath, 'utf8');
-    const parsed = JSON.parse(raw || '{}');
+    const parsed = JSON.parse(raw.trim() || '{}');
     return (parsed && typeof parsed === 'object') ? parsed : {};
   } catch (err) {
     return {};

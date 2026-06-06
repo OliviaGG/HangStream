@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HangStream Overlay</title>
+<style id="inline-shared">
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap');
+
+  :root {
+    --bg: #0e0e12;
+    --bg-elevated: #0b0b0f;
+    --panel: #1a1a22;
+    --panel-strong: #20202a;
+    --text: #f0ede8;
+    --text-muted: #888;
+    --muted: #666;
+    --border: #2a2a35;
+    --accent: #ff4d6d;
+    --accent-hover: #ff6b85;
+    --good: #2ecc71;
+    --bad: #ff7a7a;
+    --secondary: #3a3a45;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: transparent;
+    color: var(--text);
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+    overflow: hidden;
+  }
+
+  .overlay-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    gap: 32px;
+  }
+
+  .hangman-container {
+    width: 300px;
+    height: 270px;
+  }
+
+  .hm-part {
+    transition: opacity 0.3s;
+    opacity: 0;
+    stroke: var(--accent);
+    stroke-width: 4;
+    stroke-linecap: round;
+    fill: none;
+  }
+
+  .hm-part.show { opacity: 1; }
+
+  .hm-gallows {
+    stroke: var(--secondary);
+    stroke-width: 4;
+    stroke-linecap: round;
+    fill: none;
+  }
+
+  .word-row {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .letter-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .letter-char {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    color: var(--accent);
+    min-width: 36px;
+    text-align: center;
+    transition: all 0.2s;
+  }
+
+  .letter-line {
+    width: 36px;
+    height: 3px;
+    background: var(--secondary);
+  }
+
+  .keyboard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 600px;
+  }
+
+  .kb-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .kb-key {
+    width: 48px;
+    height: 52px;
+    background: color-mix(in srgb, var(--panel) 90%, transparent);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: default;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .kb-key.correct {
+    background: color-mix(in srgb, var(--good) 18%, transparent);
+    border-color: var(--good);
+    color: var(--good);
+  }
+
+  .kb-key.wrong {
+    background: var(--panel);
+    border-color: var(--border);
+    color: var(--border);
+    opacity: 0.3;
+  }
+
+  .lives-container {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .life-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    background: var(--accent);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+
+  .life-dot.lost { background: var(--border); }
+
+  .game-status {
+    font-size: 14px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="overlay-container">
+  <div class="game-status" id="game-status">Loading...</div>
+
+  <svg class="hangman-container" viewBox="0 0 200 180">
+    <line class="hm-gallows" x1="20" y1="170" x2="100" y2="170"/>
+    <line class="hm-gallows" x1="40" y1="170" x2="40" y2="20"/>
+    <line class="hm-gallows" x1="40" y1="20" x2="120" y2="20"/>
+    <line class="hm-gallows" x1="120" y1="20" x2="120" y2="40"/>
+    <circle id="hm-head" class="hm-part" cx="120" cy="52" r="12"/>
+    <line   id="hm-body" class="hm-part" x1="120" y1="64" x2="120" y2="110"/>
+    <line   id="hm-la"   class="hm-part" x1="120" y1="75" x2="96" y2="95"/>
+    <line   id="hm-ra"   class="hm-part" x1="120" y1="75" x2="144" y2="95"/>
+    <line   id="hm-ll"   class="hm-part" x1="120" y1="110" x2="96" y2="140"/>
+    <line   id="hm-rl"   class="hm-part" x1="120" y1="110" x2="144" y2="140"/>
+  </svg>
+
+  <div class="lives-container" id="lives-container"></div>
+
+  <div class="word-row" id="word-row"></div>
+  <div class="keyboard" id="keyboard"></div>
+</div>
+
+<script>
+// Overlay-specific game logic - simplified for streaming
+const MAX_WRONG = 6;
+let currentWord = '';
+let maskedChars = [];
+let wrongCount = 0;
+let revealedWord = '';
+let ALL_WORDS = [];
+let VISIBLE_WORDS = [];
+
+// Namespace handling (same as main game)
+function getRouteNamespace() {
+  const pathName = String(location.pathname || '/').replace(/\/+$/, '');
+  if (!pathName || pathName === '/' || pathName === '/viewer' || pathName === '/streamer') return '';
+  if (/^\/(oauth|auth|terms|privacy|scores|score|music)(\/|$)/.test(pathName)) return '';
+  // Extract streamer name from /streamer-name/overlay
+  const overlayMatch = pathName.match(/^\/([^/]+)\/overlay\/?$/);
+  if (overlayMatch) {
+    const slug = overlayMatch[1].trim().toLowerCase();
+    return /^[a-z0-9_.@-]+$/.test(slug) ? slug : '';
+  }
+  if (pathName.indexOf('/', 1) !== -1) return '';
+  const slug = pathName.slice(1).trim().toLowerCase();
+  return /^[a-z0-9_.@-]+$/.test(slug) ? slug : '';
+}
+
+function isLetter(ch) {
+  return /^[A-Z]$/.test(ch);
+}
+
+function filterByDifficulty(list, difficulty) {
+  if (!Array.isArray(list)) return [];
+  const byTag = list.filter(w => String((w.difficulty || '')).toLowerCase() === String(difficulty || '').toLowerCase());
+  if (byTag.length) return byTag;
+  const easy = list.filter(w => (w.word || '').length <= 6);
+  const medium = list.filter(w => (w.word || '').length >= 5 && (w.word || '').length <= 9);
+  const hard = list.filter(w => (w.word || '').length >= 8);
+  if (difficulty === 'easy') return easy.length ? easy : list;
+  if (difficulty === 'hard') return hard.length ? hard : list;
+  return medium.length ? medium : list;
+}
+
+async function loadCustomWordsFile() {
+  try {
+    const res = await fetch('/custom-words.json', { cache: 'no-store' });
+    if (!res || res.status !== 200) return;
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      const normalized = data.map(item => {
+        if (!item || typeof item !== 'object') return null;
+        return {
+          word: String(item.word || '').toUpperCase().trim(),
+          cat: String(item.cat || 'Custom'),
+          difficulty: String(item.difficulty || 'medium').toLowerCase()
+        };
+      }).filter(Boolean);
+      if (normalized.length) {
+        ALL_WORDS = normalized.slice();
+        VISIBLE_WORDS = filterByDifficulty(ALL_WORDS, 'medium');
+      }
+    }
+  } catch (e) {
+    ALL_WORDS = [];
+    VISIBLE_WORDS = [];
+  }
+}
+
+function prepareMasked(word) {
+  maskedChars = Array.from(word).map(ch => {
+    const c = String(ch || '');
+    const upper = c.toUpperCase();
+    const symbol = !isLetter(upper);
+    return { char: upper, revealed: symbol, symbol };
+  });
+}
+
+function renderWordRow() {
+  const row = document.getElementById('word-row');
+  if (!row) return;
+  row.innerHTML = '';
+  maskedChars.forEach((m, idx) => {
+    const box = document.createElement('div');
+    box.className = 'letter-box';
+    const ch = document.createElement('div');
+    ch.className = 'letter-char';
+    ch.textContent = m.revealed ? m.char : '';
+    const line = document.createElement('div');
+    line.className = 'letter-line';
+    if (m.revealed) line.style.visibility = 'hidden';
+    box.appendChild(ch);
+    box.appendChild(line);
+    row.appendChild(box);
+  });
+}
+
+function buildKeyboard() {
+  const keys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const kb = document.getElementById('keyboard');
+  if (!kb) return;
+  kb.innerHTML = '';
+  const rows = [keys.slice(0,10), keys.slice(10,19), keys.slice(19)];
+  rows.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'kb-row';
+    r.forEach(k => {
+      const btn = document.createElement('div');
+      btn.className = 'kb-key';
+      btn.textContent = k;
+      btn.id = `key-${k}`;
+      row.appendChild(btn);
+    });
+    kb.appendChild(row);
+  });
+}
+
+function handleGuess(letter, found) {
+  const btn = document.getElementById(`key-${letter}`);
+  if (btn) {
+    btn.classList.add(found ? 'correct' : 'wrong');
+  }
+  if (!found) {
+    wrongCount = Math.min(MAX_WRONG, wrongCount + 1);
+    updateHangmanParts();
+  } else {
+    renderWordRow();
+  }
+  checkWinLose();
+}
+
+function updateHangmanParts() {
+  const parts = ['hm-head','hm-body','hm-la','hm-ra','hm-ll','hm-rl'];
+  parts.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (i < wrongCount) el.classList.add('show'); else el.classList.remove('show');
+  });
+  updateLives();
+}
+
+function updateLives() {
+  const container = document.getElementById('lives-container');
+  if (!container) return;
+  container.innerHTML = '';
+  for (let i = 0; i < MAX_WRONG; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'life-dot';
+    if (i >= wrongCount) dot.classList.add('lost');
+    container.appendChild(dot);
+  }
+}
+
+function checkWinLose() {
+  const allRevealed = maskedChars.every(m => m.revealed);
+  const status = document.getElementById('game-status');
+  if (allRevealed) {
+    if (status) status.textContent = '🎉 SOLVED!';
+  } else if (wrongCount >= MAX_WRONG) {
+    if (status) status.textContent = `Game over! Word: ${revealedWord}`;
+  } else {
+    if (status) status.textContent = getStreamerNamespace() ? `@${getStreamerNamespace()}'s Game` : 'HangStream';
+  }
+}
+
+function newGame() {
+  wrongCount = 0;
+  const pool = Array.isArray(VISIBLE_WORDS) && VISIBLE_WORDS.length ? VISIBLE_WORDS : (Array.isArray(ALL_WORDS) ? ALL_WORDS : []);
+  const choice = pool.length ? pool[Math.floor(Math.random() * pool.length)] : { word: 'HANGMAN' };
+  currentWord = String(choice.word || '').toUpperCase();
+  revealedWord = currentWord;
+  prepareMasked(currentWord);
+  renderWordRow();
+  buildKeyboard();
+  updateHangmanParts();
+  updateLives();
+  checkWinLose();
+}
+
+// WebSocket connection for multiplayer
+let ws = null;
+const streamerNamespace = getStreamerNamespace();
+
+function connectWebSocket() {
+  if (!streamerNamespace) return; // Only connect in multiplayer mode
+
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const url = `${proto}://${location.host}`;
+
+  ws = new WebSocket(url);
+  ws.addEventListener('open', () => {
+    console.log('Overlay WebSocket connected');
+    // Join the streamer's channel
+    ws.send(JSON.stringify({ type: 'watch', platform: 'both', channel: streamerNamespace, owner: streamerNamespace }));
+  });
+
+  ws.addEventListener('message', (ev) => {
+    try {
+      const data = JSON.parse(ev.data || '{}');
+      if (data && data.type === 'guess') {
+        // Handle guess from chat
+        const letter = data.letter ? data.letter.toUpperCase() : '';
+        if (letter && isLetter(letter)) {
+          let found = false;
+          maskedChars.forEach(m => {
+            if (!m.revealed && m.char === letter) {
+              m.revealed = true;
+              found = true;
+            }
+          });
+          handleGuess(letter, found);
+        }
+      }
+    } catch (e) { console.warn('Invalid WS message', e); }
+  });
+
+  ws.addEventListener('close', () => {
+    console.log('Overlay WebSocket disconnected, reconnecting in 5s...');
+    setTimeout(connectWebSocket, 5000);
+  });
+
+  ws.addEventListener('error', (e) => {
+    console.warn('Overlay WebSocket error', e);
+    ws.close();
+  });
+}
+
+// Initialize
+loadCustomWordsFile().then(() => {
+  setTimeout(() => {
+    newGame();
+    if (streamerNamespace) {
+      connectWebSocket();
+    }
+  }, 500);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Viewer Profile - HangStream</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0e0e12;
+      --bg-elevated: #0b0b0f;
+      --bg-alt: #0b0b0f;
+      --card: #1a1a22;
+      --card-border: #2a2a35;
+      --panel: #1a1a22;
+      --panel-border: #2a2a35;
+      --text: #f0ede8;
+      --text-muted: #92a0af;
+      --muted: #92a0af;
+      --accent: #ff4d6d;
+      --accent-2: #7c5cff;
+      --accent-3: #7c5cff;
+      --good: #25c27a;
+      --warning: #ffbe55;
+      --bad: #ff4d4d;
+      --glass: rgba(255,255,255,0.05);
+      --radius: 24px;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+    }
+
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --bg-elevated: #ffffff;
+      --bg-alt: #ffffff;
+      --card: #ffffff;
+      --card-border: #e2e8f0;
+      --panel: #ffffff;
+      --panel-border: #e2e8f0;
+      --text: #0f1724;
+      --text-muted: #64748b;
+      --muted: #64748b;
+      --glass: rgba(0,0,0,0.04);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 77, 109, 0.15), transparent 28%),
+        radial-gradient(circle at top right, rgba(124, 92, 255, 0.12), transparent 24%),
+        radial-gradient(circle at bottom left, rgba(37, 194, 122, 0.08), transparent 20%),
+        linear-gradient(180deg, color-mix(in srgb, var(--bg) 95%, #000), var(--bg));
+    }
+
+    [data-theme="light"] body {
+      background:
+        radial-gradient(circle at top left, rgba(255, 77, 109, 0.08), transparent 28%),
+        radial-gradient(circle at top right, rgba(124, 92, 255, 0.06), transparent 24%),
+        radial-gradient(circle at bottom left, rgba(37, 194, 122, 0.04), transparent 20%),
+        linear-gradient(180deg, #f8fafc, #ffffff);
+    }
+
+    .page {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 20px 56px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+
+    .back-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .back-link:hover { color: var(--text); }
+
+    .theme-toggle {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: all 0.2s;
+    }
+
+    .theme-toggle:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      padding: 32px;
+    }
+
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .avatar {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      color: white;
+      font-weight: 700;
+    }
+
+    .profile-info h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .profile-info .provider {
+      color: var(--muted);
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .connected-accounts {
+      margin-top: 24px;
+    }
+
+    .account-item {
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .account-info {
+      flex: 1;
+    }
+
+    .account-platform {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .account-username {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .account-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      object-fit: cover;
+    }
+
+    .btn-connect {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-connect:hover { opacity: 0.9; }
+
+    .btn-disconnect {
+      background: rgba(255, 77, 109, 0.1);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-disconnect:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 800;
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 0.02em;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    .scores-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .score-item {
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .score-item strong {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .score-item span {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .score-item .points {
+      color: var(--accent);
+      font-size: 18px;
+      font-weight: 800;
+      font-family: 'Bebas Neue', sans-serif;
+    }
+
+    .login-prompt {
+      text-align: center;
+      padding: 40px;
+      color: var(--muted);
+    }
+
+    .login-btn {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 999px;
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 20px;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .login-btn:hover { opacity: 0.9; }
+
+    @media (max-width: 640px) {
+      .page { padding: 20px 16px 40px; }
+      .panel { padding: 24px; }
+      .profile-header { flex-direction: column; text-align: center; }
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <a href="/viewer" class="back-link">← Back to Game</a>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle" aria-label="Toggle theme">🌙</button>
+        <div style="font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--accent);">HANGSTREAM</div>
+      </div>
+    </div>
+
+    <div class="panel" id="profile-content">
+      <div class="login-prompt">
+        <h2>Sign in to view your profile</h2>
+        <p>Connect your account to track your scores and stats across all games.</p>
+        <button class="login-btn" onclick="startGoogleAuth()">Sign in with Google</button>
+      </div>
+    </div>
+
+    <div class="panel" id="connected-accounts-panel" style="display:none; margin-top: 24px;">
+      <div class="section-title">Connected Accounts</div>
+      <div id="accounts-list" class="scores-list"></div>
+    </div>
+  </div>
+
+  <script>
+    let currentProfile = null;
+
+    function getCookieValue(name) {
+      const escaped = String(name || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const match = String(document.cookie || '').match(new RegExp('(?:^|; )' + escaped + '=([^;]*)'));
+      return match ? decodeURIComponent(match[1]) : '';
+    }
+
+    function loadViewerProfile() {
+      try {
+        const saved = localStorage.getItem('hangstream-viewer-profile');
+        if (saved) {
+          currentProfile = JSON.parse(saved);
+          if (currentProfile && currentProfile.name) {
+            renderProfile();
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // Check if logged in via cookie
+      const viewerId = getCookieValue('viewer_id');
+      if (viewerId) {
+        fetchProfileFromServer(viewerId);
+      } else {
+        showLoginPrompt();
+      }
+    }
+
+    async function fetchProfileFromServer(viewerId) {
+      try {
+        const res = await fetch(`/viewer/profile?id=${encodeURIComponent(viewerId)}`);
+        if (res && res.status === 200) {
+          const profile = await res.json();
+          if (profile && profile.name) {
+            currentProfile = profile;
+            localStorage.setItem('hangstream-viewer-profile', JSON.stringify(profile));
+            renderProfile();
+            return;
+          }
+        }
+      } catch (e) {}
+      showLoginPrompt();
+    }
+
+    async function loadScores() {
+      try {
+        const res = await fetch('/scores', { credentials: 'same-origin' });
+        if (!res || res.status !== 200) return;
+        const data = await res.json();
+
+        // Get current viewer's scores
+        if (currentProfile && currentProfile.id) {
+          const globalScores = data.globalScores || {};
+          const roomScores = data.roomScores || {};
+
+          // Find viewer's global score
+          const globalScore = globalScores[currentProfile.id] || { total: 0 };
+          const roomScore = roomScores[currentProfile.id] || { total: 0 };
+
+          // Get solo stats from profile
+          const soloStats = currentProfile.soloStats || { score: 0, played: 0, won: 0 };
+
+          renderScores({
+            global: globalScore.total || 0,
+            room: roomScore.total || 0,
+            solo: soloStats
+          });
+        }
+      } catch (e) {
+        console.error('Failed to load scores', e);
+      }
+    }
+
+    function renderProfile() {
+      const container = document.getElementById('profile-content');
+
+      const avatar = currentProfile.avatar || currentProfile.name ? currentProfile.name.charAt(0).toUpperCase() : '?';
+      const provider = currentProfile.provider || 'Google';
+
+      container.innerHTML = `
+        <div class="profile-header">
+          <div class="avatar">${avatar}</div>
+          <div class="profile-info">
+            <h1>${escapeHtml(currentProfile.name || 'Anonymous')}</h1>
+            <div class="provider">Connected via ${escapeHtml(provider)}</div>
+          </div>
+        </div>
+      `;
+
+      // Show connected accounts panel
+      const accountsPanel = document.getElementById('connected-accounts-panel');
+      if (accountsPanel) accountsPanel.style.display = 'block';
+      renderConnectedAccounts();
+
+      loadScores();
+    }
+
+    function renderScores(scores) {
+      const container = document.getElementById('profile-content');
+
+      const winRate = scores.solo.played > 0 ? Math.round((scores.solo.won / scores.solo.played) * 100) : 0;
+
+      container.innerHTML += `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Score</div>
+            <div class="stat-value">${scores.global.toLocaleString()}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Current Room</div>
+            <div class="stat-value">${scores.room.toLocaleString()}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Solo Score</div>
+            <div class="stat-value">${scores.solo.score.toLocaleString()}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Solo Win Rate</div>
+            <div class="stat-value">${winRate}%</div>
+          </div>
+        </div>
+
+        <div class="section-title">Solo Statistics</div>
+        <div class="scores-list">
+          <div class="score-item">
+            <div>
+              <strong>Games Played</strong>
+              <span>Total solo games</span>
+            </div>
+            <div class="points">${scores.solo.played}</div>
+          </div>
+          <div class="score-item">
+            <div>
+              <strong>Games Won</strong>
+              <span>Successful solves</span>
+            </div>
+            <div class="points">${scores.solo.won}</div>
+          </div>
+          <div class="score-item">
+            <div>
+              <strong>Win Rate</strong>
+              <span>Success percentage</span>
+            </div>
+            <div class="points">${winRate}%</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderConnectedAccounts() {
+      const container = document.getElementById('accounts-list');
+      if (!container) return;
+
+      const twitch = currentProfile.twitch;
+      const tiktok = currentProfile.tiktok;
+
+      let html = '';
+
+      // Twitch account
+      if (twitch && twitch.display_name) {
+        html += `
+          <div class="account-item">
+            <img src="${escapeHtml(twitch.profile_image_url || '')}" alt="Twitch" class="account-avatar" onerror="this.style.display='none'">
+            <div class="account-info">
+              <div class="account-platform">🎮 Twitch</div>
+              <div class="account-username">${escapeHtml(twitch.display_name)}</div>
+            </div>
+            <button class="btn-disconnect" onclick="disconnectAccount('twitch')">Disconnect</button>
+          </div>
+        `;
+      } else {
+        html += `
+          <div class="account-item">
+            <div class="account-info">
+              <div class="account-platform">🎮 Twitch</div>
+              <div class="account-username">Not connected</div>
+            </div>
+            <button class="btn-connect" onclick="connectTwitch()">Connect</button>
+          </div>
+        `;
+      }
+
+      // TikTok account
+      if (tiktok && tiktok.display_name) {
+        html += `
+          <div class="account-item">
+            <img src="${escapeHtml(tiktok.avatar_url || '')}" alt="TikTok" class="account-avatar" onerror="this.style.display='none'">
+            <div class="account-info">
+              <div class="account-platform">🎵 TikTok</div>
+              <div class="account-username">${escapeHtml(tiktok.display_name)}</div>
+            </div>
+            <button class="btn-disconnect" onclick="disconnectAccount('tiktok')">Disconnect</button>
+          </div>
+        `;
+      } else {
+        html += `
+          <div class="account-item">
+            <div class="account-info">
+              <div class="account-platform">🎵 TikTok</div>
+              <div class="account-username">Not connected</div>
+            </div>
+            <button class="btn-connect" onclick="connectTiktok()">Connect</button>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function connectTwitch() {
+      try {
+        const w = window.open('/auth/twitch', 'hs_twitch_oauth', 'width=600,height=700');
+        if (!w) {
+          alert('Popup blocked. Allow popups for this site to connect Twitch.');
+          return;
+        }
+        w.focus();
+      } catch (e) {
+        console.error('Failed to open Twitch auth popup', e);
+      }
+    }
+
+    function connectTiktok() {
+      try {
+        const w = window.open('/auth/tiktok', 'hs_tiktok_oauth', 'width=600,height=700');
+        if (!w) {
+          alert('Popup blocked. Allow popups for this site to connect TikTok.');
+          return;
+        }
+        w.focus();
+      } catch (e) {
+        console.error('Failed to open TikTok auth popup', e);
+      }
+    }
+
+    async function disconnectAccount(platform) {
+      if (!confirm(`Are you sure you want to disconnect your ${platform} account?`)) return;
+
+      try {
+        const res = await fetch('/viewer/disconnect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ platform })
+        });
+
+        if (res && res.status === 200) {
+          // Update local profile
+          delete currentProfile[platform];
+          localStorage.setItem('hangstream-viewer-profile', JSON.stringify(currentProfile));
+          renderConnectedAccounts();
+        } else {
+          alert('Failed to disconnect account');
+        }
+      } catch (e) {
+        console.error('Failed to disconnect account', e);
+        alert('Failed to disconnect account');
+      }
+    }
+
+    function showLoginPrompt() {
+      const container = document.getElementById('profile-content');
+      const accountsPanel = document.getElementById('connected-accounts-panel');
+      if (accountsPanel) accountsPanel.style.display = 'none';
+      
+      container.innerHTML = `
+        <div class="login-prompt">
+          <h2>Sign in to view your profile</h2>
+          <p>Connect your account to track your scores and stats across all games.</p>
+          <button class="login-btn" onclick="startGoogleAuth()">Sign in with Google</button>
+        </div>
+      `;
+    }
+
+    function startGoogleAuth() {
+      try {
+        const w = window.open('/auth/google', 'hs_google_oauth', 'width=600,height=700');
+        if (!w) {
+          alert('Popup blocked. Allow popups for this site to sign in.');
+          return;
+        }
+        w.focus();
+      } catch (e) {
+        console.error('Failed to open Google auth popup', e);
+      }
+    }
+
+    // Listen for OAuth result
+    window.addEventListener('message', (ev) => {
+      try {
+        if (!ev || ev.origin !== location.origin) return;
+        const data = ev.data || {};
+        if (data && data.type === 'viewer-login') {
+          const id = data.id || '';
+          const name = data.name || '';
+          if (id && name) {
+            currentProfile = { id, name, provider: data.provider || 'google' };
+            localStorage.setItem('hangstream-viewer-profile', JSON.stringify(currentProfile));
+            renderProfile();
+          }
+        } else if (data && data.type === 'account-connected') {
+          // Reload profile to show new connected account
+          loadViewerProfile();
+        }
+      } catch (e) {}
+    });
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>\"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+
+    // Theme toggle with localStorage persistence
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeToggle(newTheme);
+    }
+
+    function updateThemeToggle(theme) {
+      const toggle = document.getElementById('theme-toggle');
+      if (toggle) {
+        toggle.textContent = theme === 'light' ? '🌙' : '☀️';
+      }
+    }
+
+    // Load saved theme on page load
+    (function() {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateThemeToggle(savedTheme);
+    })();
+
+    // Initialize
+    loadViewerProfile();
+  </script>
+</body>
+</html>

@@ -1,111 +1,174 @@
 # HangStream
 
-Lightweight WebSocket demo for live multiplayer interactions.
+Turn chat into an interactive game. HangStream is a real-time multiplayer hangman game that integrates with Twitch and TikTok live streams, allowing viewers to play via chat or web interface.
 
-## Deploy to Azure App Service
+## 🎮 Features
 
-This repo is ready for Azure App Service as a Linux container. The app listens on `PORT`, supports WebSockets, and can store its JSON data in a mounted directory.
+### For Viewers
+- **Play via Chat**: Type your guesses directly in the streamer's Twitch or TikTok chat
+- **Web Interface**: Play with an on-screen keyboard on the viewer page
+- **Solo Practice Mode**: Practice alone without needing a live stream
+- **Score Tracking**: Sign in to track your scores across all streams
+- **Leaderboards**: Compete with other viewers for the top scores
+- **Social Account Integration**: Connect your Twitch and TikTok accounts to your profile
 
-1. Build and push the image to Azure Container Registry, or use App Service to pull from a registry.
+### For Streamers
+- **Chat Integration**: Automatically connects to Twitch and TikTok chat
+- **Music Requests**: Viewers can request songs via chat using `!play <song>` (Spotify integration)
+- **Custom Game Settings**: Adjust difficulty and game options
+- **OBS Overlay**: Clean overlay designed for streaming software
+- **Viewer Participation Controls**: Enable or disable web play for your stream
+- **Per-Streamer Leaderboards**: Track scores separately for each streamer's audience
+- **Application System**: Streamers must apply and be approved to access dashboard
 
-2. Set these app settings in Azure:
+### Authentication
+- **Google Sign-In**: Secure OAuth authentication for all users
+- **Protected Pages**: Profile, leaderboard, and streamer settings require sign-in
+- **Public Discovery**: Homepage and viewer page are publicly accessible
+- **API Keys**: Approved streamers receive API keys for dashboard authentication
 
-```text
-NODE_ENV=production
-PORT=8080
-DATA_DIR=/home/site/wwwroot/data
-TOKEN_ENCRYPTION_KEY=<strong-random-value>
-SPOTIFY_CLIENT_ID=<value>
-SPOTIFY_CLIENT_SECRET=<value>
-SPOTIFY_REDIRECT_URI=https://<your-app>.azurewebsites.net/oauth/spotify/callback
-TWITCH_CLIENT_ID=<value>
-TIKTOK_CLIENT_KEY=<value>
-```
+## 🚀 Getting Started
 
-3. If you mount Azure Files, point the mount path at the same directory as `DATA_DIR`, or change `DATA_DIR` to match the mount path.
+### Prerequisites
+- Node.js (version 14 or higher)
+- npm
 
-4. Update OAuth redirect URIs in Spotify, Twitch, TikTok, and Google to use your Azure domain.
+### Installation
 
-5. Restart the web app and verify the `/` and `/streamer-settings` pages load over HTTPS.
-
-## Deploy to Google Cloud Run
-
-The app already listens on `process.env.PORT`, so it can run directly in Cloud Run.
-
-1. Build and deploy from the repo root:
-
+1. Clone the repository and navigate to the project directory:
 ```bash
-gcloud run deploy hangstream \
-	--source . \
-	--region us-central1 \
-	--allow-unauthenticated \
-	--set-env-vars GOOGLE_CLIENT_ID=YOUR_ID,GOOGLE_CLIENT_SECRET=YOUR_SECRET,GOOGLE_OWNER_REDIRECT_URI=YOUR_CLOUD_RUN_URL/oauth/google/callback,GOOGLE_VIEWER_REDIRECT_URI=YOUR_CLOUD_RUN_URL/auth/google/callback
+cd HangStream
 ```
 
-2. After deployment, copy the service URL and update your Google OAuth redirect URI to:
-
-```text
-https://YOUR_SERVICE_URL/oauth/google/callback
-https://YOUR_SERVICE_URL/auth/google/callback
-```
-
-3. Re-deploy any time you change the redirect URI or OAuth settings.
-
-4. If you use Spotify, TikTok, or Twitch auth, add the matching environment variables in the Cloud Run service settings before testing those flows.
-
-## Deploy to DigitalOcean App Platform
-
-You can deploy directly from this GitHub repo to DigitalOcean App Platform. App Platform builds with Node.js and supports WebSockets.
-
-1. Push your repository to GitHub (see earlier steps) and note the repo URL.
-
-2. UI method (recommended):
-	- Go to DigitalOcean → Apps → Create App → connect GitHub → select this repo and branch.
-	- Service settings: Web Service, Run command `npm start`, HTTP port `8080`, enable WebSockets.
-	- Add environment variables: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_OWNER_REDIRECT_URI` (set to `https://<your-app>.ondigitalocean.app/oauth/google/callback`), and `GOOGLE_VIEWER_REDIRECT_URI` (set to `https://<your-app>.ondigitalocean.app/auth/google/callback`).
-	- Deploy and note the service URL.
-
-3. CLI method (optional): install `doctl`, authenticate, then create from the included spec file:
-
-```bash
-# install doctl (Windows)
-winget install -e --id DigitalExperience.doctl
-
-# authenticate
-doctl auth init
-
-# create app from spec (edit .do/app.yaml with your repo/url and secrets first)
-doctl apps create --spec .do/app.yaml
-```
-
-4. After deployment, update your Google OAuth client Authorized Redirect URIs / Origins to include your DigitalOcean service URL.
-
-5. Test sign-in and verify the `viewer_id` cookie, the streamer OAuth popups, and `/scores` persistence.
-
-## Quick start
-
-1. From the `HangStream` folder run:
-
+2. Install dependencies:
 ```bash
 npm install
+```
+
+3. Copy the example environment file and configure it:
+```bash
+cp .env.example .env
+```
+
+4. Edit `.env` with your credentials:
+```env
+NODE_ENV=production
+PORT=8080
+TOKEN_ENCRYPTION_KEY=<generate a random string>
+GOOGLE_CLIENT_ID=<your Google client ID>
+GOOGLE_CLIENT_SECRET=<your Google client secret>
+GOOGLE_OWNER_REDIRECT_URI=https://yourdomain.com/oauth/google/callback
+GOOGLE_VIEWER_REDIRECT_URI=https://yourdomain.com/auth/google/callback
+ADMIN_PASSWORD=<secure password for admin dashboard>
+SPOTIFY_CLIENT_ID=<optional, for music requests>
+SPOTIFY_CLIENT_SECRET=<optional, for music requests>
+SPOTIFY_REDIRECT_URI=https://yourdomain.com/oauth/spotify/callback
+TIKTOK_CLIENT_KEY=<optional, for TikTok chat>
+TIKTOK_CLIENT_SECRET=<optional, for TikTok chat>
+TIKTOK_REDIRECT_URI=https://yourdomain.com/oauth/callback
+TIKTOK_VIEWER_REDIRECT_URI=https://yourdomain.com/auth/tiktok/callback
+TWITCH_CLIENT_ID=<optional, for Twitch chat>
+TWITCH_CLIENT_SECRET=<optional, for Twitch chat>
+TWITCH_REDIRECT_URI=https://yourdomain.com/oauth/twitch/callback
+TWITCH_VIEWER_REDIRECT_URI=https://yourdomain.com/auth/twitch/callback
+```
+
+5. Start the server:
+```bash
 npm start
 ```
 
-2. Open `http://localhost:8080` in a browser.
+6. Open `http://localhost:8080` in your browser
 
+## 🎯 How It Works
 
-3. Type messages to test broadcasting between multiple browser windows.
+### For New Users
+1. Visit the homepage to learn about the game
+2. Sign in with Google to access all features
+3. Go to the viewer page (`/viewer`) to play
+4. Choose between solo practice or join a live streamer
+5. Track your scores on the leaderboard and profile
 
-## Spotify music requests
+### For Streamers
+1. Apply to become a streamer via the application form (`/apply`)
+2. Wait for approval from the admin
+3. Once approved, access the streamer settings (`/streamer`) to:
+   - Connect your Twitch and TikTok accounts
+   - Connect Spotify for music requests
+   - Configure game settings
+   - Enable/disable web play for viewers
+   - View your API key
 
-To use `!play <song>` from chat:
+### During a Stream
+1. Start your broadcast on Twitch or TikTok
+2. Viewers can play by typing in chat or visiting `/viewer`
+3. Chat messages are processed as game guesses
+4. Scores are tracked for all authenticated viewers
+5. Use the OBS overlay (`/your-streamer-name/overlay`) in your streaming software
 
-- Set `SPOTIFY_CLIENT_ID`
-- Set `SPOTIFY_CLIENT_SECRET`
-- Set `SPOTIFY_REDIRECT_URI` to `http://localhost:8080/oauth/spotify/callback`
-- Log in with Spotify on the streamer settings page
-- Keep a Spotify Premium playback device active on the streamer machine
+## 📁 Project Structure
 
-## Streamer settings
+- `server/` - Backend server code
+  - `server.js` - Main HTTP server with WebSocket support
+  - `storage.js` - Data persistence utilities
+  - `twitch.js` - Twitch chat integration
+  - `tiktok.js` - TikTok chat integration
+- `public/` - Frontend pages
+  - `homepage.html` - Landing page
+  - `index.html` - Game interface (viewer)
+  - `profile.html` - User profile page
+  - `leaderboard.html` - Score leaderboard
+  - `streamer-settings.html` - Streamer dashboard
+  - `apply.html` - Streamer application form
+  - `admin.html` - Admin dashboard for approving applications
+  - `overlay.html` - OBS-compatible overlay
 
-Open `http://localhost:8080/streamer` after starting the server. That page is the production-facing admin entry point for OAuth setup and deployment checks.
+## 🔒 Security
+
+- **OAuth Authentication**: Uses Google OAuth for secure sign-in
+- **API Key Protection**: Streamer API keys only shown to approved accounts
+- **Password Hashing**: Application passwords are hashed before storage
+- **Admin Dashboard**: Protected by ADMIN_PASSWORD environment variable
+- **Encrypted Tokens**: OAuth tokens encrypted in storage
+
+## 🎨 Design
+
+- **Dark/Light Theme**: Toggle between dark and light themes across all pages
+- **Consistent Color Scheme**: Unified design language throughout the application
+- **Responsive Design**: Works on desktop and mobile devices
+- **Modern UI**: Clean, card-based interface with smooth animations
+
+## 📦 Deployment
+
+### Azure App Service
+1. Build and push to Azure Container Registry
+2. Set environment variables (see `.env.example`)
+3. Mount Azure Files to persist data
+4. Update OAuth redirect URIs
+
+### Google Cloud Run
+1. Run `gcloud run deploy` with appropriate flags
+2. Set environment variables in Cloud Run service
+3. Update Google OAuth redirect URIs
+
+### DigitalOcean App Platform
+1. Connect GitHub repository
+2. Configure as Web Service with WebSockets enabled
+3. Set environment variables
+4. Deploy and test
+
+## 🐛 Known Issues
+
+- Dependencies in `tiktok-live-connector` have known security vulnerabilities. Run `npm audit fix --force` to update to a safer version (may require code changes).
+
+## 📄 License
+
+This project is open source and available for modification and distribution.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit issues and pull requests.
+
+## 📞 Support
+
+For support or questions, please open an issue on the GitHub repository.
