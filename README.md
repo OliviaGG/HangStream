@@ -138,25 +138,6 @@ npm start
 - **Responsive Design**: Works on desktop and mobile devices
 - **Modern UI**: Clean, card-based interface with smooth animations
 
-## 📦 Deployment
-
-### Azure App Service
-1. Build and push to Azure Container Registry
-2. Set environment variables (see `.env.example`)
-3. Mount Azure Files to persist data
-4. Update OAuth redirect URIs
-
-### Google Cloud Run
-1. Run `gcloud run deploy` with appropriate flags
-2. Set environment variables in Cloud Run service
-3. Update Google OAuth redirect URIs
-
-### DigitalOcean App Platform
-1. Connect GitHub repository
-2. Configure as Web Service with WebSockets enabled
-3. Set environment variables
-4. Deploy and test
-
 ## 🐛 Known Issues
 
 - Dependencies in `tiktok-live-connector` have known security vulnerabilities. Run `npm audit fix --force` to update to a safer version (may require code changes).

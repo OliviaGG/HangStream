@@ -7,6 +7,10 @@ const { URL } = require('url');
 const crypto = require('crypto');
 const querystring = require('querystring');
 const https = require('https');
+
+// Initialize database connection
+require('./db');
+
 const {
   loadTokens,
   saveTokens,
@@ -50,8 +54,9 @@ const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || '';
 const SPOTIFY_REDIRECT = process.env.SPOTIFY_REDIRECT_URI || `http://localhost:${port}/oauth/spotify/callback`;
 
 // Stripe initialization
-const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
-const stripePublishableKey = process.env.STRIPE_PUBLISHABLE_KEY || '';
+const stripeKey = process.env.STRIPE_SECRET_KEY;
+const stripe = stripeKey && stripeKey !== 'sk_test_your_key_here' && stripeKey !== 'sk_live_your_key_here' ? require('stripe')(stripeKey) : null;
+const stripePublishableKey = (stripe && process.env.STRIPE_PUBLISHABLE_KEY) || '';
 
 // Environment validation
 function validateEnvironment() {
@@ -1379,6 +1384,12 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // TikTok verification file
+  if (pathname === '/tiktokoD3TMQr0cbojRXpxHpI8gUC9FGfCea6m.txt' || pathname === '/.well-known/tiktokoD3TMQr0cbojRXpxHpI8gUC9FGfCea6m.txt') {
+    sendFile(res, path.join(__dirname, '..', 'public', 'tiktokoD3TMQr0cbojRXpxHpI8gUC9FGfCea6m.txt'), 'text/plain; charset=utf-8');
+    return;
+  }
+
   const urlPath = req.url === '/' ? '/homepage.html' : req.url;
 
   if (urlPath === '/homepage.html' || urlPath === '/index.html' || urlPath === '/') {
@@ -1633,6 +1644,7 @@ twitch.on('stopped', (channel) => broadcastToChannel(`twitch:${channel}`, { type
 
 // On startup, load saved tokens and auto-watch known usernames
 try {
+  // Load tokens synchronously to ensure cache is populated
   const saved = loadTokens();
   for (const id of Object.keys(saved || {})) {
     const entry = saved[id];
