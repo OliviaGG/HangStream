@@ -414,12 +414,13 @@
         <div id="approval-status" style="margin-bottom:24px;"></div>
 
         <!-- Step 1: Sign in with Google -->
-        <div id="step-1" class="setup-step" data-step="1">
+        <div id="step-1" class="setup-step" data-step="1" style="display:block;">
           <div class="step-number">Step 1</div>
           <h2>Sign in with Google</h2>
-          <p style="color:var(--text-muted);margin-bottom:20px;">Sign in to access your streamer account and save your settings.</p>
+          <p style="color:var(--text-muted);margin-bottom:20px;">Sign in with Google to check if your application is approved.</p>
           <div id="step-1-content">
             <a class="btn btn-primary" href="/oauth/google" target="_blank" rel="noopener">Sign in with Google</a>
+            <p style="margin-top:16px;color:var(--text-muted);font-size:13px;">New streamer? <a href="/apply" style="color:var(--accent);">Apply here</a></p>
           </div>
         </div>
 
@@ -689,89 +690,41 @@
         updateThemeToggle(savedTheme);
       })();
 
-      // Check authentication status
+      // Check authentication status AND approval
       async function checkAuth() {
         try {
           const response = await fetch('/auth/check');
           const data = await response.json();
           
           if (!data.authenticated) {
-            // Not authenticated - show sign-in prompt and hide settings
-            document.querySelector('section.hero').style.display = 'none';
-            document.querySelector('aside.panel.sidebar').style.display = 'none';
-            document.querySelector('section.section-grid').style.display = 'none';
-            
-            const page = document.querySelector('.page');
-            page.innerHTML = `
-              <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:40px;">
-                <h1 style="font-size:48px;margin:0 0 16px 0;">🔐 Sign In Required</h1>
-                <p style="color:var(--text-muted);font-size:18px;margin:0 0 32px 0;">You must sign in with Google to access streamer settings.</p>
-                <a href="/auth/google" class="btn btn-primary" style="padding:16px 32px;font-size:18px;">Sign in with Google</a>
-                <p style="margin-top:24px;color:var(--text-muted);font-size:14px;"><a href="/" style="color:var(--accent);">Return to homepage</a></p>
-              </div>
-            `;
-            return false;
+            // Not authenticated - return false so they stay on Step 1
+            return { authenticated: false, approved: false, hasApplication: false };
           }
           
-          return true;
+          // Authenticated - check if approved
+          const appResponse = await fetch('/streamers?email=' + encodeURIComponent(data.email));
+          const appData = await appResponse.json();
+          
+          // Check if application exists and its status
+          const application = appData.applications && appData.applications.find(app => 
+            app.email === data.email
+          );
+          
+          if (!application) {
+            // No application - not approved
+            return { authenticated: true, approved: false, hasApplication: false };
+          } else if (application.status === 'approved') {
+            // Approved
+            return { authenticated: true, approved: true, hasApplication: true };
+          } else {
+            // Has application but not approved (pending or rejected)
+            return { authenticated: true, approved: false, hasApplication: true, applicationStatus: application.status };
+          }
         } catch (error) {
           console.error('Auth check failed:', error);
-          return false;
+          return { authenticated: false, approved: false, hasApplication: false };
         }
       }
-
-      // Check streamer approval status
-      (async function() {
-        const isAuthenticated = await checkAuth();
-        if (isAuthenticated) {
-          checkApprovalStatus();
-        }
-      })();
-
-      async function checkApprovalStatus() {
-        try {
-          const response = await fetch('/streamer/status');
-          const data = await response.json();
-          const statusDiv = document.getElementById('approval-status');
-
-          if (data.status === 'not_found') {
-            statusDiv.innerHTML = `
-              <div style="background: rgba(255, 190, 85, 0.1); border: 1px solid var(--warning); border-radius: 16px; padding: 16px;">
-                <div style="font-weight: 700; color: var(--warning); margin-bottom: 8px;">📝 Application Required</div>
-                <div style="color: var(--text-muted); font-size: 13px;">You need to submit a streamer application to access the dashboard. <a href="/apply" style="color: var(--accent); font-weight: 600;">Apply now</a></div>
-              </div>
-            `;
-          } else if (data.status === 'pending') {
-            statusDiv.innerHTML = `
-              <div style="background: rgba(255, 190, 85, 0.1); border: 1px solid var(--warning); border-radius: 16px; padding: 16px;">
-                <div style="font-weight: 700; color: var(--warning); margin-bottom: 8px;">⏳ Application Pending</div>
-                <div style="color: var(--text-muted); font-size: 13px;">Your application is under review. You'll receive an email once it's approved.</div>
-              </div>
-            `;
-          } else if (data.status === 'approved') {
-            statusDiv.innerHTML = `
-              <div style="background: rgba(37, 194, 122, 0.1); border: 1px solid var(--good); border-radius: 16px; padding: 16px;">
-                <div style="font-weight: 700; color: var(--good); margin-bottom: 8px;">✅ Application Approved</div>
-                <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">Your application has been approved! Here's your API key:</div>
-                <div style="background: var(--bg-alt); padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; word-break: break-all; color: var(--good); margin-bottom: 8px;">
-                  ${data.apiKey}
-                </div>
-                <div style="color: var(--text-muted); font-size: 12px;">Use this key to authenticate your dashboard connection.</div>
-              </div>
-            `;
-          } else if (data.status === 'rejected') {
-            statusDiv.innerHTML = `
-              <div style="background: rgba(255, 77, 77, 0.1); border: 1px solid #ff4d4d; border-radius: 16px; padding: 16px;">
-                <div style="font-weight: 700; color: #ff4d4d; margin-bottom: 8px;">❌ Application Rejected</div>
-                <div style="color: var(--text-muted); font-size: 13px;">Unfortunately, your application was not approved. Please contact support for more information.</div>
-              </div>
-            `;
-          }
-        } catch (err) {
-          console.error('Error checking approval status', err);
-        }
-      }
-
       // start connection
       connect();
       
@@ -780,43 +733,124 @@
     })();
 
     async function initStepFlow() {
-      const isAuthenticated = await checkAuth();
-      
-      if (isAuthenticated) {
-        showStep(2);
-        showAdditionalSettings();
-      } else {
+      try {
+        const authStatus = await checkAuth();
+        
+        if (authStatus.authenticated && authStatus.approved) {
+          // Approved - show full setup
+          showStep(2);
+          showAdditionalSettings();
+        } else if (authStatus.authenticated && !authStatus.approved) {
+          // Authenticated but not approved
+          if (authStatus.hasApplication) {
+            // Has application but pending/rejected
+            showApprovalStatus(authStatus.applicationStatus);
+          } else {
+            // No application - show message to apply
+            showApplyMessage();
+          }
+        } else {
+          // Not authenticated - show Step 1
+          showStep(1);
+        }
+
+        // Set up link URLs (only if approved)
+        if (authStatus.approved) {
+          const streamerId = getStreamerId();
+          if (streamerId) {
+            const baseUrl = window.location.origin;
+            const overlayUrlDisplay = document.getElementById('overlay-url-display');
+            if (overlayUrlDisplay) {
+              overlayUrlDisplay.textContent = `${baseUrl}/overlay/${encodeURIComponent(streamerId.replace('@', ''))}`;
+            }
+            const gameUrlDisplay = document.getElementById('game-url-display');
+            if (gameUrlDisplay) {
+              gameUrlDisplay.textContent = `${baseUrl}/viewer/${encodeURIComponent(streamerId.replace('@', ''))}`;
+            }
+          }
+
+          // Copy button listeners - only set up when elements exist
+          const copyOverlayBtn = document.getElementById('copy-overlay-btn');
+          if (copyOverlayBtn) {
+            copyOverlayBtn.addEventListener('click', () => {
+              copyToClipboard(document.getElementById('overlay-url-display').textContent);
+            });
+          }
+
+          const copyGameBtn = document.getElementById('copy-game-btn');
+          if (copyGameBtn) {
+            copyGameBtn.addEventListener('click', () => {
+              copyToClipboard(document.getElementById('game-url-display').textContent);
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing step flow:', error);
+        // On error, ensure step 1 is visible
         showStep(1);
       }
+    }
 
-      // Set up link URLs
-      const streamerId = getStreamerId();
-      if (streamerId) {
-        const baseUrl = window.location.origin;
-        document.getElementById('overlay-url-display').textContent = `${baseUrl}/overlay/${encodeURIComponent(streamerId.replace('@', ''))}`;
-        document.getElementById('game-url-display').textContent = `${baseUrl}/viewer/${encodeURIComponent(streamerId.replace('@', ''))}`;
+    function showApprovalStatus(status) {
+      // Hide all steps
+      document.querySelectorAll('.setup-step').forEach(step => {
+        step.style.display = 'none';
+      });
+      
+      const statusDiv = document.getElementById('approval-status');
+      if (statusDiv) {
+        if (status === 'pending') {
+          statusDiv.innerHTML = `
+            <div style="background: rgba(124, 92, 255, 0.1); border: 1px solid var(--accent-2); border-radius: 16px; padding: 16px;">
+              <div style="font-weight: 700; color: var(--accent-2); margin-bottom: 8px;">⏳ Application Pending</div>
+              <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">Your application is currently under review. We'll get back to you soon!</div>
+            </div>
+          `;
+        } else if (status === 'rejected') {
+          statusDiv.innerHTML = `
+            <div style="background: rgba(255, 77, 77, 0.1); border: 1px solid #ff4d4d; border-radius: 16px; padding: 16px;">
+              <div style="font-weight: 700; color: #ff4d4d; margin-bottom: 8px;">❌ Application Rejected</div>
+              <div style="color: var(--text-muted); font-size: 13px;">Unfortunately, your application was not approved. Please contact support for more information.</div>
+            </div>
+          `;
+        }
       }
+    }
 
-      // Copy button listeners
-      document.getElementById('copy-overlay-btn').addEventListener('click', () => {
-        copyToClipboard(document.getElementById('overlay-url-display').textContent);
+    function showApplyMessage() {
+      // Hide all steps
+      document.querySelectorAll('.setup-step').forEach(step => {
+        step.style.display = 'none';
       });
-
-      document.getElementById('copy-game-btn').addEventListener('click', () => {
-        copyToClipboard(document.getElementById('game-url-display').textContent);
-      });
+      
+      const statusDiv = document.getElementById('approval-status');
+      if (statusDiv) {
+        statusDiv.innerHTML = `
+          <div style="background: rgba(124, 92, 255, 0.1); border: 1px solid var(--accent-2); border-radius: 16px; padding: 16px;">
+            <div style="font-weight: 700; color: var(--accent-2); margin-bottom: 8px;">📝 Apply to Become a Streamer</div>
+            <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">You need to submit an application before accessing streamer settings.</div>
+            <a href="/apply" class="btn btn-primary" style="display:inline-block;padding:12px 24px;margin-top:8px;">Apply Now</a>
+          </div>
+        `;
+      }
     }
 
     function showStep(stepNum) {
       document.querySelectorAll('.setup-step').forEach(step => {
         step.style.display = 'none';
       });
-      document.getElementById(`step-${stepNum}`).style.display = 'block';
+      const stepElement = document.getElementById(`step-${stepNum}`);
+      if (stepElement) {
+        stepElement.style.display = 'block';
+      }
     }
 
     function showAdditionalSettings() {
-      document.getElementById('score-combination-section').style.display = 'block';
-      document.getElementById('viewer-participation-section').style.display = 'block';
+      const scoreComboSection = document.getElementById('score-combination-section');
+      if (scoreComboSection) scoreComboSection.style.display = 'block';
+      
+      const viewerPartSection = document.getElementById('viewer-participation-section');
+      if (viewerPartSection) viewerPartSection.style.display = 'block';
       
       // Initialize website play toggle
       const websitePlayToggle = document.getElementById('website-play-toggle');
