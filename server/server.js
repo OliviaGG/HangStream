@@ -34,6 +34,10 @@ const port = process.env.PORT || 8080;
 const viewerPath = path.join(__dirname, '..', 'public', 'index.html');
 const homepagePath = path.join(__dirname, '..', 'public', 'homepage.html');
 const settingsPath = path.join(__dirname, '..', 'public', 'streamer-settings.html');
+const profilePath = path.join(__dirname, '..', 'public', 'profile.html');
+const leaderboardPath = path.join(__dirname, '..', 'public', 'leaderboard.html');
+const applyPath = path.join(__dirname, '..', 'public', 'apply.html');
+const adminPath = path.join(__dirname, '..', 'public', 'admin.html');
 const termsPath = path.join(__dirname, '..', 'public', 'terms.html');
 const privacyPath = path.join(__dirname, '..', 'public', 'privacy.html');
 
@@ -1254,6 +1258,86 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Get all approved streamers
+  if (pathname === '/streamers' && req.method === 'GET') {
+    const accounts = loadStreamerAccounts();
+    const streamers = Object.entries(accounts).map(([email, data]) => ({
+      email,
+      platform: data.platform,
+      handle: data.handle,
+      apiKey: data.api_key ? 'configured' : 'not configured'
+    }));
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(streamers));
+    return;
+  }
+
+  // Get scores for specific streamer
+  if (pathname === '/scores' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const { streamerId } = JSON.parse(body);
+        const streamerScores = loadViewerScoresForOwner(streamerId);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(streamerScores));
+      } catch (error) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: 'Invalid request' }));
+      }
+    });
+    return;
+  }
+
+  // Update streamer settings
+  if (pathname === '/streamer/settings' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const { scoreCombination } = JSON.parse(body);
+        const owner = getOwnerKey(req, '');
+        
+        if (owner) {
+          const accounts = loadStreamerAccounts();
+          
+          // Find the account by owner (email or streamer ID)
+          let accountKey = null;
+          if (accounts[owner]) {
+            accountKey = owner;
+          } else {
+            // Try to find by email if owner is a streamer ID
+            for (const [email, account] of Object.entries(accounts)) {
+              if (account.handle === owner || email === owner) {
+                accountKey = email;
+                break;
+              }
+            }
+          }
+          
+          if (accountKey) {
+            accounts[accountKey].score_combination = scoreCombination;
+            saveStreamerAccounts(accounts);
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ success: true }));
+          } else {
+            res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ error: 'Streamer not found' }));
+          }
+        } else {
+          res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Not authenticated' }));
+        }
+      } catch (error) {
+        console.error('Error updating settings:', error);
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: 'Invalid request' }));
+      }
+    });
+    return;
+  }
+
   // Stripe donation checkout
   if (pathname === '/donate/create-checkout' && req.method === 'POST') {
     if (!stripe) {
@@ -1369,6 +1453,18 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Check authentication status
+  if (pathname === '/auth/check' && req.method === 'GET') {
+    const cookies = parseCookies(req.headers.cookie);
+    const isAuthenticated = !!(cookies.owner && cookies.google_email);
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({
+      authenticated: isAuthenticated,
+      email: cookies.google_email || null
+    }));
+    return;
+  }
+
   // Get donation history
   if (pathname === '/donate/history' && req.method === 'GET') {
     const donations = loadDonations();
@@ -1418,6 +1514,26 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (urlPath === '/profile' || urlPath === '/profile.html') {
+    sendFile(res, profilePath, 'text/html; charset=utf-8');
+    return;
+  }
+
+  if (urlPath === '/leaderboard' || urlPath === '/leaderboard.html') {
+    sendFile(res, leaderboardPath, 'text/html; charset=utf-8');
+    return;
+  }
+
+  if (urlPath === '/apply' || urlPath === '/apply.html') {
+    sendFile(res, applyPath, 'text/html; charset=utf-8');
+    return;
+  }
+
+  if (urlPath === '/admin' || urlPath === '/admin.html') {
+    sendFile(res, adminPath, 'text/html; charset=utf-8');
+    return;
+  }
+
   if (urlPath === '/custom-words.json') {
     sendFile(res, path.join(__dirname, '..', 'public', 'custom-words.json'), 'application/json; charset=utf-8');
     return;
@@ -1431,7 +1547,7 @@ const server = http.createServer((req, res) => {
     if (fs.existsSync(privacyPath)) { sendFile(res, privacyPath, 'text/html; charset=utf-8'); return; }
   }
 
-  const isSingleSegmentRoute = /^\/[^/]+\/?$/.test(urlPath) && !/[.]/.test(urlPath) && !/^\/(viewer|streamer|oauth|auth|scores|score|music|terms|privacy)(\/|$)/.test(urlPath);
+  const isSingleSegmentRoute = /^\/[^/]+\/?$/.test(urlPath) && !/[.]/.test(urlPath) && !/^\/(viewer|streamer|profile|leaderboard|apply|admin|oauth|auth|scores|score|music|terms|privacy)(\/|$)/.test(urlPath);
   if (isSingleSegmentRoute) {
     sendFile(res, viewerPath, 'text/html; charset=utf-8');
     return;

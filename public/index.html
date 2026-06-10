@@ -706,7 +706,7 @@
       </select>
       <button id="viewer-login-btn" class="settings-btn">Sign in with Google</button>
       <button id="theme-btn" class="theme-btn">Dark mode</button>
-      <button id="donate-btn" class="settings-btn" style="color:var(--accent);">❤ Donate</button>
+      <a href="#" id="donate-btn" onclick="openDonationModal();return false;" style="color:var(--text-muted);text-decoration:none;font-size:14px;padding:8px 12px;border-radius:8px;transition:all 0.2s;cursor:pointer;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-muted)'">❤ Donate</a>
       <button id="streamer-settings-btn" class="settings-btn">⚙ Streamer Settings</button>
     </div>
   </div>
@@ -1299,9 +1299,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('streamer-settings-btn')
     .addEventListener('click', () => window.open('/streamer', '_blank', 'noopener'));
-
-  document.getElementById('donate-btn')
-    .addEventListener('click', openDonationModal);
 
   document.getElementById('btn-revive')
     .addEventListener('click', revive);

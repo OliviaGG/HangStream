@@ -160,6 +160,9 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
+      max-height: 600px;
+      overflow-y: auto;
+      padding-right: 8px;
     }
 
     .leaderboard-item {
@@ -262,7 +265,14 @@
 
     <div class="tabs">
       <div class="tab active" data-tab="global">🌍 Global</div>
-      <div class="tab" data-tab="room">🏠 Current Room</div>
+      <div class="tab" data-tab="room">🎮 Streamer Leaderboard</div>
+    </div>
+
+    <div id="streamer-selector" style="display:none;margin-bottom:20px;">
+      <label style="color:var(--text-muted);font-size:14px;margin-bottom:8px;display:block;">Select Streamer:</label>
+      <select id="streamer-dropdown" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--panel-border);background:var(--bg-elevated);color:var(--text);font-size:16px;cursor:pointer;">
+        <option value="">-- Choose a streamer --</option>
+      </select>
     </div>
 
     <div class="panel">
@@ -310,6 +320,11 @@
       }
 
       let scores = tab === 'global' ? scoresData.globalScores : scoresData.roomScores;
+      renderScores(scores, tab);
+    }
+
+    function renderScores(scores, tab) {
+      const container = document.getElementById('leaderboard-content');
 
       // Convert to array and sort by score
       const sortedScores = Object.entries(scores || {})
@@ -326,7 +341,8 @@
         return;
       }
 
-      const top10 = sortedScores.slice(0, 10);
+      // Show all scores with scrollbar
+      const allScores = sortedScores;
       const profileCache = {};
 
       async function loadProfileName(id) {
@@ -347,11 +363,11 @@
       container.innerHTML = '<div class="loading">Loading players...</div>';
 
       // Load profile names for all players
-      const namePromises = top10.map(item => loadProfileName(item.id));
+      const namePromises = allScores.map(item => loadProfileName(item.id));
       Promise.all(namePromises).then(names => {
         container.innerHTML = `
           <div class="leaderboard-list">
-            ${top10.map((item, index) => {
+            ${allScores.map((item, index) => {
               const rank = index + 1;
               let rankClass = 'default';
               if (rank === 1) rankClass = 'gold';
@@ -394,8 +410,66 @@
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         currentTab = tab.dataset.tab;
+        
+        // Show/hide streamer selector
+        const selector = document.getElementById('streamer-selector');
+        if (currentTab === 'room') {
+          selector.style.display = 'block';
+          loadStreamers();
+        } else {
+          selector.style.display = 'none';
+        }
+        
         renderLeaderboard(currentTab);
       });
+    });
+
+    // Load streamers for dropdown
+    async function loadStreamers() {
+      try {
+        const res = await fetch('/streamers');
+        if (!res.ok) {
+          console.error('Failed to load streamers');
+          return;
+        }
+        const streamers = await res.json();
+        const dropdown = document.getElementById('streamer-dropdown');
+        dropdown.innerHTML = '<option value="">-- Choose a streamer --</option>';
+        
+        streamers.forEach(streamer => {
+          const option = document.createElement('option');
+          option.value = streamer.email;
+          option.textContent = `${streamer.platform}: ${streamer.handle}`;
+          dropdown.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Failed to load streamers', error);
+      }
+    }
+
+    // Load scores for selected streamer
+    document.getElementById('streamer-dropdown').addEventListener('change', async (e) => {
+      const streamerId = e.target.value;
+      if (!streamerId) {
+        renderLeaderboard('room'); // Reset to room scores
+        return;
+      }
+      
+      try {
+        const res = await fetch('/scores', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ streamerId })
+        });
+        if (!res.ok) {
+          console.error('Failed to load streamer scores');
+          return;
+        }
+        const scores = await res.json();
+        renderScores(scores, 'room');
+      } catch (error) {
+        console.error('Failed to load streamer scores', error);
+      }
     });
 
     // Theme toggle with localStorage persistence

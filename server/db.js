@@ -70,8 +70,17 @@ function initializeSchema() {
       api_key TEXT UNIQUE,
       platform TEXT NOT NULL,
       handle TEXT NOT NULL,
+      score_combination TEXT DEFAULT 'combined',
       created_at INTEGER DEFAULT (strftime('%s', 'now'))
     )`);
+
+    // Add score_combination column if it doesn't exist
+    db.run(`ALTER TABLE streamer_accounts ADD COLUMN score_combination TEXT DEFAULT 'combined'`, (err) => {
+      // Ignore error if column already exists
+      if (err && !err.message.includes('duplicate column name')) {
+        console.error('Error adding score_combination column:', err.message);
+      }
+    });
 
     // Donations table
     db.run(`CREATE TABLE IF NOT EXISTS donations (

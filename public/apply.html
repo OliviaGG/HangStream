@@ -398,8 +398,86 @@
     <a href="/privacy" style="color:var(--text-muted);text-decoration:none;">Privacy</a>
     <a href="/terms" style="color:var(--text-muted);text-decoration:none;">Terms</a>
     <a href="https://github.com/hangstream/hangstream" target="_blank" rel="noopener" style="color:var(--text-muted);text-decoration:none;">GitHub</a>
+    <a href="#" onclick="openDonationModal();return false;" style="color:var(--text-muted);text-decoration:none;">❤ Donate</a>
   </div>
 </footer>
+
+<!-- Donation Modal -->
+<div id="donation-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:2000;align-items:center;justify-content:center;">
+  <div style="background:var(--panel);padding:32px;border-radius:24px;max-width:400px;width:90%;border:1px solid var(--border);position:relative;">
+    <button onclick="closeDonationModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text-muted);font-size:24px;cursor:pointer;">×</button>
+    <h2 style="margin:0 0 16px 0;">Support HangStream</h2>
+    <p style="color:var(--text-muted);margin-bottom:24px;">Your donation helps keep HangStream running and free for streamers.</p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
+      <button class="donation-amount-btn" data-amount="5" style="padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;transition:all 0.2s;">$5</button>
+      <button class="donation-amount-btn" data-amount="10" style="padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;transition:all 0.2s;">$10</button>
+      <button class="donation-amount-btn" data-amount="20" style="padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;transition:all 0.2s;">$20</button>
+      <button class="donation-amount-btn" data-amount="50" style="padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;transition:all 0.2s;">$50</button>
+      <button class="donation-amount-btn" data-amount="100" style="padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;transition:all 0.2s;">$100</button>
+      <button class="donation-amount-btn" data-amount="custom" style="padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;transition:all 0.2s;">Custom</button>
+    </div>
+    <input type="number" id="donation-amount-input" placeholder="Custom amount" min="1" step="1" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg-elevated);color:var(--text);margin-bottom:16px;display:none;">
+    <div style="display:flex;gap:12px;">
+      <button id="cancel-donation" style="flex:1;padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;">Cancel</button>
+      <button id="confirm-donation" style="flex:1;padding:12px;border-radius:12px;background:var(--accent);border:none;color:white;cursor:pointer;font-weight:600;">Donate</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Donation modal functionality
+  function openDonationModal() {
+    document.getElementById('donation-modal').style.display = 'flex';
+  }
+
+  function closeDonationModal() {
+    document.getElementById('donation-modal').style.display = 'none';
+    document.getElementById('donation-amount-input').style.display = 'none';
+  }
+
+  document.querySelectorAll('.donation-amount-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const amount = btn.dataset.amount;
+      if (amount === 'custom') {
+        document.getElementById('donation-amount-input').style.display = 'block';
+        document.getElementById('donation-amount-input').focus();
+      } else {
+        document.getElementById('donation-amount-input').style.display = 'none';
+        processDonation(amount);
+      }
+    });
+  });
+
+  document.getElementById('cancel-donation').addEventListener('click', closeDonationModal);
+
+  document.getElementById('confirm-donation').addEventListener('click', () => {
+    const input = document.getElementById('donation-amount-input');
+    const amount = input.value ? input.value : document.querySelector('.donation-amount-btn[data-amount="custom"]').textContent;
+    if (amount && amount > 0) {
+      processDonation(amount);
+    }
+  });
+
+  function processDonation(amount) {
+    fetch('/donate/create-checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount, viewerId: '', viewerName: '' })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert('Donation system not configured. Please contact the administrator.');
+      }
+    })
+    .catch(err => {
+      console.error('Donation error:', err);
+      alert('Error processing donation. Please try again.');
+    });
+  }
+</script>
 
 </body>
 </html>

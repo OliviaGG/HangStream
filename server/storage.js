@@ -339,6 +339,7 @@ function loadStreamerAccounts(callback) {
         api_key: row.api_key,
         platform: row.platform,
         handle: row.handle,
+        score_combination: row.score_combination || 'combined',
         created_at: row.created_at
       };
     }
@@ -348,7 +349,7 @@ function loadStreamerAccounts(callback) {
 }
 
 function saveStreamerAccounts(accounts) {
-  const stmt = db.prepare('INSERT OR REPLACE INTO streamer_accounts (email, password_hash, api_key, platform, handle, created_at) VALUES (?, ?, ?, ?, ?, ?)');
+  const stmt = db.prepare('INSERT OR REPLACE INTO streamer_accounts (email, password_hash, api_key, platform, handle, score_combination, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)');
 
   for (const [email, account] of Object.entries(accounts)) {
     stmt.run(
@@ -357,6 +358,7 @@ function saveStreamerAccounts(accounts) {
       account.api_key || null,
       account.platform,
       account.handle,
+      account.score_combination || 'combined',
       account.created_at || Math.floor(Date.now() / 1000)
     );
   }
