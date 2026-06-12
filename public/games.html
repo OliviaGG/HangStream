@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PPSHEVKZK8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-PPSHEVKZK8');
+  </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Library - HangStream</title>
+<style id="inline-shared">
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap');
+
+  :root {
+    --bg: #0e0e12;
+    --bg-elevated: #0b0b0f;
+    --panel: #1a1a22;
+    --panel-strong: #20202a;
+    --text: #f0ede8;
+    --text-muted: #888;
+    --muted: #666;
+    --border: #2a2a35;
+    --accent: #ff4d6d;
+    --accent-hover: #ff6b85;
+    --good: #2ecc71;
+    --bad: #ff7a7a;
+    --secondary: #3a3a45;
+    color-scheme: dark;
+  }
+
+  body[data-theme="light"] {
+    --bg: #f5f0ea;
+    --bg-elevated: #efe8e1;
+    --panel: #ffffff;
+    --panel-strong: #f8f2ec;
+    --text: #1f1f28;
+    --text-muted: #5c5c68;
+    --muted: #6f6f7c;
+    --border: #d7cfc6;
+    --accent: #c93f5c;
+    --accent-hover: #e15a76;
+    --good: #1f8f53;
+    --bad: #c74444;
+    --secondary: #7b7681;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at top left, rgba(255, 77, 109, 0.10), transparent 28%),
+      radial-gradient(circle at top right, rgba(124, 92, 255, 0.10), transparent 24%),
+      linear-gradient(180deg, color-mix(in srgb, var(--bg) 90%, #000 10%), var(--bg));
+    color: var(--text);
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+    overflow-x: hidden;
+    padding: 20px;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.14);
+    margin-bottom: 24px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .logo {
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .logo span { color: var(--text); }
+
+  .theme-btn {
+    background: color-mix(in srgb, var(--panel) 80%, transparent);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 8px 14px;
+    border-radius: 14px;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    transition: all 0.15s;
+    min-width: 104px;
+  }
+
+  .theme-btn:hover { color: var(--text); border-color: var(--secondary); }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .page-title {
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin-bottom: 32px;
+    text-align: center;
+  }
+
+  .games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 20px;
+  }
+
+  .game-card {
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.14);
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    transition: all 0.2s;
+  }
+
+  .game-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .game-icon {
+    width: 64px;
+    height: 64px;
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    border: 1px solid var(--accent);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+  }
+
+  .game-name {
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .game-description {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .game-modes {
+    display: flex;
+    gap: 12px;
+    margin-top: auto;
+  }
+
+  .mode-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .mode-btn.solo {
+    background: color-mix(in srgb, var(--panel) 70%, transparent);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .mode-btn.solo:hover {
+    background: var(--panel-strong);
+    border-color: var(--secondary);
+  }
+
+  .mode-btn.online {
+    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+    border: none;
+    color: #fff;
+  }
+
+  .mode-btn.online:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+  }
+
+  .player-count {
+    font-size: 11px;
+    font-weight: 400;
+    opacity: 0.9;
+  }
+
+  .live-indicator {
+    width: 8px;
+    height: 8px;
+    background: var(--good);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  @media (max-width: 640px) {
+    body { padding: 12px; }
+    .topbar { margin-bottom: 16px; }
+    .games-grid { grid-template-columns: 1fr; }
+    .game-modes { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/" class="logo">HANG<span>STREAM</span></a>
+  <button id="theme-btn" class="theme-btn">Dark mode</button>
+</div>
+
+<div class="container">
+  <h1 class="page-title">GAME LIBRARY</h1>
+
+  <div class="games-grid" id="games-grid">
+    <!-- Games will be added here -->
+  </div>
+</div>
+
+<script>
+let currentTheme = 'dark';
+
+const GAMES = [
+  {
+    id: 'hangman',
+    name: 'Hangman',
+    icon: '🎯',
+    description: 'Classic hangman game with chat integration. Guess the word letter by letter before running out of lives.',
+    soloPath: '/hangman/solo',
+    onlinePath: '/hangman/online'
+  },
+  {
+    id: 'spelling-bee',
+    name: 'Spelling Bee',
+    icon: '🐝',
+    description: 'Create words from 7 letters. No center letter required - make as many words as you can!',
+    soloPath: '/spelling-bee/solo',
+    onlinePath: '/spelling-bee/online'
+  }
+];
+
+function getThemeStorageKey() {
+  return 'hangstream-game-theme';
+}
+
+function applyTheme(themeName) {
+  currentTheme = themeName || 'dark';
+  document.body.setAttribute('data-theme', currentTheme);
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = currentTheme === 'light' ? 'Light mode' : 'Dark mode';
+  try { localStorage.setItem(getThemeStorageKey(), currentTheme); } catch (e) {}
+}
+
+function toggleTheme() {
+  applyTheme(currentTheme === 'light' ? 'dark' : 'light');
+}
+
+function renderGames() {
+  const grid = document.getElementById('games-grid');
+  if (!grid) return;
+  
+  grid.innerHTML = GAMES.map(game => `
+    <div class="game-card">
+      <div class="game-icon">${game.icon}</div>
+      <div>
+        <div class="game-name">${game.name}</div>
+        <div class="game-description">${game.description}</div>
+      </div>
+      <div class="game-modes">
+        <a href="${game.soloPath}" class="mode-btn solo">
+          <span>🎮 Solo</span>
+          <span style="font-size: 11px; opacity: 0.7;">Play alone</span>
+        </a>
+        <a href="${game.onlinePath}" class="mode-btn online">
+          <span style="display: flex; align-items: center; gap: 6px;">
+            <span class="live-indicator"></span>
+            <span>Online</span>
+          </span>
+          <span class="player-count" id="player-count-${game.id}">Loading...</span>
+        </a>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function updatePlayerCounts() {
+  for (const game of GAMES) {
+    try {
+      const response = await fetch(`/game-count/${game.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        const countEl = document.getElementById(`player-count-${game.id}`);
+        if (countEl) {
+          const count = data.count || 0;
+          countEl.textContent = count === 0 ? 'No players' : `${count} playing`;
+        }
+      }
+    } catch (e) {
+      const countEl = document.getElementById(`player-count-${game.id}`);
+      if (countEl) countEl.textContent = '--';
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('theme-btn')
+    .addEventListener('click', toggleTheme);
+  
+  applyTheme(localStorage.getItem(getThemeStorageKey()) || 'dark');
+  renderGames();
+  updatePlayerCounts();
+  
+  // Update player counts every 10 seconds
+  setInterval(updatePlayerCounts, 10000);
+});
+</script>
+
+</body>
+</html>

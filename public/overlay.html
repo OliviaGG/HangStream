@@ -173,6 +173,105 @@
     letter-spacing: 2px;
     margin-bottom: 8px;
   }
+
+  .leaderboard-overlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(14, 14, 18, 0.95);
+    border: 2px solid var(--accent);
+    border-radius: 20px;
+    padding: 24px 32px;
+    max-width: 500px;
+    width: 90%;
+    backdrop-filter: blur(18px);
+    z-index: 1000;
+    display: none;
+  }
+
+  .leaderboard-overlay.visible {
+    display: block;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+
+  .leaderboard-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: var(--text);
+    text-align: center;
+  }
+
+  .leaderboard-subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .leaderboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .leaderboard-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 12px 16px;
+    border-radius: 12px;
+  }
+
+  .leaderboard-rank {
+    font-size: 24px;
+    font-weight: 700;
+    width: 40px;
+    text-align: center;
+  }
+
+  .leaderboard-rank.rank-1 { color: #ffd700; }
+  .leaderboard-rank.rank-2 { color: #c0c0c0; }
+  .leaderboard-rank.rank-3 { color: #cd7f32; }
+
+  .leaderboard-name {
+    flex: 1;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .leaderboard-score {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--good);
+  }
+
+  .leaderboard-footer {
+    text-align: center;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .leaderboard-close {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
 </style>
 </head>
 <body>
@@ -197,6 +296,19 @@
 
   <div class="word-row" id="word-row"></div>
   <div class="keyboard" id="keyboard"></div>
+
+  <!-- Round Leaderboard Overlay -->
+  <div class="leaderboard-overlay" id="leaderboard-overlay">
+    <div class="leaderboard-title">🏆 Round Leaderboard</div>
+    <div class="leaderboard-subtitle">Top performers this round</div>
+    <div class="leaderboard-list" id="leaderboard-list">
+      <!-- Leaderboard items will be added dynamically -->
+    </div>
+    <div class="leaderboard-footer">
+      <button class="leaderboard-close" onclick="hideLeaderboard()">Close</button>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -422,6 +534,57 @@ function connectWebSocket() {
     console.warn('Overlay WebSocket error', e);
     ws.close();
   });
+}
+
+// Leaderboard functions
+function showLeaderboard(scores) {
+  const overlay = document.getElementById('leaderboard-overlay');
+  const list = document.getElementById('leaderboard-list');
+  
+  if (!overlay || !list) return;
+  
+  // Sort by score (descending)
+  const sortedScores = scores.sort((a, b) => b.score - a.score).slice(0, 5);
+  
+  list.innerHTML = '';
+  
+  sortedScores.forEach((item, index) => {
+    const div = document.createElement('div');
+    div.className = 'leaderboard-item';
+    div.innerHTML = `
+      <div class="leaderboard-rank rank-${index + 1}">${index + 1}</div>
+      <div class="leaderboard-name">${item.name}</div>
+      <div class="leaderboard-score">${item.score} pts</div>
+    `;
+    list.appendChild(div);
+  });
+  
+  overlay.classList.add('visible');
+  
+  // Auto-hide after 8 seconds
+  setTimeout(() => {
+    hideLeaderboard();
+  }, 8000);
+}
+
+function hideLeaderboard() {
+  const overlay = document.getElementById('leaderboard-overlay');
+  if (overlay) {
+    overlay.classList.remove('visible');
+  }
+}
+
+// Listen for leaderboard events from WebSocket
+ws.addEventListener('message', (event) => {
+  try {
+    const data = JSON.parse(event.data);
+    if (data.type === 'leaderboard' && data.scores) {
+      showLeaderboard(data.scores);
+    }
+  } catch (e) {
+    console.warn('Failed to parse leaderboard message', e);
+  }
+});
 }
 
 // Initialize

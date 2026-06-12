@@ -40,6 +40,8 @@ const applyPath = path.join(__dirname, '..', 'public', 'apply.html');
 const adminPath = path.join(__dirname, '..', 'public', 'admin.html');
 const termsPath = path.join(__dirname, '..', 'public', 'terms.html');
 const privacyPath = path.join(__dirname, '..', 'public', 'privacy.html');
+const gamesPath = path.join(__dirname, '..', 'public', 'games.html');
+const spellingBeePath = path.join(__dirname, '..', 'public', 'spelling-bee.html');
 
 const CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY || '';
 const CLIENT_SECRET = process.env.TIKTOK_CLIENT_SECRET || '';
@@ -61,6 +63,12 @@ const SPOTIFY_REDIRECT = process.env.SPOTIFY_REDIRECT_URI || `http://localhost:$
 const stripeKey = process.env.STRIPE_SECRET_KEY;
 const stripe = stripeKey && stripeKey !== 'sk_test_your_key_here' && stripeKey !== 'sk_live_your_key_here' ? require('stripe')(stripeKey) : null;
 const stripePublishableKey = (stripe && process.env.STRIPE_PUBLISHABLE_KEY) || '';
+
+// Game player count tracking
+const gamePlayers = {
+  'hangman': new Set(),
+  'spelling-bee': new Set()
+};
 
 // Environment validation
 function validateEnvironment() {
@@ -1480,6 +1488,53 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Game player count endpoint
+  if (pathname.match(/^\/game-count\/.+/) && req.method === 'GET') {
+    const gameId = pathname.replace('/game-count/', '').split('/')[0];
+    const players = gamePlayers[gameId] || new Set();
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ count: players.size }));
+    return;
+  }
+
+  // Game join endpoint
+  if (pathname.match(/^\/game-join\/.+/) && req.method === 'POST') {
+    const gameId = pathname.replace('/game-join/', '').split('/')[0];
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        const sessionId = data.sessionId;
+        if (sessionId && gamePlayers[gameId]) {
+          gamePlayers[gameId].add(sessionId);
+        }
+      } catch (e) {}
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ success: true }));
+    });
+    return;
+  }
+
+  // Game leave endpoint
+  if (pathname.match(/^\/game-leave\/.+/) && req.method === 'POST') {
+    const gameId = pathname.replace('/game-leave/', '').split('/')[0];
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        const sessionId = data.sessionId;
+        if (sessionId && gamePlayers[gameId]) {
+          gamePlayers[gameId].delete(sessionId);
+        }
+      } catch (e) {}
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ success: true }));
+    });
+    return;
+  }
+
   // TikTok verification file
   if (pathname === '/tiktokoD3TMQr0cbojRXpxHpI8gUC9FGfCea6m.txt' || pathname === '/.well-known/tiktokoD3TMQr0cbojRXpxHpI8gUC9FGfCea6m.txt') {
     sendFile(res, path.join(__dirname, '..', 'public', 'tiktokoD3TMQr0cbojRXpxHpI8gUC9FGfCea6m.txt'), 'text/plain; charset=utf-8');
@@ -1545,6 +1600,38 @@ const server = http.createServer((req, res) => {
 
   if (urlPath === '/privacy' || urlPath === '/privacy.html') {
     if (fs.existsSync(privacyPath)) { sendFile(res, privacyPath, 'text/html; charset=utf-8'); return; }
+  }
+
+  if (urlPath === '/games' || urlPath === '/games.html' || urlPath === '/library') {
+    sendFile(res, gamesPath, 'text/html; charset=utf-8');
+    return;
+  }
+
+  if (urlPath === '/spelling-bee' || urlPath === '/spelling-bee.html') {
+    sendFile(res, spellingBeePath, 'text/html; charset=utf-8');
+    return;
+  }
+
+  // Solo game routes
+  if (urlPath === '/hangman/solo' || urlPath === '/hangman/solo/') {
+    sendFile(res, viewerPath, 'text/html; charset=utf-8');
+    return;
+  }
+
+  if (urlPath === '/spelling-bee/solo' || urlPath === '/spelling-bee/solo/') {
+    sendFile(res, spellingBeePath, 'text/html; charset=utf-8');
+    return;
+  }
+
+  // Online game routes
+  if (urlPath === '/hangman/online' || urlPath === '/hangman/online/') {
+    sendFile(res, viewerPath, 'text/html; charset=utf-8');
+    return;
+  }
+
+  if (urlPath === '/spelling-bee/online' || urlPath === '/spelling-bee/online/') {
+    sendFile(res, spellingBeePath, 'text/html; charset=utf-8');
+    return;
   }
 
   const isSingleSegmentRoute = /^\/[^/]+\/?$/.test(urlPath) && !/[.]/.test(urlPath) && !/^\/(viewer|streamer|profile|leaderboard|apply|admin|oauth|auth|scores|score|music|terms|privacy)(\/|$)/.test(urlPath);

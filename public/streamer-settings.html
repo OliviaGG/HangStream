@@ -534,6 +534,46 @@
             <p style="margin-top:8px;color:var(--text-muted);font-size:13px;">When disabled, viewers can only play via your live stream chat.</p>
           </div>
         </div>
+
+        <!-- Game Selection (only show after step 1) -->
+        <div id="game-selection-section" class="setup-step" style="margin-top:32px;display:none;">
+          <h3 style="margin:0 0 12px 0;">Game Selection</h3>
+          <p style="color:var(--text-muted);margin-bottom:16px;">Choose which game to play on your stream. Each game has its own difficulty settings.</p>
+          <div style="margin-top:16px;">
+            <label style="display:block;cursor:pointer;margin-bottom:8px;">
+              <input type="radio" name="game-selection" value="hangman" style="width:18px;height:18px;accent-color:var(--accent);">
+              <span style="font-size:14px;margin-left:8px;">🎯 Hangman - Classic letter-guessing game</span>
+            </label>
+            <label style="display:block;cursor:pointer;margin-bottom:12px;">
+              <input type="radio" name="game-selection" value="spelling-bee" style="width:18px;height:18px;accent-color:var(--accent);">
+              <span style="font-size:14px;margin-left:8px;">🐝 Spelling Bee - Path-based word formation</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Game Difficulty Settings (only show after step 1) -->
+        <div id="game-difficulty-section" class="setup-step" style="margin-top:32px;display:none;">
+          <h3 style="margin:0 0 12px 0;">Game Difficulty</h3>
+          <p style="color:var(--text-muted);margin-bottom:16px;">Set the difficulty level for your chosen game.</p>
+          <div style="margin-top:16px;">
+            <label style="display:block;cursor:pointer;margin-bottom:8px;">
+              <input type="radio" name="game-difficulty" value="easy" style="width:18px;height:18px;accent-color:var(--accent);">
+              <span style="font-size:14px;margin-left:8px;">Easy - Shorter words, more common letters</span>
+            </label>
+            <label style="display:block;cursor:pointer;margin-bottom:8px;">
+              <input type="radio" name="game-difficulty" value="normal" style="width:18px;height:18px;accent-color:var(--accent);">
+              <span style="font-size:14px;margin-left:8px;">Normal - Standard gameplay</span>
+            </label>
+            <label style="display:block;cursor:pointer;margin-bottom:8px;">
+              <input type="radio" name="game-difficulty" value="medium" style="width:18px;height:18px;accent-color:var(--accent);">
+              <span style="font-size:14px;margin-left:8px;">Medium - Challenging words</span>
+            </label>
+            <label style="display:block;cursor:pointer;margin-bottom:12px;">
+              <input type="radio" name="game-difficulty" value="hard" style="width:18px;height:18px;accent-color:var(--accent);">
+              <span style="font-size:14px;margin-left:8px;">Hard - Complex words, longer requirements</span>
+            </label>
+          </div>
+        </div>
       </div>
     </section>
   </main>
@@ -632,6 +672,56 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ scoreCombination: combination })
+          }).catch(err => console.error('Failed to save setting:', err));
+        } catch (e) {}
+      }
+
+      function getSelectedGame() {
+        const streamerId = getStreamerId() || '';
+        const key = `hangstream-selected-game:${streamerId}`;
+        try {
+          const value = localStorage.getItem(key);
+          return value || 'hangman'; // Default to hangman
+        } catch (e) {
+          return 'hangman';
+        }
+      }
+
+      function setSelectedGame(game) {
+        const streamerId = getStreamerId() || '';
+        const key = `hangstream-selected-game:${streamerId}`;
+        try {
+          localStorage.setItem(key, game);
+          // Send to server via API
+          fetch('/streamer/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ selectedGame: game })
+          }).catch(err => console.error('Failed to save setting:', err));
+        } catch (e) {}
+      }
+
+      function getGameDifficulty() {
+        const streamerId = getStreamerId() || '';
+        const key = `hangstream-game-difficulty:${streamerId}`;
+        try {
+          const value = localStorage.getItem(key);
+          return value || 'normal'; // Default to normal
+        } catch (e) {
+          return 'normal';
+        }
+      }
+
+      function setGameDifficulty(difficulty) {
+        const streamerId = getStreamerId() || '';
+        const key = `hangstream-game-difficulty:${streamerId}`;
+        try {
+          localStorage.setItem(key, difficulty);
+          // Send to server via API
+          fetch('/streamer/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ gameDifficulty: difficulty })
           }).catch(err => console.error('Failed to save setting:', err));
         } catch (e) {}
       }
@@ -861,6 +951,12 @@
       const viewerPartSection = document.getElementById('viewer-participation-section');
       if (viewerPartSection) viewerPartSection.style.display = 'block';
       
+      const gameSelectionSection = document.getElementById('game-selection-section');
+      if (gameSelectionSection) gameSelectionSection.style.display = 'block';
+      
+      const gameDifficultySection = document.getElementById('game-difficulty-section');
+      if (gameDifficultySection) gameDifficultySection.style.display = 'block';
+      
       // Initialize website play toggle
       const websitePlayToggle = document.getElementById('website-play-toggle');
       if (websitePlayToggle) {
@@ -878,6 +974,30 @@
           radio.checked = radio.value === currentCombination;
           radio.addEventListener('change', (e) => {
             setScoreCombination(e.target.value);
+          });
+        });
+      }
+
+      // Initialize game selection radio buttons
+      const gameSelectionRadios = document.querySelectorAll('input[name="game-selection"]');
+      if (gameSelectionRadios.length > 0) {
+        const currentGame = getSelectedGame();
+        gameSelectionRadios.forEach(radio => {
+          radio.checked = radio.value === (currentGame || 'hangman');
+          radio.addEventListener('change', (e) => {
+            setSelectedGame(e.target.value);
+          });
+        });
+      }
+
+      // Initialize game difficulty radio buttons
+      const gameDifficultyRadios = document.querySelectorAll('input[name="game-difficulty"]');
+      if (gameDifficultyRadios.length > 0) {
+        const currentDifficulty = getGameDifficulty();
+        gameDifficultyRadios.forEach(radio => {
+          radio.checked = radio.value === (currentDifficulty || 'normal');
+          radio.addEventListener('change', (e) => {
+            setGameDifficulty(e.target.value);
           });
         });
       }
