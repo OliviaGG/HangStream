@@ -42,6 +42,7 @@ const termsPath = path.join(__dirname, '..', 'public', 'terms.html');
 const privacyPath = path.join(__dirname, '..', 'public', 'privacy.html');
 const gamesPath = path.join(__dirname, '..', 'public', 'games.html');
 const spellingBeePath = path.join(__dirname, '..', 'public', 'spelling-bee.html');
+const speedScramblePath = path.join(__dirname, '..', 'public', 'speed-scramble.html');
 
 const CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY || '';
 const CLIENT_SECRET = process.env.TIKTOK_CLIENT_SECRET || '';
@@ -67,7 +68,8 @@ const stripePublishableKey = (stripe && process.env.STRIPE_PUBLISHABLE_KEY) || '
 // Game player count tracking
 const gamePlayers = {
   'hangman': new Set(),
-  'spelling-bee': new Set()
+  'spelling-bee': new Set(),
+  'speed-scramble': new Set()
 };
 
 // Environment validation
@@ -301,6 +303,10 @@ async function createMusicRequest(owner, query, user, opts) {
 function getOwnerKey(req, fallbackOwner = '') {
   const cookies = parseCookies(req.headers.cookie);
   return String(cookies.owner || fallbackOwner || '').trim();
+}
+
+function generateApiKey() {
+  return crypto.randomBytes(32).toString('hex');
 }
 
 function spotifyAuthHeader() {
@@ -1304,7 +1310,7 @@ const server = http.createServer((req, res) => {
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
       try {
-        const { scoreCombination } = JSON.parse(body);
+        const { scoreCombination, selectedGame, gameDifficulty } = JSON.parse(body);
         const owner = getOwnerKey(req, '');
         
         if (owner) {
@@ -1326,6 +1332,8 @@ const server = http.createServer((req, res) => {
           
           if (accountKey) {
             accounts[accountKey].score_combination = scoreCombination;
+            if (selectedGame) accounts[accountKey].selected_game = selectedGame;
+            if (gameDifficulty) accounts[accountKey].game_difficulty = gameDifficulty;
             saveStreamerAccounts(accounts);
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify({ success: true }));
@@ -1339,6 +1347,245 @@ const server = http.createServer((req, res) => {
         }
       } catch (error) {
         console.error('Error updating settings:', error);
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: 'Invalid request' }));
+      }
+    });
+    return;
+  }
+
+  // Streamer application endpoint
+  if (pathname === '/streamer/apply' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const { name, email, twitchHandle, tiktokHandle, note } = JSON.parse(body);
+        
+        // Validate required fields
+        if (!name || !email || !note) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Name, email, and note are required' }));
+          return;
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Invalid email address' }));
+          return;
+        }
+
+        // Load existing applications
+        const applicationsPath = path.join(__dirname, 'streamer-applications.json');
+        let applications = {};
+        try {
+          if (fs.existsSync(applicationsPath)) {
+            const data = fs.readFileSync(applicationsPath, 'utf8');
+            applications = JSON.parse(data);
+          }
+        } catch (e) {
+          console.error('Error loading applications:', e);
+        }
+
+        // Check if email already has an application
+        if (applications[email]) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'An application with this email already exists' }));
+          return;
+        }
+
+        // Create new application
+        applications[email] = {
+          name,
+          email,
+          twitchHandle: twitchHandle || null,
+          tiktokHandle: tiktokHandle || null,
+          note,
+          status: 'pending',
+          submittedAt: new Date().toISOString()
+        };
+
+        // Save applications
+        try {
+          fs.writeFileSync(applicationsPath, JSON.stringify(applications, null, 2));
+          console.log(`New application from ${email} (${name})`);
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: true, message: 'Application submitted successfully' }));
+        } catch (e) {
+          console.error('Error saving application:', e);
+          res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Failed to save application' }));
+        }
+      } catch (error) {
+        console.error('Error processing application:', error);
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: 'Invalid request' }));
+      }
+    });
+    return;
+  }
+
+  // Admin: Get all applications
+  if (pathname === '/admin/applications' && req.method === 'GET') {
+    const applicationsPath = path.join(__dirname, 'streamer-applications.json');
+    let applications = {};
+    try {
+      if (fs.existsSync(applicationsPath)) {
+        const data = fs.readFileSync(applicationsPath, 'utf8');
+        applications = JSON.parse(data);
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ applications }));
+    } catch (e) {
+      console.error('Error loading applications:', e);
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Failed to load applications' }));
+    }
+    return;
+  }
+
+  // Admin: Approve application
+  if (pathname === '/admin/applications/approve' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const { email } = JSON.parse(body);
+        
+        if (!email) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Email is required' }));
+          return;
+        }
+
+        const applicationsPath = path.join(__dirname, 'streamer-applications.json');
+        const accountsPath = path.join(__dirname, 'streamer-accounts.json');
+        
+        let applications = {};
+        let accounts = {};
+        
+        try {
+          if (fs.existsSync(applicationsPath)) {
+            const data = fs.readFileSync(applicationsPath, 'utf8');
+            applications = JSON.parse(data);
+          }
+        } catch (e) {
+          console.error('Error loading applications:', e);
+        }
+        
+        try {
+          if (fs.existsSync(accountsPath)) {
+            const data = fs.readFileSync(accountsPath, 'utf8');
+            accounts = JSON.parse(data);
+          }
+        } catch (e) {
+          console.error('Error loading accounts:', e);
+        }
+
+        if (!applications[email]) {
+          res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Application not found' }));
+          return;
+        }
+
+        if (applications[email].status !== 'pending') {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Application has already been processed' }));
+          return;
+        }
+
+        const app = applications[email];
+        
+        // Generate API key
+        const apiKey = generateApiKey();
+        
+        // Create streamer account
+        accounts[email] = {
+          email: app.email,
+          name: app.name,
+          handle: app.twitchHandle || app.tiktokHandle || app.email.split('@')[0],
+          twitch_handle: app.twitchHandle || null,
+          tiktok_handle: app.tiktokHandle || null,
+          api_key: apiKey,
+          created_at: new Date().toISOString(),
+          score_combination: 'combined'
+        };
+        
+        // Update application status
+        applications[email].status = 'approved';
+        applications[email].approvedAt = new Date().toISOString();
+        applications[email].apiKey = apiKey;
+        
+        // Save both files
+        try {
+          fs.writeFileSync(applicationsPath, JSON.stringify(applications, null, 2));
+          fs.writeFileSync(accountsPath, JSON.stringify(accounts, null, 2));
+          console.log(`Approved application from ${email}`);
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: true, apiKey }));
+        } catch (e) {
+          console.error('Error saving:', e);
+          res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Failed to approve application' }));
+        }
+      } catch (error) {
+        console.error('Error approving application:', error);
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: 'Invalid request' }));
+      }
+    });
+    return;
+  }
+
+  // Admin: Reject application
+  if (pathname === '/admin/applications/reject' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const { email } = JSON.parse(body);
+        
+        if (!email) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Email is required' }));
+          return;
+        }
+
+        const applicationsPath = path.join(__dirname, 'streamer-applications.json');
+        let applications = {};
+        
+        try {
+          if (fs.existsSync(applicationsPath)) {
+            const data = fs.readFileSync(applicationsPath, 'utf8');
+            applications = JSON.parse(data);
+          }
+        } catch (e) {
+          console.error('Error loading applications:', e);
+        }
+
+        if (!applications[email]) {
+          res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Application not found' }));
+          return;
+        }
+
+        applications[email].status = 'rejected';
+        applications[email].rejectedAt = new Date().toISOString();
+        
+        try {
+          fs.writeFileSync(applicationsPath, JSON.stringify(applications, null, 2));
+          console.log(`Rejected application from ${email}`);
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: true }));
+        } catch (e) {
+          console.error('Error rejecting application:', e);
+          res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Failed to reject application' }));
+        }
+      } catch (error) {
+        console.error('Error rejecting application:', error);
         res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ error: 'Invalid request' }));
       }
@@ -1612,6 +1859,11 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (urlPath === '/speed-scramble' || urlPath === '/speed-scramble.html') {
+    sendFile(res, speedScramblePath, 'text/html; charset=utf-8');
+    return;
+  }
+
   // Solo game routes
   if (urlPath === '/hangman/solo' || urlPath === '/hangman/solo/') {
     sendFile(res, viewerPath, 'text/html; charset=utf-8');
@@ -1623,6 +1875,11 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (urlPath === '/speed-scramble/solo' || urlPath === '/speed-scramble/solo/') {
+    sendFile(res, speedScramblePath, 'text/html; charset=utf-8');
+    return;
+  }
+
   // Online game routes
   if (urlPath === '/hangman/online' || urlPath === '/hangman/online/') {
     sendFile(res, viewerPath, 'text/html; charset=utf-8');
@@ -1631,6 +1888,11 @@ const server = http.createServer((req, res) => {
 
   if (urlPath === '/spelling-bee/online' || urlPath === '/spelling-bee/online/') {
     sendFile(res, spellingBeePath, 'text/html; charset=utf-8');
+    return;
+  }
+
+  if (urlPath === '/speed-scramble/online' || urlPath === '/speed-scramble/online/') {
+    sendFile(res, speedScramblePath, 'text/html; charset=utf-8');
     return;
   }
 

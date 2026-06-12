@@ -286,6 +286,43 @@
       margin: 24px 0;
     }
 
+    .games-showcase {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 24px 0;
+    }
+
+    .mini-game-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s;
+    }
+
+    .mini-game-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .mini-game-icon {
+      font-size: 24px;
+    }
+
+    .mini-game-name {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .mini-game-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
     .letter-preview {
       width: 36px;
       height: 44px;
@@ -547,11 +584,19 @@
 
     @media (max-width: 600px) {
       .site { padding: 16px 16px 32px; }
-      header { flex-direction: column; align-items: flex-start; }
-      nav { width: 100%; }
-      .hero-content h2 { font-size: 36px; }
+      header { flex-direction: column; align-items: flex-start; gap: 16px; }
+      nav { width: 100%; flex-wrap: wrap; gap: 8px; }
+      .hero-content h2 { font-size: 28px; }
+      .hero-content p.lead { font-size: 14px; }
+      .cta-group { flex-direction: column; }
+      .btn { width: 100%; text-align: center; }
       .game-preview { max-width: 100%; }
       .stats { grid-template-columns: 1fr; }
+      .mini-game-card { padding: 12px; }
+      .mini-game-icon { font-size: 20px; }
+      .mini-game-name { font-size: 13px; }
+      .mini-game-desc { font-size: 11px; }
+      .feature-card { padding: 16px; }
     }
   </style>
 </head>
@@ -589,7 +634,7 @@
 
         <div class="stats">
           <div class="stat-item">
-            <div class="stat-number">2+</div>
+            <div class="stat-number">3+</div>
             <div class="stat-label">Games</div>
           </div>
           <div class="stat-item">
@@ -611,25 +656,27 @@
         <div class="game-preview">
           <div class="preview-header">
             <span class="preview-dot"></span>
-            <span>Live Preview</span>
+            <span>Game Library</span>
           </div>
-          <div class="word-preview">
-            <div class="letter-preview revealed">H</div>
-            <div class="letter-preview">A</div>
-            <div class="letter-preview">N</div>
-            <div class="letter-preview">G</div>
-            <div class="letter-preview revealed">M</div>
-            <div class="letter-preview">A</div>
-            <div class="letter-preview">N</div>
+          <div class="games-showcase">
+            <div class="mini-game-card">
+              <div class="mini-game-icon">🎯</div>
+              <div class="mini-game-name">Hangman</div>
+              <div class="mini-game-desc">Classic letter-guessing</div>
+            </div>
+            <div class="mini-game-card">
+              <div class="mini-game-icon">🐝</div>
+              <div class="mini-game-name">Spelling Bee</div>
+              <div class="mini-game-desc">Path-based word formation</div>
+            </div>
+            <div class="mini-game-card">
+              <div class="mini-game-icon">⚡</div>
+              <div class="mini-game-name">Speed Scramble</div>
+              <div class="mini-game-desc">Timed word unscrambling</div>
+            </div>
           </div>
-          <div class="keyboard-preview">
-            <div class="key-preview wrong">A</div>
-            <div class="key-preview active">B</div>
-            <div class="key-preview wrong">C</div>
-            <div class="key-preview active">D</div>
-            <div class="key-preview">E</div>
-            <div class="key-preview">F</div>
-            <div class="key-preview wrong">G</div>
+          <div style="text-align:center; margin-top:16px;">
+            <a href="/games" class="btn btn-secondary" style="display:inline-block;padding:10px 24px;">View All Games</a>
           </div>
         </div>
       </div>

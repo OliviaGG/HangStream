@@ -50,7 +50,7 @@
     color-scheme: light;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
   body {
     min-height: 100vh;
@@ -61,6 +61,7 @@
     color: var(--text);
     font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
     overflow: hidden;
+    touch-action: manipulation;
   }
 
   .game-wrap {
@@ -479,6 +480,10 @@
     .topbar { flex-wrap: wrap; gap: 10px; }
     .honeycomb { grid-template-columns: repeat(4, 50px); grid-template-rows: repeat(4, 50px); }
     .hex { width: 50px; height: 50px; font-size: 20px; }
+    .category-badge { display: none; }
+    .score-display { display: none; }
+    .word-input { font-size: 16px; }
+    .found-word { font-size: 14px; }
   }
 </style>
 </head>
@@ -577,6 +582,7 @@ let totalScore = 0;
 let playerSessionId = null;
 let currentPath = [];
 let isDragging = false;
+let chatWS = null;
 
 const FAKE_USERS = ["xX_gamer99_Xx","streamer_fan","tiktok_live","chat_legend","just_vibing","pro_viewer","randomdude42","hyped_up_lol","lurker_no_more","gifted_sub","nochill_andy","pogchamp99"];
 
@@ -761,6 +767,117 @@ function unregisterPlayer() {
   }).catch(() => {});
   
   playerSessionId = null;
+}
+
+// ── CHAT INTEGRATION ──
+function connectChatWebSocket() {
+  if (chatWS) return;
+  
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const wsUrl = `${proto}://${location.host}`;
+  
+  try {
+    chatWS = new WebSocket(wsUrl);
+    
+    chatWS.addEventListener('open', () => {
+      console.log('Chat WebSocket connected');
+      // Subscribe to the streamer's channel if available
+      if (state.streamerId && state.streamerId !== 'default') {
+        chatWS.send(JSON.stringify({
+          type: 'watch',
+          platform: 'both',
+          owner: state.streamerId,
+          twitchChannel: state.streamerId,
+          tiktokChannel: state.streamerId
+        }));
+      }
+    });
+    
+    chatWS.addEventListener('message', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        handleChatMessage(data);
+      } catch (e) {
+        console.error('Failed to parse chat message:', e);
+      }
+    });
+    
+    chatWS.addEventListener('close', () => {
+      console.log('Chat WebSocket disconnected, reconnecting in 5s...');
+      setTimeout(connectChatWebSocket, 5000);
+    });
+    
+    chatWS.addEventListener('error', () => {
+      console.warn('Chat WebSocket error');
+    });
+  } catch (e) {
+    console.error('Failed to create WebSocket connection:', e);
+  }
+}
+
+function handleChatMessage(data) {
+  // Update connection status
+  const twitchDot = document.getElementById('twitch-dot');
+  const twitchLabel = document.getElementById('twitch-label');
+  if (twitchDot && twitchLabel) {
+    if (data.type === 'chat' || data.type === 'status') {
+      twitchDot.classList.add('connected');
+      twitchLabel.textContent = 'CONNECTED';
+    }
+  }
+  
+  if (data.type === 'chat') {
+    const user = data.user || 'viewer';
+    const message = (data.message || '').trim().toUpperCase();
+    
+    // Add to chat feed
+    addChatMessage(user, message, 'normal');
+    
+    // Process as a potential word
+    if (message && /^[A-Z]+$/.test(message)) {
+      processChatWord(user, message);
+    }
+  }
+  
+  // Add demo mode fake chat if no real streamer
+  if (state.streamerId === 'default' && !chatInterval) {
+    startDemoChat();
+  }
+}
+
+// Demo mode chat simulation
+function startDemoChat() {
+  if (chatInterval) return;
+  
+  chatInterval = setInterval(() => {
+    const randomUser = FAKE_USERS[Math.floor(Math.random() * FAKE_USERS.length)];
+    const randomWord = ['TEST', 'GAME', 'PLAY', 'WORD', 'CHAT'][Math.floor(Math.random() * 5)];
+    addChatMessage(randomUser, randomWord, 'normal');
+  }, 5000); // Add a fake message every 5 seconds
+}
+
+function processChatWord(user, word) {
+  // Check if word is valid and not already found
+  if (foundWords.has(word)) {
+    addChatMessage(user, word, 'wrong');
+    return;
+  }
+  
+  if (!isValidWord(word)) {
+    addChatMessage(user, word, 'wrong');
+    return;
+  }
+  
+  // Found a valid word
+  foundWords.add(word);
+  const score = getWordScore(word);
+  totalScore += score;
+  
+  renderFoundWords();
+  updateScore();
+  showMessage(`${user} found ${word} (+${score})!`, 'success');
+  
+  awardPlayerPoints(user, score, word);
 }
 
 function getThemeStorageKey() {
@@ -1178,8 +1295,17 @@ if (state.gameMode === 'online') {
   registerPlayer();
 }
 
+// Connect to chat WebSocket for chat integration
+connectChatWebSocket();
+
 // Cleanup on page unload
-window.addEventListener('beforeunload', unregisterPlayer);
+window.addEventListener('beforeunload', () => {
+  unregisterPlayer();
+  if (chatWS) {
+    chatWS.close();
+    chatWS = null;
+  }
+});
 
 // Storage sync
 window.addEventListener('storage', (event) => {

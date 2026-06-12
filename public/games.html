@@ -237,9 +237,16 @@
 
   @media (max-width: 640px) {
     body { padding: 12px; }
-    .topbar { margin-bottom: 16px; }
+    .topbar { margin-bottom: 16px; flex-wrap: wrap; justify-content: center; }
+    .logo { font-size: 20px; }
     .games-grid { grid-template-columns: 1fr; }
-    .game-modes { flex-direction: column; }
+    .game-card { padding: 20px; }
+    .game-icon { font-size: 40px; }
+    .game-name { font-size: 20px; }
+    .game-description { font-size: 14px; }
+    .game-modes { flex-direction: column; gap: 8px; }
+    .mode-btn { font-size: 14px; padding: 12px 20px; }
+    .player-count { font-size: 12px; }
   }
 </style>
 </head>
@@ -277,6 +284,14 @@ const GAMES = [
     description: 'Create words from 7 letters. No center letter required - make as many words as you can!',
     soloPath: '/spelling-bee/solo',
     onlinePath: '/spelling-bee/online'
+  },
+  {
+    id: 'speed-scramble',
+    name: 'Speed Scramble',
+    icon: '⚡',
+    description: 'Race against time to unscramble words before the timer ends. Fast-paced word unscrambling game!',
+    soloPath: '/speed-scramble/solo',
+    onlinePath: '/speed-scramble/online'
   }
 ];
 

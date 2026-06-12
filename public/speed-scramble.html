@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PPSHEVKZK8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-PPSHEVKZK8');
+  </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speed Scramble - HangStream</title>
+<style id="inline-shared">
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap');
+
+  :root {
+    --bg: #0e0e12;
+    --bg-elevated: #0b0b0f;
+    --panel: #1a1a22;
+    --panel-strong: #20202a;
+    --text: #f0ede8;
+    --text-muted: #888;
+    --muted: #666;
+    --border: #2a2a35;
+    --accent: #ff4d6d;
+    --accent-hover: #ff6b85;
+    --good: #2ecc71;
+    --bad: #ff7a7a;
+    --secondary: #3a3a45;
+    color-scheme: dark;
+  }
+
+  body[data-theme="light"] {
+    --bg: #f5f0ea;
+    --bg-elevated: #efe8e1;
+    --panel: #ffffff;
+    --panel-strong: #f8f2ec;
+    --text: #1f1f28;
+    --text-muted: #5c5c68;
+    --muted: #6f6f7c;
+    --border: #d7cfc6;
+    --accent: #c93f5c;
+    --accent-hover: #e15a76;
+    --good: #1f8f53;
+    --bad: #c74444;
+    --secondary: #7b7681;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at top left, rgba(255, 77, 109, 0.10), transparent 28%),
+      radial-gradient(circle at top right, rgba(124, 92, 255, 0.10), transparent 24%),
+      linear-gradient(180deg, color-mix(in srgb, var(--bg) 90%, #000 10%), var(--bg));
+    color: var(--text);
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+
+  .game-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-rows: auto 1fr auto;
+    min-height: 100vh;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .topbar {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.14);
+  }
+
+  .logo {
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    color: var(--accent);
+  }
+
+  .logo span { color: var(--text); }
+
+  .streak-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .streak-number {
+    color: var(--accent);
+    font-size: 24px;
+  }
+
+  .category-badge {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--panel) 80%, transparent);
+  }
+
+  .game-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 36px 34px;
+    gap: 32px;
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.14);
+    min-width: 0;
+  }
+
+  .timer-ring {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 24px;
+  }
+
+  .timer-ring svg { transform: rotate(-90deg); }
+
+  .timer-circle-bg {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 6;
+  }
+
+  .timer-circle {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 6;
+    stroke-dasharray: 314;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 0.1s linear;
+    stroke-linecap: round;
+  }
+
+  .timer-number {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    color: var(--text);
+  }
+
+  .scrambled-word {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    color: var(--accent);
+    letter-spacing: 8px;
+    text-align: center;
+    min-height: 60px;
+    transition: all 0.3s;
+  }
+
+  .scrambled-word.revealing {
+    animation: revealWord 0.5s ease forwards;
+  }
+
+  @keyframes revealWord {
+    0% { opacity: 0; transform: scale(0.8); }
+    50% { opacity: 0.5; transform: scale(1.1); }
+    100% { opacity: 1; transform: scale(1); color: var(--good); }
+  }
+
+  .word-input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .word-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 18px;
+    padding: 16px;
+    width: 100%;
+    outline: none;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .word-input:focus {
+    border-color: var(--accent);
+  }
+
+  .submit-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+    color: #fff;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 14px;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: all 0.15s;
+    width: 100%;
+  }
+
+  .submit-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+  }
+
+  .sidebar {
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    display: flex;
+    flex-direction: column;
+    background: color-mix(in srgb, var(--bg-elevated) 90%, transparent);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.14);
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .sidebar-head {
+    padding: 18px 18px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    letter-spacing: 2.2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .chat-feed {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: calc(100vh - 60px);
+  }
+
+  .chat-msg {
+    font-size: 13px;
+    line-height: 1.5;
+    animation: slideIn 0.2s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .chat-user { color: var(--accent); font-weight: 700; }
+  .chat-guess { color: color-mix(in srgb, var(--text) 94%, transparent); }
+  .chat-system { color: var(--muted); font-style: italic; }
+  .chat-correct { color: var(--good); }
+  .chat-wrong { color: var(--bad); }
+
+  .player-scores {
+    margin: 12px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--bg-elevated);
+    overflow: hidden;
+  }
+
+  .player-scores-head {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .player-scores-list {
+    display: flex;
+    flex-direction: column;
+    max-height: 180px;
+    overflow: auto;
+  }
+
+  .player-score-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+  }
+
+  .player-score-row:first-child { border-top: 0; }
+  .player-score-name { color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .player-score-points { color: var(--accent); font-weight: 700; }
+
+  .settings-btn {
+    background: color-mix(in srgb, var(--panel) 80%, transparent);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 8px 14px;
+    border-radius: 14px;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    transition: all 0.15s;
+  }
+
+  .settings-btn:hover { color: var(--text); border-color: var(--secondary); }
+
+  .theme-btn {
+    background: color-mix(in srgb, var(--panel) 80%, transparent);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 8px 14px;
+    border-radius: 14px;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    transition: all 0.15s;
+    min-width: 104px;
+  }
+
+  .theme-btn:hover { color: var(--text); border-color: var(--secondary); }
+
+  .setting-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 13px;
+    padding: 8px 10px;
+    width: 100%;
+    outline: none;
+  }
+
+  .setting-input:focus { border-color: var(--accent); }
+
+  .message-box {
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    text-align: center;
+    font-size: 13px;
+  }
+
+  .message-box.success {
+    background: color-mix(in srgb, var(--good) 15%, transparent);
+    border: 1px solid var(--good);
+    color: var(--good);
+  }
+
+  .message-box.error {
+    background: color-mix(in srgb, var(--bad) 15%, transparent);
+    border: 1px solid var(--bad);
+    color: var(--bad);
+  }
+
+  .message-box.info {
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+  }
+
+  @media (max-width: 640px) {
+    body { overflow: auto; }
+    .game-wrap { grid-template-columns: 1fr; grid-template-rows: auto auto auto; padding: 12px; gap: 12px; }
+    .sidebar { border-left: 0; min-height: 260px; }
+    .game-main { padding: 24px 18px; gap: 24px; }
+    .topbar { flex-wrap: wrap; gap: 10px; }
+    .scrambled-word { font-size: 32px; letter-spacing: 4px; }
+    .timer-ring { width: 100px; height: 100px; }
+    .timer-number { font-size: 32px; }
+    .category-badge { display: none; }
+    .streak-display { display: none; }
+    .word-input-container { max-width: 100%; }
+    .word-input { font-size: 16px; }
+    .submit-btn { font-size: 16px; padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="game-wrap">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <a href="/" class="logo" style="text-decoration:none;">HANG<span>STREAM</span></a>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div class="category-badge">⚡ Speed Scramble</div>
+      <div class="streak-display">
+        Streak: <span class="streak-number" id="streak">0</span>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <select id="difficulty-select" class="setting-input" style="width:110px;">
+        <option value="easy">Easy</option>
+        <option value="normal">Normal</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+      <button id="viewer-login-btn" class="settings-btn">Sign in with Google</button>
+      <button id="theme-btn" class="theme-btn">Dark mode</button>
+      <button id="new-game-btn" class="settings-btn">New Word</button>
+    </div>
+  </div>
+
+  <!-- MAIN GAME AREA -->
+  <div class="game-area">
+    <div class="game-main">
+      <div id="message-area"></div>
+
+      <div class="timer-ring">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle class="timer-circle-bg" cx="60" cy="60" r="54"/>
+          <circle class="timer-circle" id="timer-circle" cx="60" cy="60" r="54"/>
+        </svg>
+        <div class="timer-number" id="timer-number">10</div>
+      </div>
+
+      <div class="scrambled-word" id="scrambled-word">LOADING...</div>
+
+      <div class="word-input-container">
+        <input type="text" class="word-input" id="word-input" placeholder="Type the word..." maxlength="15" autocomplete="off">
+        <button class="submit-btn" id="submit-btn">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-head">
+      <div class="live-dot"></div>
+      Chat feed
+      <span style="margin-left:auto;" class="twitch-status">
+        <span class="twitch-dot" id="twitch-dot"></span>
+        <span id="twitch-label">DEMO MODE</span>
+      </span>
+    </div>
+    <div class="player-scores">
+      <div class="player-scores-head">
+        <span>Player Scores</span>
+        <span id="player-score-status">This round</span>
+      </div>
+      <div class="player-scores-list" id="player-scores-list">
+        <div class="player-score-row"><span class="player-score-name">No points yet.</span><span class="player-score-points">0</span></div>
+      </div>
+    </div>
+    <div class="chat-feed" id="chat-feed"></div>
+  </div>
+</div>
+
+<script>
+// ── STATE VARS ──
+let config = {
+  difficulty: 'normal',
+};
+
+let state = {
+  viewerId: '',
+  viewerName: '',
+  viewerAvatar: '',
+  streamerId: getStreamerNamespace(),
+  gameMode: 'solo',
+  gameId: 'speed-scramble',
+};
+
+let currentTheme = 'dark';
+let playerScores = {};
+let currentWord = '';
+let scrambledWord = '';
+let totalScore = 0;
+let streak = 0;
+let timerInterval = null;
+let timeLeft = 10;
+let gameActive = false;
+let chatWS = null;
+let playerSessionId = null;
+
+const FAKE_USERS = ["xX_gamer99_Xx","streamer_fan","tiktok_live","chat_legend","just_vibing","pro_viewer","randomdude42","hyped_up_lol","lurker_no_more","gifted_sub","nochill_andy","pogchamp99"];
+
+// Difficulty settings
+const DIFFICULTY_SETTINGS = {
+  easy: {
+    wordLength: { min: 4, max: 5 },
+    timer: 10,
+    points: { first: 75, correct: 20, streak: 5 },
+    wordPool: 'very common',
+    scramble: 'simple'
+  },
+  normal: {
+    wordLength: { min: 5, max: 7 },
+    timer: 8,
+    points: { first: 100, correct: 25, streak: 10 },
+    wordPool: 'common',
+    scramble: 'standard'
+  },
+  medium: {
+    wordLength: { min: 7, max: 9 },
+    timer: 7,
+    points: { first: 150, correct: 35, streak: 15 },
+    wordPool: 'themed',
+    scramble: 'strong'
+  },
+  hard: {
+    wordLength: { min: 9, max: 12 },
+    timer: 5,
+    points: { first: 250, correct: 50, streak: 25 },
+    wordPool: 'rare',
+    scramble: 'double'
+  }
+};
+
+// Word pools for different difficulties
+const WORD_POOLS = {
+  'very common': ['GAME', 'PLAY', 'WORD', 'TIME', 'FAST', 'TEST', 'RUN', 'JUMP', 'WALK', 'TALK'],
+  'common': ['ACTION', 'BRAVE', 'DREAM', 'EARTH', 'FLAME', 'GREAT', 'HOUSE', 'IMAGE', 'JUMP', 'KNOW', 'LIGHT', 'MUSIC', 'NIGHT', 'OCEAN'],
+  'themed': ['FANTASY', 'JOURNEY', 'MYSTERY', 'ADVENTURE', 'TREASURE', 'KINGDOM', 'WARRIOR', 'MAGICIAN', 'DRAGON', 'CASTLE', 'QUEST'],
+  'rare': ['EXTRAORDINARY', 'PHENOMENON', 'ARCHITECTURE', 'BREATHTAKING', 'CHALLENGING', 'EXPERIENCE', 'FANTASTIC']
+};
+
+// ── UTILITY ──
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
+
+function getCookieValue(name) {
+  const escaped = String(name || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = String(document.cookie || '').match(new RegExp('(?:^|; )' + escaped + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
+function getStreamerNamespace() {
+  try {
+    const cookieOwner = getCookieValue('owner');
+    if (cookieOwner) return cookieOwner;
+  } catch (e) {}
+  try {
+    const storedOwner = localStorage.getItem('hangstream-streamer-id') || '';
+    if (storedOwner) return storedOwner;
+  } catch (e) {}
+  return 'default';
+}
+
+function getGameMode() {
+  const path = window.location.pathname;
+  if (path.includes('/online')) return 'online';
+  if (path.includes('/solo')) return 'solo';
+  return 'solo';
+}
+
+function registerPlayer() {
+  if (state.gameMode !== 'online') return;
+  
+  playerSessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+  
+  fetch(`/game-join/${state.gameId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId: playerSessionId })
+  }).catch(() => {});
+}
+
+function unregisterPlayer() {
+  if (state.gameMode !== 'online' || !playerSessionId) return;
+  
+  fetch(`/game-leave/${state.gameId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId: playerSessionId })
+  }).catch(() => {});
+  
+  playerSessionId = null;
+}
+
+function getThemeStorageKey() {
+  return `hangstream-game-theme:${getStreamerNamespace()}`;
+}
+
+function getSettingsStorageKey() {
+  return `hangstream-settings:${getStreamerNamespace()}`;
+}
+
+function saveSettings() {
+  try {
+    localStorage.setItem(getSettingsStorageKey(), JSON.stringify(config));
+  } catch (e) {}
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(getSettingsStorageKey());
+    if (raw) {
+      const saved = JSON.parse(raw);
+      if (saved && typeof saved === 'object') {
+        config = { ...config, ...saved };
+      }
+    }
+  } catch (e) {}
+}
+
+// ── THEME ──
+function applyTheme(themeName) {
+  currentTheme = themeName || 'dark';
+  document.body.setAttribute('data-theme', currentTheme);
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = currentTheme === 'light' ? 'Light mode' : 'Dark mode';
+  try { localStorage.setItem(getThemeStorageKey(), currentTheme); } catch (e) {}
+}
+
+function toggleTheme() {
+  applyTheme(currentTheme === 'light' ? 'dark' : 'light');
+}
+
+// ── GAME LOGIC ──
+function fisherYatesShuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function scrambleWord(word, type) {
+  let letters = word.split('');
+  
+  if (type === 'simple') {
+    // Just shuffle once
+    letters = fisherYatesShuffle(letters);
+  } else if (type === 'standard') {
+    // Shuffle twice
+    letters = fisherYatesShuffle(fisherYatesShuffle(letters));
+  } else if (type === 'strong') {
+    // Shuffle three times
+    letters = fisherYatesShuffle(fisherYatesShuffle(fisherYatesShuffle(letters)));
+  } else if (type === 'double') {
+    // Shuffle until no letters are in original position
+    let attempts = 0;
+    const original = [...letters];
+    do {
+      letters = fisherYatesShuffle([...letters]);
+      attempts++;
+    } while (attempts < 10 && letters.some((l, i) => l === original[i]));
+  }
+  
+  return letters.join('');
+}
+
+function selectWord(difficulty) {
+  const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.normal;
+  const wordPool = WORD_POOLS[settings.wordPool] || WORD_POOLS.common;
+  
+  // Filter words by length
+  const validWords = wordPool.filter(word => {
+    const len = word.length;
+    return len >= settings.wordLength.min && len <= settings.wordLength.max;
+  });
+  
+  if (validWords.length === 0) {
+    // Fallback to default word
+    return 'GAME';
+  }
+  
+  return validWords[Math.floor(Math.random() * validWords.length)];
+}
+
+function newGame() {
+  // Stop current timer
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  
+  // Select word based on difficulty
+  currentWord = selectWord(config.difficulty);
+  const settings = DIFFICULTY_SETTINGS[config.difficulty] || DIFFICULTY_SETTINGS.normal;
+  
+  // Scramble the word
+  scrambledWord = scrambleWord(currentWord, settings.scramble);
+  
+  // Reset timer
+  timeLeft = settings.timer;
+  gameActive = true;
+  
+  renderWord();
+  updateTimer();
+  startTimer();
+  clearMessage();
+  
+  // Clear input
+  const input = document.getElementById('word-input');
+  if (input) {
+    input.value = '';
+    input.focus();
+  }
+}
+
+function renderWord() {
+  const wordEl = document.getElementById('scrambled-word');
+  if (wordEl) {
+    wordEl.textContent = scrambledWord;
+    wordEl.classList.remove('revealing');
+  }
+}
+
+function revealWord() {
+  const wordEl = document.getElementById('scrambled-word');
+  if (wordEl) {
+    wordEl.textContent = currentWord;
+    wordEl.classList.add('revealing');
+  }
+}
+
+function startTimer() {
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay();
+    
+    if (timeLeft <= 0) {
+      endRound(false);
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const timerNumber = document.getElementById('timer-number');
+  const timerCircle = document.getElementById('timer-circle');
+  
+  if (timerNumber) {
+    timerNumber.textContent = timeLeft;
+  }
+  
+  if (timerCircle) {
+    const circumference = 2 * Math.PI * 54;
+    const offset = circumference * (1 - timeLeft / 10); // Assuming max 10 seconds
+    timerCircle.style.strokeDashoffset = offset;
+  }
+}
+
+function submitAnswer() {
+  if (!gameActive) {
+    newGame();
+    return;
+  }
+  
+  const input = document.getElementById('word-input');
+  if (!input) return;
+  
+  const answer = input.value.toUpperCase().trim();
+  
+  if (!answer) return;
+  
+  if (answer === currentWord) {
+    correctAnswer();
+  } else {
+    wrongAnswer();
+  }
+  
+  input.value = '';
+}
+
+function correctAnswer() {
+  gameActive = false;
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  
+  const settings = DIFFICULTY_SETTINGS[config.difficulty] || DIFFICULTY_SETTINGS.normal;
+  const points = streak > 0 ? settings.points.correct + settings.points.streak : settings.points.first;
+  
+  streak++;
+  totalScore += points;
+  
+  revealWord();
+  updateStreak();
+  updateScore();
+  showMessage(`Correct! +${points} points!`, 'success');
+  
+  if (state.viewerName) {
+    awardPlayerPoints(state.viewerName, points, currentWord);
+  }
+  
+  addChatMessage(state.viewerName || 'Player', currentWord, 'correct');
+  
+  // Auto-start next round after delay
+  setTimeout(newGame, 3000);
+}
+
+function wrongAnswer() {
+  streak = 0;
+  updateStreak();
+  showMessage('Wrong! Try again', 'error');
+  
+  addChatMessage(state.viewerName || 'Player', 'Wrong guess', 'wrong');
+}
+
+function endRound(success) {
+  gameActive = false;
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  
+  revealWord();
+  
+  if (!success) {
+    streak = 0;
+    updateStreak();
+    showMessage(`Time's up! The word was ${currentWord}`, 'error');
+  }
+  
+  // Auto-start next round
+  setTimeout(newGame, 3000);
+}
+
+function updateScore() {
+  const scoreDisplay = document.querySelector('.streak-display');
+  if (scoreDisplay) {
+    scoreDisplay.innerHTML = `Score: <span class="streak-number" id="total-score">${totalScore}</span> Streak: <span class="streak-number" id="streak">${streak}</span>`;
+  }
+}
+
+function updateStreak() {
+  const streakEl = document.getElementById('streak');
+  if (streakEl) {
+    streakEl.textContent = streak;
+  }
+}
+
+// ── CHAT INTEGRATION ──
+function connectChatWebSocket() {
+  if (chatWS) return;
+  
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const wsUrl = `${proto}://${location.host}`;
+  
+  try {
+    chatWS = new WebSocket(wsUrl);
+    
+    chatWS.addEventListener('open', () => {
+      console.log('Chat WebSocket connected');
+      if (state.streamerId && state.streamerId !== 'default') {
+        chatWS.send(JSON.stringify({
+          type: 'watch',
+          platform: 'both',
+          owner: state.streamerId,
+          twitchChannel: state.streamerId,
+          tiktokChannel: state.streamerId
+        }));
+      }
+    });
+    
+    chatWS.addEventListener('message', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        handleChatMessage(data);
+      } catch (e) {
+        console.error('Failed to parse chat message:', e);
+      }
+    });
+    
+    chatWS.addEventListener('close', () => {
+      console.log('Chat WebSocket disconnected, reconnecting in 5s...');
+      setTimeout(connectChatWebSocket, 5000);
+    });
+    
+    chatWS.addEventListener('error', () => {
+      console.warn('Chat WebSocket error');
+    });
+  } catch (e) {
+    console.error('Failed to create WebSocket connection:', e);
+  }
+}
+
+function handleChatMessage(data) {
+  const twitchDot = document.getElementById('twitch-dot');
+  const twitchLabel = document.getElementById('twitch-label');
+  if (twitchDot && twitchLabel) {
+    if (data.type === 'chat' || data.type === 'status') {
+      twitchDot.classList.add('connected');
+      twitchLabel.textContent = 'CONNECTED';
+    }
+  }
+  
+  if (data.type === 'chat') {
+    const user = data.user || 'viewer';
+    const message = (data.message || '').trim().toUpperCase();
+    
+    addChatMessage(user, message, 'normal');
+    
+    // Process as a potential answer
+    if (message && /^[A-Z]+$/.test(message)) {
+      processChatAnswer(user, message);
+    }
+  }
+}
+
+function processChatAnswer(user, answer) {
+  if (!gameActive || !answer) return;
+  
+  if (answer === currentWord) {
+    correctAnswer();
+  } else {
+    addChatMessage(user, `Guessed: ${answer}`, 'wrong');
+  }
+}
+
+// ── CHAT FEED ──
+function addChatMessage(user, message, type = 'normal') {
+  const feed = document.getElementById('chat-feed');
+  if (!feed) return;
+  
+  const msg = document.createElement('div');
+  msg.className = 'chat-msg';
+  
+  if (type === 'correct') {
+    msg.innerHTML = `<span class="chat-user">${escapeHtml(user)}</span> found <span class="chat-correct">${escapeHtml(message)}</span>`;
+  } else if (type === 'wrong') {
+    msg.innerHTML = `<span class="chat-user">${escapeHtml(user)}</span> tried <span class="chat-wrong">${escapeHtml(message)}</span>`;
+  } else {
+    msg.innerHTML = `<span class="chat-user">${escapeHtml(user)}</span>: <span class="chat-guess">${escapeHtml(message)}</span>`;
+  }
+  
+  feed.appendChild(msg);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+// ── PLAYER SCORES ──
+function renderPlayerScores() {
+  const list = document.getElementById('player-scores-list');
+  if (!list) return;
+  const entries = Object.entries(playerScores)
+    .filter(([, points]) => Number(points) > 0)
+    .sort((a, b) => Number(b[1]) - Number(a[1]) || a[0].localeCompare(b[0]));
+  if (!entries.length) {
+    list.innerHTML = '<div class="player-score-row"><span class="player-score-name">No points yet.</span><span class="player-score-points">0</span></div>';
+    return;
+  }
+  list.innerHTML = entries.map(([name, points]) => {
+    return `<div class="player-score-row"><span class="player-score-name">${escapeHtml(name)}</span><span class="player-score-points">${points}</span></div>`;
+  }).join('');
+}
+
+function awardPlayerPoints(username, points, note) {
+  const name = String(username || '').trim() || 'viewer';
+  const current = Number(playerScores[name]) || 0;
+  playerScores[name] = current + Math.max(0, Number(points) || 0);
+  renderPlayerScores();
+}
+
+// ── MESSAGES ──
+function showMessage(text, type) {
+  const area = document.getElementById('message-area');
+  if (!area) return;
+  
+  area.innerHTML = `<div class="message-box ${type}">${text}</div>`;
+  
+  setTimeout(() => {
+    area.innerHTML = '';
+  }, 3000);
+}
+
+function clearMessage() {
+  const area = document.getElementById('message-area');
+  if (area) area.innerHTML = '';
+}
+
+// ── EVENT LISTENERS ──
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('theme-btn')
+    .addEventListener('click', toggleTheme);
+
+  document.getElementById('new-game-btn')
+    .addEventListener('click', newGame);
+
+  document.getElementById('submit-btn')
+    .addEventListener('click', submitAnswer);
+
+  const difficultySelect = document.getElementById('difficulty-select');
+  if (difficultySelect) {
+    difficultySelect.value = config.difficulty || 'normal';
+    difficultySelect.addEventListener('change', (e) => {
+      config.difficulty = e.target.value || 'normal';
+      saveSettings();
+      newGame();
+    });
+  }
+
+  const wordInput = document.getElementById('word-input');
+  if (wordInput) {
+    wordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') submitAnswer();
+    });
+  }
+});
+
+// ── INIT ──
+loadSettings();
+state.gameMode = getGameMode();
+applyTheme(localStorage.getItem(getThemeStorageKey()) || 'dark');
+newGame();
+
+if (state.gameMode === 'online') {
+  registerPlayer();
+}
+
+connectChatWebSocket();
+
+window.addEventListener('beforeunload', () => {
+  unregisterPlayer();
+  if (chatWS) {
+    chatWS.close();
+    chatWS = null;
+  }
+  if (timerInterval) {
+    clearInterval(timerInterval);
+  }
+});
+
+window.addEventListener('storage', (event) => {
+  if (event.key === getSettingsStorageKey()) loadSettings();
+  if (event.key === getThemeStorageKey()) applyTheme(event.newValue || 'dark');
+});
+</script>
+
+</body>
+</html>
