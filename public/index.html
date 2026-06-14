@@ -461,6 +461,35 @@
 
   .btn-skip:hover { color: var(--text-muted); border-color: var(--secondary); }
 
+  .streamer-hint-btn {
+    background: color-mix(in srgb, var(--panel) 70%, transparent);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: all 0.15s;
+  }
+
+  .streamer-hint-btn:hover {
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+
+  .streamer-answer {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin: 16px 0;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: var(--accent);
+    text-align: center;
+  }
+
   .win-box .revival-title { color: var(--good); }
   .win-box { border-color: var(--good); }
 
@@ -826,6 +855,10 @@
     </div>
 
     <div class="game-main">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+        <!-- Streamer-only hint button -->
+        <button id="streamer-hint-btn" class="streamer-hint-btn" style="display:none;" onclick="toggleStreamerHint()">👁️ Show Answer</button>
+      </div>
       <svg class="hangman-container" viewBox="0 0 200 180">
         <line class="hm-gallows" x1="20" y1="170" x2="100" y2="170"/>
         <line class="hm-gallows" x1="40" y1="170" x2="40" y2="20"/>
@@ -840,6 +873,7 @@
       </svg>
 
       <div class="word-row" id="word-row"></div>
+      <div id="streamer-answer" class="streamer-answer" style="display:none;"></div>
       <div class="keyboard" id="keyboard"></div>
     </div>
   </div>
@@ -1247,6 +1281,35 @@ function newGame() {
   buildKeyboard();
   updateHangmanParts();
   hideOverlay();
+
+  // Update streamer hint with new word
+  updateStreamerHint();
+
+  // Broadcast new game event to overlay
+  if (gameWs && gameWs.readyState === WebSocket.OPEN) {
+    gameWs.send(JSON.stringify({ type: 'newGame', word: currentWord }));
+  }
+}
+
+function toggleStreamerHint() {
+  const answer = document.getElementById('streamer-answer');
+  const btn = document.getElementById('streamer-hint-btn');
+  if (!answer || !btn) return;
+
+  if (answer.style.display === 'none') {
+    answer.style.display = '';
+    btn.textContent = '🙈 Hide Answer';
+  } else {
+    answer.style.display = 'none';
+    btn.textContent = '👁️ Show Answer';
+  }
+}
+
+function updateStreamerHint() {
+  const answer = document.getElementById('streamer-answer');
+  if (answer) {
+    answer.textContent = currentWord;
+  }
 }
 
 function prepareMasked(word) {
@@ -1346,6 +1409,11 @@ function showWin() {
   if (overlay) overlay.classList.add('show');
   if (winSection) winSection.style.display = '';
   if (revival) revival.style.display = 'none';
+
+  // Broadcast game over event to overlay with the correct word (win is also a game over)
+  if (gameWs && gameWs.readyState === WebSocket.OPEN) {
+    gameWs.send(JSON.stringify({ type: 'gameOver', word: activeWord }));
+  }
 }
 
 function showGameOver() {
@@ -1358,6 +1426,11 @@ function showGameOver() {
   if (revival) revival.style.display = '';
   // FIX: textContent used (not innerHTML) — safe, no escaping needed
   if (reveal) reveal.textContent = activeWord;
+
+  // Broadcast game over event to overlay with the correct word
+  if (gameWs && gameWs.readyState === WebSocket.OPEN) {
+    gameWs.send(JSON.stringify({ type: 'gameOver', word: activeWord }));
+  }
 }
 
 function hideOverlay() {
@@ -1485,8 +1558,64 @@ try { initMobileUI(); } catch (e) {}
 setTimeout(refreshScoresFromServer, 1000);
 setInterval(refreshScoresFromServer, 30 * 1000);
 
+// Initialize streamer hint (only show if user is streamer)
+setTimeout(initStreamerHint, 500);
+
 // FIX: newGame() chained after words load instead of racing with a setTimeout
 loadCustomWordsFile().then(() => newGame()).catch(() => newGame());
+
+// WebSocket connection for streaming game state to overlay
+let gameWs = null;
+const streamerNamespace = getStreamerNamespace();
+
+// Show streamer hint button if user is the streamer
+function initStreamerHint() {
+  const hintBtn = document.getElementById('streamer-hint-btn');
+  if (!hintBtn) return;
+
+  // Check if user is the streamer (has owner cookie matching namespace)
+  const owner = getOwnerKey();
+  if (owner && owner === streamerNamespace) {
+    hintBtn.style.display = '';
+  }
+}
+
+if (state.gameMode === 'online' && streamerNamespace) {
+  function connectGameWebSocket() {
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const url = `${proto}://${location.host}`;
+
+    gameWs = new WebSocket(url);
+    gameWs.addEventListener('open', () => {
+      console.log('Game WebSocket connected');
+      gameWs.send(JSON.stringify({ type: 'watch', platform: 'both', channel: streamerNamespace, owner: streamerNamespace }));
+    });
+
+    gameWs.addEventListener('message', (ev) => {
+      try {
+        const data = JSON.parse(ev.data || '{}');
+        if (data && data.type === 'requestGameState') {
+          // Send current game state to requesting client
+          if (currentWord) {
+            gameWs.send(JSON.stringify({ type: 'gameState', word: currentWord }));
+          }
+        }
+      } catch (e) { console.warn('Invalid WS message', e); }
+    });
+
+    gameWs.addEventListener('close', () => {
+      console.log('Game WebSocket disconnected, reconnecting in 5s...');
+      setTimeout(connectGameWebSocket, 5000);
+    });
+
+    gameWs.addEventListener('error', (e) => {
+      console.warn('Game WebSocket error', e);
+      gameWs.close();
+    });
+  }
+
+  connectGameWebSocket();
+}
 
 if (state.gameMode === 'online') {
   registerPlayer();

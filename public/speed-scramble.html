@@ -434,6 +434,35 @@
     .word-input { font-size: 16px; }
     .submit-btn { font-size: 16px; padding: 16px; }
   }
+
+  .streamer-hint-btn {
+    background: color-mix(in srgb, var(--panel) 70%, transparent);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: all 0.15s;
+  }
+
+  .streamer-hint-btn:hover {
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+
+  .streamer-answer {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin: 16px 0;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: var(--accent);
+    text-align: center;
+  }
 </style>
 </head>
 <body>
@@ -465,6 +494,10 @@
   <!-- MAIN GAME AREA -->
   <div class="game-area">
     <div class="game-main">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+        <!-- Streamer-only hint button -->
+        <button id="streamer-hint-btn" class="streamer-hint-btn" style="display:none;" onclick="toggleStreamerHint()">👁️ Show Answer</button>
+      </div>
       <div id="message-area"></div>
 
       <div class="timer-ring">
@@ -476,6 +509,8 @@
       </div>
 
       <div class="scrambled-word" id="scrambled-word">LOADING...</div>
+
+      <div id="streamer-answer" class="streamer-answer" style="display:none;"></div>
 
       <div class="word-input-container">
         <input type="text" class="word-input" id="word-input" placeholder="Type the word..." maxlength="15" autocomplete="off">
@@ -740,6 +775,7 @@ function newGame() {
   gameActive = true;
   
   renderWord();
+  updateStreamerHint();
   updateTimer();
   startTimer();
   clearMessage();
@@ -749,6 +785,39 @@ function newGame() {
   if (input) {
     input.value = '';
     input.focus();
+  }
+}
+
+function toggleStreamerHint() {
+  const answer = document.getElementById('streamer-answer');
+  const btn = document.getElementById('streamer-hint-btn');
+  if (!answer || !btn) return;
+
+  if (answer.style.display === 'none') {
+    answer.style.display = '';
+    btn.textContent = '🙈 Hide Answer';
+  } else {
+    answer.style.display = 'none';
+    btn.textContent = '👁️ Show Answer';
+  }
+}
+
+function updateStreamerHint() {
+  const answer = document.getElementById('streamer-answer');
+  if (answer) {
+    answer.textContent = currentWord;
+  }
+}
+
+function initStreamerHint() {
+  const hintBtn = document.getElementById('streamer-hint-btn');
+  if (!hintBtn) return;
+
+  // Check if user is the streamer (has owner cookie matching namespace)
+  const streamerNamespace = getStreamerNamespace();
+  const owner = getCookieValue('owner');
+  if (owner && owner === streamerNamespace) {
+    hintBtn.style.display = '';
   }
 }
 
@@ -1058,6 +1127,9 @@ loadSettings();
 state.gameMode = getGameMode();
 applyTheme(localStorage.getItem(getThemeStorageKey()) || 'dark');
 newGame();
+
+// Initialize streamer hint (only show if user is streamer)
+setTimeout(initStreamerHint, 500);
 
 if (state.gameMode === 'online') {
   registerPlayer();

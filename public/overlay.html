@@ -506,6 +506,8 @@ function connectWebSocket() {
     console.log('Overlay WebSocket connected');
     // Join the streamer's channel
     ws.send(JSON.stringify({ type: 'watch', platform: 'both', channel: streamerNamespace, owner: streamerNamespace }));
+    // Request current game state
+    ws.send(JSON.stringify({ type: 'requestGameState', owner: streamerNamespace }));
   });
 
   ws.addEventListener('message', (ev) => {
@@ -524,6 +526,40 @@ function connectWebSocket() {
           });
           handleGuess(letter, found);
         }
+      } else if (data && data.type === 'newGame') {
+        // Handle new game event from streamer - sync the word
+        if (data.word) {
+          currentWord = String(data.word || '').toUpperCase();
+          revealedWord = currentWord;
+          prepareMasked(currentWord);
+          renderWordRow();
+          buildKeyboard();
+          updateHangmanParts();
+          updateLives();
+          checkWinLose();
+        }
+      } else if (data && data.type === 'gameOver') {
+        // Handle game over event - show correct word
+        if (data.word) {
+          revealedWord = String(data.word || '').toUpperCase();
+          wrongCount = MAX_WRONG;
+          updateHangmanParts();
+          checkWinLose();
+        }
+      } else if (data && data.type === 'gameState') {
+        // Handle current game state response
+        if (data.word) {
+          currentWord = String(data.word || '').toUpperCase();
+          revealedWord = currentWord;
+          prepareMasked(currentWord);
+          renderWordRow();
+          buildKeyboard();
+          updateHangmanParts();
+          updateLives();
+        }
+      } else if (data && data.type === 'leaderboard' && data.scores) {
+        // Handle leaderboard events
+        showLeaderboard(data.scores);
       }
     } catch (e) { console.warn('Invalid WS message', e); }
   });
@@ -577,24 +613,14 @@ function hideLeaderboard() {
   }
 }
 
-// Listen for leaderboard events from WebSocket
-ws.addEventListener('message', (event) => {
-  try {
-    const data = JSON.parse(event.data);
-    if (data.type === 'leaderboard' && data.scores) {
-      showLeaderboard(data.scores);
-    }
-  } catch (e) {
-    console.warn('Failed to parse leaderboard message', e);
-  }
-});
-}
-
 // Initialize
 loadCustomWordsFile().then(() => {
   setTimeout(() => {
-    newGame();
-    if (streamerNamespace) {
+    // Only start a local game if not in multiplayer mode
+    if (!streamerNamespace) {
+      newGame();
+    } else {
+      // In multiplayer mode, connect to WebSocket and wait for streamer's word
       connectWebSocket();
     }
   }, 500);

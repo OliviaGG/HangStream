@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+Dockerfile
+.git
+.gitignore
+README.md
+HangStream.code-workspace
+**/*.log
+**/.DS_Store
+# Namespaced storage files for different streamers
+viewer-profiles-*.json
+viewer-scores-*.json

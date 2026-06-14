@@ -488,6 +488,50 @@
     .word-input { font-size: 16px; }
     .found-word { font-size: 14px; }
   }
+
+  .streamer-hint-btn {
+    background: color-mix(in srgb, var(--panel) 70%, transparent);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: all 0.15s;
+  }
+
+  .streamer-hint-btn:hover {
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+
+  .streamer-hints {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 16px 0;
+    font-size: 14px;
+    color: var(--accent);
+  }
+
+  .streamer-hints h4 {
+    margin: 0 0 12px 0;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+  }
+
+  .streamer-hints .hint-word {
+    display: inline-block;
+    background: color-mix(in srgb, var(--panel) 70%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin: 4px;
+    font-size: 13px;
+    text-transform: uppercase;
+  }
 </style>
 </head>
 <body>
@@ -519,6 +563,10 @@
   <!-- MAIN GAME AREA -->
   <div class="game-area">
     <div class="game-main">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+        <!-- Streamer-only hint button -->
+        <button id="streamer-hint-btn" class="streamer-hint-btn" style="display:none;" onclick="toggleStreamerHint()">👁️ Show Possible Words</button>
+      </div>
       <div id="message-area"></div>
 
       <div class="honeycomb" id="honeycomb">
@@ -532,6 +580,8 @@
         <input type="text" class="word-input" id="word-input" placeholder="Drag across letters..." readonly>
         <div class="instructions">Drag across adjacent letters to form words (4+ letters)</div>
       </div>
+
+      <div id="streamer-hints" class="streamer-hints" style="display:none;"></div>
 
       <div class="found-words" id="found-words">
         <!-- Found words will appear here -->
@@ -934,6 +984,7 @@ function newGame() {
   renderHoneycomb();
   renderFoundWords();
   updateScore();
+  updateStreamerHints();
   clearMessage();
   
   // Clear input
@@ -945,6 +996,52 @@ function newGame() {
   const instructions = document.querySelector('.instructions');
   if (instructions) {
     instructions.textContent = `Drag across adjacent letters to form words (${settings.minLength}+ letters)`;
+  }
+}
+
+function toggleStreamerHint() {
+  const hints = document.getElementById('streamer-hints');
+  const btn = document.getElementById('streamer-hint-btn');
+  if (!hints || !btn) return;
+
+  if (hints.style.display === 'none') {
+    hints.style.display = '';
+    btn.textContent = '🙈 Hide Hints';
+  } else {
+    hints.style.display = 'none';
+    btn.textContent = '👁️ Show Possible Words';
+  }
+}
+
+function updateStreamerHints() {
+  const hints = document.getElementById('streamer-hints');
+  if (!hints) return;
+
+  // Get all possible words from the current letters
+  const settings = DIFFICULTY_SETTINGS[config.difficulty] || DIFFICULTY_SETTINGS.normal;
+  const possibleWords = getCommonWords(settings.minLength);
+
+  // Show top 10 possible words
+  const topWords = possibleWords.slice(0, 10);
+  hints.innerHTML = `<h4>Possible words (${possibleWords.length} total):</h4>`;
+  
+  topWords.forEach(word => {
+    const span = document.createElement('span');
+    span.className = 'hint-word';
+    span.textContent = word;
+    hints.appendChild(span);
+  });
+}
+
+function initStreamerHint() {
+  const hintBtn = document.getElementById('streamer-hint-btn');
+  if (!hintBtn) return;
+
+  // Check if user is the streamer (has owner cookie matching namespace)
+  const streamerNamespace = getStreamerNamespace();
+  const owner = getOwnerKey();
+  if (owner && owner === streamerNamespace) {
+    hintBtn.style.display = '';
   }
 }
 
@@ -1293,6 +1390,9 @@ loadSettings();
 state.gameMode = getGameMode();
 applyTheme(localStorage.getItem(getThemeStorageKey()) || 'dark');
 newGame();
+
+// Initialize streamer hint (only show if user is streamer)
+setTimeout(initStreamerHint, 500);
 
 if (state.gameMode === 'online') {
   registerPlayer();
