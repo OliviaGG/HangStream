@@ -587,6 +587,42 @@
             </label>
           </div>
         </div>
+
+        <!-- Revival Gift Settings (only show after step 1) -->
+        <div id="gift-settings-section" class="setup-step" style="margin-top:32px;display:none;">
+          <h3 style="margin:0 0 12px 0;">🎁 Gift Revival Settings</h3>
+          <p style="color:var(--text-muted);margin-bottom:16px;">Choose which gifts trigger game revival when the stream is on TikTok or Twitch.</p>
+          
+          <div style="margin-top:16px;">
+            <label style="display:block;cursor:pointer;margin-bottom:12px;font-weight:600;font-size:13px;">TikTok Gifts</label>
+            <select id="tiktok-gift-select" class="setting-input" style="width:100%;">
+              <option value="">No TikTok revival</option>
+              <option value="rose">🌹 Rose (1 coin)</option>
+              <option value="carnival">🎪 Carnival Gift</option>
+              <option value="galaxy">✨ Galaxy Gift</option>
+              <option value="spacecapsule">🚀 Space Capsule</option>
+              <option value="custom">Custom coin amount</option>
+            </select>
+            <input type="number" id="tiktok-custom-coins" class="setting-input" placeholder="Custom coin amount" style="display:none;margin-top:8px;">
+          </div>
+
+          <div style="margin-top:24px;">
+            <label style="display:block;cursor:pointer;margin-bottom:12px;font-weight:600;font-size:13px;">Twitch Gifts</label>
+            <select id="twitch-gift-select" class="setting-input" style="width:100%;">
+              <option value="">No Twitch revival</option>
+              <option value="100bits">100 Bits</option>
+              <option value="500bits">500 Bits</option>
+              <option value="1000bits">1000 Bits</option>
+              <option value="sub">Subscription</option>
+              <option value="custom">Custom bit amount</option>
+            </select>
+            <input type="number" id="twitch-custom-bits" class="setting-input" placeholder="Custom bit amount" style="display:none;margin-top:8px;">
+          </div>
+
+          <div style="margin-top:24px;padding:16px;background:color-mix(in srgb,var(--accent)10%,transparent);border-radius:12px;border:1px solid var(--accent);">
+            <p style="color:var(--accent);font-size:13px;margin:0;">💡 When a viewer sends the selected gift during the 15-second countdown after game over, the game will continue with the same word.</p>
+          </div>
+        </div>
       </div>
     </section>
   </main>
@@ -685,6 +721,98 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ scoreCombination: combination })
+          }).catch(err => console.error('Failed to save setting:', err));
+        } catch (e) {}
+      }
+
+      function getTiktokGift() {
+        const streamerId = getStreamerId() || '';
+        const key = `hangstream-tiktok-gift:${streamerId}`;
+        try {
+          return localStorage.getItem(key) || '';
+        } catch (e) {
+          return '';
+        }
+      }
+
+      function setTiktokGift(gift) {
+        const streamerId = getStreamerId() || '';
+        const key = `hangstream-tiktok-gift:${streamerId}`;
+        try {
+          localStorage.setItem(key, gift);
+          fetch('/streamer/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tiktokGift: gift })
+          }).catch(err => console.error('Failed to save setting:', err));
+        } catch (e) {}
+      }
+
+      function getTiktokCustomCoins() {
+        const streamerId = getStreamerId() || '';
+        const key = `hangstream-tiktok-custom-coins:${streamerId}`;
+        try {
+          return localStorage.getItem(key) || '';
+        } catch (e) {
+          return '';
+        }
+      }
+
+      function setTiktokCustomCoins(coins) {
+        const streamerId = getStreamerId() || '';
+        const key = `hangstream-tiktok-custom-coins:${streamerId}`;
+        try {
+          localStorage.setItem(key, coins);
+          fetch('/streamer/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tiktokCustomCoins: coins })
+          }).catch(err => console.error('Failed to save setting:', err));
+        } catch (e) {}
+      }
+
+      function getTwitchGift() {
+        const streamerId = getStreamerId() || '';
+        const key = `hangstream-twitch-gift:${streamerId}`;
+        try {
+          return localStorage.getItem(key) || '';
+        } catch (e) {
+          return '';
+        }
+      }
+
+      function setTwitchGift(gift) {
+        const streamerId = getStreamerId() || '';
+        const key = `hangstream-twitch-gift:${streamerId}`;
+        try {
+          localStorage.setItem(key, gift);
+          fetch('/streamer/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ twitchGift: gift })
+          }).catch(err => console.error('Failed to save setting:', err));
+        } catch (e) {}
+      }
+
+      function getTwitchCustomBits() {
+        const streamerId = getStreamerId() || '';
+        const key = `hangstream-twitch-custom-bits:${streamerId}`;
+        try {
+          return localStorage.getItem(key) || '';
+        } catch (e) {
+          return '';
+        }
+      }
+
+      function setTwitchCustomBits(bits) {
+        const streamerId = getStreamerId() || '';
+        const key = `hangstream-twitch-custom-bits:${streamerId}`;
+        try {
+          localStorage.setItem(key, bits);
+          fetch('/streamer/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ twitchCustomBits: bits })
           }).catch(err => console.error('Failed to save setting:', err));
         } catch (e) {}
       }
@@ -871,15 +999,45 @@
           const streamerId = getStreamerId();
           if (streamerId) {
             const baseUrl = window.location.origin;
+            const selectedGame = getSelectedGame() || 'hangman';
+            
+            // Show appropriate overlay URL based on selected game
             const overlayUrlDisplay = document.getElementById('overlay-url-display');
             if (overlayUrlDisplay) {
-              overlayUrlDisplay.textContent = `${baseUrl}/overlay/${encodeURIComponent(streamerId.replace('@', ''))}`;
+              if (selectedGame === 'hangman') {
+                overlayUrlDisplay.textContent = `${baseUrl}/overlay/${encodeURIComponent(streamerId.replace('@', ''))}`;
+              } else if (selectedGame === 'spelling-bee') {
+                overlayUrlDisplay.textContent = `${baseUrl}/overlay/spelling-bee/${encodeURIComponent(streamerId.replace('@', ''))}`;
+              } else if (selectedGame === 'speed-scramble') {
+                overlayUrlDisplay.textContent = `${baseUrl}/overlay/speed-scramble/${encodeURIComponent(streamerId.replace('@', ''))}`;
+              }
             }
             const gameUrlDisplay = document.getElementById('game-url-display');
             if (gameUrlDisplay) {
               gameUrlDisplay.textContent = `${baseUrl}/viewer/${encodeURIComponent(streamerId.replace('@', ''))}`;
             }
           }
+
+          // Update overlay URL when game selection changes
+          const gameSelectionRadios = document.querySelectorAll('input[name="game-selection"]');
+          gameSelectionRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+              const streamerId = getStreamerId();
+              const selectedGame = getSelectedGame() || 'hangman';
+              const baseUrl = window.location.origin;
+              
+              const overlayUrlDisplay = document.getElementById('overlay-url-display');
+              if (overlayUrlDisplay) {
+                if (selectedGame === 'hangman') {
+                  overlayUrlDisplay.textContent = `${baseUrl}/overlay/${encodeURIComponent(streamerId.replace('@', ''))}`;
+                } else if (selectedGame === 'spelling-bee') {
+                  overlayUrlDisplay.textContent = `${baseUrl}/overlay/spelling-bee/${encodeURIComponent(streamerId.replace('@', ''))}`;
+                } else if (selectedGame === 'speed-scramble') {
+                  overlayUrlDisplay.textContent = `${baseUrl}/overlay/speed-scramble/${encodeURIComponent(streamerId.replace('@', ''))}`;
+                }
+              }
+            });
+          });
 
           // Copy button listeners - only set up when elements exist
           const copyOverlayBtn = document.getElementById('copy-overlay-btn');
@@ -970,6 +1128,9 @@
       const gameDifficultySection = document.getElementById('game-difficulty-section');
       if (gameDifficultySection) gameDifficultySection.style.display = 'block';
       
+      const giftSettingsSection = document.getElementById('gift-settings-section');
+      if (giftSettingsSection) giftSettingsSection.style.display = 'block';
+      
       // Initialize website play toggle
       const websitePlayToggle = document.getElementById('website-play-toggle');
       if (websitePlayToggle) {
@@ -988,6 +1149,50 @@
           radio.addEventListener('change', (e) => {
             setScoreCombination(e.target.value);
           });
+        });
+      }
+
+      // Initialize gift revival settings
+      const tiktokGiftSelect = document.getElementById('tiktok-gift-select');
+      const tiktokCustomCoins = document.getElementById('tiktok-custom-coins');
+      const twitchGiftSelect = document.getElementById('twitch-gift-select');
+      const twitchCustomBits = document.getElementById('twitch-custom-bits');
+
+      if (tiktokGiftSelect) {
+        tiktokGiftSelect.value = getTiktokGift();
+        tiktokGiftSelect.addEventListener('change', (e) => {
+          setTiktokGift(e.target.value);
+          if (e.target.value === 'custom') {
+            if (tiktokCustomCoins) tiktokCustomCoins.style.display = '';
+          } else {
+            if (tiktokCustomCoins) tiktokCustomCoins.style.display = 'none';
+          }
+        });
+      }
+
+      if (tiktokCustomCoins) {
+        tiktokCustomCoins.value = getTiktokCustomCoins();
+        tiktokCustomCoins.addEventListener('input', (e) => {
+          setTiktokCustomCoins(e.target.value);
+        });
+      }
+
+      if (twitchGiftSelect) {
+        twitchGiftSelect.value = getTwitchGift();
+        twitchGiftSelect.addEventListener('change', (e) => {
+          setTwitchGift(e.target.value);
+          if (e.target.value === 'custom') {
+            if (twitchCustomBits) twitchCustomBits.style.display = '';
+          } else {
+            if (twitchCustomBits) twitchCustomBits.style.display = 'none';
+          }
+        });
+      }
+
+      if (twitchCustomBits) {
+        twitchCustomBits.value = getTwitchCustomBits();
+        twitchCustomBits.addEventListener('input', (e) => {
+          setTwitchCustomBits(e.target.value);
         });
       }
 

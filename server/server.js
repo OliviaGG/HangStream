@@ -1464,7 +1464,7 @@ const server = http.createServer((req, res) => {
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
       try {
-        const { scoreCombination, selectedGame, gameDifficulty } = JSON.parse(body);
+        const { scoreCombination, selectedGame, gameDifficulty, tiktokGift, tiktokCustomCoins, twitchGift, twitchCustomBits } = JSON.parse(body);
         const owner = getOwnerKey(req, '');
         
         if (owner) {
@@ -1488,6 +1488,10 @@ const server = http.createServer((req, res) => {
             accounts[accountKey].score_combination = scoreCombination;
             if (selectedGame) accounts[accountKey].selected_game = selectedGame;
             if (gameDifficulty) accounts[accountKey].game_difficulty = gameDifficulty;
+            if (tiktokGift) accounts[accountKey].tiktok_gift = tiktokGift;
+            if (tiktokCustomCoins) accounts[accountKey].tiktok_custom_coins = tiktokCustomCoins;
+            if (twitchGift) accounts[accountKey].twitch_gift = twitchGift;
+            if (twitchCustomBits) accounts[accountKey].twitch_custom_bits = twitchCustomBits;
             saveStreamerAccounts(accounts);
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify({ success: true }));
@@ -1590,14 +1594,11 @@ const server = http.createServer((req, res) => {
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
     const authHeader = req.headers['authorization'];
     
-    // Temporarily disable auth for debugging - remove this later
-    // if (!authHeader || authHeader !== `Bearer ${adminPassword}`) {
-    //   res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
-    //   res.end(JSON.stringify({ error: 'Unauthorized' }));
-    //   return;
-    // }
-    
-    console.log('Admin auth check:', { hasAuth: !!authHeader, authHeader, expected: `Bearer ${adminPassword}` });
+    if (!authHeader || authHeader !== `Bearer ${adminPassword}`) {
+      res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
     
     const applicationsPath = path.join(__dirname, 'streamer-applications.json');
     let applications = {};
@@ -1621,14 +1622,11 @@ const server = http.createServer((req, res) => {
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
     const authHeader = req.headers['authorization'];
     
-    // Temporarily disable auth for debugging
-    // if (!authHeader || authHeader !== `Bearer ${adminPassword}`) {
-    //   res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
-    //   res.end(JSON.stringify({ error: 'Unauthorized' }));
-    //   return;
-    // }
-    
-    console.log('Approve auth check:', { hasAuth: !!authHeader, authHeader, expected: `Bearer ${adminPassword}` });
+    if (!authHeader || authHeader !== `Bearer ${adminPassword}`) {
+      res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
     
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
@@ -1730,14 +1728,11 @@ const server = http.createServer((req, res) => {
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
     const authHeader = req.headers['authorization'];
     
-    // Temporarily disable auth for debugging
-    // if (!authHeader || authHeader !== `Bearer ${adminPassword}`) {
-    //   res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
-    //   res.end(JSON.stringify({ error: 'Unauthorized' }));
-    //   return;
-    // }
-    
-    console.log('Reject auth check:', { hasAuth: !!authHeader, authHeader, expected: `Bearer ${adminPassword}` });
+    if (!authHeader || authHeader !== `Bearer ${adminPassword}`) {
+      res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
     
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
@@ -2066,6 +2061,24 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Overlay routes
+  if (urlPath.startsWith('/overlay/')) {
+    const parts = urlPath.split('/').filter(Boolean);
+    // /overlay/spelling-bee/streamername
+    if (parts.length === 3 && parts[1] === 'spelling-bee') {
+      sendFile(res, spellingBeePath, 'text/html; charset=utf-8');
+      return;
+    }
+    // /overlay/speed-scramble/streamername
+    if (parts.length === 3 && parts[1] === 'speed-scramble') {
+      sendFile(res, speedScramblePath, 'text/html; charset=utf-8');
+      return;
+    }
+    // /overlay/streamername or /overlay/:streamerId - default to hangman
+    sendFile(res, path.join(__dirname, '..', 'public', 'overlay.html'), 'text/html; charset=utf-8');
+    return;
+  }
+
   // Solo game routes
   if (urlPath === '/hangman/solo' || urlPath === '/hangman/solo/') {
     sendFile(res, viewerPath, 'text/html; charset=utf-8');
@@ -2297,6 +2310,10 @@ tiktok.on('chat', (channel, data) => {
   handleChatCommand('tiktok', channel, data).catch(() => {});
 });
 
+tiktok.on('gift', (channel, data) => {
+  broadcastToChannel(`tiktok:${channel}`, { type: 'gift', platform: 'tiktok', channel, data });
+});
+
 tiktok.on('streamStart', (channel) => broadcastToChannel(`tiktok:${channel}`, { type: 'streamStart', platform: 'tiktok', channel }));
 tiktok.on('streamEnd', (channel) => broadcastToChannel(`tiktok:${channel}`, { type: 'streamEnd', platform: 'tiktok', channel }));
 
@@ -2304,6 +2321,10 @@ twitch.on('chat', (channel, data) => {
   broadcastToChannel(`twitch:${channel}`, { type: 'chat', platform: 'twitch', channel, data });
   // parse commands asynchronously
   handleChatCommand('twitch', channel, data).catch(() => {});
+});
+
+twitch.on('gift', (channel, data) => {
+  broadcastToChannel(`twitch:${channel}`, { type: 'gift', platform: 'twitch', channel, data });
 });
 
 twitch.on('started', (channel) => broadcastToChannel(`twitch:${channel}`, { type: 'streamStart', platform: 'twitch', channel }));

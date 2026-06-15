@@ -28,6 +28,10 @@ class TikTokManager extends EventEmitter {
       this.emit('chat', channel, data);
     });
 
+    conn.on('gift', (data) => {
+      this.emit('gift', channel, data);
+    });
+
     conn.on('connect', () => this.emit('connect', channel));
 
     conn.on('streamStart', () => this.emit('streamStart', channel));

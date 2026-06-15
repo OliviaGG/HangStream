@@ -22,6 +22,15 @@ class TwitchManager extends EventEmitter {
       const chan = channel.replace(/^#/, '');
       this.emit('chat', chan, { user: userstate['display-name'] || userstate['username'] || userstate['user-id'], message, raw: userstate });
     });
+    
+    // Detect bits in messages
+    this.client.on('message', (channel, userstate, message, self) => {
+      if (userstate.bits) {
+        const chan = channel.replace(/^#/, '');
+        this.emit('gift', chan, { type: 'bits', amount: parseInt(userstate.bits), user: userstate['display-name'] || userstate['username'] });
+      }
+    });
+    
     this.client.on('connected', (addr, port) => { /*noop*/ });
     this.client.connect().catch(() => {});
   }

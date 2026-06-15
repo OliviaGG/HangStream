@@ -543,8 +543,13 @@ function connectWebSocket() {
         if (data.word) {
           revealedWord = String(data.word || '').toUpperCase();
           wrongCount = MAX_WRONG;
+          // Reveal all letters in the word display
+          maskedChars.forEach(m => {
+            m.revealed = true;
+          });
+          renderWordRow();
           updateHangmanParts();
-          checkWinLose();
+          checkWinLose(); // This will update the game-status display
         }
       } else if (data && data.type === 'gameState') {
         // Handle current game state response

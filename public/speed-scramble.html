@@ -463,6 +463,29 @@
     color: var(--accent);
     text-align: center;
   }
+
+  body.overlay-mode .topbar,
+  body.overlay-mode .sidebar,
+  body.overlay-mode #streamer-hint-btn,
+  body.overlay-mode #streamer-answer,
+  body.overlay-mode .difficulty-select,
+  body.overlay-mode .settings-btn,
+  body.overlay-mode .theme-btn,
+  body.overlay-mode .viewer-login-btn {
+    display: none !important;
+  }
+
+  body.overlay-mode .game-wrap {
+    display: block;
+  }
+
+  body.overlay-mode .game-area {
+    display: block;
+  }
+
+  body.overlay-mode .game-main {
+    padding: 60px 34px;
+  }
 </style>
 </head>
 <body>
@@ -1126,6 +1149,12 @@ document.addEventListener('DOMContentLoaded', () => {
 loadSettings();
 state.gameMode = getGameMode();
 applyTheme(localStorage.getItem(getThemeStorageKey()) || 'dark');
+
+// Detect overlay mode and add body class
+if (window.location.pathname.startsWith('/overlay')) {
+  document.body.classList.add('overlay-mode');
+}
+
 newGame();
 
 // Initialize streamer hint (only show if user is streamer)

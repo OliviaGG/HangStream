@@ -490,6 +490,11 @@
     text-align: center;
   }
 
+  @keyframes slideDown {
+    from { opacity: 0; transform: translate(-50%, -20px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+  }
+
   .win-box .revival-title { color: var(--good); }
   .win-box { border-color: var(--good); }
 
@@ -1427,10 +1432,173 @@ function showGameOver() {
   // FIX: textContent used (not innerHTML) — safe, no escaping needed
   if (reveal) reveal.textContent = activeWord;
 
+  // Start countdown timer for gift revival
+  startRevivalCountdown();
+
   // Broadcast game over event to overlay with the correct word
   if (gameWs && gameWs.readyState === WebSocket.OPEN) {
     gameWs.send(JSON.stringify({ type: 'gameOver', word: activeWord }));
   }
+}
+
+let revivalCountdown = null;
+let revivalTimeLeft = 15;
+
+function startRevivalCountdown() {
+  // Clear any existing countdown
+  if (revivalCountdown) {
+    clearInterval(revivalCountdown);
+  }
+
+  revivalTimeLeft = 15;
+  updateCountdownDisplay();
+
+  revivalCountdown = setInterval(() => {
+    revivalTimeLeft--;
+    updateCountdownDisplay();
+
+    if (revivalTimeLeft <= 0) {
+      clearInterval(revivalCountdown);
+      // Countdown expired - hide revival section and show new game button
+      const revival = document.getElementById('revival-section');
+      const winSection = document.getElementById('win-section');
+      const overlayTitle = document.getElementById('overlay-title');
+      const overlaySub = document.getElementById('overlay-sub');
+      
+      if (revival) revival.style.display = 'none';
+      if (winSection) winSection.style.display = '';
+      if (overlayTitle) overlayTitle.textContent = 'GAME OVER';
+      if (overlaySub) overlaySub.style.display = 'none';
+    }
+  }, 1000);
+}
+
+function updateCountdownDisplay() {
+  const countdownNum = document.getElementById('countdown-num');
+  const countdownCircle = document.getElementById('countdown-circle');
+  
+  if (countdownNum) {
+    countdownNum.textContent = revivalTimeLeft;
+  }
+  
+  if (countdownCircle) {
+    // Update SVG circle stroke based on time left
+    const circumference = 2 * Math.PI * 36;
+    const progress = revivalTimeLeft / 15;
+    const offset = circumference * (1 - progress);
+    countdownCircle.style.strokeDashoffset = offset;
+  }
+}
+
+function triggerRevival() {
+  // Clear countdown
+  if (revivalCountdown) {
+    clearInterval(revivalCountdown);
+    revivalCountdown = null;
+  }
+
+  // Hide overlay and continue with same word
+  hideOverlay();
+  
+  // Reset wrong count but keep the same word
+  wrongCount = 0;
+  updateHangmanParts();
+  updateLives();
+  
+  // Re-mask the word (hide some letters again)
+  maskedChars.forEach(m => {
+    if (Math.random() > 0.5) {
+      m.revealed = false;
+    }
+  });
+  renderWordRow();
+  buildKeyboard();
+}
+
+function handleGift(giftData) {
+  // Only trigger revival if countdown is active
+  if (!revivalCountdown || revivalTimeLeft <= 0) {
+    return;
+  }
+
+  // Get streamer's gift settings
+  const streamerId = getStreamerId() || '';
+  const tiktokGift = localStorage.getItem(`hangstream-tiktok-gift:${streamerId}`) || '';
+  const tiktokCustomCoins = parseInt(localStorage.getItem(`hangstream-tiktok-custom-coins:${streamerId}`) || '0');
+  const twitchGift = localStorage.getItem(`hangstream-twitch-gift:${streamerId}`) || '';
+  const twitchCustomBits = parseInt(localStorage.getItem(`hangstream-twitch-custom-bits:${streamerId}`) || '0');
+
+  // Check if gift matches configured settings
+  let shouldRevive = false;
+
+  if (giftData.platform === 'tiktok' && tiktokGift) {
+    // Check TikTok gift
+    if (giftData.data && giftData.data.giftName) {
+      if (tiktokGift === 'rose' && giftData.data.giftName.toLowerCase() === 'rose') {
+        shouldRevive = true;
+      } else if (tiktokGift === 'carnival' && giftData.data.giftName.toLowerCase().includes('carnival')) {
+        shouldRevive = true;
+      } else if (tiktokGift === 'galaxy' && giftData.data.giftName.toLowerCase().includes('galaxy')) {
+        shouldRevive = true;
+      } else if (tiktokGift === 'spacecapsule' && giftData.data.giftName.toLowerCase().includes('capsule')) {
+        shouldRevive = true;
+      } else if (tiktokGift === 'custom' && giftData.data.diamondCount >= tiktokCustomCoins) {
+        shouldRevive = true;
+      }
+    }
+  } else if (giftData.platform === 'twitch' && twitchGift) {
+    // Check Twitch gift (bits)
+    if (giftData.data && giftData.data.type === 'bits') {
+      if (twitchGift === '100bits' && giftData.data.amount >= 100) {
+        shouldRevive = true;
+      } else if (twitchGift === '500bits' && giftData.data.amount >= 500) {
+        shouldRevive = true;
+      } else if (twitchGift === '1000bits' && giftData.data.amount >= 1000) {
+        shouldRevive = true;
+      } else if (twitchGift === 'sub') {
+        // Subscriptions (handled differently, but for now just accept)
+        shouldRevive = true;
+      } else if (twitchGift === 'custom' && giftData.data.amount >= twitchCustomBits) {
+        shouldRevive = true;
+      }
+    }
+  }
+
+  if (shouldRevive) {
+    triggerRevival();
+    
+    // Show notification
+    showNotification(`${giftData.data.user || 'Someone'} sent a gift! Game revived! 🎉`);
+  }
+}
+
+function showNotification(message) {
+  const existing = document.querySelector('.revival-notification');
+  if (existing) existing.remove();
+
+  const notification = document.createElement('div');
+  notification.className = 'revival-notification';
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--good);
+    color: white;
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 200;
+    animation: slideDown 0.3s ease;
+  `;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.remove();
+  }, 3000);
 }
 
 function hideOverlay() {
@@ -1599,6 +1767,9 @@ if (state.gameMode === 'online' && streamerNamespace) {
           if (currentWord) {
             gameWs.send(JSON.stringify({ type: 'gameState', word: currentWord }));
           }
+        } else if (data && data.type === 'gift') {
+          // Handle gift event for revival
+          handleGift(data);
         }
       } catch (e) { console.warn('Invalid WS message', e); }
     });
