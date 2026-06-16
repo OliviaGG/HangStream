@@ -338,6 +338,47 @@
       cursor: not-allowed;
     }
 
+    /* Loading spinner */
+    .spinner {
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top: 3px solid var(--accent);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .error-container {
+      background: rgba(255, 77, 77, 0.1);
+      border: 1px solid var(--bad);
+      border-radius: 12px;
+      padding: 16px;
+      margin: 20px 0;
+    }
+
+    .error-title {
+      color: var(--bad);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .error-message {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
     .login-section {
       background: var(--card);
       border: 1px solid var(--card-border);
@@ -478,7 +519,7 @@
         <input type="password" class="form-input" id="admin-password" placeholder="Admin password">
         <button class="password-toggle" onclick="togglePassword()" id="password-toggle" aria-label="Show password">👁️</button>
       </div>
-      <button class="btn btn-primary" style="width:100%" onclick="login()">Login</button>
+      <button class="btn btn-primary" style="width:100%" onclick="login()" id="login-btn">Login</button>
     </div>
   </div>
 
@@ -523,7 +564,10 @@
         </div>
       </div>
       <div class="applications-grid" id="applications-grid">
-        <div class="empty-state">Loading applications...</div>
+        <div class="empty-state loading">
+          <div class="spinner"></div>
+          <span>Loading applications...</span>
+        </div>
       </div>
     </div>
   </div>
@@ -550,6 +594,11 @@
         return;
       }
 
+      // Show loading state
+      const btn = document.getElementById('login-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;"></div> Loading...';
+
       // Set the token (in a real app, this would be a JWT or session)
       adminToken = password;
       localStorage.setItem('admin_token', password);
@@ -564,6 +613,9 @@
           adminToken = null;
           showMessage('error', 'Invalid password');
         }
+        // Reset button
+        btn.disabled = false;
+        btn.textContent = 'Login';
       });
     }
 
@@ -611,13 +663,18 @@
           updateStats();
           return true;
         } else if (response.status === 401) {
+          showMessage('error', 'Invalid password. Please try again.');
+          return false;
+        } else if (response.status === 500) {
+          showMessage('error', 'Server error. Please try again later.');
           return false;
         } else {
-          console.error('Failed to load applications');
+          showMessage('error', 'Failed to load applications. Please try again.');
           return false;
         }
       } catch (err) {
         console.error('Error loading applications', err);
+        showMessage('error', 'Network error. Check your connection.');
         return false;
       }
     }
@@ -694,6 +751,12 @@
     async function approveApp(email) {
       if (!confirm('Are you sure you want to approve this application? This will generate an API key.')) return;
 
+      const btn = document.querySelector(`button[onclick="approveApp('${escapeAttribute(email)}')"]`);
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Approving...';
+      }
+
       try {
         const response = await fetch('/admin/applications/approve', {
           method: 'POST',
@@ -714,11 +777,22 @@
         }
       } catch (err) {
         alert('Failed to approve application');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Approve';
+        }
       }
     }
 
     async function rejectApp(email) {
       if (!confirm('Are you sure you want to reject this application?')) return;
+
+      const btn = document.querySelector(`button[onclick="rejectApp('${escapeAttribute(email)}')"]`);
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Rejecting...';
+      }
 
       try {
         const response = await fetch('/admin/applications/reject', {
@@ -739,6 +813,11 @@
         }
       } catch (err) {
         alert('Failed to reject application');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Reject';
+        }
       }
     }
 
