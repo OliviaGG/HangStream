@@ -10,9 +10,7 @@
 
     gtag('config', 'G-PPSHEVKZK8');
   </script>
-  <!-- Google AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7924572843609877"
-       crossorigin="anonymous"></script>
+  <!-- Google AdSense removed from overlay for clean OBS streaming -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HangStream Overlay</title>
@@ -275,9 +273,20 @@
     font-weight: 600;
   }
 
+  /* Hide all ads on overlay for clean OBS stream */
+  .adsbygoogle,
+  ins.adsbygoogle {
+    display: none !important;
+  }
+
+  .overlay-mode .adsbygoogle,
+  .overlay-mode ins.adsbygoogle {
+    display: none !important;
+  }
+
 </style>
 </head>
-<body>
+<body class="overlay-mode">
 
 <div class="overlay-container">
   <div class="game-status" id="game-status">Loading...</div>

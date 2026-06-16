@@ -606,7 +606,7 @@
 
         if (response.ok) {
           const data = await response.json();
-          allApplications = data.applications || [];
+          allApplications = normalizeApplications(data.applications);
           renderApplications();
           updateStats();
           return true;
@@ -620,6 +620,17 @@
         console.error('Error loading applications', err);
         return false;
       }
+    }
+
+    function normalizeApplications(applications) {
+      if (Array.isArray(applications)) return applications;
+      if (!applications || typeof applications !== 'object') return [];
+
+      return Object.entries(applications).map(([email, app]) => ({
+        id: app.id || email,
+        email: app.email || email,
+        ...app
+      }));
     }
 
     function filterApps(filter) {
@@ -652,18 +663,18 @@
             </div>
             <div class="note">${escapeHtml(app.note)}</div>
             <div class="dates">
-              Applied: ${new Date(app.createdAt).toLocaleString()}
+              Applied: ${new Date(app.createdAt || app.submittedAt).toLocaleString()}
               ${app.reviewedAt ? ` • Reviewed: ${new Date(app.reviewedAt).toLocaleString()}` : ''}
             </div>
           </div>
           <div class="app-actions">
             <span class="status-badge ${app.status}">${app.status}</span>
             ${app.status === 'pending' ? `
-              <button class="btn-action btn-approve" onclick="approveApp('${app.id}')">Approve</button>
-              <button class="btn-action btn-reject" onclick="rejectApp('${app.id}')">Reject</button>
+              <button class="btn-action btn-approve" onclick="approveApp('${escapeAttribute(app.email)}')">Approve</button>
+              <button class="btn-action btn-reject" onclick="rejectApp('${escapeAttribute(app.email)}')">Reject</button>
             ` : ''}
             ${app.status === 'approved' ? `
-              <button class="btn-action btn-view-key" onclick="viewApiKey('${app.id}')">View API Key</button>
+              <button class="btn-action btn-view-key" onclick="viewApiKey('${escapeAttribute(app.email)}')">View API Key</button>
             ` : ''}
           </div>
         </div>
@@ -680,7 +691,7 @@
       document.getElementById('stat-approved').textContent = approved;
     }
 
-    async function approveApp(id) {
+    async function approveApp(email) {
       if (!confirm('Are you sure you want to approve this application? This will generate an API key.')) return;
 
       try {
@@ -690,7 +701,7 @@
             'Authorization': `Bearer ${adminToken}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ id })
+          body: JSON.stringify({ email })
         });
 
         if (response.ok) {
@@ -706,7 +717,7 @@
       }
     }
 
-    async function rejectApp(id) {
+    async function rejectApp(email) {
       if (!confirm('Are you sure you want to reject this application?')) return;
 
       try {
@@ -716,7 +727,7 @@
             'Authorization': `Bearer ${adminToken}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ id })
+          body: JSON.stringify({ email })
         });
 
         if (response.ok) {
@@ -731,8 +742,8 @@
       }
     }
 
-    async function viewApiKey(id) {
-      const app = allApplications.find(a => a.id === id);
+    async function viewApiKey(email) {
+      const app = allApplications.find(a => a.email === email);
       if (!app) return;
 
       // Need to fetch the API key from the server
@@ -743,7 +754,7 @@
             'Authorization': `Bearer ${adminToken}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ id })
+          body: JSON.stringify({ email })
         });
 
         if (response.ok) {
@@ -765,6 +776,10 @@
         '"': '&quot;',
         "'": '&#39;'
       }[m]));
+    }
+
+    function escapeAttribute(text) {
+      return escapeHtml(text).replace(/`/g, '&#96;');
     }
 
     // Theme toggle with localStorage persistence

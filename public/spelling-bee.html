@@ -498,6 +498,12 @@
     padding: 60px 34px;
   }
 
+  /* Hide all ads on overlay for clean OBS stream */
+  body.overlay-mode .adsbygoogle,
+  body.overlay-mode ins.adsbygoogle {
+    display: none !important;
+  }
+
   @media (max-width: 640px) {
     body { overflow: auto; }
     .game-wrap { grid-template-columns: 1fr; grid-template-rows: auto auto auto; padding: 12px; gap: 12px; }

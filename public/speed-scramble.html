@@ -486,6 +486,12 @@
   body.overlay-mode .game-main {
     padding: 60px 34px;
   }
+
+  /* Hide all ads on overlay for clean OBS stream */
+  body.overlay-mode .adsbygoogle,
+  body.overlay-mode ins.adsbygoogle {
+    display: none !important;
+  }
 </style>
 </head>
 <body>
@@ -799,7 +805,7 @@ function newGame() {
   
   renderWord();
   updateStreamerHint();
-  updateTimer();
+  updateTimerDisplay();
   startTimer();
   clearMessage();
   
