@@ -1594,20 +1594,12 @@ const server = http.createServer((req, res) => {
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
     const authHeader = req.headers['authorization'];
 
-    console.log('Admin auth check:', { 
-      hasAuth: !!authHeader, 
-      authHeader: authHeader ? authHeader.substring(0, 10) + '...' : 'none',
-      providedPass: authHeader ? authHeader.replace('Bearer ', '') : 'none',
-      expectedPass: adminPassword ? adminPassword.substring(0, 3) + '...' : 'default',
-      passwordsMatch: authHeader === `Bearer ${adminPassword}`
-    });
-
     if (!authHeader || authHeader !== `Bearer ${adminPassword}`) {
       res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ error: 'Unauthorized' }));
       return;
     }
-    
+
     const applicationsPath = path.join(__dirname, 'streamer-applications.json');
     let applications = {};
     try {
@@ -1629,12 +1621,6 @@ const server = http.createServer((req, res) => {
   if (pathname === '/admin/applications/approve' && req.method === 'POST') {
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
     const authHeader = req.headers['authorization'];
-
-    console.log('Approve auth check:', { 
-      hasAuth: !!authHeader, 
-      expectedPass: adminPassword ? adminPassword.substring(0, 3) + '...' : 'default',
-      passwordsMatch: authHeader === `Bearer ${adminPassword}`
-    });
 
     if (!authHeader || authHeader !== `Bearer ${adminPassword}`) {
       res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -1741,12 +1727,6 @@ const server = http.createServer((req, res) => {
   if (pathname === '/admin/applications/reject' && req.method === 'POST') {
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
     const authHeader = req.headers['authorization'];
-
-    console.log('Reject auth check:', { 
-      hasAuth: !!authHeader, 
-      expectedPass: adminPassword ? adminPassword.substring(0, 3) + '...' : 'default',
-      passwordsMatch: authHeader === `Bearer ${adminPassword}`
-    });
 
     if (!authHeader || authHeader !== `Bearer ${adminPassword}`) {
       res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
