@@ -159,10 +159,11 @@ function parseCookies(cookieHeader) {
   }, {});
 }
 
-function buildOwnerLoginSuccessPage(ownerId, ownerName, provider) {
+function buildOwnerLoginSuccessPage(ownerId, ownerName, provider, ownerEmail = '') {
   const idJson = JSON.stringify(ownerId || '');
   const nameJson = JSON.stringify(ownerName || '');
   const providerJson = JSON.stringify(provider || '');
+  const emailJson = JSON.stringify(ownerEmail || '');
   return `<!doctype html><html><head><meta charset="utf-8"><title>Login successful</title></head><body style="font-family: sans-serif; padding: 24px; background: #0e0e12; color: #f0ede8;">
     <h2>Login successful</h2>
     <p>Owner account connected. You can close this window and return to HangStream.</p>
@@ -172,14 +173,18 @@ function buildOwnerLoginSuccessPage(ownerId, ownerName, provider) {
           const ownerId = ${idJson};
           const ownerName = ${nameJson};
           const provider = ${providerJson};
+          const ownerEmail = ${emailJson};
           if (ownerId) {
             localStorage.setItem('hangstream-streamer-id', ownerId);
             document.cookie = 'owner=' + encodeURIComponent(ownerId) + '; Path=/;';
           }
+          if (ownerEmail) {
+            document.cookie = 'google_email=' + encodeURIComponent(ownerEmail) + '; Path=/;';
+          }
           if (ownerName) localStorage.setItem('hangstream-owner-name', ownerName);
           if (provider) localStorage.setItem('hangstream-owner-provider', provider);
           if (window.opener) {
-            window.opener.postMessage({ type: 'owner-login', ownerId: ownerId, ownerName: ownerName, provider: provider }, location.origin);
+            window.opener.postMessage({ type: 'owner-login', ownerId: ownerId, ownerName: ownerName, provider: provider, email: ownerEmail }, location.origin);
           }
         } catch (e) {}
         setTimeout(() => window.close(), 400);
@@ -986,8 +991,9 @@ const server = http.createServer((req, res) => {
                 const profile = JSON.parse(userBody);
                 const ownerId = `google:${profile.sub || profile.email || crypto.randomBytes(8).toString('hex')}`;
                 const ownerName = profile.name || profile.email || profile.given_name || 'Google user';
+                const ownerEmail = profile.email || '';
                 res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-                res.end(buildOwnerLoginSuccessPage(ownerId, ownerName, 'google'));
+                res.end(buildOwnerLoginSuccessPage(ownerId, ownerName, 'google', ownerEmail));
               } catch (e) {
                 res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
                 res.end('Failed to parse Google profile: ' + e.message);
