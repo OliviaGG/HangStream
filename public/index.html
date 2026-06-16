@@ -126,6 +126,16 @@
     background: color-mix(in srgb, var(--panel) 80%, transparent);
   }
 
+  .word-category {
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+    font-family: 'Bebas Neue', sans-serif;
+  }
+
   .game-main {
     display: flex;
     flex-direction: column;
@@ -877,6 +887,7 @@
         <line   id="hm-rl"   class="hm-part" x1="120" y1="110" x2="144" y2="140"/>
       </svg>
 
+      <div class="word-category" id="word-category"></div>
       <div class="word-row" id="word-row"></div>
       <div id="streamer-answer" class="streamer-answer" style="display:none;"></div>
       <div class="keyboard" id="keyboard"></div>
@@ -957,9 +968,11 @@ let ALL_WORDS = [];
 let VISIBLE_WORDS = [];
 
 let currentWord = '';
+let currentCategory = '';
 let activeWord = '';
 let maskedChars = [];
 let wrongCount = 0;
+let usedWords = new Set();
 
 const MAX_WRONG = 6;
 const VIEWER_PROFILE_KEY = 'hangstream-viewer-profile';
@@ -1278,21 +1291,46 @@ function newGame() {
   const pool = Array.isArray(VISIBLE_WORDS) && VISIBLE_WORDS.length
     ? VISIBLE_WORDS
     : (Array.isArray(ALL_WORDS) ? ALL_WORDS : []);
-  const choice = pool.length ? pool[Math.floor(Math.random() * pool.length)] : { word: 'HANGMAN' };
+  
+  // Filter out already used words
+  const availableWords = pool.filter(w => !usedWords.has(w.word));
+  
+  // If all words used, reset and start over
+  let choice;
+  if (availableWords.length === 0) {
+    usedWords.clear();
+    choice = pool.length ? pool[Math.floor(Math.random() * pool.length)] : { word: 'HANGMAN', cat: 'Games' };
+  } else {
+    choice = availableWords[Math.floor(Math.random() * availableWords.length)];
+  }
+  
   currentWord = String(choice.word || '').toUpperCase();
+  currentCategory = String(choice.cat || 'Games');
   activeWord = currentWord;
+  usedWords.add(currentWord); // Track this word as used
+  
   prepareMasked(currentWord);
   renderWordRow();
   buildKeyboard();
   updateHangmanParts();
   hideOverlay();
 
+  // Update category display
+  updateCategoryDisplay();
+
   // Update streamer hint with new word
   updateStreamerHint();
 
   // Broadcast new game event to overlay
   if (gameWs && gameWs.readyState === WebSocket.OPEN) {
-    gameWs.send(JSON.stringify({ type: 'newGame', word: currentWord }));
+    gameWs.send(JSON.stringify({ type: 'newGame', word: currentWord, category: currentCategory }));
+  }
+}
+
+function updateCategoryDisplay() {
+  const categoryEl = document.getElementById('word-category');
+  if (categoryEl) {
+    categoryEl.textContent = currentCategory;
   }
 }
 

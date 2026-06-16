@@ -454,11 +454,22 @@
             </div>
             
             <!-- Optional Spotify -->
-            <details style="margin-top:24px;">
+            <details style="margin-top:24px;" id="spotify-section">
               <summary style="cursor:pointer;color:var(--text-muted);font-size:14px;padding:8px 0;">Optional: Enable music requests</summary>
               <div style="margin-top:12px;">
                 <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px;">Connect Spotify to let viewers request songs via chat using <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;font-family:monospace;">!play song artist</code>.</p>
-                <a class="btn btn-secondary" href="/oauth/spotify" target="_blank" rel="noopener">Connect Spotify</a>
+                
+                <div style="margin-bottom:16px;padding:12px;background:color-mix(in srgb,var(--accent)10%,transparent);border:1px solid var(--accent);border-radius:12px;">
+                  <div style="display:flex;align-items:center;gap:12px;">
+                    <div id="spotify-status-indicator" style="width:12px;height:12px;border-radius:50%;background:var(--text-muted);"></div>
+                    <div style="flex:1;">
+                      <div id="spotify-status-text" style="font-weight:600;font-size:14px;color:var(--text);">Not connected</div>
+                      <div id="spotify-status-sub" style="font-size:12px;color:var(--text-muted);">Click below to connect your Spotify account</div>
+                    </div>
+                  </div>
+                </div>
+
+                <a class="btn btn-secondary" href="/oauth/spotify" target="_blank" rel="noopener" id="spotify-connect-btn">Connect Spotify</a>
                 
                 <div style="margin-top:20px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;">
                   <h4 style="margin:0 0 12px 0;font-size:14px;">📖 How to stream music</h4>
@@ -1341,6 +1352,46 @@
       alert('Error processing donation. Please try again.');
     });
   }
+
+  // Spotify connection status
+  async function checkSpotifyStatus() {
+    try {
+      const response = await fetch('/tokens');
+      const data = await response.json();
+      updateSpotifyStatus(data.spotify);
+    } catch (err) {
+      console.error('Failed to check Spotify status:', err);
+    }
+  }
+
+  function updateSpotifyStatus(connected) {
+    const indicator = document.getElementById('spotify-status-indicator');
+    const statusText = document.getElementById('spotify-status-text');
+    const statusSub = document.getElementById('spotify-status-sub');
+    const connectBtn = document.getElementById('spotify-connect-btn');
+
+    if (connected) {
+      indicator.style.background = 'var(--good)';
+      statusText.textContent = 'Connected';
+      statusSub.textContent = 'Spotify is connected and ready for music requests';
+      connectBtn.textContent = 'Reconnect Spotify';
+    } else {
+      indicator.style.background = 'var(--text-muted)';
+      statusText.textContent = 'Not connected';
+      statusSub.textContent = 'Click below to connect your Spotify account';
+      connectBtn.textContent = 'Connect Spotify';
+    }
+  }
+
+  // Listen for OAuth completion
+  window.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'owner-login' && event.data.provider === 'spotify') {
+      updateSpotifyStatus(true);
+    }
+  });
+
+  // Check Spotify status on load
+  setTimeout(checkSpotifyStatus, 1000);
 </script>
 
 </body>

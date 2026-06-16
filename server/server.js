@@ -1072,19 +1072,27 @@ const server = http.createServer((req, res) => {
           const accessToken = parsed.access_token;
           if (!accessToken) throw new Error('Missing access token');
           const profile = await spotifyGetProfile(accessToken);
-          const ownerId = (cookies && cookies.owner) || `spotify:${profile && profile.id ? profile.id : crypto.randomBytes(8).toString('hex')}`;
+          
+          // Require owner to be logged in to connect Spotify
+          const owner = (cookies && cookies.owner);
+          if (!owner) {
+            res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
+            res.end('Please log in with Google first to connect Spotify. Close this window and log in, then try again.');
+            return;
+          }
+          
           const ownerName = (profile && profile.display_name) || (profile && profile.email) || 'Spotify user';
           const tokens = loadTokens();
-          tokens[ownerId] = {
+          tokens[owner] = {
             created: Date.now(),
             resp: parsed,
             platform: 'spotify',
-            owner: ownerId,
+            owner: owner,
             profile,
           };
           saveTokens(tokens);
           res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-          res.end(buildOwnerLoginSuccessPage(ownerId, ownerName, 'spotify'));
+          res.end(buildOwnerLoginSuccessPage(owner, ownerName, 'spotify', profile.email));
         } catch (e) {
           res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
           res.end('Failed to parse Spotify token response: ' + e.message + '\n' + body);
@@ -2041,6 +2049,22 @@ const server = http.createServer((req, res) => {
 
   if (urlPath === '/custom-words.json') {
     sendFile(res, path.join(__dirname, '..', 'public', 'custom-words.json'), 'application/json; charset=utf-8');
+    return;
+  }
+
+  if (urlPath === '/tokens') {
+    const tokens = loadTokens();
+    const cookies = parseCookies(req.headers.cookie);
+    const owner = cookies.owner;
+    
+    // Only check if current owner has Spotify connected
+    let hasSpotify = false;
+    if (owner && tokens && tokens[owner]) {
+      hasSpotify = tokens[owner].platform === 'spotify';
+    }
+    
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ spotify: hasSpotify }));
     return;
   }
 
