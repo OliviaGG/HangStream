@@ -83,6 +83,22 @@
     margin-right: auto;
   }
 
+  .toplinks {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .toplinks a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .toplinks a:hover { color: var(--accent); }
+
   .logo {
     font-family: Inter, system-ui, sans-serif;
     font-size: 19px;
@@ -257,11 +273,23 @@
 
 <div class="topbar">
   <a href="/" class="logo">HANG<span>STREAM</span></a>
-  <button id="theme-btn" class="theme-btn">Dark mode</button>
+  <div class="toplinks">
+    <a href="/about">About</a>
+    <a href="/faq">FAQ</a>
+    <a href="/contact">Contact</a>
+    <a href="/privacy">Privacy</a>
+    <button id="theme-btn" class="theme-btn">Dark mode</button>
+  </div>
 </div>
 
 <div class="container">
   <h1 class="page-title">GAME LIBRARY</h1>
+  <section class="game-card" style="margin-bottom:20px;">
+    <div class="game-name">Choose a word game for solo practice or live chat play</div>
+    <div class="game-description">
+      HangStream games are built for quick participation: viewers can jump in from a browser or, when a streamer has connected chat, play from Twitch or TikTok messages. Solo modes are useful for learning the rules before joining a live stream.
+    </div>
+  </section>
 
   <div class="games-grid" id="games-grid">
     <!-- Games will be added here -->

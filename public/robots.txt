@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin.html
+Disallow: /streamer
+Disallow: /profile
+Disallow: /oauth
+Disallow: /auth
+
+Sitemap: https://hangstream.me/sitemap.xml

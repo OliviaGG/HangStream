@@ -1,61 +1,77 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PPSHEVKZK8"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-PPSHEVKZK8');
-  </script>
-  <!-- Google AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7924572843609877"
-       crossorigin="anonymous"></script>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy - HangStream</title>
-    <style>
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
-            line-height: 1.6;
-            background: #0e0e12;
-            color: #f0ede8;
-        }
-        h1, h2 { color: #fff; }
-        a { color: #646cff; }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy Policy - HangStream</title>
+  <meta name="description" content="How HangStream collects, uses, stores, and protects viewer and streamer data for live stream games.">
+  <style>
+    :root { color-scheme: dark; --bg:#0e0e12; --panel:#1a1a22; --border:#2a2a35; --text:#f0ede8; --muted:#a7b0bd; --accent:#ff4d6d; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; line-height:1.65; }
+    header, main, footer { width:min(920px, calc(100% - 32px)); margin:0 auto; }
+    header { padding:28px 0 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:center; }
+    .brand { color:var(--text); text-decoration:none; font-weight:800; letter-spacing:.12em; }
+    nav { display:flex; gap:14px; flex-wrap:wrap; }
+    nav a, footer a { color:var(--accent); text-decoration:none; font-weight:700; }
+    main { padding:40px 0 56px; }
+    h1 { font-size:clamp(34px, 7vw, 56px); line-height:1; margin:0 0 14px; }
+    h2 { margin:34px 0 10px; font-size:22px; }
+    p, li { color:var(--muted); }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:22px; margin:22px 0; }
+    footer { border-top:1px solid var(--border); padding:26px 0 44px; color:var(--muted); }
+  </style>
 </head>
 <body>
+  <header>
+    <a class="brand" href="/">HANGSTREAM</a>
+    <nav aria-label="Main navigation">
+      <a href="/games">Games</a>
+      <a href="/about">About</a>
+      <a href="/faq">FAQ</a>
+      <a href="/contact">Contact</a>
+      <a href="/terms">Terms</a>
+    </nav>
+  </header>
+
+  <main>
     <h1>Privacy Policy</h1>
     <p>Last updated: June 2026</p>
-    
-    <h2>Data Collection</h2>
-    <p>HangStream collects minimal data necessary for the service to function:</p>
-    <ul>
-        <li>Viewer profiles (name, avatar, provider)</li>
-        <li>Game scores and participation history</li>
-        <li>OAuth tokens for authentication (encrypted)</li>
-        <li>Music queue requests</li>
-    </ul>
-    
-    <h2>Data Storage</h2>
-    <p>All data is stored locally on the server in JSON format. OAuth tokens are encrypted when TOKEN_ENCRYPTION_KEY is configured.</p>
-    
-    <h2>Data Sharing</h2>
-    <p>We do not sell or share your personal data with third parties. Data is only used to provide the HangStream service.</p>
-    
-    <h2>User Rights</h2>
-    <p>You can request deletion of your data by contacting the streamer or server administrator.</p>
-    
-    <h2>Third-Party Services</h2>
-    <p>When you authenticate through third-party services (Google, Spotify, Twitch, TikTok), those services may collect data according to their own privacy policies.</p>
-    
-    <p><a href="/">← Back to HangStream</a></p>
+    <p>This policy explains what HangStream collects when viewers play games, streamers connect live chat, and users sign in to save profiles or scores.</p>
+
+    <section class="panel">
+      <h2>Information We Collect</h2>
+      <ul>
+        <li>Profile details from sign-in providers, such as display name, avatar, provider ID, and email when supplied by the provider.</li>
+        <li>Game activity, including guesses, scores, leaderboards, streamer namespaces, and participation history.</li>
+        <li>Streamer application details, including name, email, Twitch or TikTok handle, and application notes.</li>
+        <li>OAuth tokens for connected services when a streamer authorizes integrations. Tokens are encrypted when a token encryption key is configured.</li>
+        <li>Basic technical information such as browser requests, cookies needed for sign-in, and server logs used to keep the service working.</li>
+      </ul>
+    </section>
+
+    <h2>How We Use Information</h2>
+    <p>We use information to run live games, show overlays, save scores, operate streamer dashboards, process applications, keep accounts secure, diagnose errors, and communicate with streamers about their access.</p>
+
+    <h2>Advertising and Analytics</h2>
+    <p>HangStream may use Google Analytics and Google AdSense on public content pages. These services may use cookies, web beacons, IP addresses, or similar technologies to measure traffic and serve ads. Google explains how it uses information from partner sites at <a href="https://policies.google.com/technologies/partner-sites" rel="noopener">policies.google.com/technologies/partner-sites</a>.</p>
+
+    <h2>Sharing</h2>
+    <p>We do not sell personal information. We share data only with service providers needed to operate HangStream, such as authentication providers, streaming platforms, payment processors, email services, analytics, and hosting infrastructure.</p>
+
+    <h2>Your Choices</h2>
+    <p>You can avoid optional sign-in features by playing public or solo modes where available. You can request deletion or correction of your profile, score, or streamer application data through the <a href="/contact">contact page</a>.</p>
+
+    <h2>Children</h2>
+    <p>HangStream is intended for general audiences and stream communities. Streamers should use their platform moderation tools and avoid directing the service to children under 13 without meeting all legal and platform requirements.</p>
+
+    <h2>Security</h2>
+    <p>We use reasonable safeguards for the size and purpose of the service, including encrypted OAuth token storage when configured and limited administrative access. No online service can guarantee perfect security.</p>
+  </main>
+
+  <footer>
+    <p>© 2026 HangStream. Built for interactive live stream word games.</p>
+    <p><a href="/terms">Terms of Service</a> · <a href="/contact">Contact</a> · <a href="/faq">FAQ</a></p>
+  </footer>
 </body>
 </html>

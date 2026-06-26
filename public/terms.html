@@ -1,33 +1,72 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PPSHEVKZK8"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-PPSHEVKZK8');
-  </script>
-  <!-- Google AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7924572843609877"
-       crossorigin="anonymous"></script>
-
   <meta charset="utf-8">
-  <title>Terms — HangStream</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terms of Service - HangStream</title>
+  <meta name="description" content="HangStream terms for viewers, streamers, accounts, game play, acceptable use, and third-party streaming integrations.">
   <style>
-    body{font-family:Inter,system-ui;padding:40px;background:#f7fbfc;color:#0b1220}
-    .card{max-width:900px;margin:0 auto;background:#fff;padding:28px;border-radius:12px;box-shadow:0 8px 24px rgba(2,6,23,0.06)}
-    h1{margin-top:0}
-    p{color:#374151}
+    :root { color-scheme: dark; --bg:#0e0e12; --panel:#1a1a22; --border:#2a2a35; --text:#f0ede8; --muted:#a7b0bd; --accent:#ff4d6d; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; line-height:1.65; }
+    header, main, footer { width:min(920px, calc(100% - 32px)); margin:0 auto; }
+    header { padding:28px 0 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:center; }
+    .brand { color:var(--text); text-decoration:none; font-weight:800; letter-spacing:.12em; }
+    nav { display:flex; gap:14px; flex-wrap:wrap; }
+    nav a, footer a { color:var(--accent); text-decoration:none; font-weight:700; }
+    main { padding:40px 0 56px; }
+    h1 { font-size:clamp(34px, 7vw, 56px); line-height:1; margin:0 0 14px; }
+    h2 { margin:34px 0 10px; font-size:22px; }
+    p, li { color:var(--muted); }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:22px; margin:22px 0; }
+    footer { border-top:1px solid var(--border); padding:26px 0 44px; color:var(--muted); }
   </style>
 </head>
 <body>
-  <div class="card">
+  <header>
+    <a class="brand" href="/">HANGSTREAM</a>
+    <nav aria-label="Main navigation">
+      <a href="/games">Games</a>
+      <a href="/about">About</a>
+      <a href="/faq">FAQ</a>
+      <a href="/contact">Contact</a>
+      <a href="/privacy">Privacy</a>
+    </nav>
+  </header>
+
+  <main>
     <h1>Terms of Service</h1>
-    <p>Use HangStream at your own risk. Self-hosting and operating the software implies responsibility for compliance with streaming platform policies and local regulations. Do not use HangStream to violate platform rules.</p>
-    <p>For commercial use, contact the project team.</p>
-  </div>
+    <p>Last updated: June 2026</p>
+    <p>These terms explain how viewers and streamers may use HangStream, a browser-based live stream game platform that lets communities play word games through a web page, Twitch chat, TikTok chat, and stream overlays.</p>
+
+    <section class="panel">
+      <h2>Using HangStream</h2>
+      <p>HangStream is provided for entertainment and community engagement. Viewers may join public games, play solo practice modes, and sign in to save scores. Streamers may apply for access to tools that connect games to their live chat and overlay setup.</p>
+      <p>You are responsible for using HangStream in a lawful way and for following the rules of any streaming, chat, music, or authentication service you connect to the site.</p>
+    </section>
+
+    <h2>Accounts and Access</h2>
+    <p>Some features require sign-in through supported providers such as Google, Twitch, TikTok, or Spotify. You agree to provide accurate information and to keep your account access secure. Streamer dashboard access may be reviewed, approved, limited, or removed to protect the service and its users.</p>
+
+    <h2>Acceptable Use</h2>
+    <p>Do not use HangStream to harass people, submit abusive content, interfere with the service, scrape private data, bypass access controls, or violate another platform's policies. Streamers are responsible for moderating their own communities and for deciding whether a chat-connected game is appropriate for their audience.</p>
+
+    <h2>Game Content</h2>
+    <p>HangStream includes word games and custom word features. Do not submit words, prompts, names, or messages that are illegal, hateful, sexually explicit, misleading, or otherwise harmful. We may remove content or restrict access when needed to keep the service usable and safe.</p>
+
+    <h2>Third-Party Services</h2>
+    <p>HangStream can integrate with services such as Google, Twitch, TikTok, Spotify, Stripe, and email providers. Those services are operated by third parties and are governed by their own terms and privacy policies. HangStream is not endorsed by those providers unless explicitly stated by them.</p>
+
+    <h2>Availability and Changes</h2>
+    <p>HangStream may change over time as games, account features, and streaming integrations improve. We may update, pause, or discontinue features, especially when third-party APIs change or when maintenance is required.</p>
+
+    <h2>Contact</h2>
+    <p>Questions about these terms can be sent through the <a href="/contact">contact page</a>. If you are a streamer, include the email address connected to your streamer application so we can find your account.</p>
+  </main>
+
+  <footer>
+    <p>© 2026 HangStream. Built for interactive live stream word games.</p>
+    <p><a href="/privacy">Privacy Policy</a> · <a href="/contact">Contact</a> · <a href="/faq">FAQ</a></p>
+  </footer>
 </body>
 </html>

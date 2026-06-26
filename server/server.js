@@ -46,6 +46,9 @@ const applyPath = path.join(__dirname, '..', 'public', 'apply.html');
 const adminPath = path.join(__dirname, '..', 'public', 'admin.html');
 const termsPath = path.join(__dirname, '..', 'public', 'terms.html');
 const privacyPath = path.join(__dirname, '..', 'public', 'privacy.html');
+const aboutPath = path.join(__dirname, '..', 'public', 'about.html');
+const faqPath = path.join(__dirname, '..', 'public', 'faq.html');
+const contactPath = path.join(__dirname, '..', 'public', 'contact.html');
 const gamesPath = path.join(__dirname, '..', 'public', 'games.html');
 const spellingBeePath = path.join(__dirname, '..', 'public', 'spelling-bee.html');
 const speedScramblePath = path.join(__dirname, '..', 'public', 'speed-scramble.html');
@@ -2074,6 +2077,33 @@ const server = http.createServer((req, res) => {
 
   if (urlPath === '/privacy' || urlPath === '/privacy.html') {
     if (fs.existsSync(privacyPath)) { sendFile(res, privacyPath, 'text/html; charset=utf-8'); return; }
+  }
+
+  if (urlPath === '/about' || urlPath === '/about.html') {
+    if (fs.existsSync(aboutPath)) { sendFile(res, aboutPath, 'text/html; charset=utf-8'); return; }
+  }
+
+  if (urlPath === '/faq' || urlPath === '/faq.html') {
+    if (fs.existsSync(faqPath)) { sendFile(res, faqPath, 'text/html; charset=utf-8'); return; }
+  }
+
+  if (urlPath === '/contact' || urlPath === '/contact.html') {
+    if (fs.existsSync(contactPath)) { sendFile(res, contactPath, 'text/html; charset=utf-8'); return; }
+  }
+
+  if (urlPath === '/ads.txt') {
+    sendFile(res, path.join(__dirname, '..', 'public', 'ads.txt'), 'text/plain; charset=utf-8');
+    return;
+  }
+
+  if (urlPath === '/robots.txt') {
+    sendFile(res, path.join(__dirname, '..', 'public', 'robots.txt'), 'text/plain; charset=utf-8');
+    return;
+  }
+
+  if (urlPath === '/sitemap.xml') {
+    sendFile(res, path.join(__dirname, '..', 'public', 'sitemap.xml'), 'application/xml; charset=utf-8');
+    return;
   }
 
   if (urlPath === '/games' || urlPath === '/games.html' || urlPath === '/library') {
