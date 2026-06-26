@@ -402,6 +402,54 @@ async function sendApplicationNotification(application) {
   }
 }
 
+function escapeEmailHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[char]));
+}
+
+async function sendContactNotification(message) {
+  const transporter = getEmailTransporter();
+  if (!transporter) {
+    console.log('Email transporter not available, contact message saved only');
+    return;
+  }
+
+  const adminEmail = process.env.ADMIN_EMAIL || process.env.SMTP_USER || process.env.EMAIL_USER;
+  if (!adminEmail) {
+    console.log('ADMIN_EMAIL not configured, contact message saved only');
+    return;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"HangStream" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`,
+      replyTo: message.email,
+      to: adminEmail,
+      subject: `HangStream Contact: ${message.topic}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #ff4d6d;">New HangStream Contact Message</h2>
+          <div style="background: #f5f5f5; padding: 18px; border-radius: 8px; margin: 18px 0;">
+            <p><strong>Name:</strong> ${escapeEmailHtml(message.name)}</p>
+            <p><strong>Email:</strong> ${escapeEmailHtml(message.email)}</p>
+            <p><strong>Topic:</strong> ${escapeEmailHtml(message.topic)}</p>
+            <p><strong>Submitted:</strong> ${escapeEmailHtml(new Date(message.submittedAt).toLocaleString())}</p>
+          </div>
+          <p style="white-space: pre-wrap; background: #fff; padding: 16px; border-left: 3px solid #ff4d6d;">${escapeEmailHtml(message.message)}</p>
+        </div>
+      `
+    });
+    console.log(`Contact notification sent to ${adminEmail}`);
+  } catch (e) {
+    console.error('Failed to send contact notification:', e);
+  }
+}
+
 async function sendApprovalNotification(application) {
   const transporter = getEmailTransporter();
   if (!transporter) return;
@@ -1522,6 +1570,76 @@ const server = http.createServer((req, res) => {
         }
       } catch (error) {
         console.error('Error updating settings:', error);
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: 'Invalid request' }));
+      }
+    });
+    return;
+  }
+
+  // Public contact form endpoint
+  if (pathname === '/contact' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+      if (body.length > 20000) req.destroy();
+    });
+    req.on('end', async () => {
+      try {
+        const { name, email, topic, message, company } = JSON.parse(body);
+
+        if (company) {
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: true }));
+          return;
+        }
+
+        const cleanName = String(name || '').trim();
+        const cleanEmail = String(email || '').trim();
+        const cleanTopic = String(topic || '').trim();
+        const cleanMessage = String(message || '').trim();
+
+        if (!cleanName || !cleanEmail || !cleanTopic || !cleanMessage) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Name, email, topic, and message are required' }));
+          return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(cleanEmail)) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Invalid email address' }));
+          return;
+        }
+
+        const contactMessage = {
+          id: crypto.randomBytes(12).toString('hex'),
+          name: cleanName.slice(0, 120),
+          email: cleanEmail.slice(0, 180),
+          topic: cleanTopic.slice(0, 120),
+          message: cleanMessage.slice(0, 5000),
+          submittedAt: new Date().toISOString()
+        };
+
+        const messagesPath = path.join(__dirname, 'contact-messages.json');
+        let messages = [];
+        try {
+          if (fs.existsSync(messagesPath)) {
+            messages = JSON.parse(fs.readFileSync(messagesPath, 'utf8'));
+            if (!Array.isArray(messages)) messages = [];
+          }
+        } catch (e) {
+          console.error('Error loading contact messages:', e);
+        }
+
+        messages.unshift(contactMessage);
+        fs.writeFileSync(messagesPath, JSON.stringify(messages.slice(0, 500), null, 2));
+        sendContactNotification(contactMessage);
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: true, message: 'Message sent' }));
+      } catch (error) {
+        console.error('Error processing contact message:', error);
         res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ error: 'Invalid request' }));
       }

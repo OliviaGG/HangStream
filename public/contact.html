@@ -186,6 +186,64 @@
     p, li { color: var(--text-muted); line-height: 1.65; }
     ul { margin: 12px 0 0 18px; }
 
+    .contact-form {
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      background: var(--bg-elevated);
+      color: var(--text);
+      font: inherit;
+      padding: 13px 14px;
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255, 77, 109, 0.16);
+    }
+
+    .form-message {
+      min-height: 22px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .form-message.success { color: var(--good); }
+    .form-message.error { color: var(--accent); }
+
+    .hidden-field {
+      display: none;
+    }
+
     .btn {
       padding: 12px 18px;
       border-radius: 12px;
@@ -219,6 +277,7 @@
       nav { width: 100%; }
       a.nav { flex: 1; text-align: center; padding: 9px 12px; }
       .contact-grid { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -268,6 +327,44 @@
       </section>
 
       <section class="content-panel">
+        <h3>Send a Message</h3>
+        <p>Use this form for streamer questions, privacy requests, bug reports, or general support. If email is configured on the server, the message will be sent to the HangStream admin inbox.</p>
+        <form class="contact-form" id="contact-form">
+          <div class="form-row">
+            <label>
+              Name
+              <input id="contact-name" name="name" autocomplete="name" required maxlength="120">
+            </label>
+            <label>
+              Email
+              <input id="contact-email" name="email" type="email" autocomplete="email" required maxlength="180">
+            </label>
+          </div>
+          <label>
+            Topic
+            <select id="contact-topic" name="topic" required>
+              <option value="">Choose a topic</option>
+              <option>Streamer application</option>
+              <option>Privacy or data request</option>
+              <option>Bug report</option>
+              <option>Gameplay question</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label>
+            Message
+            <textarea id="contact-message" name="message" required maxlength="5000" placeholder="Tell us what happened, what stream or game it involved, and the best way to help."></textarea>
+          </label>
+          <label class="hidden-field" aria-hidden="true">
+            Company
+            <input id="contact-company" name="company" tabindex="-1" autocomplete="off">
+          </label>
+          <button class="btn" type="submit" id="contact-submit">Send Message</button>
+          <div class="form-message" id="contact-status" role="status"></div>
+        </form>
+      </section>
+
+      <section class="content-panel">
         <h3>Before You Contact Us</h3>
         <ul>
           <li>Check the <a href="/faq">FAQ</a> for common gameplay and account questions.</li>
@@ -306,6 +403,47 @@
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
     updateThemeToggle(savedTheme);
+
+    const contactForm = document.getElementById('contact-form');
+    const contactStatus = document.getElementById('contact-status');
+    const contactSubmit = document.getElementById('contact-submit');
+
+    contactForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      contactStatus.className = 'form-message';
+      contactStatus.textContent = 'Sending message...';
+      contactSubmit.disabled = true;
+
+      const payload = {
+        name: document.getElementById('contact-name').value,
+        email: document.getElementById('contact-email').value,
+        topic: document.getElementById('contact-topic').value,
+        message: document.getElementById('contact-message').value,
+        company: document.getElementById('contact-company').value
+      };
+
+      try {
+        const response = await fetch('/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Unable to send message');
+        }
+
+        contactForm.reset();
+        contactStatus.className = 'form-message success';
+        contactStatus.textContent = 'Thanks. Your message was sent.';
+      } catch (error) {
+        contactStatus.className = 'form-message error';
+        contactStatus.textContent = error.message || 'Unable to send message. Please try again.';
+      } finally {
+        contactSubmit.disabled = false;
+      }
+    });
   </script>
 </body>
 </html>
