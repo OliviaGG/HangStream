@@ -318,12 +318,12 @@
         <article class="contact-card">
           <h3>Privacy Requests</h3>
           <p>For profile deletion, score removal, or account questions, include the provider you used to sign in and enough detail to find your record.</p>
-          <a class="btn" href="mailto:support@hangstream.me">support@hangstream.me</a>
+          <a class="btn" href="#contact-form" data-topic="Privacy or data request">Start Request</a>
         </article>
         <article class="contact-card">
           <h3>Bug Reports</h3>
           <p>For gameplay or overlay issues, include the page URL, browser, device, streamer handle, and what happened right before the problem.</p>
-          <a class="btn" href="mailto:support@hangstream.me">Report a Bug</a>
+          <a class="btn" href="#contact-form" data-topic="Bug report">Report a Bug</a>
         </article>
       </section>
 
@@ -408,6 +408,38 @@
     const contactForm = document.getElementById('contact-form');
     const contactStatus = document.getElementById('contact-status');
     const contactSubmit = document.getElementById('contact-submit');
+
+    function applyContactPrefill() {
+      const params = new URLSearchParams(window.location.search);
+      const topic = params.get('topic') || '';
+      const viewerId = params.get('viewerId') || '';
+      const name = params.get('name') || '';
+      const provider = params.get('provider') || '';
+
+      if (name) document.getElementById('contact-name').value = name;
+      if (topic === 'privacy') {
+        document.getElementById('contact-topic').value = 'Privacy or data request';
+        document.getElementById('contact-message').value = [
+          'I want to request deletion of my HangStream data.',
+          '',
+          `Account ID: ${viewerId || 'not provided'}`,
+          `Provider: ${provider || 'not provided'}`,
+          `Display name: ${name || 'not provided'}`,
+          '',
+          'Please delete my profile and score history.'
+        ].join('\n');
+      }
+    }
+
+    applyContactPrefill();
+
+    document.querySelectorAll('[data-topic]').forEach(link => {
+      link.addEventListener('click', () => {
+        const topic = link.getAttribute('data-topic') || '';
+        if (topic) document.getElementById('contact-topic').value = topic;
+        setTimeout(() => document.getElementById('contact-message').focus(), 50);
+      });
+    });
 
     contactForm.addEventListener('submit', async event => {
       event.preventDefault();
