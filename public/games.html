@@ -285,9 +285,9 @@
 <div class="container">
   <h1 class="page-title">GAME LIBRARY</h1>
   <section class="game-card" style="margin-bottom:20px;">
-    <div class="game-name">Choose a word game for solo practice or live chat play</div>
+    <div class="game-name">Choose a game for live chat play or solo mode</div>
     <div class="game-description">
-      HangStream games are built for quick participation: viewers can jump in from a browser or, when a streamer has connected chat, play from Twitch or TikTok messages. Solo modes are useful for learning the rules before joining a live stream.
+      During a Twitch or TikTok stream, viewers can become the players by sending guesses and actions from chat. When no streamer is live, anyone can use solo mode to play from the browser whenever they want.
     </div>
   </section>
 
@@ -304,7 +304,7 @@ const GAMES = [
     id: 'hangman',
     name: 'Hangman',
     icon: '🎯',
-    description: 'Classic hangman game with chat integration. Guess the word letter by letter before running out of lives.',
+    description: 'Classic hangman for live chat or solo play. Guess the word letter by letter before running out of lives.',
     soloPath: '/hangman/solo',
     onlinePath: '/hangman/online'
   },
@@ -312,7 +312,7 @@ const GAMES = [
     id: 'spelling-bee',
     name: 'Spelling Bee',
     icon: '🐝',
-    description: 'Create words from 7 letters. No center letter required - make as many words as you can!',
+    description: 'Create words from 7 letters during a live stream or practice alone in solo mode.',
     soloPath: '/spelling-bee/solo',
     onlinePath: '/spelling-bee/online'
   },
@@ -320,7 +320,7 @@ const GAMES = [
     id: 'speed-scramble',
     name: 'Speed Scramble',
     icon: '⚡',
-    description: 'Race against time to unscramble words before the timer ends. Fast-paced word unscrambling game!',
+    description: 'Race against time to unscramble words before the timer ends, with modes for chat play and solo practice.',
     soloPath: '/speed-scramble/solo',
     onlinePath: '/speed-scramble/online'
   }
