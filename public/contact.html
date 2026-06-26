@@ -274,8 +274,9 @@
 
     @media (max-width: 768px) {
       header { flex-direction: column; align-items: flex-start; }
-      nav { width: 100%; }
-      a.nav { flex: 1; text-align: center; padding: 9px 12px; }
+      nav { width: 100%; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; }
+      a.nav { flex: 0 0 auto; min-height: 44px; text-align: center; padding: 9px 12px; display: inline-flex; align-items: center; justify-content: center; }
+      .theme-toggle { flex: 0 0 auto; }
       .contact-grid { grid-template-columns: 1fr; }
       .form-row { grid-template-columns: 1fr; }
     }

@@ -312,8 +312,9 @@
 
     @media (max-width: 768px) {
       header { flex-direction: column; align-items: flex-start; }
-      nav { width: 100%; }
-      a.nav { flex: 1; text-align: center; padding: 9px 12px; }
+      nav { width: 100%; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; }
+      a.nav { flex: 0 0 auto; min-height: 44px; text-align: center; padding: 9px 12px; display: inline-flex; align-items: center; justify-content: center; }
+      .theme-toggle { flex: 0 0 auto; }
       .step { grid-template-columns: 1fr; }
     }
   </style>
@@ -354,7 +355,7 @@
         <article class="feature-card">
           <div class="feature-icon">S</div>
           <h3>For Streamers</h3>
-          <p>Connect Twitch or TikTok chat, show an OBS-friendly overlay, and let the audience become active players during the broadcast.</p>
+          <p>Connect Twitch or TikTok chat, show an OBS-friendly overlay on desktop, or share your mobile screen with the game open during the broadcast.</p>
         </article>
         <article class="feature-card">
           <div class="feature-icon">C</div>
@@ -368,7 +369,7 @@
         <div class="steps">
           <div class="step"><div class="step-number">1</div><div><h3>Choose a game</h3><p>Start with Hangman, Spelling Bee, or Speed Scramble. Each game has a solo option for practice and online options for stream participation.</p></div></div>
           <div class="step"><div class="step-number">2</div><div><h3>Connect the audience</h3><p>Approved streamers connect supported chat services so viewer messages become game actions. Viewers can also use the browser interface.</p></div></div>
-          <div class="step"><div class="step-number">3</div><div><h3>Show the overlay</h3><p>The overlay is built for OBS and similar streaming tools, keeping the game visible without covering the creator's main content.</p></div></div>
+          <div class="step"><div class="step-number">3</div><div><h3>Show the game</h3><p>Use the overlay in OBS on desktop, or stream from your phone by opening the game and sharing your screen.</p></div></div>
           <div class="step"><div class="step-number">4</div><div><h3>Keep play available</h3><p>Profiles, leaderboards, and solo modes let communities keep playing even when a streamer is not live.</p></div></div>
         </div>
       </section>

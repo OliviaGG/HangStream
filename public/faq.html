@@ -198,8 +198,9 @@
 
     @media (max-width: 768px) {
       header { flex-direction: column; align-items: flex-start; }
-      nav { width: 100%; }
-      a.nav { flex: 1; text-align: center; padding: 9px 12px; }
+      nav { width: 100%; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; }
+      a.nav { flex: 0 0 auto; min-height: 44px; text-align: center; padding: 9px 12px; display: inline-flex; align-items: center; justify-content: center; }
+      .theme-toggle { flex: 0 0 auto; }
       .faq-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -237,6 +238,7 @@
         <article><h3>How do chat guesses work?</h3><p>When a streamer connects supported chat integrations, HangStream listens for eligible live chat messages and turns them into guesses or game actions. The streamer remains responsible for chat moderation and community rules.</p></article>
         <article><h3>Why do viewers sign in?</h3><p>Sign-in lets HangStream save profile details, scores, and leaderboard history. Public play can still be available depending on the game mode and streamer settings.</p></article>
         <article><h3>What does a streamer need?</h3><p>A streamer needs an approved account, a browser source for the overlay, and the Twitch or TikTok connection required for the chat integration they choose to use.</p></article>
+        <article><h3>Can I stream HangStream from my phone?</h3><p>Yes. Mobile streamers can open the game page on their phone and share their screen during the stream. Desktop streamers can use the overlay link in OBS or another streaming tool.</p></article>
         <article><h3>Does HangStream store chat messages?</h3><p>HangStream stores the game data needed for scoring and participation. It does not aim to archive a streamer's full chat history.</p></article>
         <article><h3>Can I request data deletion?</h3><p>Yes. Use the contact page and include the account email or streamer handle that helps identify the record.</p></article>
         <article><h3>Is HangStream affiliated with Twitch, TikTok, Spotify, or Google?</h3><p>No. HangStream can connect to third-party services through their APIs, but those services are separate companies with their own rules and policies.</p></article>

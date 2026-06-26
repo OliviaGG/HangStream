@@ -424,7 +424,7 @@
     <section class="hero" style="margin-top:40px;">
       <div class="panel intro" style="grid-column: 1 / -1; max-width: 800px; margin: 0 auto;">
         <h1 style="margin:0 0 8px 0;font-size:28px;">Welcome! Let's get you set up in 3 easy steps.</h1>
-        <p class="lede">Follow the steps below to configure your stream and start playing HangStream with your viewers.</p>
+        <p class="lede">Follow the steps below to configure your stream and start playing HangStream with your viewers. Desktop streamers can use an overlay, and mobile streamers can open the game link and share their screen.</p>
 
         <div id="approval-status" style="margin-bottom:24px;"></div>
 
@@ -500,7 +500,7 @@
               <div class="link-content">
                 <h3>OBS Overlay</h3>
                 <p class="link-url" id="overlay-url-display">Loading...</p>
-                <p class="link-description">Add this as a Browser Source in OBS. Your viewers on stream will see the game.</p>
+                <p class="link-description">Add this as a Browser Source in OBS or another desktop streaming tool. Your viewers on stream will see the game.</p>
               </div>
               <button class="btn btn-secondary" id="copy-overlay-btn" style="padding:8px 16px;">Copy</button>
             </div>
@@ -525,6 +525,11 @@
             <div style="background:rgba(37,194,122,0.1);border:1px solid var(--good);border-radius:16px;padding:16px;margin-top:20px;">
               <div style="font-weight:600;color:var(--good);margin-bottom:8px;">💡 Tip</div>
               <div style="color:var(--text-muted);font-size:13px;">You can use both at the same time! Overlay keeps viewers on your stream, the game link lets others jump in and play.</div>
+            </div>
+
+            <div style="background:color-mix(in srgb,var(--accent)10%,transparent);border:1px solid var(--accent);border-radius:16px;padding:16px;margin-top:12px;">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:8px;">Mobile Streaming</div>
+              <div style="color:var(--text-muted);font-size:13px;">Streaming from your phone? Open the game link on your mobile browser, start screen sharing in your streaming app, and let viewers play from Twitch or TikTok chat.</div>
             </div>
           </div>
         </div>
@@ -847,6 +852,7 @@
         const key = `hangstream-selected-game:${streamerId}`;
         try {
           localStorage.setItem(key, game);
+          updateStreamerLinks();
           // Send to server via API
           fetch('/streamer/settings', {
             method: 'POST',
@@ -854,6 +860,37 @@
             body: JSON.stringify({ selectedGame: game })
           }).catch(err => console.error('Failed to save setting:', err));
         } catch (e) {}
+      }
+
+      function getGameRoute(selectedGame, streamerId) {
+        const slug = encodeURIComponent(String(streamerId || '').replace('@', ''));
+        if (selectedGame === 'spelling-bee') return `/spelling-bee/online?streamer=${slug}`;
+        if (selectedGame === 'speed-scramble') return `/speed-scramble/online?streamer=${slug}`;
+        return `/viewer/${slug}`;
+      }
+
+      function getOverlayRoute(selectedGame, streamerId) {
+        const slug = encodeURIComponent(String(streamerId || '').replace('@', ''));
+        if (selectedGame === 'spelling-bee') return `/overlay/spelling-bee/${slug}`;
+        if (selectedGame === 'speed-scramble') return `/overlay/speed-scramble/${slug}`;
+        return `/overlay/${slug}`;
+      }
+
+      function updateStreamerLinks() {
+        const streamerId = getStreamerId();
+        if (!streamerId) return;
+
+        const baseUrl = window.location.origin;
+        const selectedGame = getSelectedGame() || 'hangman';
+        const overlayUrlDisplay = document.getElementById('overlay-url-display');
+        const gameUrlDisplay = document.getElementById('game-url-display');
+
+        if (overlayUrlDisplay) {
+          overlayUrlDisplay.textContent = `${baseUrl}${getOverlayRoute(selectedGame, streamerId)}`;
+        }
+        if (gameUrlDisplay) {
+          gameUrlDisplay.textContent = `${baseUrl}${getGameRoute(selectedGame, streamerId)}`;
+        }
       }
 
       function getGameDifficulty() {
@@ -1010,46 +1047,14 @@
 
         // Set up link URLs (only if approved)
         if (authStatus.approved) {
-          const streamerId = getStreamerId();
-          if (streamerId) {
-            const baseUrl = window.location.origin;
-            const selectedGame = getSelectedGame() || 'hangman';
-            
-            // Show appropriate overlay URL based on selected game
-            const overlayUrlDisplay = document.getElementById('overlay-url-display');
-            if (overlayUrlDisplay) {
-              if (selectedGame === 'hangman') {
-                overlayUrlDisplay.textContent = `${baseUrl}/overlay/${encodeURIComponent(streamerId.replace('@', ''))}`;
-              } else if (selectedGame === 'spelling-bee') {
-                overlayUrlDisplay.textContent = `${baseUrl}/overlay/spelling-bee/${encodeURIComponent(streamerId.replace('@', ''))}`;
-              } else if (selectedGame === 'speed-scramble') {
-                overlayUrlDisplay.textContent = `${baseUrl}/overlay/speed-scramble/${encodeURIComponent(streamerId.replace('@', ''))}`;
-              }
-            }
-            const gameUrlDisplay = document.getElementById('game-url-display');
-            if (gameUrlDisplay) {
-              gameUrlDisplay.textContent = `${baseUrl}/viewer/${encodeURIComponent(streamerId.replace('@', ''))}`;
-            }
-          }
+          updateStreamerLinks();
 
           // Update overlay URL when game selection changes
           const gameSelectionRadios = document.querySelectorAll('input[name="game-selection"]');
           gameSelectionRadios.forEach(radio => {
             radio.addEventListener('change', () => {
               const streamerId = getStreamerId();
-              const selectedGame = getSelectedGame() || 'hangman';
-              const baseUrl = window.location.origin;
-              
-              const overlayUrlDisplay = document.getElementById('overlay-url-display');
-              if (overlayUrlDisplay) {
-                if (selectedGame === 'hangman') {
-                  overlayUrlDisplay.textContent = `${baseUrl}/overlay/${encodeURIComponent(streamerId.replace('@', ''))}`;
-                } else if (selectedGame === 'spelling-bee') {
-                  overlayUrlDisplay.textContent = `${baseUrl}/overlay/spelling-bee/${encodeURIComponent(streamerId.replace('@', ''))}`;
-                } else if (selectedGame === 'speed-scramble') {
-                  overlayUrlDisplay.textContent = `${baseUrl}/overlay/speed-scramble/${encodeURIComponent(streamerId.replace('@', ''))}`;
-                }
-              }
+              if (streamerId) updateStreamerLinks();
             });
           });
 

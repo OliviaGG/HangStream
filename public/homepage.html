@@ -588,7 +588,9 @@
     @media (max-width: 600px) {
       .site { padding: 16px 16px 32px; }
       header { flex-direction: column; align-items: flex-start; gap: 16px; }
-      nav { width: 100%; flex-wrap: wrap; gap: 8px; }
+      nav { width: 100%; flex-wrap: nowrap; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
+      a.nav { flex: 0 0 auto; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+      .theme-toggle { flex: 0 0 auto; }
       .hero-content h2 { font-size: 28px; }
       .hero-content p.lead { font-size: 14px; }
       .cta-group { flex-direction: column; }
@@ -711,7 +713,7 @@
       <div class="feature-card">
         <div class="feature-icon">🎬</div>
         <h3>Stream Overlay</h3>
-        <p>Clean OBS overlay for professional stream presentation.</p>
+        <p>Use an OBS overlay on desktop, or open the game on mobile and share your screen.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">⚙️</div>
@@ -737,7 +739,7 @@
             <div class="step-number">2</div>
             <div class="step-content">
               <h3>Put the Game on Stream</h3>
-              <p>Add the overlay to OBS and share the game link so viewers can join from chat or browser.</p>
+              <p>Add the overlay to OBS on desktop, or open the game on your phone and share your screen while viewers play from chat.</p>
             </div>
           </div>
           <div class="step">
@@ -776,7 +778,7 @@
           <ul class="audience-features">
             <li>Twitch & TikTok chat integration</li>
             <li>Chat viewers participate by typing</li>
-            <li>Clean OBS overlay</li>
+            <li>OBS overlay or mobile screen sharing</li>
             <li>Custom game settings</li>
             <li>Viewer participation controls</li>
             <li>Per-streamer leaderboards</li>
