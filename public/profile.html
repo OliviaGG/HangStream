@@ -209,6 +209,32 @@
 
     .btn-connect:hover { opacity: 0.9; }
 
+    .account-id-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 28px;
+    }
+
+    .account-id-value {
+      margin: 10px 0 12px;
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--bg-elevated);
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+      border: 1px solid var(--panel-border);
+    }
+
+    .account-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
     .btn-disconnect {
       background: rgba(255, 77, 109, 0.1);
       color: var(--accent);
@@ -445,6 +471,15 @@
             <div class="provider">Connected via ${escapeHtml(provider)}</div>
           </div>
         </div>
+        <div class="account-id-card">
+          <div class="section-title" style="margin-bottom:8px;">Account ID</div>
+          <p style="color:var(--muted);font-size:14px;margin:0;">Use this ID if you request profile or score deletion.</p>
+          <div class="account-id-value" id="account-id-value">${escapeHtml(currentProfile.id || '')}</div>
+          <div class="account-actions">
+            <button class="btn-connect" onclick="copyAccountId()">Copy Account ID</button>
+            <button class="btn-disconnect" onclick="requestDataDeletion()">Request Data Deletion</button>
+          </div>
+        </div>
       `;
 
       // Show connected accounts panel
@@ -591,6 +626,32 @@
       } catch (e) {
         console.error('Failed to open TikTok auth popup', e);
       }
+    }
+
+    function copyAccountId() {
+      const id = currentProfile && currentProfile.id ? currentProfile.id : '';
+      if (!id) return;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(id).then(() => alert('Account ID copied.'));
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = id;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        alert('Account ID copied.');
+      }
+    }
+
+    function requestDataDeletion() {
+      const params = new URLSearchParams({
+        topic: 'privacy',
+        viewerId: currentProfile && currentProfile.id ? currentProfile.id : '',
+        name: currentProfile && currentProfile.name ? currentProfile.name : '',
+        provider: currentProfile && currentProfile.provider ? currentProfile.provider : 'google'
+      });
+      window.location.href = `/contact?${params.toString()}`;
     }
 
     async function disconnectAccount(platform) {
