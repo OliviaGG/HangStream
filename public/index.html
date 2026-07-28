@@ -772,6 +772,43 @@
 
   .twitch-dot.connected { background: #9146ff; }
 
+  .music-request-notice {
+    margin: 12px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg-elevated));
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .music-request-notice strong { color: var(--text); }
+
+  .music-request-notice-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .music-request-tooltip {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--accent);
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    font-size: 12px;
+    line-height: 1;
+    cursor: help;
+    flex: 0 0 auto;
+  }
+
   @media (max-width: 640px) {
     body { overflow: auto; }
     .game-wrap { grid-template-columns: 1fr; grid-template-rows: auto auto auto; padding: 12px; gap: 12px; }
@@ -903,6 +940,18 @@
         <span class="twitch-dot" id="twitch-dot"></span>
         <span id="twitch-label">DEMO MODE</span>
       </span>
+    </div>
+    <div class="music-request-notice" id="music-request-notice" style="display:none;">
+      <div class="music-request-notice-title">
+        <span>Music Requests</span>
+        <button
+          class="music-request-tooltip"
+          type="button"
+          title="During a live stream, !play only reaches Spotify if the streamer connected Spotify Premium. Otherwise the request stays local and will not play in Spotify."
+          aria-label="Music requests help"
+        >i</button>
+      </div>
+      During a stream, <strong>!play</strong> only reaches Spotify when the streamer has connected Spotify Premium. If not, the request stays local and will not play in Spotify.
     </div>
     <div class="player-scores">
       <div class="player-scores-head">
@@ -1449,9 +1498,27 @@ function showWin() {
   const overlay = document.getElementById('overlay');
   const winSection = document.getElementById('win-section');
   const revival = document.getElementById('revival-section');
+  const overlayTitle = document.getElementById('overlay-title');
+  const reveal = document.getElementById('reveal-word');
+  const leaderboardSection = document.querySelector('.leaderboard-section');
+  const leaderboardList = document.getElementById('round-leaderboard');
+  
   if (overlay) overlay.classList.add('show');
   if (winSection) winSection.style.display = '';
   if (revival) revival.style.display = 'none';
+  
+  // Set win message and reveal the word
+  if (overlayTitle) overlayTitle.textContent = '🎉 YOU WIN!';
+  if (reveal) reveal.textContent = activeWord;
+  
+  // Hide leaderboard section if empty (solo/demo mode with no scores)
+  if (leaderboardSection && leaderboardList) {
+    if (leaderboardList.children.length === 0) {
+      leaderboardSection.style.display = 'none';
+    } else {
+      leaderboardSection.style.display = '';
+    }
+  }
 
   // Broadcast game over event to overlay with the correct word (win is also a game over)
   if (gameWs && gameWs.readyState === WebSocket.OPEN) {
@@ -1761,6 +1828,7 @@ state.gameMode = getGameMode();
 loadSavedSettings();
 applyTheme(localStorage.getItem(getThemeStorageKey()) || 'dark');
 try { initMobileUI(); } catch (e) {}
+updateMusicRequestNotice();
 setTimeout(refreshScoresFromServer, 1000);
 setInterval(refreshScoresFromServer, 30 * 1000);
 
@@ -1784,6 +1852,12 @@ function initStreamerHint() {
   if (owner && owner === streamerNamespace) {
     hintBtn.style.display = '';
   }
+}
+
+function updateMusicRequestNotice() {
+  const notice = document.getElementById('music-request-notice');
+  if (!notice) return;
+  notice.style.display = state.gameMode === 'online' ? 'block' : 'none';
 }
 
 if (state.gameMode === 'online' && streamerNamespace) {
