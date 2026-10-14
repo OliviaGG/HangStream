@@ -4,8 +4,92 @@ const crypto = require('crypto');
 // In-memory cache for synchronous access
 let tokensCache = null;
 
+function ensureOAuthTokensTable() {
+  db.run(`CREATE TABLE IF NOT EXISTS oauth_tokens (
+    provider TEXT PRIMARY KEY,
+    access_token TEXT NOT NULL,
+    refresh_token TEXT,
+    expires_at INTEGER
+  )`);
+}
+
+function getTokenEncryptionKey() {
+  const secret = process.env.TOKEN_ENCRYPTION_KEY || '';
+  if (!secret) {
+    console.warn('TOKEN_ENCRYPTION_KEY is not set; OAuth tokens are being stored in plaintext.');
+    return null;
+  }
+  return crypto.createHash('sha256').update(String(secret)).digest();
+}
+
+function encryptTokenPayload(value) {
+  const key = getTokenEncryptionKey();
+  if (!key) {
+    return typeof value === 'string' ? value : JSON.stringify(value);
+  }
+
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const payload = typeof value === 'string' ? value : JSON.stringify(value);
+  const encrypted = Buffer.concat([cipher.update(payload, 'utf8'), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return `enc:${Buffer.concat([iv, tag, encrypted]).toString('base64')}`;
+}
+
+function decryptTokenPayload(value) {
+  if (typeof value !== 'string' || !value.startsWith('enc:')) {
+    return value;
+  }
+
+  const key = getTokenEncryptionKey();
+  if (!key) {
+    return value;
+  }
+
+  try {
+    const raw = Buffer.from(value.slice(4), 'base64');
+    if (raw.length < 32) {
+      return value;
+    }
+    const iv = raw.subarray(0, 16);
+    const tag = raw.subarray(16, 32);
+    const encrypted = raw.subarray(32);
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAuthTag(tag);
+    return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString('utf8');
+  } catch (err) {
+    console.warn('Failed to decrypt saved OAuth token payload:', err.message);
+    return value;
+  }
+}
+
+function normalizeStoredTokenEntry(row) {
+  if (!row || typeof row !== 'object') return {};
+
+  const decrypted = decryptTokenPayload(row.access_token);
+  try {
+    const parsed = JSON.parse(decrypted);
+    if (parsed && typeof parsed === 'object') {
+      return parsed;
+    }
+  } catch (err) {
+    // fall through to legacy token row shape below
+  }
+
+  return {
+    access_token: row.access_token,
+    refresh_token: row.refresh_token,
+    expires_at: row.expires_at,
+    provider: row.provider,
+    created: row.created || null,
+    platform: row.platform || row.provider || null,
+  };
+}
+
 // OAuth tokens (with encryption)
 function loadTokens(callback) {
+  ensureOAuthTokensTable();
+
   // If called without callback, return cached value (for backward compatibility)
   if (!callback) {
     if (tokensCache !== null) {
@@ -25,11 +109,8 @@ function loadTokens(callback) {
 
     const tokens = {};
     for (const row of rows) {
-      tokens[row.provider] = {
-        access_token: row.access_token,
-        refresh_token: row.refresh_token,
-        expires_at: row.expires_at
-      };
+      const entry = normalizeStoredTokenEntry(row);
+      tokens[row.provider] = entry;
     }
 
     tokensCache = tokens;
@@ -38,16 +119,18 @@ function loadTokens(callback) {
 }
 
 function loadTokensSync() {
+  if (tokensCache !== null) {
+    return tokensCache;
+  }
+
   try {
+    ensureOAuthTokensTable();
     const rows = db.prepare('SELECT * FROM oauth_tokens').all();
     const tokens = {};
     if (Array.isArray(rows)) {
       for (const row of rows) {
-        tokens[row.provider] = {
-          access_token: row.access_token,
-          refresh_token: row.refresh_token,
-          expires_at: row.expires_at
-        };
+        const entry = normalizeStoredTokenEntry(row);
+        tokens[row.provider] = entry;
       }
     }
     tokensCache = tokens;
@@ -59,35 +142,44 @@ function loadTokensSync() {
 }
 
 function saveTokens(tokens) {
+  ensureOAuthTokensTable();
+  tokensCache = tokens || {};
   const stmt = db.prepare('INSERT OR REPLACE INTO oauth_tokens (provider, access_token, refresh_token, expires_at) VALUES (?, ?, ?, ?)');
 
-  for (const [provider, data] of Object.entries(tokens)) {
+  for (const [provider, data] of Object.entries(tokens || {})) {
+    const entry = data && typeof data === 'object' ? data : { access_token: data };
+    const expiresAt = Number(entry.expires_at ?? (entry.resp && entry.resp.expires_in ? (entry.created || Date.now()) + (Number(entry.resp.expires_in) * 1000) : null));
+    const encryptedPayload = encryptTokenPayload(entry);
     stmt.run(
       provider,
-      data.access_token,
-      data.refresh_token || null,
-      data.expires_at || null
+      encryptedPayload,
+      entry.refresh_token || (entry.resp && entry.resp.refresh_token) || null,
+      Number.isFinite(expiresAt) ? expiresAt : null
     );
   }
 
   stmt.finalize();
-  tokensCache = tokens;
   console.log('Tokens saved to database');
 }
 
 function saveTokensAsync(tokens) {
   return new Promise((resolve, reject) => {
+    ensureOAuthTokensTable();
+    tokensCache = tokens || {};
     const stmt = db.prepare('INSERT OR REPLACE INTO oauth_tokens (provider, access_token, refresh_token, expires_at) VALUES (?, ?, ?, ?)');
     const promises = [];
 
-    for (const [provider, data] of Object.entries(tokens)) {
+    for (const [provider, data] of Object.entries(tokens || {})) {
+      const entry = data && typeof data === 'object' ? data : { access_token: data };
+      const expiresAt = Number(entry.expires_at ?? (entry.resp && entry.resp.expires_in ? (entry.created || Date.now()) + (Number(entry.resp.expires_in) * 1000) : null));
+      const encryptedPayload = encryptTokenPayload(entry);
       promises.push(
         new Promise((res, rej) => {
           stmt.run(
             provider,
-            data.access_token,
-            data.refresh_token || null,
-            data.expires_at || null,
+            encryptedPayload,
+            entry.refresh_token || (entry.resp && entry.resp.refresh_token) || null,
+            Number.isFinite(expiresAt) ? expiresAt : null,
             (err) => err ? rej(err) : res()
           );
         })
@@ -107,6 +199,23 @@ function saveTokensAsync(tokens) {
 
 // Music queue
 function loadMusicQueue(callback) {
+  if (!callback) {
+    try {
+      const rows = db.prepare('SELECT * FROM music_queue ORDER BY added_at ASC').all() || [];
+      return {
+        items: Array.isArray(rows) ? rows.map(row => ({
+          requester_name: row.requester_name,
+          song_name: row.song_name,
+          song_url: row.song_url,
+          added_at: row.added_at
+        })) : []
+      };
+    } catch (err) {
+      console.error('Error loading music queue synchronously:', err);
+      return { items: [] };
+    }
+  }
+
   db.all('SELECT * FROM music_queue ORDER BY added_at ASC', (err, rows) => {
     if (err) {
       console.error('Error loading music queue:', err);
@@ -158,6 +267,26 @@ function saveMusicQueue(queue) {
 
 // Viewer profiles
 function loadViewerProfiles(callback) {
+  if (!callback) {
+    try {
+      const rows = db.prepare('SELECT * FROM viewer_profiles').all() || [];
+      const profiles = {};
+      for (const row of Array.isArray(rows) ? rows : []) {
+        profiles[row.viewer_id] = {
+          name: row.name,
+          avatar: row.avatar,
+          provider: row.provider,
+          created_at: row.created_at,
+          updated_at: row.updated_at
+        };
+      }
+      return profiles;
+    } catch (err) {
+      console.error('Error loading viewer profiles synchronously:', err);
+      return {};
+    }
+  }
+
   db.all('SELECT * FROM viewer_profiles', (err, rows) => {
     if (err) {
       console.error('Error loading viewer profiles:', err);
@@ -231,6 +360,23 @@ function saveViewerProfilesAsync(profiles) {
 
 // Viewer scores
 function loadViewerScores(callback) {
+  if (!callback) {
+    try {
+      const rows = db.prepare('SELECT * FROM viewer_scores ORDER BY completed_at DESC').all() || [];
+      return {
+        scores: Array.isArray(rows) ? rows.map(row => ({
+          viewer_id: row.viewer_id,
+          score: row.score,
+          word: row.word,
+          completed_at: row.completed_at
+        })) : []
+      };
+    } catch (err) {
+      console.error('Error loading viewer scores synchronously:', err);
+      return { scores: [] };
+    }
+  }
+
   db.all('SELECT * FROM viewer_scores ORDER BY completed_at DESC', (err, rows) => {
     if (err) {
       console.error('Error loading viewer scores:', err);
@@ -281,6 +427,26 @@ function saveViewerScores(scores) {
 
 // Streamer applications
 function loadStreamerApplications(callback) {
+  if (!callback) {
+    try {
+      const rows = db.prepare('SELECT * FROM streamer_applications ORDER BY created_at DESC').all() || [];
+      return Array.isArray(rows) ? rows.map(row => ({
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        platform: row.platform,
+        handle: row.handle,
+        message: row.message,
+        status: row.status,
+        api_key: row.api_key,
+        created_at: row.created_at
+      })) : [];
+    } catch (err) {
+      console.error('Error loading streamer applications synchronously:', err);
+      return [];
+    }
+  }
+
   db.all('SELECT * FROM streamer_applications ORDER BY created_at DESC', (err, rows) => {
     if (err) {
       console.error('Error loading streamer applications:', err);
@@ -325,6 +491,27 @@ function saveStreamerApplications(applications) {
 
 // Streamer accounts
 function loadStreamerAccounts(callback) {
+  if (!callback) {
+    try {
+      const rows = db.prepare('SELECT * FROM streamer_accounts').all() || [];
+      const accounts = {};
+      for (const row of Array.isArray(rows) ? rows : []) {
+        accounts[row.email] = {
+          password_hash: row.password_hash,
+          api_key: row.api_key,
+          platform: row.platform,
+          handle: row.handle,
+          score_combination: row.score_combination || 'combined',
+          created_at: row.created_at
+        };
+      }
+      return accounts;
+    } catch (err) {
+      console.error('Error loading streamer accounts synchronously:', err);
+      return {};
+    }
+  }
+
   db.all('SELECT * FROM streamer_accounts', (err, rows) => {
     if (err) {
       console.error('Error loading streamer accounts:', err);
@@ -369,6 +556,25 @@ function saveStreamerAccounts(accounts) {
 
 // Donations
 function loadDonations(callback) {
+  if (!callback) {
+    try {
+      const rows = db.prepare('SELECT * FROM donations ORDER BY created_at DESC').all() || [];
+      return Array.isArray(rows) ? rows.map(row => ({
+        id: row.id,
+        viewer_id: row.viewer_id,
+        viewer_name: row.viewer_name,
+        amount: row.amount,
+        currency: row.currency,
+        status: row.status,
+        createdAt: new Date(row.created_at * 1000).toISOString(),
+        sessionId: row.session_id
+      })) : [];
+    } catch (err) {
+      console.error('Error loading donations synchronously:', err);
+      return [];
+    }
+  }
+
   db.all('SELECT * FROM donations ORDER BY created_at DESC', (err, rows) => {
     if (err) {
       console.error('Error loading donations:', err);
@@ -444,6 +650,7 @@ function saveDonationsAsync(donations) {
 
 module.exports = {
   loadTokens,
+  loadTokensSync,
   saveTokens,
   saveTokensAsync,
   loadMusicQueue,

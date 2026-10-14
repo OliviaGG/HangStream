@@ -18,6 +18,8 @@ try {
 require('./db');
 
 const {
+  loadStreamerAccounts,
+  saveStreamerAccounts,
   loadTokens,
   saveTokens,
   loadMusicQueue,
@@ -37,6 +39,7 @@ const {
 } = require('./storage');
 
 const port = process.env.PORT || 8080;
+const SESSION_SECRET = process.env.SESSION_SECRET || '';
 const viewerPath = path.join(__dirname, '..', 'public', 'index.html');
 const homepagePath = path.join(__dirname, '..', 'public', 'homepage.html');
 const settingsPath = path.join(__dirname, '..', 'public', 'streamer-settings.html');
@@ -88,6 +91,7 @@ function validateEnvironment() {
   const warnings = [];
 
   // Required variables
+  if (!SESSION_SECRET) errors.push('SESSION_SECRET is required');
   if (!GOOGLE_CLIENT_ID) errors.push('GOOGLE_CLIENT_ID is required');
   if (!GOOGLE_CLIENT_SECRET) errors.push('GOOGLE_CLIENT_SECRET is required');
 
@@ -159,8 +163,64 @@ function sendErrorResponse(res, statusCode, message, error = null) {
 function parseCookies(cookieHeader) {
   return (cookieHeader || '').split(';').map(s => s.trim()).reduce((acc, cur) => {
     const [k, v] = cur.split('='); if (k) acc[k] = v; return acc;
-  }, {});
+  }, {}); 
 }
+  function createSessionToken(ownerId, email) {
+  const payload = Buffer.from(JSON.stringify({
+    ownerId: String(ownerId),
+    email: String(email || ''),
+    expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000
+  })).toString('base64url');
+
+  const signature = crypto
+    .createHmac('sha256', SESSION_SECRET)
+    .update(payload)
+    .digest('base64url');
+
+  return `${payload}.${signature}`;
+}
+
+function readOwnerSession(req) {
+  const token = parseCookies(req.headers.cookie).hs_session;
+  if (!token || !SESSION_SECRET) return null;
+
+  const [payload, signature, extra] = token.split('.');
+  if (!payload || !signature || extra !== undefined) return null;
+
+  const expected = crypto
+    .createHmac('sha256', SESSION_SECRET)
+    .update(payload)
+    .digest('base64url');
+
+  const actualBytes = Buffer.from(signature);
+  const expectedBytes = Buffer.from(expected);
+
+  if (
+    actualBytes.length !== expectedBytes.length ||
+    !crypto.timingSafeEqual(actualBytes, expectedBytes)
+  ) {
+    return null;
+  }
+
+  try {
+    const session = JSON.parse(
+      Buffer.from(payload, 'base64url').toString('utf8')
+    );
+
+    if (
+      !session.ownerId ||
+      !Number.isSafeInteger(session.expiresAt) ||
+      session.expiresAt <= Date.now()
+    ) {
+      return null;
+    }
+
+    return session;
+  } catch {
+    return null;
+  }
+}
+
 
 function buildOwnerLoginSuccessPage(ownerId, ownerName, provider, ownerEmail = '') {
   const idJson = JSON.stringify(ownerId || '');
@@ -317,6 +377,18 @@ async function createMusicRequest(owner, query, user, opts) {
 function getOwnerKey(req, fallbackOwner = '') {
   const cookies = parseCookies(req.headers.cookie);
   return String(cookies.owner || fallbackOwner || '').trim();
+}
+
+function requireOwnerSession(req, res) {
+  const session = readOwnerSession(req);
+
+  if (!session) {
+    res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ error: 'authentication_required' }));
+    return null;
+  }
+
+  return String(session.ownerId);
 }
 
 function generateApiKey() {
@@ -665,6 +737,12 @@ const server = http.createServer((req, res) => {
 
   // OAuth entry: redirect to TikTok
   if (pathname === '/oauth') {
+    const session = readOwnerSession(req);
+if (!session) {
+  res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('Please log in with Google before connecting to TikTok.');
+  return;
+}
     if (!CLIENT_KEY) {
       sendErrorResponse(res, 500, 'TIKTOK_CLIENT_KEY not configured on server.');
       return;
@@ -726,6 +804,13 @@ const server = http.createServer((req, res) => {
 
   // Spotify owner login entry
   if (pathname === '/oauth/spotify') {
+    const session = readOwnerSession(req);
+if (!session) {
+  res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('Please log in with Google before connecting Spotify.');
+  return;
+}
+    res.end('Please log in with Google before connecting Spotify.');
     if (!SPOTIFY_CLIENT_ID) {
       sendErrorResponse(res, 500, 'SPOTIFY_CLIENT_ID not configured on server.');
       return;
@@ -746,6 +831,13 @@ const server = http.createServer((req, res) => {
 
   // Twitch OAuth entry
   if (pathname === '/oauth/twitch') {
+    const session = readOwnerSession(req);
+
+    if (!session) {
+  res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('Please log in with Google before connecting Twitch.');
+  return;
+}
     if (!TWITCH_CLIENT_ID) {
       sendErrorResponse(res, 500, 'TWITCH_CLIENT_ID not configured on server.');
       return;
@@ -779,10 +871,17 @@ const server = http.createServer((req, res) => {
     }
 
     if (!state || cookies.csrfState !== state) {
-      res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Invalid state (possible CSRF)');
-      return;
-    }
+  res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('Invalid state (possible CSRF)');
+  return;
+}
+
+const session = readOwnerSession(req);
+if (!session) {
+  res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('Please log in with Google before connecting TikTok.');
+  return;
+}
 
     if (!code) {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -826,7 +925,7 @@ const server = http.createServer((req, res) => {
             const tokens = loadTokens();
             // store response under a generated id
             const id = crypto.randomBytes(8).toString('hex');
-            tokens[id] = { created: Date.now(), resp: parsed, platform: 'tiktok', owner: (cookies && cookies.owner) || null };
+            tokens[id] = { created: Date.now(), resp: parsed, platform: 'tiktok', owner: session.ownerId };
             saveTokens(tokens);
 
             // try to get userinfo using access token if present
@@ -890,6 +989,14 @@ const server = http.createServer((req, res) => {
       res.end('Invalid state (possible CSRF)');
       return;
     }
+
+    const session = readOwnerSession(req);
+    if (!session) {
+      res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Please log in with Google before connecting TikTok.');
+      return;
+    }
+
     if (!code) {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Missing code');
@@ -1043,7 +1150,23 @@ const server = http.createServer((req, res) => {
                 const ownerId = `google:${profile.sub || profile.email || crypto.randomBytes(8).toString('hex')}`;
                 const ownerName = profile.name || profile.email || profile.given_name || 'Google user';
                 const ownerEmail = profile.email || '';
-                res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                const sessionToken = createSessionToken(ownerId, ownerEmail);
+const sessionCookie = [
+  `hs_session=${sessionToken}`,
+  'HttpOnly',
+  'Path=/',
+  'SameSite=Lax',
+  'Max-Age=604800'
+];
+
+if (process.env.NODE_ENV === 'production') {
+  sessionCookie.push('Secure');
+}
+
+res.writeHead(200, {
+  'Content-Type': 'text/html; charset=utf-8',
+  'Set-Cookie': sessionCookie.join('; ')
+});
                 res.end(buildOwnerLoginSuccessPage(ownerId, ownerName, 'google', ownerEmail));
               } catch (e) {
                 res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -1125,12 +1248,14 @@ const server = http.createServer((req, res) => {
           const profile = await spotifyGetProfile(accessToken);
           
           // Require owner to be logged in to connect Spotify
-          const owner = (cookies && cookies.owner);
-          if (!owner) {
-            res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
-            res.end('Please log in with Google first to connect Spotify. Close this window and log in, then try again.');
-            return;
-          }
+          const session = readOwnerSession(req);
+          if (!session) {
+          res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('Please log in with Google first to connect Spotify.');
+          return;
+        }
+
+const owner = session.ownerId;
           
           const ownerName = (profile && profile.display_name) || (profile && profile.email) || 'Spotify user';
           const tokens = loadTokens();
@@ -1166,7 +1291,18 @@ const server = http.createServer((req, res) => {
     const code = params.get('code');
     const state = params.get('state');
     const cookies = parseCookies(req.headers.cookie);
-    if (!state || cookies.csrfState !== state) { res.writeHead(403); res.end('Invalid state'); return; }
+    if (!state || cookies.csrfState !== state) {
+  res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('Invalid state');
+  return;
+}
+
+const session = readOwnerSession(req);
+if (!session) {
+  res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('Please log in with Google before connecting Twitch.');
+  return;
+}
     if (!code) { res.writeHead(400); res.end('Missing code'); return; }
     if (!TWITCH_CLIENT_ID || !TWITCH_CLIENT_SECRET) { res.writeHead(500); res.end('Twitch OAuth not configured'); return; }
 
@@ -1180,7 +1316,7 @@ const server = http.createServer((req, res) => {
           const parsed = JSON.parse(body);
           const tokens = loadTokens();
           const id = crypto.randomBytes(8).toString('hex');
-          tokens[id] = { created: Date.now(), resp: parsed, platform: 'twitch', owner: (cookies && cookies.owner) || null };
+          tokens[id] = { created: Date.now(), resp: parsed, platform: 'twitch', owner: session.ownerId };
           // fetch user info
           const opts = { hostname: 'api.twitch.tv', path: '/helix/users', method: 'GET', headers: { 'Authorization': `Bearer ${parsed.access_token}`, 'Client-Id': TWITCH_CLIENT_ID } };
           const r = https.request(opts, (uRes) => {
@@ -1208,47 +1344,19 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Return stored tokens (safe for local streamer page)
-  if (pathname === '/oauth/tokens' && req.method === 'GET') {
-    const tokens = loadTokens();
-    const owner = reqUrl.searchParams.get('owner');
-    if (owner) {
-      const out = {};
-      for (const id of Object.keys(tokens || {})) {
-        if (tokens[id] && tokens[id].owner === owner) out[id] = tokens[id];
-      }
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify(out));
-      return;
-    }
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify(tokens));
+   // Token management endpoints are disabled until server-side ownership
+  // checks are implemented. Never expose OAuth credentials to the browser.
+  if (
+    (pathname === '/oauth/tokens' && req.method === 'GET') ||
+    (pathname === '/oauth/remove' && req.method === 'POST')
+  ) {
+    res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ error: 'Not found' }));
     return;
   }
 
   // Remove a token by id
-  if (pathname === '/oauth/remove' && req.method === 'POST') {
-    let body = '';
-    req.on('data', (c) => body += c);
-    req.on('end', () => {
-      try {
-        const parsed = JSON.parse(body || '{}');
-        const id = parsed.id;
-        const cookies = parseCookies(req.headers.cookie);
-        if (!id) { res.writeHead(400); res.end('missing id'); return; }
-        const tokens = loadTokens();
-        if (!tokens[id]) { res.writeHead(404); res.end('not found'); return; }
-        if (tokens[id].owner && cookies.owner && tokens[id].owner !== cookies.owner) { res.writeHead(403); res.end('forbidden'); return; }
-        // allow deletion if owners match or if token has no owner
-        delete tokens[id];
-        saveTokens(tokens);
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ ok: true }));
-      } catch (e) { res.writeHead(500); res.end('error'); }
-    });
-    return;
-  }
-
+ 
   if (pathname === '/music/request' && req.method === 'POST') {
     let body = '';
     req.on('data', (c) => body += c);
@@ -1287,8 +1395,8 @@ const server = http.createServer((req, res) => {
     req.on('data', (c) => body += c);
     req.on('end', async () => {
       try {
-        const parsed = JSON.parse(body || '{}');
-        const owner = getOwnerKey(req, typeof parsed.owner === 'string' ? parsed.owner : '');
+        const owner = requireOwnerSession(req, res);
+        if (!owner) return;
         const accessToken = await getSpotifyAccessToken(owner);
         if (!accessToken) {
           res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -1311,7 +1419,8 @@ const server = http.createServer((req, res) => {
     req.on('end', async () => {
       try {
         const parsed = JSON.parse(body || '{}');
-        const owner = getOwnerKey(req, typeof parsed.owner === 'string' ? parsed.owner : '');
+        const owner = requireOwnerSession(req, res);
+        if (!owner) return;
         const action = String(parsed.action || '').toLowerCase();
         const accessToken = await getSpotifyAccessToken(owner);
         if (!accessToken) {
@@ -1365,7 +1474,8 @@ const server = http.createServer((req, res) => {
       try {
         const parsed = JSON.parse(body || '{}');
         const id = typeof parsed.id === 'string' ? parsed.id.trim() : '';
-        const owner = getOwnerKey(req, typeof parsed.owner === 'string' ? parsed.owner : '');
+        const owner = requireOwnerSession(req, res);
+        if (!owner) return;
         if (!id) {
           res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(JSON.stringify({ error: 'missing id' }));
@@ -1495,7 +1605,7 @@ const server = http.createServer((req, res) => {
   if (pathname === '/streamers' && req.method === 'GET') {
     const accounts = loadStreamerAccounts();
     const streamers = Object.entries(accounts).map(([email, data]) => ({
-      email,
+      id: String(data.handle || email || '').trim() || String(email || '').trim(),
       platform: data.platform,
       handle: data.handle,
       apiKey: data.api_key ? 'configured' : 'not configured'
@@ -1530,44 +1640,36 @@ const server = http.createServer((req, res) => {
     req.on('end', async () => {
       try {
         const { scoreCombination, selectedGame, gameDifficulty, tiktokGift, tiktokCustomCoins, twitchGift, twitchCustomBits } = JSON.parse(body);
-        const owner = getOwnerKey(req, '');
-        
-        if (owner) {
-          const accounts = loadStreamerAccounts();
-          
-          // Find the account by owner (email or streamer ID)
-          let accountKey = null;
-          if (accounts[owner]) {
-            accountKey = owner;
-          } else {
-            // Try to find by email if owner is a streamer ID
-            for (const [email, account] of Object.entries(accounts)) {
-              if (account.handle === owner || email === owner) {
-                accountKey = email;
-                break;
-              }
-            }
-          }
-          
-          if (accountKey) {
-            accounts[accountKey].score_combination = scoreCombination;
-            if (selectedGame) accounts[accountKey].selected_game = selectedGame;
-            if (gameDifficulty) accounts[accountKey].game_difficulty = gameDifficulty;
-            if (tiktokGift) accounts[accountKey].tiktok_gift = tiktokGift;
-            if (tiktokCustomCoins) accounts[accountKey].tiktok_custom_coins = tiktokCustomCoins;
-            if (twitchGift) accounts[accountKey].twitch_gift = twitchGift;
-            if (twitchCustomBits) accounts[accountKey].twitch_custom_bits = twitchCustomBits;
-            saveStreamerAccounts(accounts);
-            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(JSON.stringify({ success: true }));
-          } else {
-            res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(JSON.stringify({ error: 'Streamer not found' }));
-          }
-        } else {
+        const owner = requireOwnerSession(req, res);
+        if (!owner) return;
+
+        const session = readOwnerSession(req);
+        if (!session) {
           res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(JSON.stringify({ error: 'Not authenticated' }));
+          return;
         }
+
+        const ownerEmail = String(session.email || '').trim().toLowerCase();
+        const accounts = loadStreamerAccounts();
+        const accountKey = Object.keys(accounts).find((email) => email.toLowerCase() === ownerEmail);
+
+        if (!accountKey) {
+          res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Streamer not found' }));
+          return;
+        }
+
+        accounts[accountKey].score_combination = scoreCombination;
+        if (selectedGame) accounts[accountKey].selected_game = selectedGame;
+        if (gameDifficulty) accounts[accountKey].game_difficulty = gameDifficulty;
+        if (tiktokGift) accounts[accountKey].tiktok_gift = tiktokGift;
+        if (tiktokCustomCoins) accounts[accountKey].tiktok_custom_coins = tiktokCustomCoins;
+        if (twitchGift) accounts[accountKey].twitch_gift = twitchGift;
+        if (twitchCustomBits) accounts[accountKey].twitch_custom_bits = twitchCustomBits;
+        saveStreamerAccounts(accounts);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: true }));
       } catch (error) {
         console.error('Error updating settings:', error);
         res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -2041,16 +2143,15 @@ const server = http.createServer((req, res) => {
   }
 
   // Check authentication status
-  if (pathname === '/auth/check' && req.method === 'GET') {
-    const cookies = parseCookies(req.headers.cookie);
-    const isAuthenticated = !!(cookies.owner && cookies.google_email);
+   if (pathname === '/auth/check' && req.method === 'GET') {
+    const session = readOwnerSession(req);
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({
-      authenticated: isAuthenticated,
-      email: cookies.google_email || null
+      authenticated: Boolean(session),
+      email: session ? session.email : null
     }));
     return;
-  }
+  }  
 
   // Get donation history
   if (pathname === '/donate/history' && req.method === 'GET') {
@@ -2174,10 +2275,9 @@ const server = http.createServer((req, res) => {
   }
 
   if (urlPath === '/tokens') {
-    const tokens = loadTokens();
-    const cookies = parseCookies(req.headers.cookie);
-    const owner = cookies.owner;
-    
+    const session = readOwnerSession(req);
+const owner = session ? session.ownerId : '';
+
     // Only check if current owner has Spotify connected
     let hasSpotify = false;
     if (owner && tokens && tokens[owner]) {
