@@ -55,6 +55,11 @@ const contactPath = path.join(__dirname, '..', 'public', 'contact.html');
 const gamesPath = path.join(__dirname, '..', 'public', 'games.html');
 const spellingBeePath = path.join(__dirname, '..', 'public', 'spelling-bee.html');
 const speedScramblePath = path.join(__dirname, '..', 'public', 'speed-scramble.html');
+const wordlePath = path.join(__dirname, '..', 'public', 'wordle.html');
+const searchlePath = path.join(__dirname, '..', 'public', 'searchle.html');
+// Searchle ranker (port wt-eco searchle engine). Loads embedding models
+// lazily on first API call — safe to require at boot.
+const searchleRanker = require('./searchle/ranker');
 
 const CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY || '';
 const CLIENT_SECRET = process.env.TIKTOK_CLIENT_SECRET || '';
@@ -2364,6 +2369,60 @@ if (!session) {
     return;
   }
 
+  // Searchle API — semantic ranking against the hidden target word.
+  // The target never leaves the server; the model loads lazily on first use.
+  if (pathname === '/searchle/api/status' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    searchleRanker.status().then(s => res.end(JSON.stringify(s)));
+    return;
+  }
+
+  if (pathname === '/searchle/api/start' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      searchleRanker.createGame().then(
+        game => {
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: true, gameId: game.gameId }));
+        },
+        err => {
+          res.writeHead(err && err.code === 'MODEL_NOT_READY' ? 503 : 500,
+            { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: false, error: err.message, code: err.code || 'ERROR' }));
+        }
+      );
+    });
+    return;
+  }
+
+  if (pathname === '/searchle/api/guess' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      let gameId = null;
+      let word = null;
+      try {
+        const data = JSON.parse(body || '{}');
+        gameId = data.gameId;
+        word = data.word;
+      } catch (e) {}
+      searchleRanker.submitGuess(gameId, word).then(
+        result => {
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify(Object.assign({ success: true }, result)));
+        },
+        err => {
+          const code = err && err.code;
+          const status = code === 'MODEL_NOT_READY' ? 503 : code === 'NO_GAME' || code === 'GAME_WON' ? 400 : 500;
+          res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: false, error: err.message, code: code || 'ERROR' }));
+        }
+      );
+    });
+    return;
+  }
+
   // TikTok verification file
   if (pathname === '/tiktokoD3TMQr0cbojRXpxHpI8gUC9FGfCea6m.txt' || pathname === '/.well-known/tiktokoD3TMQr0cbojRXpxHpI8gUC9FGfCea6m.txt') {
     sendFile(res, path.join(__dirname, '..', 'public', 'tiktokoD3TMQr0cbojRXpxHpI8gUC9FGfCea6m.txt'), 'text/plain; charset=utf-8');
@@ -2390,6 +2449,11 @@ if (!session) {
 
   if (urlPath === '/styles.css') {
     sendFile(res, path.join(__dirname, '..', 'public', 'styles.css'), 'text/css; charset=utf-8');
+    return;
+  }
+
+  if (urlPath === '/wordle-words.js') {
+    sendFile(res, path.join(__dirname, '..', 'public', 'wordle-words.js'), 'application/javascript; charset=utf-8');
     return;
   }
 
@@ -2489,6 +2553,16 @@ if (!session) {
     return;
   }
 
+  if (urlPath === '/wordle' || urlPath === '/wordle.html') {
+    sendFile(res, wordlePath, 'text/html; charset=utf-8');
+    return;
+  }
+
+  if (urlPath === '/searchle' || urlPath === '/searchle.html') {
+    sendFile(res, searchlePath, 'text/html; charset=utf-8');
+    return;
+  }
+
   // Overlay routes
   if (urlPath.startsWith('/overlay/')) {
     const parts = urlPath.split('/').filter(Boolean);
@@ -2500,6 +2574,16 @@ if (!session) {
     // /overlay/speed-scramble/streamername
     if (parts.length === 3 && parts[1] === 'speed-scramble') {
       sendFile(res, speedScramblePath, 'text/html; charset=utf-8');
+      return;
+    }
+    // /overlay/wordle/streamername
+    if (parts.length === 3 && parts[1] === 'wordle') {
+      sendFile(res, wordlePath, 'text/html; charset=utf-8');
+      return;
+    }
+    // /overlay/searchle/streamername
+    if (parts.length === 3 && parts[1] === 'searchle') {
+      sendFile(res, searchlePath, 'text/html; charset=utf-8');
       return;
     }
     // /overlay/streamername or /overlay/:streamerId - default to hangman
@@ -2523,6 +2607,16 @@ if (!session) {
     return;
   }
 
+  if (urlPath === '/wordle/solo' || urlPath === '/wordle/solo/') {
+    sendFile(res, wordlePath, 'text/html; charset=utf-8');
+    return;
+  }
+
+  if (urlPath === '/searchle/solo' || urlPath === '/searchle/solo/') {
+    sendFile(res, searchlePath, 'text/html; charset=utf-8');
+    return;
+  }
+
   // Online game routes
   if (urlPath === '/hangman/online' || urlPath === '/hangman/online/') {
     sendFile(res, viewerPath, 'text/html; charset=utf-8');
@@ -2536,6 +2630,16 @@ if (!session) {
 
   if (urlPath === '/speed-scramble/online' || urlPath === '/speed-scramble/online/') {
     sendFile(res, speedScramblePath, 'text/html; charset=utf-8');
+    return;
+  }
+
+  if (urlPath === '/wordle/online' || urlPath === '/wordle/online/') {
+    sendFile(res, wordlePath, 'text/html; charset=utf-8');
+    return;
+  }
+
+  if (urlPath === '/searchle/online' || urlPath === '/searchle/online/') {
+    sendFile(res, searchlePath, 'text/html; charset=utf-8');
     return;
   }
 

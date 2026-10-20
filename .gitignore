@@ -7,3 +7,10 @@ server/*.json
 server/data/*.json
 data/
 *.db
+
+# Searchle embedding models — built locally via server/searchle/tools/*,
+# ~125MB. Exceeds GitHub's 100MB limit; never commit.
+# (Negates the generic `data/` rule above so target-words.json IS tracked.)
+!server/searchle/data/
+server/searchle/data/models/
+server/searchle/data/fasttext/

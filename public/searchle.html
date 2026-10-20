@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PPSHEVKZK8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-PPSHEVKZK8');
+  </script>
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7924572843609877"
+       crossorigin="anonymous"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Searchle - HangStream</title>
+<style id="inline-shared">
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap');
+
+  :root {
+    --bg: #0e0e12;
+    --bg-elevated: #0b0b0f;
+    --panel: #1a1a22;
+    --panel-strong: #20202a;
+    --text: #f0ede8;
+    --text-muted: #888;
+    --muted: #666;
+    --border: #2a2a35;
+    --accent: #ff4d6d;
+    --accent-hover: #ff6b85;
+    --good: #2ecc71;
+    --bad: #ff7a7a;
+    --secondary: #3a3a45;
+    color-scheme: dark;
+  }
+
+  body[data-theme="light"] {
+    --bg: #f5f0ea;
+    --bg-elevated: #efe8e1;
+    --panel: #ffffff;
+    --panel-strong: #f8f2ec;
+    --text: #1f1f28;
+    --text-muted: #5c5c68;
+    --muted: #6f6f7c;
+    --border: #d7cfc6;
+    --accent: #c93f5c;
+    --accent-hover: #e15a76;
+    --good: #1f8f53;
+    --bad: #c74444;
+    --secondary: #7b7681;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at top left, rgba(255, 77, 109, 0.10), transparent 28%),
+      radial-gradient(circle at top right, rgba(124, 92, 255, 0.10), transparent 24%),
+      linear-gradient(180deg, color-mix(in srgb, var(--bg) 90%, #000 10%), var(--bg));
+    color: var(--text);
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+
+  .game-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-rows: auto 1fr auto;
+    min-height: 100vh;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .topbar {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.14);
+  }
+
+  .logo {
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    color: var(--accent);
+  }
+
+  .logo span { color: var(--text); }
+
+  .score-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .score-number {
+    color: var(--accent);
+    font-size: 24px;
+  }
+
+  .category-badge {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--panel) 80%, transparent);
+  }
+
+  .game-area {
+    display: flex;
+    min-width: 0;
+  }
+
+  .game-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 36px 34px;
+    gap: 22px;
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.14);
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* ── HERO RANK ── */
+  .rank-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 22px 40px;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    background: color-mix(in srgb, var(--panel) 70%, transparent);
+    min-width: 260px;
+    text-align: center;
+  }
+
+  .rank-big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 64px;
+    line-height: 1;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+
+  .rank-big.hit { color: var(--good); }
+
+  .rank-label {
+    font-size: 11px;
+    letter-spacing: 2.4px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .rank-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .percentile-track {
+    width: 100%;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--panel-strong);
+    overflow: hidden;
+    margin-top: 4px;
+  }
+
+  .percentile-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), var(--good));
+    transition: width 0.5s ease;
+  }
+
+  /* ── GUESS FORM ── */
+  .guess-form {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .guess-input {
+    flex: 1;
+    padding: 15px 18px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: color-mix(in srgb, var(--panel) 85%, transparent);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    letter-spacing: 0.06em;
+    outline: none;
+    transition: border-color 0.15s;
+    min-width: 0;
+  }
+
+  .guess-input:focus { border-color: var(--accent); }
+  .guess-input:disabled { opacity: 0.5; }
+
+  .guess-btn {
+    padding: 15px 26px;
+    border-radius: 12px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #ffffff;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .guess-btn:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .guess-btn:active { transform: scale(0.96); }
+  .guess-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── GUESS LIST ── */
+  .guess-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 34vh;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .guess-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--panel) 75%, transparent);
+    animation: slideIn 0.2s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .rank-badge {
+    min-width: 58px;
+    text-align: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    background: var(--secondary);
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .rank-badge.near   { background: color-mix(in srgb, var(--good) 25%, transparent); color: var(--good); border: 1px solid var(--good); }
+  .rank-badge.close  { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); border: 1px solid var(--accent); }
+  .rank-badge.ok     { background: color-mix(in srgb, #f0b429 20%, transparent); color: #f0b429; border: 1px solid #f0b429; }
+  .rank-badge.win    { background: var(--good); color: #ffffff; border: 1px solid var(--good); }
+
+  .guess-word {
+    font-family: 'Space Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .guess-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .guess-best-tag {
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .empty-guesses {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    padding: 14px;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+  }
+
+  .instructions {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.5;
+    max-width: 520px;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    display: flex;
+    flex-direction: column;
+    background: color-mix(in srgb, var(--bg-elevated) 90%, transparent);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.14);
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .sidebar-head {
+    padding: 18px 18px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    letter-spacing: 2.2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  .twitch-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .twitch-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+
+  .twitch-dot.connected { background: var(--good); }
+
+  .chat-feed {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: calc(100vh - 60px);
+  }
+
+  .chat-msg {
+    font-size: 13px;
+    line-height: 1.5;
+    animation: slideIn 0.2s ease;
+  }
+
+  .chat-user { color: var(--accent); font-weight: 700; }
+  .chat-guess { color: color-mix(in srgb, var(--text) 94%, transparent); }
+  .chat-system { color: var(--muted); font-style: italic; }
+  .chat-correct { color: var(--good); }
+  .chat-wrong { color: var(--bad); }
+
+  .settings-btn {
+    background: color-mix(in srgb, var(--panel) 80%, transparent);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 8px 14px;
+    border-radius: 14px;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    transition: all 0.15s;
+  }
+
+  .settings-btn:hover { color: var(--text); border-color: var(--secondary); }
+
+  .theme-btn {
+    background: color-mix(in srgb, var(--panel) 80%, transparent);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 8px 14px;
+    border-radius: 14px;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    transition: all 0.15s;
+    min-width: 104px;
+  }
+
+  .theme-btn:hover { color: var(--text); border-color: var(--secondary); }
+
+  .player-scores {
+    margin: 12px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--bg-elevated);
+    overflow: hidden;
+  }
+
+  .player-scores-head {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .player-scores-list {
+    display: flex;
+    flex-direction: column;
+    max-height: 180px;
+    overflow: auto;
+  }
+
+  .player-score-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+  }
+
+  .player-score-row:first-child { border-top: 0; }
+  .player-score-name { color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .player-score-points { color: var(--accent); font-weight: 700; }
+
+  .message-box {
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    text-align: center;
+    font-size: 13px;
+  }
+
+  .message-box.success {
+    background: color-mix(in srgb, var(--good) 15%, transparent);
+    border: 1px solid var(--good);
+    color: var(--good);
+  }
+
+  .message-box.error {
+    background: color-mix(in srgb, var(--bad) 15%, transparent);
+    border: 1px solid var(--bad);
+    color: var(--bad);
+  }
+
+  .message-box.info {
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+  }
+
+  body.overlay-mode .topbar,
+  body.overlay-mode .sidebar,
+  body.overlay-mode .settings-btn,
+  body.overlay-mode .theme-btn {
+    display: none !important;
+  }
+
+  body.overlay-mode .game-wrap {
+    display: block;
+  }
+
+  body.overlay-mode .game-area {
+    display: block;
+  }
+
+  body.overlay-mode .game-main {
+    padding: 60px 34px;
+  }
+
+  /* Hide all ads on overlay for clean OBS stream */
+  body.overlay-mode .adsbygoogle,
+  body.overlay-mode ins.adsbygoogle {
+    display: none !important;
+  }
+
+  @media (max-width: 640px) {
+    body { overflow: auto; }
+    .game-wrap { grid-template-columns: 1fr; grid-template-rows: auto auto auto; padding: 12px; gap: 12px; }
+    .sidebar { border-left: 0; min-height: 260px; }
+    .game-main { padding: 24px 18px; gap: 18px; }
+    .topbar { flex-wrap: wrap; gap: 10px; }
+    .category-badge { display: none; }
+    .score-display { display: none; }
+    .rank-big { font-size: 48px; }
+    .rank-hero { padding: 16px 24px; min-width: 0; width: 100%; }
+    .guess-btn { padding: 15px 18px; }
+    .guess-meta { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="game-wrap">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <a href="/" class="logo" style="text-decoration:none;">HANG<span>STREAM</span></a>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div class="category-badge">🔍 Searchle</div>
+      <div class="score-display">
+        Best <span class="score-number" id="best-rank">—</span>
+        <span style="color:var(--text-muted); font-weight:400; font-size:13px;">| Guess <span id="guess-count">0</span></span>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <button id="viewer-login-btn" class="settings-btn">Sign in with Google</button>
+      <button id="theme-btn" class="theme-btn">Dark mode</button>
+      <button id="new-game-btn" class="settings-btn">🔄 New Round</button>
+    </div>
+  </div>
+
+  <!-- MAIN GAME AREA -->
+  <div class="game-area">
+    <div class="game-main">
+      <div id="message-area"></div>
+
+      <div class="rank-hero">
+        <div class="rank-label">Closest guess</div>
+        <div class="rank-big" id="rank-big">—</div>
+        <div class="rank-sub" id="rank-sub">Rank #1 wins the round</div>
+        <div class="percentile-track"><div class="percentile-fill" id="percentile-fill"></div></div>
+      </div>
+
+      <form class="guess-form" id="guess-form" autocomplete="off">
+        <input class="guess-input" id="guess-input" type="text" maxlength="32"
+               placeholder="Type any word…" spellcheck="false" autocapitalize="off" autocomplete="off">
+        <button class="guess-btn" id="guess-btn" type="submit">Guess</button>
+      </form>
+
+      <div class="guess-list" id="guess-list">
+        <div class="empty-guesses" id="empty-guesses">No guesses yet. Find the hidden word — the closer your guess, the better your rank.</div>
+      </div>
+
+      <div class="instructions" id="instructions">Guess words until your guess is ranked #1. Chat guesses count in online mode.</div>
+    </div>
+  </div>
+
+  <!-- CHAT SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-head">
+      <div class="live-dot"></div>
+      Chat feed
+      <span style="margin-left:auto;" class="twitch-status">
+        <span class="twitch-dot" id="twitch-dot"></span>
+        <span id="twitch-label">DEMO MODE</span>
+      </span>
+    </div>
+    <div class="player-scores">
+      <div class="player-scores-head">
+        <span>Player Scores</span>
+        <span id="player-score-status">This round</span>
+      </div>
+      <div class="player-scores-list" id="player-scores-list">
+        <div class="player-score-row"><span class="player-score-name">No points yet.</span><span class="player-score-points">0</span></div>
+      </div>
+    </div>
+    <div class="chat-feed" id="chat-feed"></div>
+  </div>
+</div>
+
+<script>
+// ── STATE VARS ──
+let state = {
+  viewerId: '',
+  viewerName: '',
+  viewerAvatar: '',
+  streamerId: getStreamerNamespace(),
+  gameMode: 'solo', // 'solo' or 'online'
+  gameId: 'searchle',
+};
+
+let currentTheme = 'dark';
+let playerScores = {};
+let playerSessionId = null;
+let chatWS = null;
+let chatInterval = null;
+let messageTimer = null;
+
+// Searchle game state
+let roundId = null;      // server-side session id (target stays on server)
+let roundOver = false;
+let busy = false;        // guess request in flight
+let guessCount = 0;
+let bestRank = null;
+let retryTimer = null;
+
+const FAKE_USERS = ["xX_gamer99_Xx","streamer_fan","tiktok_live","chat_legend","just_vibing","pro_viewer","randomdude42","hyped_up_lol","lurker_no_more","gifted_sub","nochill_andy","pogchamp99"];
+const DEMO_WORDS = ["apple","river","money","happy","ghost","queen","brick","candle","planet","tiger"];
+
+// ── UTILITY ──
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
+
+function getCookieValue(name) {
+  const escaped = String(name || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = String(document.cookie || '').match(new RegExp('(?:^|; )' + escaped + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
+function getStreamerNamespace() {
+  try {
+    const cookieOwner = getCookieValue('owner');
+    if (cookieOwner) return cookieOwner;
+  } catch (e) {}
+  try {
+    const storedOwner = localStorage.getItem('hangstream-streamer-id') || '';
+    if (storedOwner) return storedOwner;
+  } catch (e) {}
+  return 'default';
+}
+
+function getGameMode() {
+  const path = window.location.pathname;
+  if (path.includes('/online')) return 'online';
+  if (path.includes('/solo')) return 'solo';
+  return 'solo'; // default
+}
+
+function registerPlayer() {
+  if (state.gameMode !== 'online') return;
+
+  playerSessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+
+  fetch(`/game-join/${state.gameId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId: playerSessionId })
+  }).catch(() => {});
+}
+
+function unregisterPlayer() {
+  if (state.gameMode !== 'online' || !playerSessionId) return;
+
+  fetch(`/game-leave/${state.gameId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId: playerSessionId })
+  }).catch(() => {});
+
+  playerSessionId = null;
+}
+
+function getThemeStorageKey() {
+  return `hangstream-game-theme:${getStreamerNamespace()}`;
+}
+
+// ── THEME ──
+function applyTheme(themeName) {
+  currentTheme = themeName || 'dark';
+  document.body.setAttribute('data-theme', currentTheme);
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = currentTheme === 'light' ? 'Light mode' : 'Dark mode';
+  try { localStorage.setItem(getThemeStorageKey(), currentTheme); } catch (e) {}
+}
+
+function toggleTheme() {
+  applyTheme(currentTheme === 'light' ? 'dark' : 'light');
+}
+
+// ── ROUND LIFECYCLE ──
+function resetRoundUI() {
+  guessCount = 0;
+  bestRank = null;
+  roundOver = false;
+  busy = false;
+
+  document.getElementById('guess-count').textContent = '0';
+  document.getElementById('best-rank').textContent = '—';
+  const rankBig = document.getElementById('rank-big');
+  rankBig.textContent = '—';
+  rankBig.classList.remove('hit');
+  document.getElementById('rank-sub').textContent = 'Rank #1 wins the round';
+  document.getElementById('percentile-fill').style.width = '0%';
+  document.getElementById('guess-list').innerHTML =
+    '<div class="empty-guesses" id="empty-guesses">No guesses yet. Find the hidden word — the closer your guess, the better your rank.</div>';
+  document.getElementById('guess-input').value = '';
+  document.getElementById('guess-input').disabled = false;
+  document.getElementById('guess-btn').disabled = false;
+  clearMessage();
+
+  const instructions = document.getElementById('instructions');
+  if (instructions) {
+    instructions.textContent = state.gameMode === 'online'
+      ? 'Guess words until your guess is ranked #1. Chat word-guesses count in online mode.'
+      : 'Guess words until your guess is ranked #1. The closer your guess, the better your rank.';
+  }
+}
+
+async function startRound() {
+  if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
+  resetRoundUI();
+
+  try {
+    const res = await fetch('/searchle/api/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (res.ok && data.success && data.gameId) {
+      roundId = data.gameId;
+      setGuessEnabled(true);
+      showMessage('New round started — good luck!', 'info');
+      return;
+    }
+
+    if (res.status === 503) {
+      showMessage('Warming up the ranking model… this can take a moment on first load.', 'info');
+      retryTimer = setTimeout(startRound, 4000);
+      return;
+    }
+
+    showMessage(data.error || 'Could not start a round', 'error');
+    retryTimer = setTimeout(startRound, 6000);
+  } catch (e) {
+    showMessage('Connection problem — retrying…', 'error');
+    retryTimer = setTimeout(startRound, 5000);
+  }
+}
+
+function setGuessEnabled(on) {
+  const input = document.getElementById('guess-input');
+  const btn = document.getElementById('guess-btn');
+  if (input) input.disabled = !on || roundOver;
+  if (btn) btn.disabled = !on || roundOver;
+}
+
+// ── GUESSING ──
+function rankBadgeClass(rank) {
+  if (rank === 1) return 'win';
+  if (rank <= 10) return 'near';
+  if (rank <= 100) return 'close';
+  return 'ok';
+}
+
+function percentileText(rank, total) {
+  if (!rank || !total || total < 2) return '';
+  const pct = (1 - (rank - 1) / total) * 100;
+  return `closer than ${pct.toFixed(1)}%`;
+}
+
+function addGuessRow(word, rank, total, isNewBest, won) {
+  const list = document.getElementById('guess-list');
+  const empty = document.getElementById('empty-guesses');
+  if (empty) empty.remove();
+
+  const row = document.createElement('div');
+  row.className = 'guess-row';
+
+  const badge = document.createElement('span');
+  if (rank === null || rank === undefined) {
+    badge.className = 'rank-badge';
+    badge.textContent = 'OUT';
+    badge.title = 'Valid word, but outside this round\u2019s ranked pool';
+  } else {
+    badge.className = 'rank-badge ' + rankBadgeClass(rank);
+    badge.textContent = '#' + rank;
+  }
+
+  const wordEl = document.createElement('span');
+  wordEl.className = 'guess-word';
+  wordEl.textContent = word;
+
+  row.appendChild(badge);
+  row.appendChild(wordEl);
+
+  if (won) {
+    const tag = document.createElement('span');
+    tag.className = 'guess-best-tag';
+    tag.textContent = '\u2713 FOUND IT';
+    tag.style.color = 'var(--good)';
+    row.appendChild(tag);
+  } else if (isNewBest && rank !== null && rank !== undefined) {
+    const tag = document.createElement('span');
+    tag.className = 'guess-best-tag';
+    tag.textContent = 'NEW BEST';
+    row.appendChild(tag);
+  }
+
+  const meta = document.createElement('span');
+  meta.className = 'guess-meta';
+  meta.textContent = rank !== null && rank !== undefined && total
+    ? `${percentileText(rank, total)} \u00b7 pool ${Number(total).toLocaleString()}`
+    : 'not in ranked pool';
+  row.appendChild(meta);
+
+  list.appendChild(row);
+  list.scrollTop = list.scrollHeight;
+}
+
+function updateHero(rank, total) {
+  const rankBig = document.getElementById('rank-big');
+  const rankSub = document.getElementById('rank-sub');
+  const fill = document.getElementById('percentile-fill');
+  if (rank === null || rank === undefined) {
+    rankSub.textContent = total ? `Outside this round\u2019s ranked pool of ${Number(total).toLocaleString()} words` : 'Rank #1 wins the round';
+    return;
+  }
+  rankBig.textContent = '#' + rank;
+  rankBig.classList.toggle('hit', rank === 1);
+  const pct = total ? Math.max(0, (1 - (rank - 1) / total) * 100) : 0;
+  rankSub.textContent = total
+    ? `#${rank} of ${Number(total).toLocaleString()} ranked words \u00b7 ${percentileText(rank, total)}`
+    : `#${rank} \u00b7 Rank #1 wins the round`;
+  fill.style.width = pct.toFixed(1) + '%';
+}
+
+function updateCounters() {
+  document.getElementById('guess-count').textContent = String(guessCount);
+  document.getElementById('best-rank').textContent = bestRank === null ? '—' : '#' + bestRank;
+}
+
+// Returns: 'win' | 'ok' | 'outside' | 'invalid' | 'duplicate' | 'unknown' | 'error'
+async function submitGuess(word, sourceUser) {
+  const raw = String(word || '').toLowerCase().trim();
+  if (!roundId || roundOver) return 'error';
+  if (!/^[a-z]+$/.test(raw)) { showMessage('Letters only', 'error'); return 'invalid'; }
+  if (busy) return 'error';
+
+  busy = true;
+  setGuessEnabled(false);
+
+  try {
+    const res = await fetch('/searchle/api/guess', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId: roundId, word: raw })
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (res.status === 503) {
+      showMessage('Ranking model is still warming up — try again in a moment.', 'info');
+      return 'error';
+    }
+    if (res.status === 400 && data.code === 'NO_GAME') {
+      roundId = null;
+      showMessage('Round expired — starting a new one…', 'info');
+      startRound();
+      return 'error';
+    }
+    if (res.status === 400 && data.code === 'GAME_WON') {
+      showMessage('Round already won — start a new round', 'info');
+      return 'error';
+    }
+    if (!res.ok || !data.success) {
+      showMessage(data.error || 'Something went wrong', 'error');
+      return 'error';
+    }
+
+    if (data.status === 'invalid') { showMessage('Letters only', 'error'); return 'invalid'; }
+    if (data.status === 'duplicate') { showMessage('Already guessed', 'info'); return 'duplicate'; }
+    if (data.status === 'unknown') { showMessage('Not a real word', 'error'); return 'unknown'; }
+
+    // ranked or outside
+    guessCount = data.guessNumber;
+    if (data.rank !== null && data.rank !== undefined) {
+      if (bestRank === null || data.rank < bestRank) bestRank = data.rank;
+    }
+    updateCounters();
+    updateHero(data.rank, data.poolSize);
+    addGuessRow(data.word, data.rank, data.poolSize, !!data.newBest, !!data.win);
+
+    if (data.win) {
+      roundOver = true;
+      const points = data.points || 10;
+      awardPlayerPoints(sourceUser || 'You', points);
+      showMessage(`Found it in ${data.guessCount} ${data.guessCount === 1 ? 'guess' : 'guesses'}! +${points} points \u2014 the word was ${data.target}`, 'success');
+      const instructions = document.getElementById('instructions');
+      if (instructions) instructions.textContent = `Solved! The word was ${data.target}. Press New Round to play again.`;
+      return 'win';
+    }
+
+    return data.status === 'outside' ? 'outside' : 'ok';
+  } catch (e) {
+    showMessage('Connection problem \u2014 try again', 'error');
+    return 'error';
+  } finally {
+    busy = false;
+    setGuessEnabled(!!roundId);
+    const input = document.getElementById('guess-input');
+    if (input && !roundOver) input.focus();
+  }
+}
+
+// ── PLAYER SCORES ──
+function renderPlayerScores() {
+  const list = document.getElementById('player-scores-list');
+  if (!list) return;
+  const entries = Object.entries(playerScores)
+    .filter(([, points]) => Number(points) > 0)
+    .sort((a, b) => Number(b[1]) - Number(a[1]) || a[0].localeCompare(b[0]));
+  if (!entries.length) {
+    list.innerHTML = '<div class="player-score-row"><span class="player-score-name">No points yet.</span><span class="player-score-points">0</span></div>';
+    return;
+  }
+  list.innerHTML = entries.map(([name, points]) => {
+    return `<div class="player-score-row"><span class="player-score-name">${escapeHtml(name)}</span><span class="player-score-points">${points}</span></div>`;
+  }).join('');
+}
+
+function awardPlayerPoints(username, points) {
+  const name = String(username || '').trim() || 'viewer';
+  const current = Number(playerScores[name]) || 0;
+  playerScores[name] = current + Math.max(0, Number(points) || 0);
+  renderPlayerScores();
+}
+
+function showMessage(text, type) {
+  const area = document.getElementById('message-area');
+  if (!area) return;
+
+  if (messageTimer) clearTimeout(messageTimer);
+  area.innerHTML = `<div class="message-box ${type}">${escapeHtml(text)}</div>`;
+
+  messageTimer = setTimeout(() => {
+    area.innerHTML = '';
+  }, 3200);
+}
+
+function clearMessage() {
+  const area = document.getElementById('message-area');
+  if (area) area.innerHTML = '';
+  if (messageTimer) clearTimeout(messageTimer);
+}
+
+// ── CHAT INTEGRATION ──
+function connectChatWebSocket() {
+  if (chatWS) return;
+
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const wsUrl = `${proto}://${location.host}`;
+
+  try {
+    chatWS = new WebSocket(wsUrl);
+
+    chatWS.addEventListener('open', () => {
+      console.log('Chat WebSocket connected');
+      // Subscribe to the streamer's channel if available
+      if (state.streamerId && state.streamerId !== 'default') {
+        chatWS.send(JSON.stringify({
+          type: 'watch',
+          platform: 'both',
+          owner: state.streamerId,
+          twitchChannel: state.streamerId,
+          tiktokChannel: state.streamerId
+        }));
+      }
+    });
+
+    chatWS.addEventListener('message', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        handleChatMessage(data);
+      } catch (e) {
+        console.error('Failed to parse chat message:', e);
+      }
+    });
+
+    chatWS.addEventListener('close', () => {
+      console.log('Chat WebSocket disconnected, reconnecting in 5s...');
+      chatWS = null;
+      setTimeout(connectChatWebSocket, 5000);
+    });
+
+    chatWS.addEventListener('error', () => {
+      console.warn('Chat WebSocket error');
+    });
+  } catch (e) {
+    console.error('Failed to create WebSocket connection:', e);
+  }
+}
+
+async function handleChatMessage(data) {
+  // Update connection status
+  const twitchDot = document.getElementById('twitch-dot');
+  const twitchLabel = document.getElementById('twitch-label');
+  if (twitchDot && twitchLabel) {
+    if (data.type === 'chat' || data.type === 'status') {
+      twitchDot.classList.add('connected');
+      twitchLabel.textContent = 'CONNECTED';
+    }
+  }
+
+  if (data.type === 'chat') {
+    const user = data.user || 'viewer';
+    const message = (data.message || '').trim();
+
+    // Chat word-guesses only count in online mode so solo play stays clean
+    const isWordGuess = state.gameMode === 'online' && /^[A-Za-z]{3,24}$/.test(message) && !/^[!#]/.test(message);
+    if (isWordGuess && roundId && !roundOver) {
+      const outcome = await submitGuess(message, user);
+      if (outcome === 'invalid' || outcome === 'unknown' || outcome === 'duplicate') {
+        addChatMessage(user, message.toUpperCase(), 'wrong');
+      } else if (outcome === 'win') {
+        addChatMessage(user, message.toUpperCase(), 'correct');
+      } else if (outcome === 'ok' || outcome === 'outside') {
+        addChatMessage(user, message.toUpperCase(), 'normal');
+      }
+    } else {
+      addChatMessage(user, message, 'normal');
+    }
+  }
+
+  // Add demo mode fake chat if no real streamer
+  if (state.streamerId === 'default' && !chatInterval) {
+    startDemoChat();
+  }
+}
+
+// Demo mode chat simulation (feed only, does not play the round)
+function startDemoChat() {
+  if (chatInterval) return;
+
+  chatInterval = setInterval(() => {
+    const randomUser = FAKE_USERS[Math.floor(Math.random() * FAKE_USERS.length)];
+    const randomWord = DEMO_WORDS[Math.floor(Math.random() * DEMO_WORDS.length)];
+    addChatMessage(randomUser, randomWord.toUpperCase(), 'normal');
+  }, 5000); // Add a fake message every 5 seconds
+}
+
+// ── CHAT FEED ──
+function addChatMessage(user, message, type = 'normal') {
+  const feed = document.getElementById('chat-feed');
+  if (!feed) return;
+
+  const msg = document.createElement('div');
+  msg.className = 'chat-msg';
+
+  if (type === 'correct') {
+    msg.innerHTML = `<span class="chat-user">${escapeHtml(user)}</span> found it with <span class="chat-correct">${escapeHtml(message)}</span>`;
+  } else if (type === 'wrong') {
+    msg.innerHTML = `<span class="chat-user">${escapeHtml(user)}</span> tried <span class="chat-wrong">${escapeHtml(message)}</span>`;
+  } else {
+    msg.innerHTML = `<span class="chat-user">${escapeHtml(user)}</span>: <span class="chat-guess">${escapeHtml(message)}</span>`;
+  }
+
+  feed.appendChild(msg);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+// ── EVENT LISTENERS ──
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('theme-btn')
+    .addEventListener('click', toggleTheme);
+
+  document.getElementById('new-game-btn')
+    .addEventListener('click', () => startRound());
+
+  document.getElementById('guess-form')
+    .addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('guess-input');
+      const word = input.value;
+      input.value = '';
+      const outcome = await submitGuess(word, state.viewerName || 'You');
+      if (outcome === 'invalid' || outcome === 'unknown' || outcome === 'duplicate') {
+        input.value = word; // give the player their typed word back on reject
+      }
+    });
+});
+
+// ── INIT ──
+state.gameMode = getGameMode();
+applyTheme(localStorage.getItem(getThemeStorageKey()) || 'dark');
+
+// Detect overlay mode and add body class
+if (window.location.pathname.startsWith('/overlay')) {
+  document.body.classList.add('overlay-mode');
+}
+
+resetRoundUI();
+startRound();
+
+if (state.gameMode === 'online') {
+  registerPlayer();
+}
+
+// Connect to chat WebSocket for chat integration
+connectChatWebSocket();
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+  unregisterPlayer();
+  if (retryTimer) {
+    clearTimeout(retryTimer);
+    retryTimer = null;
+  }
+  if (chatInterval) {
+    clearInterval(chatInterval);
+    chatInterval = null;
+  }
+  if (chatWS) {
+    chatWS.close();
+    chatWS = null;
+  }
+});
+
+// Storage sync
+window.addEventListener('storage', (event) => {
+  if (event.key === getThemeStorageKey()) applyTheme(event.newValue || 'dark');
+});
+</script>
+
+</body>
+</html>
