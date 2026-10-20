@@ -485,6 +485,48 @@
                 </div>
               </div>
             </details>
+
+            <div id="music-control-panel" style="margin-top:24px;padding:20px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;">
+                <div>
+                  <h3 style="margin:0 0 6px 0;font-size:18px;">Music Control</h3>
+                  <p style="color:var(--text-muted);font-size:13px;margin:0;">Control Spotify and manage viewer requests from your HangStream dashboard.</p>
+                </div>
+                <button class="btn btn-secondary" type="button" id="music-refresh-btn" style="padding:9px 14px;">Refresh</button>
+              </div>
+
+              <div id="now-playing-card" style="display:flex;align-items:center;gap:14px;padding:14px;background:rgba(255,255,255,0.035);border-radius:12px;margin-bottom:14px;">
+                <div id="now-playing-art" style="width:56px;height:56px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:24px;">♫</div>
+                <div style="min-width:0;flex:1;">
+                  <div style="color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.12em;">Now playing</div>
+                  <div id="now-playing-title" style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Nothing playing</div>
+                  <div id="now-playing-artist" style="color:var(--text-muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Connect Spotify to start</div>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+                <button class="btn btn-secondary" type="button" id="music-play-pause-btn" style="padding:9px 14px;">Pause</button>
+                <button class="btn btn-secondary" type="button" id="music-skip-btn" style="padding:9px 14px;">Skip</button>
+                <label style="display:flex;align-items:center;gap:8px;color:var(--text-muted);font-size:13px;margin-left:auto;">
+                  Volume
+                  <input id="music-volume" type="range" min="0" max="100" value="50" style="accent-color:var(--accent);">
+                  <span id="music-volume-value">50%</span>
+                </label>
+              </div>
+
+              <form id="manual-music-request" style="display:flex;gap:8px;margin-bottom:18px;">
+                <input id="manual-music-query" class="setting-input" type="text" maxlength="200" placeholder="Add a song or artist" style="flex:1;min-width:0;">
+                <button class="btn btn-primary" type="submit" style="padding:10px 14px;">Add song</button>
+              </form>
+
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <h4 style="margin:0;font-size:14px;">Viewer Requests</h4>
+                <span id="music-queue-status" style="color:var(--text-muted);font-size:12px;">Loading...</span>
+              </div>
+              <div id="music-request-queue" style="display:grid;gap:8px;">
+                <div style="color:var(--text-muted);font-size:13px;">No requests yet.</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1389,6 +1431,119 @@
     }
   }
 
+  let spotifyPlaying = false;
+
+  function escapeMusicText(value) {
+    return String(value || '').replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[char]));
+  }
+
+  async function loadMusicControls() {
+    try {
+      const [currentResponse, queueResponse] = await Promise.all([
+        fetch('/music/current', { credentials: 'same-origin' }),
+        fetch('/music/queue', { credentials: 'same-origin' })
+      ]);
+      if (!currentResponse.ok || !queueResponse.ok) throw new Error('Music controls unavailable');
+      const current = await currentResponse.json();
+      const queue = await queueResponse.json();
+      const item = current.item;
+      spotifyPlaying = Boolean(current.is_playing);
+      document.getElementById('now-playing-title').textContent = item ? item.name || 'Unknown track' : 'Nothing playing';
+      document.getElementById('now-playing-artist').textContent = item ? item.artists?.map((artist) => artist.name).join(', ') || 'Unknown artist' : 'Connect Spotify to start';
+      const art = item && item.album && item.album.images && item.album.images[0] ? item.album.images[0].url : '';
+      const artElement = document.getElementById('now-playing-art');
+      artElement.style.backgroundImage = art ? `url("${art.replace(/"/g, '%22')}")` : '';
+      artElement.style.backgroundSize = 'cover';
+      artElement.textContent = art ? '' : '♫';
+      document.getElementById('music-play-pause-btn').textContent = spotifyPlaying ? 'Pause' : 'Resume';
+      renderMusicQueue(queue.items || []);
+    } catch (error) {
+      document.getElementById('music-queue-status').textContent = 'Connect Spotify to use controls';
+      console.error('Failed to load music controls:', error);
+    }
+  }
+
+  function renderMusicQueue(items) {
+    const container = document.getElementById('music-request-queue');
+    const status = document.getElementById('music-queue-status');
+    status.textContent = `${items.length} request${items.length === 1 ? '' : 's'}`;
+    if (!items.length) {
+      container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">No requests yet.</div>';
+      return;
+    }
+    container.innerHTML = items.map((item) => `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.035);border-radius:10px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeMusicText(item.spotify?.trackName || item.query)}</div>
+          <div style="font-size:11px;color:var(--text-muted);">${escapeMusicText(item.spotify?.artist || item.requestedBy || 'viewer')} · ${escapeMusicText(item.status || 'queued')}</div>
+        </div>
+        <button class="btn btn-secondary music-remove-btn" type="button" data-id="${escapeMusicText(item.id)}" style="padding:6px 10px;font-size:12px;">Remove</button>
+      </div>
+    `).join('');
+    container.querySelectorAll('.music-remove-btn').forEach((button) => {
+      button.addEventListener('click', () => removeMusicRequest(button.dataset.id));
+    });
+  }
+
+  async function removeMusicRequest(id) {
+    const response = await fetch('/music/queue/remove', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+    if (!response.ok) {
+      alert('Unable to remove that request.');
+      return;
+    }
+    loadMusicControls();
+  }
+
+  document.getElementById('music-refresh-btn').addEventListener('click', loadMusicControls);
+  document.getElementById('music-play-pause-btn').addEventListener('click', async () => {
+    const response = await fetch('/music/pause', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: spotifyPlaying ? 'pause' : 'resume' })
+    });
+    if (response.ok) loadMusicControls();
+  });
+  document.getElementById('music-skip-btn').addEventListener('click', async () => {
+    const response = await fetch('/music/skip', { method: 'POST', credentials: 'same-origin' });
+    if (response.ok) loadMusicControls();
+  });
+  document.getElementById('music-volume').addEventListener('change', async (event) => {
+    const volume = Number(event.target.value);
+    document.getElementById('music-volume-value').textContent = `${volume}%`;
+    await fetch('/music/volume', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ volume })
+    });
+  });
+  document.getElementById('manual-music-request').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const input = document.getElementById('manual-music-query');
+    const query = input.value.trim();
+    if (!query) return;
+    const response = await fetch('/music/request', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, user: 'streamer' })
+    });
+    if (!response.ok) {
+      alert('Unable to add that song.');
+      return;
+    }
+    input.value = '';
+    loadMusicControls();
+  });
+
   // Listen for OAuth completion
   window.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'owner-login' && event.data.provider === 'spotify') {
@@ -1397,7 +1552,10 @@
   });
 
   // Check Spotify status on load
-  setTimeout(checkSpotifyStatus, 1000);
+  setTimeout(() => {
+    checkSpotifyStatus();
+    loadMusicControls();
+  }, 1000);
 </script>
 
 </body>

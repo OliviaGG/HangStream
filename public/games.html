@@ -385,7 +385,21 @@ function renderGames() {
   const grid = document.getElementById('games-grid');
   if (!grid) return;
   
-  grid.innerHTML = GAMES.map(game => `
+  grid.innerHTML = GAMES.map(game => game.comingSoon ? `
+    <div class="game-card">
+      <div class="game-icon">${game.icon}</div>
+      <div>
+        <div class="game-name">${game.name}</div>
+        <div class="game-description">${game.description}</div>
+      </div>
+      <div class="game-modes">
+        <div class="mode-btn solo" style="cursor:default;opacity:.72;">
+          <span>Coming soon</span>
+          <span style="font-size:11px;opacity:.7;">Native HangStream version</span>
+        </div>
+      </div>
+    </div>
+  ` : `
     <div class="game-card">
       <div class="game-icon">${game.icon}</div>
       <div>
@@ -411,6 +425,7 @@ function renderGames() {
 
 async function updatePlayerCounts() {
   for (const game of GAMES) {
+    if (game.comingSoon) continue;
     try {
       const response = await fetch(`/game-count/${game.id}`);
       if (response.ok) {

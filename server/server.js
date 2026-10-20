@@ -81,8 +81,123 @@ const stripePublishableKey = (stripe && process.env.STRIPE_PUBLISHABLE_KEY) || '
 const gamePlayers = {
   'hangman': new Set(),
   'spelling-bee': new Set(),
-  'speed-scramble': new Set()
+  'speed-scramble': new Set(),
+  'wordle': new Set(),
+  'searchle': new Set()
 };
+
+const NEXT_GAME_VOTE_CHOICES = [
+  { id: 'hangman', name: 'Hangman' },
+  { id: 'spelling-bee', name: 'Spelling Bee' },
+  { id: 'speed-scramble', name: 'Speed Scramble' },
+];
+const NEXT_GAME_VOTE_RE = /^(?:[!/]?vote\s*)?#?\s*([1-9]\d?)\s*$/i;
+const NEXT_GAME_VOTE_DEFAULT_DURATION_SEC = 30;
+const NEXT_GAME_VOTE_MIN_DURATION_SEC = 10;
+const NEXT_GAME_VOTE_MAX_DURATION_SEC = 180;
+const NEXT_GAME_VOTE_RESULT_GRACE_SEC = 8;
+const nextGameVotes = new Map();
+
+function normalizeVoteChannel(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getNextGameName(gameId) {
+  const match = NEXT_GAME_VOTE_CHOICES.find((entry) => entry.id === gameId);
+  return match ? match.name : String(gameId || '');
+}
+
+function buildNextGameVoteSnapshot(vote) {
+  if (!vote) return null;
+  const now = Date.now();
+  const totalVotes = Object.values(vote.tallies || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+  const ballot = (vote.ballot || []).map((entry) => {
+    const votes = Number(vote.tallies && vote.tallies[entry.gameId] || 0);
+    return {
+      ...entry,
+      votes,
+      pct: totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0
+    };
+  });
+  return {
+    phase: vote.phase,
+    channel: vote.channel,
+    currentGameId: vote.currentGameId,
+    currentGameName: getNextGameName(vote.currentGameId),
+    totalVotes,
+    ballot,
+    secondsLeft: vote.phase === 'voting' ? Math.max(0, Math.ceil((vote.voteEndsAt - now) / 1000)) : 0,
+    resultSecondsLeft: vote.phase === 'result' ? Math.max(0, Math.ceil((vote.resultEndsAt - now) / 1000)) : 0,
+    winner: vote.winnerGameId ? {
+      gameId: vote.winnerGameId,
+      name: getNextGameName(vote.winnerGameId),
+      votes: Number(vote.tallies && vote.tallies[vote.winnerGameId] || 0),
+      tiebreak: Boolean(vote.tiebreak)
+    } : null
+  };
+}
+
+function setOwnerSelectedGame(ownerEmail, gameId) {
+  if (!ownerEmail || !gameId) return;
+  const accounts = loadStreamerAccounts();
+  const accountKey = Object.keys(accounts).find((email) => email.toLowerCase() === String(ownerEmail).toLowerCase());
+  if (!accountKey) return;
+  accounts[accountKey].selected_game = gameId;
+  saveStreamerAccounts(accounts);
+}
+
+function finalizeNextGameVote(vote) {
+  const totalVotes = Object.values(vote.tallies || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+  if (!totalVotes) {
+    vote.phase = 'idle';
+    vote.voteEndsAt = 0;
+    vote.resultEndsAt = 0;
+    vote.ballot = [];
+    vote.tallies = {};
+    vote.voters.clear();
+    vote.winnerGameId = null;
+    vote.tiebreak = false;
+    return;
+  }
+
+  const entries = Object.entries(vote.tallies || {});
+  const topVotes = Math.max(...entries.map((entry) => Number(entry[1] || 0)));
+  const leaders = entries.filter((entry) => Number(entry[1] || 0) === topVotes).map((entry) => entry[0]);
+  const winner = leaders[Math.floor(Math.random() * leaders.length)];
+  vote.phase = 'result';
+  vote.winnerGameId = winner;
+  vote.tiebreak = leaders.length > 1;
+  vote.resultEndsAt = Date.now() + (NEXT_GAME_VOTE_RESULT_GRACE_SEC * 1000);
+}
+
+function closeNextGameVote(vote) {
+  if (!vote) return;
+  if (vote.winnerGameId && vote.winnerGameId !== vote.currentGameId) {
+    setOwnerSelectedGame(vote.ownerEmail, vote.winnerGameId);
+  }
+  vote.phase = 'idle';
+  vote.voteEndsAt = 0;
+  vote.resultEndsAt = 0;
+  vote.ballot = [];
+  vote.tallies = {};
+  vote.voters.clear();
+  vote.winnerGameId = null;
+  vote.tiebreak = false;
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const vote of nextGameVotes.values()) {
+    if (!vote) continue;
+    if (vote.phase === 'voting' && now >= vote.voteEndsAt) {
+      finalizeNextGameVote(vote);
+      continue;
+    }
+    if (vote.phase === 'result' && now >= vote.resultEndsAt) {
+      closeNextGameVote(vote);
+    }
+  }
+}, 1000);
 
 // Environment validation
 function validateEnvironment() {
@@ -694,6 +809,11 @@ async function spotifyPausePlayback(accessToken) {
 
 async function spotifyResumePlayback(accessToken) {
   const result = await spotifyPlaybackRequest('/v1/me/player/play', accessToken, 'PUT');
+  return result.statusCode >= 200 && result.statusCode < 300;
+}
+
+async function spotifySetVolume(accessToken, volumePercent) {
+  const result = await spotifyPlaybackRequest(`/v1/me/player/volume?volume_percent=${encodeURIComponent(volumePercent)}`, accessToken, 'PUT');
   return result.statusCode >= 200 && result.statusCode < 300;
 }
 
@@ -1433,6 +1553,35 @@ if (!session) {
         res.end(JSON.stringify({ ok, action: action === 'resume' ? 'resume' : 'pause' }));
       } catch (e) {
         sendErrorResponse(res, 500, 'failed to update playback', e);
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/music/volume' && req.method === 'POST') {
+    let body = '';
+    req.on('data', (c) => body += c);
+    req.on('end', async () => {
+      try {
+        const parsed = JSON.parse(body || '{}');
+        const owner = requireOwnerSession(req, res);
+        if (!owner) return;
+        const volume = Number(parsed.volume);
+        if (!Number.isInteger(volume) || volume < 0 || volume > 100) {
+          sendErrorResponse(res, 400, 'volume must be an integer between 0 and 100');
+          return;
+        }
+        const accessToken = await getSpotifyAccessToken(owner);
+        if (!accessToken) {
+          res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'spotify account not connected' }));
+          return;
+        }
+        const ok = await spotifySetVolume(accessToken, volume);
+        res.writeHead(ok ? 200 : 502, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok, volume }));
+      } catch (e) {
+        sendErrorResponse(res, 500, 'failed to update volume', e);
       }
     });
     return;
@@ -2276,12 +2425,13 @@ if (!session) {
 
   if (urlPath === '/tokens') {
     const session = readOwnerSession(req);
-const owner = session ? session.ownerId : '';
+    const owner = session ? session.ownerId : '';
+    const savedTokens = loadTokens();
 
     // Only check if current owner has Spotify connected
     let hasSpotify = false;
-    if (owner && tokens && tokens[owner]) {
-      hasSpotify = tokens[owner].platform === 'spotify';
+    if (owner && savedTokens && savedTokens[owner]) {
+      hasSpotify = savedTokens[owner].platform === 'spotify';
     }
     
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -2763,4 +2913,3 @@ async function refreshTokensLoop() {
 setInterval(() => { refreshTokensLoop().catch(()=>{}); }, 10 * 60 * 1000);
 // also run once at startup shortly after load
 setTimeout(() => { refreshTokensLoop().catch(()=>{}); }, 5000);
-
