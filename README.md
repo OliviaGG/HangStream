@@ -30,7 +30,7 @@ Turn chat into an interactive game. HangStream is a real-time multiplayer hangma
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (version 14 or higher)
+- Node.js (version 18 or higher — see `engines` in `package.json`)
 - npm
 
 ### Installation
@@ -138,24 +138,198 @@ npm start
 - **Responsive Design**: Works on desktop and mobile devices
 - **Modern UI**: Clean, card-based interface with smooth animations
 
-## 📦 Deployment
+## 📦 Deployment (Azure)
 
-### Azure App Service
-1. Build and push to Azure Container Registry
-2. Set environment variables (see `.env.example`)
-3. Mount Azure Files to persist data
-4. Update OAuth redirect URIs
+HangStream is a single Node.js process with a SQLite database, so the simplest fit
+on Azure is a **Linux VM managed with pm2** — which is how this project deploys.
+What it needs:
 
-### Google Cloud RunI
-1. Run `gcloud run deploy` with appropriate flags
-2. Set environment variables in Cloud Run service
-3. Update Google OAuth redirect URIs
+- Node.js ≥ 18 (Node 20 recommended)
+- ~512 MB RAM to run; ~1 GB RAM if you build the Searchle model on the VM
+- Ports **80/443** open (or 8080 directly if you skip nginx)
+- The server listens on `process.env.PORT || 8080` — every page, API, WebSocket,
+  and overlay is served from this one process
 
-### DigitalOcean App Platform
-1. Connect GitHub repository
-2. Configure as Web Service with WebSockets enabled
-3. Set environment variables
-4. Deploy and test
+> **Why not Azure App Service?** It can work (a `Dockerfile` is included for
+> containers too), but the SQLite file, native `sqlite3` module, always-on
+> WebSockets, and the Searchle model build are all friction there. A VM keeps
+> everything in one place.
+
+### 1. Create the VM
+
+- **Image**: Ubuntu 22.04 or 24.04 LTS
+- **Size**: anything with **2 GB+ RAM** (4 GB lets you build the Searchle model
+  on the VM instead of copying it)
+- **Networking**: allow inbound HTTP/HTTPS in the NSG — portal: *Networking →
+  Add inbound security rule*; or CLI:
+  `az vm open-port --resource-group <rg> --name <vm> --port 80`
+
+### 2. Install the basics
+
+```bash
+sudo apt update
+sudo apt install -y git python3 make g++     # build tools for native npm modules
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+```
+
+### 3. Clone and configure
+
+```bash
+cd ~
+git clone <your-repo-url> HangStream
+cd HangStream
+cp .env.example .env
+nano .env          # see the table below
+npm install
+```
+
+### 4. Environment variables
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `NODE_ENV=production` | ✅ | production mode |
+| `APP_URL` | ✅ | public URL, e.g. `https://yourdomain.com` — must match the OAuth redirect URIs |
+| `SESSION_SECRET` | ✅ | random string for session cookies |
+| `TOKEN_ENCRYPTION_KEY` | ✅ | random string used to encrypt stored OAuth tokens |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | ✅ | admin dashboard login |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | ✅ | Google sign-in (all auth runs through it) |
+| `SMTP_*` | optional | email notifications for applications |
+| `SPOTIFY_*` / `TIKTOK_*` / `TWITCH_*` | optional | music requests and chat integration — features degrade gracefully when absent |
+| `STRIPE_*` | optional | payments |
+
+Generate secrets with `openssl rand -hex 32`. Full variable list with redirect-URI
+formats is in "Getting Started" above — once the site has a real domain, update
+each provider's redirect URIs to that origin.
+
+### 5. Build the Searchle model (one time)
+
+Searchle ranks guesses with FastText embeddings (~125 MB); the model is **not**
+in git. On the VM:
+
+```bash
+node server/searchle/tools/download-fasttext.js   # ~2.2 GB download into server/searchle/data/fasttext/
+node server/searchle/tools/build-model.js fasttext
+node server/searchle/tools/convert-float16.js fasttext
+rm -rf server/searchle/data/fasttext              # reclaim the ~2.2 GB raw vectors
+```
+
+- Needs ~2.5 GB free disk and ~1 GB RAM while building
+- Output lands in `server/searchle/data/models/fasttext/` (gitignored — survives
+  `git pull`, no backup needed, just rebuildable)
+- Skipping this is safe: the whole site runs normally, `/searchle` just returns
+  503 "model not ready"
+- Shortcut: build on your own machine and copy the result over instead:
+  `scp -r server/searchle/data/models <vm>:/home/<user>/HangStream/server/searchle/data/`
+- After a server restart, the first Searchle guess takes ~10 s while the model
+  loads into RAM (~400 MB)
+
+### 6. Start with pm2
+
+```bash
+pm2 start npm --name hangstream -- start
+pm2 save
+pm2 startup systemd    # run the command it prints, so pm2 restarts on reboot
+```
+
+Check `pm2 logs hangstream`, then open `http://<vm-ip>:8080`.
+
+### 7. (Recommended) nginx + HTTPS
+
+```bash
+sudo apt install -y nginx
+sudo nano /etc/nginx/sites-available/hangstream
+```
+
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 90s;
+    }
+}
+```
+
+```bash
+sudo ln -s /etc/nginx/sites-available/hangstream /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d yourdomain.com
+```
+
+Finally set `APP_URL=https://yourdomain.com` in `.env` and update the OAuth
+redirect URIs at Google/Spotify/TikTok/Twitch to the https origins.
+
+## 🚀 Shipping an update
+
+SSH in and run:
+
+```bash
+cd ~/HangStream
+git pull origin main
+npm install          # only needed when package.json changed
+pm2 restart hangstream
+```
+
+Verify it came back up:
+
+```bash
+pm2 status hangstream
+curl -fsS http://127.0.0.1:8080/game-count/hangman   # healthy: {"count":0}
+```
+
+Prefer it automated? Pushes to `main` can deploy themselves via the GitHub
+Actions SSH workflow — recreate `.github/workflows/deploy.yml`:
+
+```yaml
+name: Deploy to Azure VM
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd ~/HangStream
+            git pull origin main
+            npm install
+            pm2 restart hangstream
+```
+
+(Requires repo secrets `VM_HOST`, `VM_USER`, `VM_SSH_KEY` with a deploy key that
+can pull from GitHub.)
+
+## 💾 Data & backups
+
+- All application state lives in `data/hangstream.db` (SQLite). It is not in git
+  and `git pull`/`npm install`/`pm2 restart` never touch it — but it sits on the
+  VM's disk, so **back it up** (recreating the VM loses it):
+
+  ```bash
+  sqlite3 ~/HangStream/data/hangstream.db ".backup '/backups/hangstream-$(date +%F).db'"
+  ```
+
+- The Searchle model needs no backup — rerun the three build commands from
+  Deployment step 5 whenever it's missing.
 
 ## 🐛 Known Issues
 
