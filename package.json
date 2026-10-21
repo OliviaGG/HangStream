@@ -15,16 +15,15 @@
     "deploy-azure": "powershell -ExecutionPolicy Bypass -File deploy-azure.ps1"
   },
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=20.19.0",
     "npm": ">=8.0.0"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
-    "nodemailer": "^8.0.11",
-    "python": "^0.0.4",
+    "nodemailer": "^10.2.0",
     "sqlite3": "^6.0.1",
     "stripe": "^14.25.0",
-    "tiktok-live-connector": "^2.1.1-beta1",
+    "tiktok-live-connector": "^2.5.0",
     "tmi.js": "^1.8.5",
     "ws": "^8.13.0"
   }

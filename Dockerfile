@@ -1,4 +1,6 @@
-FROM node:20-alpine
+# Node 22 is required: tiktok-live-connector v2.5+ is ESM-only and HangStream
+# `require()`s it, which needs Node >= 20.19 / 22.12+.
+FROM node:22-alpine
 
 WORKDIR /app
 

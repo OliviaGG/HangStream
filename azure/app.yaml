@@ -1,0 +1,117 @@
+# Azure Container Apps template for HangStream.
+#
+# 1. Replace every <PLACEHOLDER> below.
+# 2. Find the environment id:
+#      az containerapp env show -n <ENV> -g <RG> --query id -o tsv
+#    and paste it into properties.environmentId.
+# 3. Create the app:
+#      az containerapp create --name <APP> --resource-group <RG> \
+#        --environment <ENV> --yaml azure/app.yaml
+#
+# Template reference:
+# https://learn.microsoft.com/azure/container-apps/azure-resource-manager-api-spec
+#
+# Notes
+# - minReplicas/maxReplicas are pinned to 1: game state lives in the process
+#   memory and in one SQLite file, so a second replica would be a second game.
+# - The SQLite database and the Searchle model are mounted from an Azure Files
+#   share at /data (see the volumeMounts/volumes below).
+# - Secrets live in configuration.secrets and are referenced with secretRef, so
+#   they are never written into the image.
+
+properties:
+  environmentId: /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/<RESOURCE_GROUP>/providers/Microsoft.App/managedEnvironments/<ENVIRONMENT_NAME>
+
+  configuration:
+    # One revision serves all traffic - never split it across two containers.
+    activeRevisionsMode: Single
+
+    ingress:
+      external: true
+      targetPort: 8080
+      transport: auto
+      allowInsecure: false
+
+    secrets:
+      registry-password:
+        value: "<ACR_PASSWORD>"
+      session-secret:
+        value: "<SESSION_SECRET>"
+      token-encryption-key:
+        value: "<TOKEN_ENCRYPTION_KEY>"
+      admin-password:
+        value: "<ADMIN_PASSWORD>"
+
+    registries:
+      - server: <ACR_NAME>.azurecr.io
+        username: <ACR_NAME>
+        secretRef: registry-password
+
+  template:
+    containers:
+      - name: hangstream
+        image: <ACR_NAME>.azurecr.io/hangstream:v1
+        resources:
+          cpu: 1.0
+          memory: 2Gi
+
+        env:
+          - name: NODE_ENV
+            value: production
+          - name: PORT
+            value: "8080"
+          - name: APP_URL
+            value: "https://<YOUR_DOMAIN>"
+          # The SQLite database and the Searchle model live on the Azure Files
+          # share that is mounted at /data.
+          - name: DB_PATH
+            value: /data/hangstream.db
+          - name: SEARCHLE_MODELS_DIR
+            value: /data/searchle-models
+          - name: SESSION_SECRET
+            secretRef: session-secret
+          - name: TOKEN_ENCRYPTION_KEY
+            secretRef: token-encryption-key
+          - name: ADMIN_EMAIL
+            value: "<ADMIN_EMAIL>"
+          - name: ADMIN_PASSWORD
+            secretRef: admin-password
+
+        probes:
+          - type: Startup
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 60
+          - type: Liveness
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+          - type: Readiness
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+
+        volumeMounts:
+          - volumeName: hangstream-files
+            mountPath: /data
+
+    volumes:
+      - name: hangstream-files
+        storageType: AzureFile
+        storageName: hangstream-files
+
+    scale:
+      # One replica, always on. Set minReplicas to 0 to scale to zero between
+      # shows - but the container then sleeps, so the Twitch/TikTok chat
+      # connectors stay offline until the first request wakes it up.
+      minReplicas: 1
+      maxReplicas: 1
