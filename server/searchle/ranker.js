@@ -14,6 +14,9 @@ const crypto = require('crypto');
 const rankingEngine = require('./ranking-engine');
 const guessHelpers = require('./guess-helpers');
 const config = require('./config');
+// The shared blocklist. A blocked word must never become a Searchle target
+// (it would end up on screen) nor a guess (it would end up in chat history).
+const wordPolicy = require('../games/word-policy');
 
 const MODEL_BIN = path.join(config.modelsDir, 'fasttext', 'vectors.bin');
 const MODEL_INDEX = path.join(config.modelsDir, 'fasttext', 'index.json');
@@ -77,7 +80,8 @@ async function getTargets() {
     const raw = JSON.parse(fs.readFileSync(config.targetsPath, 'utf8'));
     targetList = (Array.isArray(raw) ? raw : [])
       .map(w => String(w).toLowerCase().trim())
-      .filter(w => /^[a-z]+$/.test(w) && rankingEngine.isValidTarget(w));
+      .filter(w => /^[a-z]+$/.test(w) && rankingEngine.isValidTarget(w))
+      .filter(w => wordPolicy.isWordAllowedForGame('searchle', 'target', w));
     targetsLoaded = true;
     console.log(`[Searchle] ${targetList.length} valid targets`);
   }
@@ -134,6 +138,9 @@ async function submitGuess(gameId, rawWord) {
   const word = String(rawWord || '').toLowerCase().trim();
   if (!config.guessPattern.test(word)) {
     return { status: 'invalid' };
+  }
+  if (!wordPolicy.isWordAllowedForGame('searchle', 'guess', word)) {
+    return { status: 'blocked' };
   }
 
   await ensureInit();

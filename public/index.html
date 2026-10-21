@@ -1152,38 +1152,101 @@ function toggleTheme() {
 }
 
 // ── WORD LOADING ──
+// Length bands per difficulty. They mirror the server games
+// (server/games/hangman.js, server/games/speedscramble.js) so a local round
+// and an online round feel the same.
+const DIFFICULTY_BANDS = {
+  easy:    [4, 6],
+  medium:  [5, 8],
+  hard:    [8, 20],
+  normal:  [5, 7],
+  extreme: [9, 14],
+};
+
+// Game level -> pool difficulty tag. Speed Scramble says normal/extreme where
+// the pool only knows easy/medium/hard.
+const LEVEL_TO_TAG = {
+  easy: 'easy',
+  medium: 'medium',
+  normal: 'medium',
+  hard: 'hard',
+  extreme: 'hard',
+};
+
 function filterByDifficulty(list, difficulty) {
   if (!Array.isArray(list)) return [];
-  const byTag = list.filter(w => String((w.difficulty || '')).toLowerCase() === String(difficulty || '').toLowerCase());
+  const level = String(difficulty || '').toLowerCase();
+  const tag = LEVEL_TO_TAG[level] || level;
+  const band = DIFFICULTY_BANDS[level] || null;
+  const inBand = (w) => {
+    if (!band) return true;
+    const len = (w.word || '').length;
+    return len >= band[0] && len <= band[1];
+  };
+  const byTag = list.filter(w => String((w.difficulty || '')).toLowerCase() === tag);
+  // Prefer words inside the band, but keep the hand-curated ones even when
+  // they sit outside it - the streamer picked those deliberately.
+  const banded = byTag.filter(inBand);
+  if (banded.length) return banded;
   if (byTag.length) return byTag;
   const easy   = list.filter(w => (w.word || '').length <= 6);
   const medium = list.filter(w => (w.word || '').length >= 5 && (w.word || '').length <= 9);
   const hard   = list.filter(w => (w.word || '').length >= 8);
-  if (difficulty === 'easy') return easy.length ? easy : list;
-  if (difficulty === 'hard') return hard.length ? hard : list;
+  if (level === 'easy') return easy.length ? easy : list;
+  if (level === 'hard') return hard.length ? hard : list;
   return medium.length ? medium : list;
+}
+
+// The general pool: the ecosystem's curated target list, tagged by difficulty.
+// It carries no category of its own, so those rounds show "Common".
+async function loadWordBankFile() {
+  try {
+    const res = await fetch('/word-bank.json', { cache: 'no-store' });
+    if (!res || res.status !== 200) return [];
+    const data = await res.json();
+    const buckets = (data && data.words) || {};
+    const out = [];
+    for (const [difficulty, list] of Object.entries(buckets)) {
+      if (!Array.isArray(list)) continue;
+      for (const raw of list) {
+        const word = String(raw || '').toUpperCase().trim();
+        if (!word) continue;
+        out.push({ word, cat: 'Common', difficulty: String(difficulty || 'medium').toLowerCase(), src: 'general' });
+      }
+    }
+    return out;
+  } catch (e) {
+    return [];
+  }
 }
 
 // FIX: returns promise so callers can chain .then(newGame)
 async function loadCustomWordsFile() {
   try {
-    const res = await fetch('/custom-words.json', { cache: 'no-store' });
-    if (!res || res.status !== 200) return;
-    const data = await res.json();
-    if (Array.isArray(data) && data.length > 0) {
-      const normalized = data.map(item => {
-        if (!item || typeof item !== 'object') return null;
-        return {
-          word: String(item.word || '').toUpperCase().trim(),
-          cat: String(item.cat || 'Custom'),
-          difficulty: String(item.difficulty || 'medium').toLowerCase()
-        };
-      }).filter(Boolean);
-      if (normalized.length) {
-        ALL_WORDS = normalized.slice();
-        config.customWords = normalized;
-        VISIBLE_WORDS = filterByDifficulty(ALL_WORDS, config.difficulty || 'medium');
+    const [curatedRes, general] = await Promise.all([
+      fetch('/custom-words.json', { cache: 'no-store' }),
+      loadWordBankFile(),
+    ]);
+    const normalized = [];
+    if (curatedRes && curatedRes.status === 200) {
+      const data = await curatedRes.json();
+      if (Array.isArray(data) && data.length > 0) {
+        for (const item of data) {
+          if (!item || typeof item !== 'object') continue;
+          normalized.push({
+            word: String(item.word || '').toUpperCase().trim(),
+            cat: String(item.cat || 'Custom'),
+            difficulty: String(item.difficulty || 'medium').toLowerCase(),
+            src: 'curated'
+          });
+        }
       }
+    }
+    const merged = normalized.concat(general);
+    if (merged.length) {
+      ALL_WORDS = merged.slice();
+      config.customWords = merged;
+      VISIBLE_WORDS = filterByDifficulty(ALL_WORDS, config.difficulty || 'medium');
     }
   } catch (e) {
     ALL_WORDS = [];
@@ -1335,24 +1398,39 @@ function isLetter(ch) {
   return /^[A-Z]$/.test(ch);
 }
 
+// How often a round is drawn from the curated pool rather than the general
+// one. The curated words carry a real category, so the badge on stream stays
+// useful; the general pool is far bigger, so it supplies the variety.
+// These mirror server/games/dictionary.js.
+const CURATED_PREFERENCE = 0.6;
+const MIN_CURATED_STOCK = 40;
+
 function newGame() {
   wrongCount = 0;
   const pool = Array.isArray(VISIBLE_WORDS) && VISIBLE_WORDS.length
     ? VISIBLE_WORDS
     : (Array.isArray(ALL_WORDS) ? ALL_WORDS : []);
-  
+
   // Filter out already used words
   const availableWords = pool.filter(w => !usedWords.has(w.word));
-  
+
   // If all words used, reset and start over
-  let choice;
-  if (availableWords.length === 0) {
+  let candidates = availableWords.length ? availableWords : pool;
+  if (candidates.length === 0) {
     usedWords.clear();
-    choice = pool.length ? pool[Math.floor(Math.random() * pool.length)] : { word: 'HANGMAN', cat: 'Games' };
-  } else {
-    choice = availableWords[Math.floor(Math.random() * availableWords.length)];
+    candidates = pool;
   }
-  
+
+  // Prefer a curated word so the category badge keeps meaning something.
+  const curated = candidates.filter(w => w.src === 'curated');
+  let choice;
+  if (curated.length >= MIN_CURATED_STOCK && Math.random() < CURATED_PREFERENCE) {
+    choice = curated[Math.floor(Math.random() * curated.length)];
+  } else {
+    choice = candidates[Math.floor(Math.random() * candidates.length)];
+  }
+  if (!choice) choice = { word: 'HANGMAN', cat: 'Games' };
+
   currentWord = String(choice.word || '').toUpperCase();
   currentCategory = String(choice.cat || 'Games');
   activeWord = currentWord;

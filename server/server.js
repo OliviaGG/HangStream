@@ -60,6 +60,12 @@ const searchlePath = path.join(__dirname, '..', 'public', 'searchle.html');
 // Searchle ranker (port wt-eco searchle engine). Loads embedding models
 // lazily on first API call — safe to require at boot.
 const searchleRanker = require('./searchle/ranker');
+// Server-authoritative game layer (port of the word-tycoon-ecosystem game
+// backend): one engine + registry behind HangStream's existing UI and ws hub.
+const gameLayer = require('./games');
+// "What do we play next?" chat vote (port of chat-relay/src/game-vote.js).
+const gameVote = require('./games/game-vote');
+const voteConfig = require('./games/vote-config');
 
 const CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY || '';
 const CLIENT_SECRET = process.env.TIKTOK_CLIENT_SECRET || '';
@@ -91,118 +97,21 @@ const gamePlayers = {
   'searchle': new Set()
 };
 
+// Game ids a streamer's rotation may name on a next-game ballot. Kept here so
+// the dashboard/API can validate a submitted rotation without importing the
+// engine; names are reused by game-vote.js's `gameLabel` dep.
 const NEXT_GAME_VOTE_CHOICES = [
   { id: 'hangman', name: 'Hangman' },
-  { id: 'spelling-bee', name: 'Spelling Bee' },
-  { id: 'speed-scramble', name: 'Speed Scramble' },
+  { id: 'spellingbee', name: 'Spelling Bee' },
+  { id: 'speedscramble', name: 'Speed Scramble' },
+  { id: 'wordle', name: 'Wordle' },
+  { id: 'searchle', name: 'Searchle' },
 ];
-const NEXT_GAME_VOTE_RE = /^(?:[!/]?vote\s*)?#?\s*([1-9]\d?)\s*$/i;
-const NEXT_GAME_VOTE_DEFAULT_DURATION_SEC = 30;
-const NEXT_GAME_VOTE_MIN_DURATION_SEC = 10;
-const NEXT_GAME_VOTE_MAX_DURATION_SEC = 180;
-const NEXT_GAME_VOTE_RESULT_GRACE_SEC = 8;
-const nextGameVotes = new Map();
-
-function normalizeVoteChannel(value) {
-  return String(value || '').trim().toLowerCase();
-}
 
 function getNextGameName(gameId) {
   const match = NEXT_GAME_VOTE_CHOICES.find((entry) => entry.id === gameId);
   return match ? match.name : String(gameId || '');
 }
-
-function buildNextGameVoteSnapshot(vote) {
-  if (!vote) return null;
-  const now = Date.now();
-  const totalVotes = Object.values(vote.tallies || {}).reduce((sum, value) => sum + Number(value || 0), 0);
-  const ballot = (vote.ballot || []).map((entry) => {
-    const votes = Number(vote.tallies && vote.tallies[entry.gameId] || 0);
-    return {
-      ...entry,
-      votes,
-      pct: totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0
-    };
-  });
-  return {
-    phase: vote.phase,
-    channel: vote.channel,
-    currentGameId: vote.currentGameId,
-    currentGameName: getNextGameName(vote.currentGameId),
-    totalVotes,
-    ballot,
-    secondsLeft: vote.phase === 'voting' ? Math.max(0, Math.ceil((vote.voteEndsAt - now) / 1000)) : 0,
-    resultSecondsLeft: vote.phase === 'result' ? Math.max(0, Math.ceil((vote.resultEndsAt - now) / 1000)) : 0,
-    winner: vote.winnerGameId ? {
-      gameId: vote.winnerGameId,
-      name: getNextGameName(vote.winnerGameId),
-      votes: Number(vote.tallies && vote.tallies[vote.winnerGameId] || 0),
-      tiebreak: Boolean(vote.tiebreak)
-    } : null
-  };
-}
-
-function setOwnerSelectedGame(ownerEmail, gameId) {
-  if (!ownerEmail || !gameId) return;
-  const accounts = loadStreamerAccounts();
-  const accountKey = Object.keys(accounts).find((email) => email.toLowerCase() === String(ownerEmail).toLowerCase());
-  if (!accountKey) return;
-  accounts[accountKey].selected_game = gameId;
-  saveStreamerAccounts(accounts);
-}
-
-function finalizeNextGameVote(vote) {
-  const totalVotes = Object.values(vote.tallies || {}).reduce((sum, value) => sum + Number(value || 0), 0);
-  if (!totalVotes) {
-    vote.phase = 'idle';
-    vote.voteEndsAt = 0;
-    vote.resultEndsAt = 0;
-    vote.ballot = [];
-    vote.tallies = {};
-    vote.voters.clear();
-    vote.winnerGameId = null;
-    vote.tiebreak = false;
-    return;
-  }
-
-  const entries = Object.entries(vote.tallies || {});
-  const topVotes = Math.max(...entries.map((entry) => Number(entry[1] || 0)));
-  const leaders = entries.filter((entry) => Number(entry[1] || 0) === topVotes).map((entry) => entry[0]);
-  const winner = leaders[Math.floor(Math.random() * leaders.length)];
-  vote.phase = 'result';
-  vote.winnerGameId = winner;
-  vote.tiebreak = leaders.length > 1;
-  vote.resultEndsAt = Date.now() + (NEXT_GAME_VOTE_RESULT_GRACE_SEC * 1000);
-}
-
-function closeNextGameVote(vote) {
-  if (!vote) return;
-  if (vote.winnerGameId && vote.winnerGameId !== vote.currentGameId) {
-    setOwnerSelectedGame(vote.ownerEmail, vote.winnerGameId);
-  }
-  vote.phase = 'idle';
-  vote.voteEndsAt = 0;
-  vote.resultEndsAt = 0;
-  vote.ballot = [];
-  vote.tallies = {};
-  vote.voters.clear();
-  vote.winnerGameId = null;
-  vote.tiebreak = false;
-}
-
-setInterval(() => {
-  const now = Date.now();
-  for (const vote of nextGameVotes.values()) {
-    if (!vote) continue;
-    if (vote.phase === 'voting' && now >= vote.voteEndsAt) {
-      finalizeNextGameVote(vote);
-      continue;
-    }
-    if (vote.phase === 'result' && now >= vote.resultEndsAt) {
-      closeNextGameVote(vote);
-    }
-  }
-}, 1000);
 
 // Environment validation
 function validateEnvironment() {
@@ -859,6 +768,15 @@ const server = http.createServer((req, res) => {
 
   // Apply security headers to all responses
   addSecurityHeaders(res);
+
+  // Health check. Kept first and cheap on purpose: a container platform
+  // (Azure Container Apps health probes, a load balancer, uptime checks)
+  // polls this to decide whether the app is alive and taking traffic.
+  if (pathname === '/health' || pathname === '/healthz') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ ok: true, service: 'hangstream', uptime: Math.round(process.uptime()) }));
+    return;
+  }
 
   // OAuth entry: redirect to TikTok
   if (pathname === '/oauth') {
@@ -2423,6 +2341,189 @@ if (!session) {
     return;
   }
 
+  // ── Server-authoritative game API (server/games/) ──
+  // Games the engine can host.
+  if (pathname === '/games/api/list' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ games: gameRegistry.list() }));
+    return;
+  }
+
+  // Current public state of a game room: /games/api/state/<game>?owner=<id>
+  if (pathname.match(/^\/games\/api\/state\/[^/]+$/) && req.method === 'GET') {
+    const gameId = pathname.split('/').pop();
+    const owner = (reqUrl.searchParams.get('owner') || 'public').toLowerCase();
+    const state = gameRegistry.state(owner, gameId);
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ success: true, game: gameId, owner, state }));
+    return;
+  }
+
+  // Start (or restart) a round: POST /games/api/new/<game> {owner,timerSeconds,...}
+  if (pathname.match(/^\/games\/api\/new\/[^/]+$/) && req.method === 'POST') {
+    const gameId = pathname.split('/').pop();
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', () => {
+      let data = {};
+      try { data = JSON.parse(body || '{}'); } catch (e) {}
+      const owner = String(data.owner || 'public').toLowerCase();
+      const result = gameRegistry.startRound(owner, gameId, data);
+      res.writeHead(result.success ? 200 : 400, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify(Object.assign({ game: gameId, owner }, result)));
+    });
+    return;
+  }
+
+  // Pause / resume / end a round: POST /games/api/<action>/<game> { owner }
+  if (pathname.match(/^\/games\/api\/(pause|resume|end)\/[^/]+$/) && req.method === 'POST') {
+    const parts = pathname.split('/');
+    const action = parts[3];
+    const gameId = parts[4];
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', () => {
+      let data = {};
+      try { data = JSON.parse(body || '{}'); } catch (e) {}
+      const owner = String(data.owner || 'public').toLowerCase();
+      const game = gameRegistry.room(owner, gameId);
+      if (!game) {
+        res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: false, error: 'unknown_game' }));
+        return;
+      }
+      const result = action === 'pause' ? game.pause() : action === 'resume' ? game.resume() : game.end();
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify(Object.assign({ game: gameId, owner, action }, result)));
+    });
+    return;
+  }
+
+  // Daily puzzle history for a game: /games/api/daily/<game>
+  if (pathname.match(/^\/games\/api\/daily\/[^/]+$/) && req.method === 'GET') {
+    const gameId = pathname.split('/').pop();
+    gameLayer.rounds.dailyHistory(gameId).then((rows) => {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ game: gameId, dailyDate: gameLayer.getDailyDate(), history: rows }));
+    });
+    return;
+  }
+
+  // ── Next-game vote API (server/games/game-vote.js) ──
+  // The full vote surface: phase, ballot with tallies, term countdown.
+  if (pathname === '/games/api/vote/state' && req.method === 'GET') {
+    const owner = (reqUrl.searchParams.get('owner') || 'public').toLowerCase();
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({
+      owner,
+      vote: gameVote.snapshotFor(owner),
+      choices: NEXT_GAME_VOTE_CHOICES,
+    }));
+    return;
+  }
+
+  // Read or write a streamer's rotation. GET returns the stored config plus the
+  // ids that may appear on a ballot; POST validates and persists, then warms the
+  // in-memory cache so the tick picks it up immediately.
+  if (pathname === '/games/api/vote/config' && req.method === 'GET') {
+    const owner = (reqUrl.searchParams.get('owner') || 'public').toLowerCase();
+    voteConfig.loadVoteConfig(owner).then((config) => {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        owner,
+        enabled: Boolean(config) || voteConfigCache.has(owner),
+        config: config || voteConfigCache.get(owner) || null,
+        choices: NEXT_GAME_VOTE_CHOICES,
+      }));
+    }).catch(() => {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ owner, enabled: false, config: null, choices: NEXT_GAME_VOTE_CHOICES }));
+    });
+    return;
+  }
+
+  if (pathname === '/games/api/vote/config' && req.method === 'POST') {
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', () => {
+      let data = {};
+      try { data = JSON.parse(body || '{}'); } catch (e) {}
+      const owner = String(data.owner || 'public').toLowerCase();
+      const enabled = data.enabled !== false;
+
+      if (!enabled) {
+        voteConfigCache.delete(owner);
+        gameVote.clearStreamer(owner);
+        voteConfig.clearVoteConfig(owner)
+          .then(() => {
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ success: true, owner, enabled: false }));
+          })
+          .catch(() => {
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ success: true, owner, enabled: false }));
+          });
+        return;
+      }
+
+      // Validate every candidate id against the known games so a typo can't put
+      // an unswitchable row on the ballot.
+      const raw = data.config || data;
+      const known = new Set(NEXT_GAME_VOTE_CHOICES.map((c) => c.id));
+      const candidates = (Array.isArray(raw.candidates) ? raw.candidates : [])
+        .map((entry) => {
+          const gameId = normalizeGameId(entry && entry.gameId);
+          if (!gameId || !known.has(gameId)) return null;
+          const termUnit = entry.termUnit === 'minutes' ? 'minutes' : 'rounds';
+          const termValue = Math.max(1, Math.min(termUnit === 'rounds' ? 50 : 240, Number(entry.termValue) || (termUnit === 'rounds' ? 5 : 30)));
+          return { gameId, termUnit, termValue };
+        })
+        .filter(Boolean);
+
+      if (candidates.length < 2) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: false, error: 'A rotation needs at least 2 games' }));
+        return;
+      }
+
+      const config = gameVote.normalizeConfig({
+        ...raw,
+        candidates,
+        enabled: true,
+      });
+      voteConfigCache.set(owner, config);
+
+      voteConfig.saveVoteConfig(owner, config, true)
+        .then((ok) => {
+          res.writeHead(ok ? 200 : 500, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: ok, owner, enabled: true, config }));
+        })
+        .catch(() => {
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: true, owner, enabled: true, config }));
+        });
+    });
+    return;
+  }
+
+  // Run a ballot by hand: POST /games/api/vote/start|end|cancel { owner }
+  if (pathname.match(/^\/games\/api\/vote\/(start|end|cancel)$/) && req.method === 'POST') {
+    const action = pathname.split('/').pop();
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', () => {
+      let data = {};
+      try { data = JSON.parse(body || '{}'); } catch (e) {}
+      const owner = String(data.owner || 'public').toLowerCase();
+      const result = action === 'start' ? gameVote.startVote(owner)
+        : action === 'end' ? gameVote.endVote(owner)
+          : gameVote.cancelVote(owner);
+      res.writeHead(result.ok ? 200 : 400, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify(Object.assign({ owner, action }, result)));
+    });
+    return;
+  }
+
   // TikTok verification file
   if (pathname === '/tiktokoD3TMQr0cbojRXpxHpI8gUC9FGfCea6m.txt' || pathname === '/.well-known/tiktokoD3TMQr0cbojRXpxHpI8gUC9FGfCea6m.txt') {
     sendFile(res, path.join(__dirname, '..', 'public', 'tiktokoD3TMQr0cbojRXpxHpI8gUC9FGfCea6m.txt'), 'text/plain; charset=utf-8');
@@ -2449,6 +2550,17 @@ if (!session) {
 
   if (urlPath === '/styles.css') {
     sendFile(res, path.join(__dirname, '..', 'public', 'styles.css'), 'text/css; charset=utf-8');
+    return;
+  }
+
+  // Next-game vote card, shared by the overlay, viewer pages and dashboard.
+  if (urlPath === '/hangstream-vote-card.css') {
+    sendFile(res, path.join(__dirname, '..', 'public', 'hangstream-vote-card.css'), 'text/css; charset=utf-8');
+    return;
+  }
+
+  if (urlPath === '/hangstream-vote-card.js') {
+    sendFile(res, path.join(__dirname, '..', 'public', 'hangstream-vote-card.js'), 'application/javascript; charset=utf-8');
     return;
   }
 
@@ -2484,6 +2596,14 @@ if (!session) {
 
   if (urlPath === '/custom-words.json') {
     sendFile(res, path.join(__dirname, '..', 'public', 'custom-words.json'), 'application/json; charset=utf-8');
+    return;
+  }
+
+  // The general word pool: the ecosystem's curated target list, tagged by
+  // difficulty. Served separately from /custom-words.json because it carries
+  // no category - only the curated pool has hints worth showing on stream.
+  if (urlPath === '/word-bank.json') {
+    sendFile(res, path.join(__dirname, '..', 'public', 'word-bank.json'), 'application/json; charset=utf-8');
     return;
   }
 
@@ -2717,6 +2837,115 @@ function flushChannelQueues() {
 // periodic flush to send queued messages in short bursts
 setInterval(flushChannelQueues, BROADCAST_FLUSH_MS);
 
+// ── Next-game vote plumbing ─────────────────────────────────────────
+// Rotation config cache, keyed by lowercased streamer id. game-vote.js polls
+// this on its 1s tick, so it must stay in memory rather than hitting SQLite.
+const voteConfigCache = new Map();
+// Which game each streamer is on, for the vote's term clock.
+const selectedGameByStreamer = new Map();
+
+/** Canonical game id: page/chat ids map onto the engine's registry ids. */
+function normalizeGameId(gameId) {
+  const id = String(gameId || '').trim().toLowerCase();
+  const aliases = { 'spelling-bee': 'spellingbee', 'speed-scramble': 'speedscramble', 'wordle': 'wordle' };
+  return aliases[id] || id;
+}
+
+function selectedGameFor(streamerId) {
+  return selectedGameByStreamer.get(String(streamerId || 'public').toLowerCase()) || null;
+}
+
+function setSelectedGame(streamerId, gameId) {
+  selectedGameByStreamer.set(String(streamerId || 'public').toLowerCase(), normalizeGameId(gameId));
+}
+
+/**
+ * Send a game-layer payload to a streamer's watchers. Public/default rooms reach
+ * everyone (matching the registry's broadcast), a real streamer reaches its
+ * twitch:/tiktok: watchers.
+ */
+function broadcastGamePayload(streamerId, payload) {
+  const id = String(streamerId || 'public').toLowerCase();
+  if (!streamerId || id === 'public' || id === 'default') {
+    broadcastToChannel('stream:public', payload);
+    for (const key of watchers.keys()) broadcastToChannel(key, payload);
+    return;
+  }
+  broadcastToChannel(`tiktok:${id}`, payload);
+  broadcastToChannel(`twitch:${id}`, payload);
+}
+
+// ── Server-authoritative games (server/games/) ──────────────────────
+// One registry bridges the game engine to the watchers above: a game room for
+// a streamer broadcasts on the same `platform:channel` keys the pages already
+// subscribe to, so existing pages keep working untouched.
+const gameRegistry = new gameLayer.GameRegistry({
+  broadcast: (streamerId, payload) => {
+    if (!streamerId || streamerId === 'public' || streamerId === 'default') {
+      // Public/default rooms reach every watcher plus the demo channel.
+      broadcastToChannel('stream:public', payload);
+      for (const key of watchers.keys()) broadcastToChannel(key, payload);
+      return;
+    }
+    broadcastToChannel(`tiktok:${streamerId}`, payload);
+    broadcastToChannel(`twitch:${streamerId}`, payload);
+  },
+  persist: (streamerId, gameId) => {
+    const state = gameRegistry.rooms.get(streamerId || 'public');
+    const game = state && state.get(gameId);
+    if (game) gameLayer.rounds.saveRound(streamerId || 'public', gameId, game.getSerializableState()).catch(() => {});
+  },
+  // A completed round burns down the active game's term and (if a win card is
+  // ever added) holds the ballot back — both handled by game-vote.js.
+  onRoundComplete: (streamerId, gameId) => {
+    try {
+      gameVote.noteRound(streamerId, gameId);
+      gameVote.noteWinCard(streamerId);
+    } catch (e) {
+      console.warn('vote round-complete failed', e && e.message ? e.message : e);
+    }
+  },
+});
+gameRegistry.startSweeper();
+
+// ── Next-game vote (server/games/game-vote.js) ──────────────────────
+// Faithful port of Word Tycoon's `gameVote`: a rotation of games, each with a
+// term (rounds or minutes); when the active game's term runs out, chat votes on
+// a ballot and the winner becomes the next game. Dependencies are injected, so
+// the module itself stays free of sockets, chat and the engine.
+gameVote.setDeps({
+  // The streamer's rotation, kept in SQLite (game_vote_config) and cached here
+  // so the 1s tick doesn't hit the database.
+  getConfig: (streamerId) => voteConfigCache.get(String(streamerId || 'public').toLowerCase()) || null,
+  listVoteStreamers: () => Array.from(voteConfigCache.keys()),
+  emit: (streamerId, payload) => {
+    broadcastGamePayload(streamerId, { type: 'game-vote-update', vote: payload });
+  },
+  // Which game's term is running: the streamer's selected game, which the
+  // registry also uses as the active room.
+  getActiveGame: (streamerId) => selectedGameFor(streamerId),
+  // Perform the real switch. Selecting the game starts (or resumes) its round.
+  switchGame: (streamerId, gameId) => {
+    setSelectedGame(streamerId, gameId);
+    const room = gameRegistry.room(streamerId, normalizeGameId(gameId));
+    if (room && room.status === 'idle') gameRegistry.startRound(streamerId, normalizeGameId(gameId), {});
+  },
+  gameLabel: (gameId) => getNextGameName(normalizeGameId(gameId)),
+  // Win-card hold. HangStream has no win card yet, so the ballot is never held
+  // back — the hook exists so adding one later is a one-line change.
+  getWinCardHoldMs: () => 0,
+});
+
+// Votes are configured per streamer; warm the cache at boot so a restart keeps
+// everyone's rotation. The tick also picks up any enabled later.
+voteConfig.listVoteStreamers().then((ids) => {
+  for (const id of ids) {
+    voteConfig.loadVoteConfig(id).then((config) => {
+      if (config) voteConfigCache.set(id, config);
+    }).catch(() => {});
+  }
+}).catch(() => {});
+
 // heartbeat/ping to detect dead clients and free resources
 setInterval(() => {
   wss.clients.forEach((ws) => {
@@ -2766,6 +2995,61 @@ wss.on('connection', (ws) => {
       }
     }
 
+    // Server-authoritative game messages ('game-list', 'game-state', 'game-new',
+    // 'game-pause'/'game-resume'/'game-end', 'game-join-room', 'guess').
+    if (['game-list', 'game-state', 'game-new', 'game-pause', 'game-resume', 'game-end', 'game-join-room', 'guess'].includes(data.type)) {
+      try {
+        const payloads = gameRegistry.handleMessage(ws, data);
+        if (Array.isArray(payloads)) {
+          for (const payload of payloads) {
+            if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
+          }
+        } else if (payloads && typeof payloads.then === 'function') {
+          // Searchle ranks guesses over an embedding model, so its path is a
+          // promise; land the reply when it resolves rather than dropping it.
+          payloads.then((resolved) => {
+            if (!Array.isArray(resolved)) return;
+            for (const payload of resolved) {
+              if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
+            }
+          }).catch((err) => {
+            console.warn('async game message failed', data.type, err && err.message);
+          });
+        }
+      } catch (err) {
+        console.warn('game message failed', data.type, err && err.message);
+      }
+    }
+
+    // Next-game vote over the socket: read the snapshot, run a ballot by hand,
+    // or cast a vote from the page (chat votes arrive via feedChatToGames).
+    if (['game-vote-state', 'game-vote-start', 'game-vote-cancel', 'game-vote'].includes(data.type)) {
+      try {
+        const streamerId = String(data.owner || data.streamerId || ws.owner || 'public').toLowerCase();
+        let payload = null;
+        if (data.type === 'game-vote-state') {
+          payload = { type: 'game-vote-update', owner: streamerId, vote: gameVote.snapshotFor(streamerId) };
+        } else if (data.type === 'game-vote-start') {
+          const r = gameVote.startVote(streamerId);
+          payload = { type: 'game-vote-action', action: 'start', owner: streamerId, ...r };
+        } else if (data.type === 'game-vote-cancel') {
+          const r = gameVote.cancelVote(streamerId);
+          payload = { type: 'game-vote-action', action: 'cancel', owner: streamerId, ...r };
+        } else if (data.type === 'game-vote') {
+          // A page vote, deduped by the same platform:viewer key as chat.
+          const result = gameVote.handleChat(streamerId, {
+            platform: data.platform || 'web',
+            message: String(data.choice || data.n || '').trim(),
+            user: { id: data.viewerId || data.username || null, username: data.username || null },
+          });
+          payload = { type: 'game-vote-action', action: 'vote', owner: streamerId, ...(result || { voted: false }) };
+        }
+        if (payload && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
+      } catch (err) {
+        console.warn('game vote message failed', data.type, err && err.message);
+      }
+    }
+
     if (data.type === 'unwatch') {
       // can unwatch specific platform/channel or all for this ws
       if (data.channel && data.platform) {
@@ -2805,6 +3089,46 @@ function getMessageFromChatData(platform, data) {
   return String(data.comment || data.message || data.msg || data.text || (data.data && (data.data.comment || data.data.message)) || '').trim();
 }
 
+/**
+ * Route a chat line into the server-authoritative game rooms for that streamer.
+ * Reuses the same normalizers the browser feed uses, so a Twitch message and a
+ * TikTok comment produce identical player identities.
+ */
+function feedChatToGames(platform, channel, data) {
+  try {
+    const message = getMessageFromChatData(platform, data);
+    if (!message) return;
+    const streamerId = String(channel || '').toLowerCase();
+    const user = data && (data.user || data.displayName || data.nick || data.uniqueId || data.author || data.username) || 'chat';
+    const avatar = data && (data.profilePictureUrl || data.avatar || data.profilePicture || (data.userinfo && data.userinfo.profile_picture_url)) || null;
+    const platformUserId = data && (data.userId || data.user_id || data.uniqueId || data.open_id || data.uid) || null;
+
+    // Next-game vote first. Like Word Tycoon's sink this NEVER suppresses the
+    // message: a bare number only counts while a vote is open, and outside that
+    // window it falls through to the games untouched.
+    try {
+      gameVote.handleChat(streamerId, {
+        platform,
+        message,
+        user: { id: platformUserId, username: user },
+      });
+    } catch (e) {
+      console.warn('game vote chat failed', e && e.message ? e.message : e);
+    }
+
+    gameRegistry.sendChatGuess(platform, streamerId, message, {
+      username: user,
+      displayName: user,
+      avatar,
+      platformUserId,
+    }).catch((e) => {
+      console.warn('chat guess failed', e && e.message ? e.message : e);
+    });
+  } catch (e) {
+    console.warn('feedChatToGames failed', e && e.message ? e.message : e);
+  }
+}
+
 async function handleChatCommand(platform, channel, data) {
   try {
     const message = getMessageFromChatData(platform, data);
@@ -2838,6 +3162,7 @@ async function handleChatCommand(platform, channel, data) {
 
 tiktok.on('chat', (channel, data) => {
   broadcastToChannel(`tiktok:${channel}`, { type: 'chat', platform: 'tiktok', channel, data });
+  feedChatToGames('tiktok', channel, data);
   // parse commands asynchronously
   handleChatCommand('tiktok', channel, data).catch(() => {});
 });
@@ -2851,8 +3176,19 @@ tiktok.on('streamEnd', (channel) => broadcastToChannel(`tiktok:${channel}`, { ty
 
 twitch.on('chat', (channel, data) => {
   broadcastToChannel(`twitch:${channel}`, { type: 'chat', platform: 'twitch', channel, data });
+  feedChatToGames('twitch', channel, data);
   // parse commands asynchronously
   handleChatCommand('twitch', channel, data).catch(() => {});
+});
+
+// A failed chat connection must never take the process down: both managers emit
+// 'error' with no other listener, which Node turns into an uncaught exception.
+twitch.on('error', (channel, err) => {
+  console.warn('twitch chat error', channel, err && err.message ? err.message : err);
+});
+
+tiktok.on('error', (channel, err) => {
+  console.warn('tiktok chat error', channel, err && err.message ? err.message : err);
 });
 
 twitch.on('gift', (channel, data) => {

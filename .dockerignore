@@ -10,3 +10,7 @@ HangStream.code-workspace
 # Namespaced storage files for different streamers
 viewer-profiles-*.json
 viewer-scores-*.json
+# Never bake a local database or the downloaded Searchle model into the image.
+data/
+*.db
+server/searchle/data/models/

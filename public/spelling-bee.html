@@ -16,6 +16,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Spelling Bee - HangStream</title>
+<link rel="stylesheet" href="/hangstream-vote-card.css">
 <style id="inline-shared">
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap');
 
@@ -482,7 +483,8 @@
   body.overlay-mode .difficulty-select,
   body.overlay-mode .settings-btn,
   body.overlay-mode .theme-btn,
-  body.overlay-mode .viewer-login-btn {
+  body.overlay-mode .viewer-login-btn,
+  body.overlay-mode .hs-vote-sidebar-slot {
     display: none !important;
   }
 
@@ -628,6 +630,7 @@
         <span id="twitch-label">DEMO MODE</span>
       </span>
     </div>
+    <div class="hs-vote-sidebar-slot" id="vote-slot"></div>
     <div class="player-scores">
       <div class="player-scores-head">
         <span>Player Scores</span>
@@ -641,6 +644,7 @@
   </div>
 </div>
 
+<script src="/hangstream-vote-card.js"></script>
 <script>
 // ── STATE VARS ──
 let config = {
@@ -665,6 +669,47 @@ let playerSessionId = null;
 let currentPath = [];
 let isDragging = false;
 let chatWS = null;
+
+// ── NEXT-GAME VOTE ──
+// The sidebar ballot is interactive: tapping a row sends the same
+// `{ type:'game-vote', choice:n }` a chat number would, and the server dedupes
+// it against chat votes by platform:viewer key.
+const voteCard = (function () {
+  const slot = document.getElementById('vote-slot');
+  if (!slot || !window.HangStreamVoteCard) return null;
+  try {
+    return window.HangStreamVoteCard.create(slot, {
+      interactive: true,
+      onVote: sendVote
+    });
+  } catch (e) {
+    console.warn('vote card failed to mount', e);
+    return null;
+  }
+})();
+
+/** A stable per-browser id so one viewer is one vote, matching the chat key. */
+function getVoterIdentity() {
+  let id = '';
+  try { id = localStorage.getItem('hangstream-voter-id') || ''; } catch (e) {}
+  if (!id) {
+    id = 'web-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+    try { localStorage.setItem('hangstream-voter-id', id); } catch (e) {}
+  }
+  return id;
+}
+
+function sendVote(n) {
+  if (!chatWS || chatWS.readyState !== WebSocket.OPEN) return;
+  chatWS.send(JSON.stringify({
+    type: 'game-vote',
+    owner: state.streamerId,
+    platform: 'web',
+    viewerId: getVoterIdentity(),
+    username: state.viewerName || '',
+    choice: String(n)
+  }));
+}
 
 const FAKE_USERS = ["xX_gamer99_Xx","streamer_fan","tiktok_live","chat_legend","just_vibing","pro_viewer","randomdude42","hyped_up_lol","lurker_no_more","gifted_sub","nochill_andy","pogchamp99"];
 
@@ -873,6 +918,9 @@ function connectChatWebSocket() {
           tiktokChannel: state.streamerId
         }));
       }
+      // Ask for the current vote even without a streamer namespace, so the
+      // public room's ballot renders in demo mode.
+      chatWS.send(JSON.stringify({ type: 'game-vote-state', owner: state.streamerId || 'public' }));
     });
     
     chatWS.addEventListener('message', (event) => {
@@ -898,6 +946,15 @@ function connectChatWebSocket() {
 }
 
 function handleChatMessage(data) {
+  // Vote traffic first: it shares this socket but is not chat, and the chat
+  // branch below would otherwise treat a `game-vote-update` as a status ping.
+  if (data && (data.type === 'game-vote-update' || data.type === 'game-vote-action')) {
+    if (data.type === 'game-vote-update' && voteCard) {
+      voteCard.render(data.vote || null);
+    }
+    return;
+  }
+
   // Update connection status
   const twitchDot = document.getElementById('twitch-dot');
   const twitchLabel = document.getElementById('twitch-label');

@@ -1,0 +1,35 @@
+{
+  "exact": [
+    "cunt",
+    "fag",
+    "faggot",
+    "fuck",
+    "fucked",
+    "fucker",
+    "fucking",
+    "kike",
+    "motherfucker",
+    "nigga",
+    "nigger",
+    "retard",
+    "retarded",
+    "slut",
+    "spic",
+    "twat",
+    "wetback"
+  ],
+  "partial": [],
+  "patterns": [
+    "\\bc+u+n+t+\\b",
+    "\\bf+a+g+(?:g+o+t+)?\\b",
+    "\\bf+u+c+k+(?:e+d+|e+r+|i+n+g+|s+)?\\b",
+    "\\bk+i+k+e+\\b",
+    "\\bm+o+t+h+e+r+f+u+c+k+e+r+\\b",
+    "\\bn+i+g+g+(?:e+r+|a+)\\b",
+    "\\br+e+t+a+r+d+(?:e+d+)?\\b",
+    "\\bs+l+u+t+\\b",
+    "\\bs+p+i+c+\\b",
+    "\\bt+w+a+t+\\b",
+    "\\bw+e+t+b+a+c+k+\\b"
+  ]
+}

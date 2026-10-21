@@ -625,9 +625,73 @@
           </div>
         </div>
 
+        <!-- Next-Game Vote (rotation + ballot timing) -->
+        <div id="vote-settings-section" class="setup-step" style="margin-top:32px;display:none;">
+          <h3 style="margin:0 0 12px 0;">🗳️ Next-Game Vote</h3>
+          <p style="color:var(--text-muted);margin-bottom:16px;">Let chat choose what you play next. Each game on the rotation gets a <strong>term</strong> — how long it stays on before the vote opens.</p>
+
+          <label style="display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:16px;">
+            <input type="checkbox" id="vote-enabled" style="width:18px;height:18px;accent-color:var(--accent);">
+            <span style="font-size:14px;">Enable the next-game vote</span>
+          </label>
+
+          <div id="vote-controls" style="display:none;">
+            <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px;">Pick at least two games, then set how long each stays on. Chat votes by typing the row number; a bare number still passes through to the game when no vote is open.</p>
+
+            <div id="vote-rotation" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;"></div>
+
+            <div class="section-grid" style="margin-top:0;gap:16px;">
+              <div>
+                <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;">Vote length</label>
+                <select id="vote-duration" class="setting-input" style="width:100%;">
+                  <option value="30">30 seconds</option>
+                  <option value="45">45 seconds</option>
+                  <option value="60">60 seconds</option>
+                  <option value="90">90 seconds</option>
+                  <option value="120">2 minutes</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;">Games on each ballot</label>
+                <select id="vote-ballot-size" class="setting-input" style="width:100%;">
+                  <option value="2">2 games</option>
+                  <option value="3">3 games</option>
+                  <option value="4">4 games</option>
+                  <option value="0">All of them</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="margin-top:16px;display:flex;flex-direction:column;gap:12px;">
+              <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+                <input type="checkbox" id="vote-keep-playing" style="width:18px;height:18px;accent-color:var(--accent);" checked>
+                <span style="font-size:14px;">Add a "keep playing" option to the ballot</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+                <input type="checkbox" id="vote-auto-switch" style="width:18px;height:18px;accent-color:var(--accent);" checked>
+                <span style="font-size:14px;">Switch games automatically when the vote ends</span>
+              </label>
+            </div>
+
+            <div class="action-row" style="margin-top:20px;">
+              <button id="vote-save-btn" class="btn btn-primary">Save rotation</button>
+              <button id="vote-preview-btn" class="btn btn-secondary">Preview ballot</button>
+              <span id="vote-save-status" style="align-self:center;font-size:13px;color:var(--text-muted);"></span>
+            </div>
+
+            <div id="vote-now" style="display:none;margin-top:20px;padding:16px;background:color-mix(in srgb,var(--accent)10%,transparent);border:1px solid var(--accent);border-radius:12px;">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:8px;" id="vote-now-title">Vote in progress</div>
+              <div style="color:var(--text-muted);font-size:13px;" id="vote-now-detail"></div>
+              <div class="action-row" style="margin-top:12px;">
+                <button id="vote-force-start" class="btn btn-secondary" style="padding:8px 16px;">Start vote now</button>
+                <button id="vote-force-cancel" class="btn btn-secondary" style="padding:8px 16px;">Cancel vote</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Game Difficulty Settings (only show after step 1) -->
-        <div id="game-difficulty-section" class="setup-step" style="margin-top:32px;display:none;">
-          <h3 style="margin:0 0 12px 0;">Game Difficulty</h3>
+        <div id="game-difficulty-section" class="setup-step" style="margin-top:32px;display:none;">          <h3 style="margin:0 0 12px 0;">Game Difficulty</h3>
           <p style="color:var(--text-muted);margin-bottom:16px;">Set the difficulty level for your chosen game.</p>
           <div style="margin-top:16px;">
             <label style="display:block;cursor:pointer;margin-bottom:8px;">
@@ -938,8 +1002,299 @@
         }
       }
 
-      function getGameDifficulty() {
-        const streamerId = getStreamerId() || '';
+      // ── Next-Game Vote settings ──
+      // Talks to the real /games/api/vote/* routes. The streamer id is the same
+      // one the overlay and viewer pages use, so all three agree on the room.
+      const VOTE_GAMES = [
+        { id: 'spellingbee', name: 'Spelling Bee', icon: '🐝' },
+        { id: 'wordle', name: 'Wordle', icon: '🟩' },
+        { id: 'searchle', name: 'Searchle', icon: '🔎' },
+        { id: 'hangman', name: 'Hangman', icon: '🎯' },
+        { id: 'speedscramble', name: 'Speed Scramble', icon: '⚡' }
+      ];
+
+      // In-memory copy of the rotation the editor is working on.
+      let voteDraft = { candidates: [], enabled: false };
+
+      function getVoteOwner() {
+        // Vote config is keyed by the plain streamer id (no leading @), matching
+        // the channel key the ws relay uses.
+        return getRouteSlug(getStreamerId()) || 'public';
+      }
+
+      function renderVoteRotation() {
+        const wrap = document.getElementById('vote-rotation');
+        if (!wrap) return;
+        wrap.innerHTML = '';
+
+        VOTE_GAMES.forEach((game) => {
+          const existing = voteDraft.candidates.find((c) => c.gameId === game.id);
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:16px;';
+
+          const label = document.createElement('label');
+          label.style.cssText = 'display:flex;align-items:center;gap:10px;cursor:pointer;flex:1;min-width:0;';
+          const check = document.createElement('input');
+          check.type = 'checkbox';
+          check.checked = Boolean(existing);
+          check.style.cssText = 'width:18px;height:18px;accent-color:var(--accent);flex:0 0 auto;';
+          const text = document.createElement('span');
+          text.style.cssText = 'font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+          text.textContent = game.icon + ' ' + game.name;
+          label.appendChild(check);
+          label.appendChild(text);
+
+          const termWrap = document.createElement('div');
+          termWrap.style.cssText = 'display:flex;align-items:center;gap:6px;flex:0 0 auto;' + (existing ? '' : 'display:none;');
+
+          const value = document.createElement('input');
+          value.type = 'number';
+          value.min = '1';
+          value.className = 'setting-input';
+          value.style.cssText = 'width:64px;padding:6px 8px;';
+          value.value = existing ? existing.termValue : 3;
+
+          const unit = document.createElement('select');
+          unit.className = 'setting-input';
+          unit.style.cssText = 'width:auto;padding:6px 8px;';
+          unit.innerHTML = '<option value="rounds">rounds</option><option value="minutes">minutes</option>';
+          unit.value = existing ? existing.termUnit : 'rounds';
+
+          termWrap.appendChild(value);
+          termWrap.appendChild(unit);
+
+          function syncCandidate() {
+            if (check.checked) {
+              const unitVal = unit.value === 'minutes' ? 'minutes' : 'rounds';
+              const max = unitVal === 'minutes' ? 240 : 50;
+              const v = Math.max(1, Math.min(max, parseInt(value.value, 10) || 1));
+              value.value = v;
+              // Keep the existing entry (upsert) so order stays stable.
+              const prev = voteDraft.candidates.find((c) => c.gameId === game.id);
+              if (prev) {
+                prev.termUnit = unitVal;
+                prev.termValue = v;
+              } else {
+                voteDraft.candidates.push({ gameId: game.id, termUnit: unitVal, termValue: v });
+              }
+            } else {
+              voteDraft.candidates = voteDraft.candidates.filter((c) => c.gameId !== game.id);
+            }
+            updateVoteSaveState();
+          }
+
+          check.addEventListener('change', () => {
+            termWrap.style.display = check.checked ? 'flex' : 'none';
+            syncCandidate();
+          });
+          value.addEventListener('change', syncCandidate);
+          unit.addEventListener('change', syncCandidate);
+
+          row.appendChild(label);
+          row.appendChild(termWrap);
+          wrap.appendChild(row);
+        });
+      }
+
+      function updateVoteSaveState() {
+        const status = document.getElementById('vote-save-status');
+        if (!status) return;
+        const n = voteDraft.candidates.length;
+        if (n < 2) {
+          status.textContent = n === 0 ? 'Pick at least two games' : 'Pick one more game';
+          status.style.color = 'var(--warning)';
+        } else {
+          status.textContent = n + ' games on the rotation';
+          status.style.color = 'var(--text-muted)';
+        }
+      }
+
+      function loadVoteSettings() {
+        const enabledToggle = document.getElementById('vote-enabled');
+        const controls = document.getElementById('vote-controls');
+        if (!enabledToggle || !controls) return;
+
+        fetch('/games/api/vote/config?owner=' + encodeURIComponent(getVoteOwner()), { cache: 'no-store' })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((data) => {
+            if (data && data.config) {
+              voteDraft.candidates = Array.isArray(data.config.candidates)
+                ? data.config.candidates.map((c) => ({
+                  gameId: c.gameId,
+                  termUnit: c.termUnit === 'minutes' ? 'minutes' : 'rounds',
+                  termValue: Number(c.termValue) || 3
+                }))
+                : [];
+              voteDraft.enabled = data.enabled !== false;
+              if (data.config.ballotSize !== undefined) {
+                const bs = document.getElementById('vote-ballot-size');
+                if (bs) bs.value = String(data.config.ballotSize === 0 ? 0 : data.config.ballotSize);
+              }
+              if (data.config.voteDurationSec) {
+                const dur = document.getElementById('vote-duration');
+                if (dur) dur.value = String(data.config.voteDurationSec);
+              }
+              const keep = document.getElementById('vote-keep-playing');
+              if (keep) keep.checked = data.config.allowKeepPlaying !== false;
+              const autoSwitch = document.getElementById('vote-auto-switch');
+              if (autoSwitch) autoSwitch.checked = data.config.autoSwitch !== false;
+            }
+            enabledToggle.checked = Boolean(data && data.enabled && voteDraft.candidates.length >= 2);
+            controls.style.display = enabledToggle.checked ? 'block' : 'none';
+            renderVoteRotation();
+            updateVoteSaveState();
+          })
+          .catch(() => {
+            renderVoteRotation();
+            updateVoteSaveState();
+          });
+      }
+
+      function saveVoteSettings() {
+        const status = document.getElementById('vote-save-status');
+        const enabledToggle = document.getElementById('vote-enabled');
+        const wanted = Boolean(enabledToggle && enabledToggle.checked);
+
+        if (wanted && voteDraft.candidates.length < 2) {
+          if (status) {
+            status.textContent = 'Add at least two games first';
+            status.style.color = 'var(--warning)';
+          }
+          return;
+        }
+        if (status) { status.textContent = 'Saving…'; status.style.color = 'var(--text-muted)'; }
+
+        const payload = {
+          owner: getVoteOwner(),
+          enabled: wanted,
+          config: {
+            candidates: voteDraft.candidates,
+            ballotSize: parseInt((document.getElementById('vote-ballot-size') || {}).value, 10) || 0,
+            voteDurationSec: parseInt((document.getElementById('vote-duration') || {}).value, 10) || 60,
+            allowKeepPlaying: Boolean((document.getElementById('vote-keep-playing') || {}).checked),
+            autoSwitch: Boolean((document.getElementById('vote-auto-switch') || {}).checked)
+          }
+        };
+
+        fetch('/games/api/vote/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+          .then((r) => r.json().then((body) => ({ ok: r.ok, body })))
+          .then((res) => {
+            if (!status) return;
+            if (res.ok && res.body && res.body.success) {
+              status.textContent = wanted ? 'Saved — the vote is live' : 'Saved — the vote is off';
+              status.style.color = 'var(--good)';
+            } else {
+              status.textContent = (res.body && res.body.error) || 'Could not save';
+              status.style.color = 'var(--bad)';
+            }
+          })
+          .catch(() => {
+            if (status) { status.textContent = 'Could not reach the server'; status.style.color = 'var(--bad)'; }
+          });
+      }
+
+      /** Show current vote phase and offer a manual kick-off. */
+      function refreshVoteNow() {
+        const box = document.getElementById('vote-now');
+        if (!box) return;
+        fetch('/games/api/vote/state?owner=' + encodeURIComponent(getVoteOwner()), { cache: 'no-store' })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((data) => {
+            const vote = data && data.vote;
+            const detail = document.getElementById('vote-now-detail');
+            const title = document.getElementById('vote-now-title');
+            if (!vote || (vote.phase === 'idle' && !vote.termUnit)) {
+              box.style.display = 'none';
+              return;
+            }
+            box.style.display = 'block';
+            if (vote.phase === 'voting') {
+              title.textContent = '🗳️ Vote in progress';
+              if (detail) detail.textContent = (vote.totalVotes || 0) + ' votes so far — ' + (vote.secondsLeft || 0) + 's left';
+            } else if (vote.phase === 'result') {
+              title.textContent = '✅ Next up: ' + ((vote.winner && vote.winner.name) || '—');
+              if (detail) detail.textContent = vote.winner && vote.winner.stay
+                ? 'Staying on the current game'
+                : 'Switching in ' + (vote.resultSecondsLeft || 0) + 's';
+            } else if (vote.termUnit === 'rounds') {
+              title.textContent = '⏳ Term running';
+              if (detail) detail.textContent = 'Rounds ' + (vote.roundsDone || 0) + '/' + (vote.termValue || 0) + ' before the vote opens';
+            } else {
+              title.textContent = '⏳ Term running';
+              if (detail) detail.textContent = 'Next vote in ' + (vote.termSecondsLeft || 0) + 's';
+            }
+          })
+          .catch(() => {});
+      }
+
+      function initVoteSettings() {
+        const enabledToggle = document.getElementById('vote-enabled');
+        const controls = document.getElementById('vote-controls');
+        if (!enabledToggle || !controls) return;
+
+        enabledToggle.addEventListener('change', () => {
+          controls.style.display = enabledToggle.checked ? 'block' : 'none';
+        });
+
+        const saveBtn = document.getElementById('vote-save-btn');
+        if (saveBtn) saveBtn.addEventListener('click', saveVoteSettings);
+
+        const previewBtn = document.getElementById('vote-preview-btn');
+        if (previewBtn) {
+          previewBtn.addEventListener('click', () => {
+            // Opening a real ballot is the honest preview — it is what chat sees.
+            fetch('/games/api/vote/start', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ owner: getVoteOwner() })
+            })
+              .then((r) => r.json())
+              .then((body) => {
+                const status = document.getElementById('vote-save-status');
+                if (status) {
+                  status.textContent = body.ok ? 'Ballot opened — check your overlay' : (body.error || 'Could not start');
+                  status.style.color = body.ok ? 'var(--good)' : 'var(--bad)';
+                }
+                refreshVoteNow();
+              })
+              .catch(() => {});
+          });
+        }
+
+        const startBtn = document.getElementById('vote-force-start');
+        if (startBtn) {
+          startBtn.addEventListener('click', () => {
+            fetch('/games/api/vote/start', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ owner: getVoteOwner() })
+            }).then(refreshVoteNow).catch(() => {});
+          });
+        }
+
+        const cancelBtn = document.getElementById('vote-force-cancel');
+        if (cancelBtn) {
+          cancelBtn.addEventListener('click', () => {
+            fetch('/games/api/vote/cancel', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ owner: getVoteOwner() })
+            }).then(refreshVoteNow).catch(() => {});
+          });
+        }
+
+        loadVoteSettings();
+        refreshVoteNow();
+        // The phase can change on its own (term expiry, chat votes), so poll
+        // while the dashboard is open — this is a settings page, not a stream.
+        setInterval(refreshVoteNow, 5000);
+      }
+
+      function getGameDifficulty() {        const streamerId = getStreamerId() || '';
         const key = `hangstream-game-difficulty:${streamerId}`;
         try {
           const value = localStorage.getItem(key);
@@ -1195,6 +1550,10 @@
       
       const giftSettingsSection = document.getElementById('gift-settings-section');
       if (giftSettingsSection) giftSettingsSection.style.display = 'block';
+
+      const voteSettingsSection = document.getElementById('vote-settings-section');
+      if (voteSettingsSection) voteSettingsSection.style.display = 'block';
+      initVoteSettings();
       
       // Initialize website play toggle
       const websitePlayToggle = document.getElementById('website-play-toggle');

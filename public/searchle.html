@@ -916,6 +916,9 @@ async function submitGuess(word, sourceUser) {
 
     if (data.status === 'invalid') { showMessage('Letters only', 'error'); return 'invalid'; }
     if (data.status === 'duplicate') { showMessage('Already guessed', 'info'); return 'duplicate'; }
+    // A blocked word is reported as "not a real word" so the word itself is
+    // never echoed back onto the stream.
+    if (data.status === 'blocked') { showMessage('Not a real word', 'error'); return 'unknown'; }
     if (data.status === 'unknown') { showMessage('Not a real word', 'error'); return 'unknown'; }
 
     // ranked or outside

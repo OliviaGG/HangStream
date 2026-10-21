@@ -12,7 +12,10 @@ module.exports = {
 
   // Embedding models — fasttext wiki-news-300d-1M (built once via
   // tools/download-fasttext.js + tools/build-model.js + tools/convert-float16.js)
-  modelsDir: path.join(ROOT, 'data', 'models'),
+  //
+  // The location is overridable so a container deployment can keep the ~125 MB
+  // model on a mounted persistent volume instead of baking it into the image.
+  modelsDir: process.env.SEARCHLE_MODELS_DIR || path.join(ROOT, 'data', 'models'),
   activeModels: ['fasttext'],
   modelWeights: { fasttext: 1 },
   rrfK: 60, // Reciprocal Rank Fusion constant

@@ -7,6 +7,11 @@
     "start": "node server/server.js",
     "dev": "node server/server.js",
     "azure-start": "node server/server.js",
+    "test": "node --test server/__tests__/games.test.js server/__tests__/game-vote.test.js server/__tests__/word-bank.test.js server/__tests__/storage.test.js",
+    "smoke": "node server/__tests__/smoke.js",
+    "smoke:vote-ui": "node server/__tests__/vote-ui.smoke.js",
+    "smoke:games": "node server/__tests__/games-live.js && node server/__tests__/games-chat.js",
+    "build:word-bank": "node server/games/tools/build-curated-words.js",
     "deploy-azure": "powershell -ExecutionPolicy Bypass -File deploy-azure.ps1"
   },
   "engines": {

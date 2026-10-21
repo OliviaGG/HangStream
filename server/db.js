@@ -1,11 +1,33 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 
 const dbPath = process.env.DB_PATH || path.join(__dirname, '../data/hangstream.db');
+
+// sqlite3 does not create the parent directory, so a fresh checkout (or a
+// container image built from one) would fail to open the database at all.
+// Creating it up front means the app boots on a brand new machine.
+try {
+  fs.mkdirSync(path.dirname(path.resolve(dbPath)), { recursive: true });
+} catch (err) {
+  console.error('Could not create the database directory:', err.message);
+}
+
+// Resolves once the connection is open AND every table/index has been created.
+// Consumers (and tests) can await this instead of guessing at a delay: the
+// CREATE TABLE statements below are async, so "schema initialized" only means
+// they were queued, not committed.
+let readyResolve;
+let readyReject;
+const ready = new Promise((resolve, reject) => {
+  readyResolve = resolve;
+  readyReject = reject;
+});
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error opening database:', err.message);
+    readyReject(err);
   } else {
     console.log('Connected to SQLite database:', dbPath);
     initializeSchema();
@@ -94,8 +116,52 @@ function initializeSchema() {
       session_id TEXT
     )`);
 
-    console.log('Database schema initialized');
+    // Server-authoritative game rounds (server/games/). One row per
+    // streamer x game room; `state` holds the serialized Game state so a
+    // restart can restore live rounds, and daily/played bookkeeping lets
+    // games roll a shared puzzle over once per day.
+    db.run(`CREATE TABLE IF NOT EXISTS game_rounds (
+      streamer_id TEXT NOT NULL,
+      game_id TEXT NOT NULL,
+      state TEXT,
+      is_daily INTEGER DEFAULT 0,
+      daily_date TEXT,
+      updated_at INTEGER DEFAULT (strftime('%s', 'now')),
+      PRIMARY KEY (streamer_id, game_id)
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS game_daily_played (
+      game_id TEXT NOT NULL,
+      daily_date TEXT NOT NULL,
+      streamer_id TEXT DEFAULT 'public',
+      puzzle_id TEXT,
+      completed_at INTEGER DEFAULT (strftime('%s', 'now')),
+      PRIMARY KEY (game_id, daily_date, streamer_id)
+    )`);
+
+    // Next-game vote config (server/games/game-vote.js). One row per streamer
+    // holding the rotation, ballot size, durations and flags — the equivalent
+    // of Word Tycoon's per-streamer `gameVote` widget config.
+    db.run(`CREATE TABLE IF NOT EXISTS game_vote_config (
+      streamer_id TEXT PRIMARY KEY,
+      config TEXT NOT NULL,
+      enabled INTEGER DEFAULT 1,
+      updated_at INTEGER DEFAULT (strftime('%s', 'now'))
+    )`);
+
+    // Final serialized statement: when it completes, every table exists.
+    db.run('SELECT 1', (err) => {
+      if (err) {
+        console.error('Error initializing schema:', err.message);
+        readyReject(err);
+        return;
+      }
+      console.log('Database schema initialized');
+      readyResolve(db);
+    });
   });
 }
+
+db.ready = ready;
 
 module.exports = db;

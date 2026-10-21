@@ -12,7 +12,9 @@ const db = require('../db');
 const { loadTokens, saveTokens, loadTokensSync } = require('../storage');
 
 test('saveTokens and loadTokens preserve OAuth payloads and metadata', async () => {
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  // Wait for the schema to actually be committed rather than guessing at a
+  // delay — CREATE TABLE is async, so "initialized" only means "queued".
+  await db.ready;
   const payload = {
     'spotify-123': {
       created: 1700000000000,
