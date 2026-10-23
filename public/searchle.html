@@ -16,621 +16,773 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Searchle - HangStream</title>
-<style id="inline-shared">
-  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap');
+<style>
+/* ─────────────────────────────────────────────────────────────
+   Searchle — HangStream skin on WordTycoon's layout.
 
-  :root {
-    --bg: #0e0e12;
-    --bg-elevated: #0b0b0f;
-    --panel: #1a1a22;
-    --panel-strong: #20202a;
-    --text: #f0ede8;
-    --text-muted: #888;
-    --muted: #666;
-    --border: #2a2a35;
-    --accent: #ff4d6d;
-    --accent-hover: #ff6b85;
-    --good: #2ecc71;
-    --bad: #ff7a7a;
-    --secondary: #3a3a45;
-    color-scheme: dark;
+   Two screens, one document:
+     • viewer page  — compact header, full-height vertical guess
+                      list with log-scale rank bars, sticky input
+     • OBS overlay  — same list as giant bubbles with a water-fill
+                      rank bar, no input, transparent background
+
+   Rank colours + bar scale are ported from WordTycoon's play page
+   (searchle/client/play.html): logarithmic percentile, gold at 95+.
+   ───────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap');
+
+:root {
+  --bg: #0e0e12;
+  --bg-elevated: #0b0b0f;
+  --panel: #1a1a22;
+  --panel-strong: #20202a;
+  --text: #f0ede8;
+  --text-muted: #888;
+  --muted: #666;
+  --border: #2a2a35;
+  --accent: #ff4d6d;
+  --accent-hover: #ff6b85;
+  --accent-2: #7c5cff;
+  --good: #2ecc71;
+  --bad: #ff7a7a;
+  --secondary: #3a3a45;
+
+  /* WordTycoon rank ramp, retuned to HangStream's palette */
+  --rank-gold: #ffd166;
+  --rank-green: #37d67a;
+  --rank-blue: #4fa3ff;
+  --rank-purple: #9b7bff;
+  --rank-gray: #8a8a97;
+  --rank-cold: #55555f;
+
+  --radius: 14px;
+  color-scheme: dark;
+}
+
+body[data-theme="light"] {
+  --bg: #f5f0ea;
+  --bg-elevated: #efe8e1;
+  --panel: #ffffff;
+  --panel-strong: #f8f2ec;
+  --text: #1f1f28;
+  --text-muted: #5c5c68;
+  --muted: #6f6f7c;
+  --border: #d7cfc6;
+  --accent: #c93f5c;
+  --accent-hover: #e15a76;
+  --accent-2: #6a4bd8;
+  --good: #1f8f53;
+  --bad: #c74444;
+  --secondary: #7b7681;
+  --rank-gold: #b7791f;
+  --rank-green: #1f8f53;
+  --rank-blue: #2b6cb0;
+  --rank-purple: #6a4bd8;
+  --rank-gray: #7b7681;
+  --rank-cold: #a9a29a;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; }
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(255, 77, 109, 0.10), transparent 30%),
+    radial-gradient(circle at top right, rgba(124, 92, 255, 0.12), transparent 26%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg) 92%, #000 8%), var(--bg));
+  color: var(--text);
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  overflow: hidden;
+  touch-action: manipulation;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── App shell ─────────────────────────────────────────────── */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 16px;
+  gap: 14px;
+}
+
+/* ── Header ────────────────────────────────────────────────── */
+.header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--bg-elevated) 86%, transparent);
+  backdrop-filter: blur(16px);
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.header-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+.logo {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  background: linear-gradient(120deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  white-space: nowrap;
+}
+
+.brand {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.status-dot.connected { background: var(--good); box-shadow: 0 0 10px color-mix(in srgb, var(--good) 65%, transparent); }
+.status-dot.won { background: var(--rank-gold); box-shadow: 0 0 12px color-mix(in srgb, var(--rank-gold) 70%, transparent); animation: none; }
+
+.header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.chip {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 70%, transparent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.chip.strong { color: var(--text); border-color: color-mix(in srgb, var(--accent) 30%, var(--border)); }
+.chip.points { color: var(--rank-gold); border-color: color-mix(in srgb, var(--rank-gold) 32%, var(--border)); }
+.chip[hidden] { display: none; }
+
+.btn {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 70%, #000);
+  border-radius: 10px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.12s, box-shadow 0.18s;
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 26%, transparent);
+  white-space: nowrap;
+}
+
+.btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.btn:active { transform: translateY(0) scale(0.98); }
+
+.btn.ghost {
+  color: var(--text-muted);
+  background: transparent;
+  border-color: var(--border);
+  box-shadow: none;
+}
+
+.btn.ghost:hover { color: var(--text); background: color-mix(in srgb, var(--panel) 80%, transparent); }
+
+/* ── Win banner ────────────────────────────────────────────── */
+.win-banner {
+  flex-shrink: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 18px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--rank-gold) 34%, var(--border));
+  background:
+    linear-gradient(120deg,
+      color-mix(in srgb, var(--rank-gold) 14%, transparent),
+      color-mix(in srgb, var(--accent) 10%, transparent));
+  animation: banner-in 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.win-banner.show { display: flex; }
+.win-word { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 0.06em; color: var(--rank-gold); }
+.win-info { font-size: 12px; color: var(--text-muted); }
+.win-info b { color: var(--text); font-weight: 700; }
+
+@keyframes banner-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Guess list ────────────────────────────────────────────── */
+.guess-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.guess-list::-webkit-scrollbar { width: 6px; }
+.guess-list::-webkit-scrollbar-track { background: transparent; }
+.guess-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.guess-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--panel) 72%, transparent);
+  animation: row-in 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.25s;
+}
+
+.guess-row:hover { background: color-mix(in srgb, var(--panel-strong) 90%, transparent); }
+
+.guess-row.is-mine {
+  border-color: color-mix(in srgb, var(--accent) 46%, transparent);
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--accent) 12%, transparent),
+      transparent 65%),
+    color-mix(in srgb, var(--panel) 82%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent),
+              0 10px 30px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.guess-row.is-best::after {
+  content: 'BEST';
+  position: absolute;
+  top: -7px;
+  right: 14px;
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--bg);
+  background: var(--rank-gold);
+  padding: 2px 8px;
+  border-radius: 999px;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--rank-gold) 50%, transparent);
+}
+
+.guess-row.won {
+  border-color: color-mix(in srgb, var(--good) 55%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--good) 25%, transparent),
+              0 12px 36px color-mix(in srgb, var(--good) 18%, transparent);
+}
+
+@keyframes row-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.guess-rank {
+  flex-shrink: 0;
+  min-width: 74px;
+  text-align: right;
+  font-weight: 800;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  color: var(--rank-color, var(--text));
+  letter-spacing: -0.01em;
+}
+
+.guess-rank.is-out { font-size: 10px; letter-spacing: 0.12em; color: var(--muted); }
+
+.guess-word {
+  flex-shrink: 0;
+  min-width: 92px;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.guess-bar-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 40px;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel-strong) 90%, transparent);
+  overflow: hidden;
+}
+
+.guess-bar {
+  height: 100%;
+  width: var(--pct, 0%);
+  border-radius: inherit;
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--rank-color, var(--accent)) 55%, transparent),
+    var(--rank-color, var(--accent)));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--rank-color, var(--accent)) 45%, transparent);
+  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: width;
+}
+
+.guess-user {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 150px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.guess-avatar {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  border: 1px solid color-mix(in srgb, #fff 22%, transparent);
+}
+
+.guess-user-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Empty state ───────────────────────────────────────────── */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--text-muted);
+  animation: row-in 0.3s ease-out;
+}
+
+.empty-emoji {
+  font-size: 40px;
+  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--accent) 35%, transparent));
+}
+
+.empty-state h1 { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.01em; }
+.empty-state p { font-size: 13px; line-height: 1.55; max-width: 380px; }
+
+/* ── Chat ticker ───────────────────────────────────────────── */
+.chat-ticker {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+  min-height: 18px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.chat-ticker.show { opacity: 1; }
+.chat-ticker[hidden] { display: none; }
+
+.ticker-user { color: var(--text); font-weight: 700; }
+.ticker-word { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--accent); }
+.ticker-word.bad { color: var(--rank-cold); }
+.ticker-word.good { color: var(--good); }
+
+/* ── Input bar ─────────────────────────────────────────────── */
+.input-bar {
+  flex-shrink: 0;
+  padding: 12px 14px 10px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--bg-elevated) 86%, transparent);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 -14px 40px rgba(0, 0, 0, 0.18);
+}
+
+.input-wrap { display: flex; gap: 8px; }
+
+.guess-input {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 16px;
+  font-family: 'Space Mono', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  background: color-mix(in srgb, var(--panel) 85%, transparent);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+.guess-input::placeholder { color: var(--muted); font-weight: 400; letter-spacing: 0.02em; }
+.guess-input:focus {
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.guess-input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.send-btn {
+  flex-shrink: 0;
+  padding: 14px 26px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.12s, opacity 0.18s;
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.send-btn:hover { background: var(--accent-hover); }
+.send-btn:active { transform: scale(0.97); }
+.send-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+.hint {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+
+/* ── Toast ─────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  top: 88px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-16px);
+  z-index: 200;
+  max-width: min(90vw, 460px);
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  background: color-mix(in srgb, var(--panel-strong) 96%, transparent);
+  border: 1px solid var(--border);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  backdrop-filter: blur(12px);
+}
+
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.info { border-color: color-mix(in srgb, var(--accent-2) 45%, var(--border)); }
+.toast.success { border-color: color-mix(in srgb, var(--good) 50%, var(--border)); color: var(--good); }
+.toast.error { border-color: color-mix(in srgb, var(--bad) 50%, var(--border)); color: var(--bad); }
+
+/* ── OBS overlay mode ──────────────────────────────────────── */
+body.overlay-mode {
+  background: transparent;
+  overflow: hidden;
+}
+
+body.overlay-mode .app {
+  max-width: none;
+  padding: 18px 22px;
+  gap: 16px;
+}
+
+body.overlay-mode .header {
+  padding: 18px 30px;
+  border-radius: 24px;
+  border-color: color-mix(in srgb, var(--accent) 26%, var(--border));
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--accent) 8%, transparent),
+      transparent 35%,
+      transparent 65%,
+      color-mix(in srgb, var(--accent-2) 8%, transparent)),
+    color-mix(in srgb, var(--bg-elevated) 78%, transparent);
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.45);
+}
+
+body.overlay-mode .brand,
+body.overlay-mode .status,
+body.overlay-mode .btn.ghost { display: none; }
+
+body.overlay-mode .logo { font-size: clamp(26px, 2.6vw, 44px); }
+body.overlay-mode .chip { font-size: clamp(15px, 1.5vw, 26px); padding: 0.5em 0.9em; }
+body.overlay-mode .btn { font-size: clamp(13px, 1.2vw, 20px); padding: 0.7em 1.1em; border-radius: 14px; }
+
+body.overlay-mode .guess-list { gap: 18px; padding: 6px 2px; }
+
+body.overlay-mode .guess-row {
+  min-height: clamp(120px, 16vh, 190px);
+  padding: 20px 44px;
+  border-radius: 36px;
+  gap: 34px;
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+  overflow: hidden;
+}
+
+body.overlay-mode .guess-row.is-mine {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  box-shadow: 0 0 40px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+body.overlay-mode .guess-rank {
+  position: relative;
+  z-index: 1;
+  order: 3;
+  min-width: auto;
+  padding: 0 30px;
+  height: clamp(72px, 9vh, 110px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(30px, 4.4vh, 58px);
+  letter-spacing: 0.02em;
+  color: var(--rank-color, var(--text));
+  background: color-mix(in srgb, var(--bg-elevated) 82%, transparent);
+  border-radius: 999px;
+  outline: 4px solid color-mix(in srgb, var(--rank-color, #fff) 55%, transparent);
+  outline-offset: -2px;
+}
+
+body.overlay-mode .guess-rank.is-out { font-family: Inter, sans-serif; font-size: clamp(14px, 1.6vh, 22px); padding: 0 22px; outline-color: var(--border); }
+
+body.overlay-mode .guess-word {
+  position: relative;
+  z-index: 1;
+  order: 1;
+  min-width: 0;
+  font-size: clamp(38px, 6.4vh, 86px);
+  letter-spacing: 0.03em;
+  line-height: 1;
+  color: var(--text);
+  text-shadow: 0 0 40px rgba(0, 0, 0, 0.45);
+}
+
+body.overlay-mode .guess-user {
+  position: relative;
+  z-index: 1;
+  order: 2;
+  flex: 1;
+  justify-content: center;
+  max-width: none;
+  gap: 14px;
+  font-size: clamp(16px, 2vh, 28px);
+  color: color-mix(in srgb, var(--text) 82%, transparent);
+}
+
+body.overlay-mode .guess-avatar {
+  width: clamp(34px, 4.4vh, 58px);
+  height: clamp(34px, 4.4vh, 58px);
+  font-size: clamp(15px, 2vh, 24px);
+  border-width: 2px;
+}
+
+/* Water-fill bar: same element, now a full-bleed vertical fill */
+body.overlay-mode .guess-bar-wrap {
+  position: absolute;
+  inset: 0;
+  height: auto;
+  border-radius: inherit;
+  background: transparent;
+  overflow: hidden;
+  z-index: 0;
+}
+
+body.overlay-mode .guess-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: var(--pct, 0%);
+  border-radius: 0;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--rank-color, var(--accent)) 26%, transparent),
+    color-mix(in srgb, var(--rank-color, var(--accent)) 8%, transparent));
+  box-shadow: none;
+  transition: height 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.overlay-mode .guess-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--rank-color, var(--accent));
+  opacity: 0.55;
+}
+
+body.overlay-mode .guess-row.is-best::after { top: 12px; right: 18px; font-size: clamp(9px, 1.1vh, 14px); padding: 0.3em 0.9em; }
+
+body.overlay-mode .empty-state { gap: 18px; }
+body.overlay-mode .empty-emoji { font-size: clamp(40px, 7vh, 90px); }
+body.overlay-mode .empty-state h1 { font-size: clamp(26px, 4vh, 52px); }
+body.overlay-mode .empty-state p { font-size: clamp(14px, 2vh, 26px); max-width: 55ch; }
+
+/* Overlay hides interactive chrome so the canvas stays clean */
+body.overlay-mode .input-bar,
+body.overlay-mode .chat-ticker,
+body.overlay-mode .btn#theme-btn { display: none; }
+
+body.overlay-mode .toast {
+  top: auto;
+  bottom: 34px;
+  font-size: clamp(16px, 2vh, 26px);
+  padding: 0.7em 1.3em;
+  border-radius: 18px;
+}
+
+body.overlay-mode .win-banner {
+  padding: 16px 28px;
+  border-radius: 20px;
+}
+body.overlay-mode .win-word { font-size: clamp(26px, 3.6vh, 46px); }
+body.overlay-mode .win-info { font-size: clamp(13px, 1.6vh, 20px); }
+
+/* ── Responsive (viewer) ───────────────────────────────────── */
+@media (max-width: 720px) {
+  .app { padding: 10px; gap: 10px; }
+  .header { padding: 10px 12px; border-radius: 16px; }
+  .brand, .status, .chip#vocab-size { display: none; }
+  .logo { font-size: 18px; }
+  .guess-row { gap: 10px; padding: 10px 12px; border-radius: 12px; }
+  .guess-rank { min-width: 54px; font-size: 13px; }
+  .guess-word { min-width: 70px; font-size: 13px; }
+  .guess-user { max-width: 90px; }
+  .guess-user-name { display: none; }
+  .input-bar { padding: 10px; border-radius: 16px; }
+  .guess-input { padding: 12px 14px; font-size: 16px; }
+  .send-btn { padding: 12px 18px; }
+  .toast { top: 74px; }
+}
+
+@media (max-height: 560px) {
+  .chat-ticker, .hint { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
-
-  body[data-theme="light"] {
-    --bg: #f5f0ea;
-    --bg-elevated: #efe8e1;
-    --panel: #ffffff;
-    --panel-strong: #f8f2ec;
-    --text: #1f1f28;
-    --text-muted: #5c5c68;
-    --muted: #6f6f7c;
-    --border: #d7cfc6;
-    --accent: #c93f5c;
-    --accent-hover: #e15a76;
-    --good: #1f8f53;
-    --bad: #c74444;
-    --secondary: #7b7681;
-    color-scheme: light;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-  body {
-    min-height: 100vh;
-    background:
-      radial-gradient(circle at top left, rgba(255, 77, 109, 0.10), transparent 28%),
-      radial-gradient(circle at top right, rgba(124, 92, 255, 0.10), transparent 24%),
-      linear-gradient(180deg, color-mix(in srgb, var(--bg) 90%, #000 10%), var(--bg));
-    color: var(--text);
-    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-    overflow: hidden;
-    touch-action: manipulation;
-  }
-
-  .game-wrap {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 340px;
-    grid-template-rows: auto 1fr auto;
-    min-height: 100vh;
-    gap: 16px;
-    padding: 20px;
-  }
-
-  .topbar {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18px 22px;
-    border: 1px solid var(--border);
-    border-radius: 24px;
-    background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
-    backdrop-filter: blur(16px);
-    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.14);
-  }
-
-  .logo {
-    font-family: Inter, system-ui, sans-serif;
-    font-size: 19px;
-    font-weight: 800;
-    letter-spacing: 0.16em;
-    color: var(--accent);
-  }
-
-  .logo span { color: var(--text); }
-
-  .score-display {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text);
-  }
-
-  .score-number {
-    color: var(--accent);
-    font-size: 24px;
-  }
-
-  .category-badge {
-    font-size: 11px;
-    letter-spacing: 2px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    border: 1px solid var(--border);
-    padding: 4px 12px;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--panel) 80%, transparent);
-  }
-
-  .game-area {
-    display: flex;
-    min-width: 0;
-  }
-
-  .game-main {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 36px 34px;
-    gap: 22px;
-    border: 1px solid var(--border);
-    border-radius: 28px;
-    background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
-    backdrop-filter: blur(16px);
-    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.14);
-    min-width: 0;
-    width: 100%;
-  }
-
-  /* ── HERO RANK ── */
-  .rank-hero {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    padding: 22px 40px;
-    border: 1px solid var(--border);
-    border-radius: 22px;
-    background: color-mix(in srgb, var(--panel) 70%, transparent);
-    min-width: 260px;
-    text-align: center;
-  }
-
-  .rank-big {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 64px;
-    line-height: 1;
-    letter-spacing: 2px;
-    color: var(--accent);
-  }
-
-  .rank-big.hit { color: var(--good); }
-
-  .rank-label {
-    font-size: 11px;
-    letter-spacing: 2.4px;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .rank-sub {
-    font-size: 12px;
-    color: var(--text-muted);
-  }
-
-  .percentile-track {
-    width: 100%;
-    height: 6px;
-    border-radius: 999px;
-    background: var(--panel-strong);
-    overflow: hidden;
-    margin-top: 4px;
-  }
-
-  .percentile-fill {
-    height: 100%;
-    width: 0%;
-    border-radius: 999px;
-    background: linear-gradient(90deg, var(--accent), var(--good));
-    transition: width 0.5s ease;
-  }
-
-  /* ── GUESS FORM ── */
-  .guess-form {
-    display: flex;
-    gap: 10px;
-    width: 100%;
-    max-width: 520px;
-  }
-
-  .guess-input {
-    flex: 1;
-    padding: 15px 18px;
-    border-radius: 12px;
-    border: 2px solid var(--border);
-    background: color-mix(in srgb, var(--panel) 85%, transparent);
-    color: var(--text);
-    font-family: 'Space Mono', monospace;
-    font-size: 16px;
-    letter-spacing: 0.06em;
-    outline: none;
-    transition: border-color 0.15s;
-    min-width: 0;
-  }
-
-  .guess-input:focus { border-color: var(--accent); }
-  .guess-input:disabled { opacity: 0.5; }
-
-  .guess-btn {
-    padding: 15px 26px;
-    border-radius: 12px;
-    border: 1px solid var(--accent);
-    background: var(--accent);
-    color: #ffffff;
-    font-family: Inter, system-ui, sans-serif;
-    font-size: 14px;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .guess-btn:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-  .guess-btn:active { transform: scale(0.96); }
-  .guess-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  /* ── GUESS LIST ── */
-  .guess-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    width: 100%;
-    max-width: 520px;
-    max-height: 34vh;
-    overflow-y: auto;
-    padding-right: 4px;
-  }
-
-  .guess-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--panel) 75%, transparent);
-    animation: slideIn 0.2s ease;
-  }
-
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .rank-badge {
-    min-width: 58px;
-    text-align: center;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
-    letter-spacing: 1px;
-    padding: 3px 8px;
-    border-radius: 8px;
-    background: var(--secondary);
-    color: var(--text-muted);
-    flex-shrink: 0;
-  }
-
-  .rank-badge.near   { background: color-mix(in srgb, var(--good) 25%, transparent); color: var(--good); border: 1px solid var(--good); }
-  .rank-badge.close  { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); border: 1px solid var(--accent); }
-  .rank-badge.ok     { background: color-mix(in srgb, #f0b429 20%, transparent); color: #f0b429; border: 1px solid #f0b429; }
-  .rank-badge.win    { background: var(--good); color: #ffffff; border: 1px solid var(--good); }
-
-  .guess-word {
-    font-family: 'Space Mono', monospace;
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text);
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .guess-meta {
-    font-size: 11px;
-    color: var(--text-muted);
-    white-space: nowrap;
-  }
-
-  .guess-best-tag {
-    font-size: 10px;
-    letter-spacing: 1.4px;
-    text-transform: uppercase;
-    color: var(--accent);
-    font-weight: 700;
-  }
-
-  .empty-guesses {
-    font-size: 13px;
-    color: var(--muted);
-    text-align: center;
-    padding: 14px;
-    border: 1px dashed var(--border);
-    border-radius: 12px;
-  }
-
-  .instructions {
-    font-size: 12px;
-    color: var(--text-muted);
-    text-align: center;
-    line-height: 1.5;
-    max-width: 520px;
-  }
-
-  /* ── SIDEBAR ── */
-  .sidebar {
-    border: 1px solid var(--border);
-    border-radius: 28px;
-    display: flex;
-    flex-direction: column;
-    background: color-mix(in srgb, var(--bg-elevated) 90%, transparent);
-    backdrop-filter: blur(14px);
-    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.14);
-    min-width: 0;
-    overflow: hidden;
-  }
-
-  .sidebar-head {
-    padding: 18px 18px;
-    border-bottom: 1px solid var(--border);
-    font-size: 11px;
-    letter-spacing: 2.2px;
-    color: var(--muted);
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .live-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: pulse 1.5s infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; animation: none !important; }
-  }
-
-  .twitch-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 10px;
-    color: var(--muted);
-  }
-
-  .twitch-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--muted);
-  }
-
-  .twitch-dot.connected { background: var(--good); }
-
-  .chat-feed {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: calc(100vh - 60px);
-  }
-
-  .chat-msg {
-    font-size: 13px;
-    line-height: 1.5;
-    animation: slideIn 0.2s ease;
-  }
-
-  .chat-user { color: var(--accent); font-weight: 700; }
-  .chat-guess { color: color-mix(in srgb, var(--text) 94%, transparent); }
-  .chat-system { color: var(--muted); font-style: italic; }
-  .chat-correct { color: var(--good); }
-  .chat-wrong { color: var(--bad); }
-
-  .settings-btn {
-    background: color-mix(in srgb, var(--panel) 80%, transparent);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    padding: 8px 14px;
-    border-radius: 14px;
-    font-family: Inter, system-ui, sans-serif;
-    font-size: 11px;
-    cursor: pointer;
-    letter-spacing: 0.08em;
-    transition: all 0.15s;
-  }
-
-  .settings-btn:hover { color: var(--text); border-color: var(--secondary); }
-
-  .theme-btn {
-    background: color-mix(in srgb, var(--panel) 80%, transparent);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    padding: 8px 14px;
-    border-radius: 14px;
-    font-family: Inter, system-ui, sans-serif;
-    font-size: 11px;
-    cursor: pointer;
-    letter-spacing: 0.08em;
-    transition: all 0.15s;
-    min-width: 104px;
-  }
-
-  .theme-btn:hover { color: var(--text); border-color: var(--secondary); }
-
-  .player-scores {
-    margin: 12px;
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    background: var(--bg-elevated);
-    overflow: hidden;
-  }
-
-  .player-scores-head {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border);
-    font-size: 11px;
-    letter-spacing: 2px;
-    color: var(--muted);
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .player-scores-list {
-    display: flex;
-    flex-direction: column;
-    max-height: 180px;
-    overflow: auto;
-  }
-
-  .player-score-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 10px 14px;
-    border-top: 1px solid var(--border);
-    font-size: 12px;
-  }
-
-  .player-score-row:first-child { border-top: 0; }
-  .player-score-name { color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .player-score-points { color: var(--accent); font-weight: 700; }
-
-  .message-box {
-    padding: 12px;
-    border-radius: 12px;
-    margin-bottom: 12px;
-    text-align: center;
-    font-size: 13px;
-  }
-
-  .message-box.success {
-    background: color-mix(in srgb, var(--good) 15%, transparent);
-    border: 1px solid var(--good);
-    color: var(--good);
-  }
-
-  .message-box.error {
-    background: color-mix(in srgb, var(--bad) 15%, transparent);
-    border: 1px solid var(--bad);
-    color: var(--bad);
-  }
-
-  .message-box.info {
-    background: color-mix(in srgb, var(--accent) 15%, transparent);
-    border: 1px solid var(--accent);
-    color: var(--accent);
-  }
-
-  body.overlay-mode .topbar,
-  body.overlay-mode .sidebar,
-  body.overlay-mode .settings-btn,
-  body.overlay-mode .theme-btn {
-    display: none !important;
-  }
-
-  body.overlay-mode .game-wrap {
-    display: block;
-  }
-
-  body.overlay-mode .game-area {
-    display: block;
-  }
-
-  body.overlay-mode .game-main {
-    padding: 60px 34px;
-  }
-
-  /* Hide all ads on overlay for clean OBS stream */
-  body.overlay-mode .adsbygoogle,
-  body.overlay-mode ins.adsbygoogle {
-    display: none !important;
-  }
-
-  @media (max-width: 640px) {
-    body { overflow: auto; }
-    .game-wrap { grid-template-columns: 1fr; grid-template-rows: auto auto auto; padding: 12px; gap: 12px; }
-    .sidebar { border-left: 0; min-height: 260px; }
-    .game-main { padding: 24px 18px; gap: 18px; }
-    .topbar { flex-wrap: wrap; gap: 10px; }
-    .category-badge { display: none; }
-    .score-display { display: none; }
-    .rank-big { font-size: 48px; }
-    .rank-hero { padding: 16px 24px; min-width: 0; width: 100%; }
-    .guess-btn { padding: 15px 18px; }
-    .guess-meta { display: none; }
-  }
+}
 </style>
 </head>
 <body>
 
-<div class="game-wrap">
-
-  <!-- TOP BAR -->
-  <div class="topbar">
-    <a href="/" class="logo" style="text-decoration:none;">HANG<span>STREAM</span></a>
-    <div style="display:flex; align-items:center; gap:12px;">
-      <div class="category-badge">🔍 Searchle</div>
-      <div class="score-display">
-        Best <span class="score-number" id="best-rank">—</span>
-        <span style="color:var(--text-muted); font-weight:400; font-size:13px;">| Guess <span id="guess-count">0</span></span>
+<div class="app">
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">Searchle</span>
+      <span class="brand">HangStream</span>
+      <div class="status">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Connecting</span>
       </div>
     </div>
-    <div style="display:flex; align-items:center; gap:12px;">
-      <button id="viewer-login-btn" class="settings-btn">Sign in with Google</button>
-      <button id="theme-btn" class="theme-btn">Dark mode</button>
-      <button id="new-game-btn" class="settings-btn">🔄 New Round</button>
+    <div class="header-right">
+      <span class="chip" id="vocab-size">— words</span>
+      <span class="chip strong" id="guess-count">0 guesses</span>
+      <span class="chip points" id="points-chip" hidden>0 pts</span>
+      <button class="btn ghost" id="theme-btn" type="button">Dark</button>
+      <button class="btn" id="new-game-btn" type="button">New round</button>
     </div>
+  </header>
+
+  <div class="win-banner" id="win-banner">
+    <span class="win-word" id="win-word"></span>
+    <span class="win-info">found by <b id="win-winner">someone</b> · <span id="win-detail"></span></span>
   </div>
 
-  <!-- MAIN GAME AREA -->
-  <div class="game-area">
-    <div class="game-main">
-      <div id="message-area"></div>
-
-      <div class="rank-hero">
-        <div class="rank-label">Closest guess</div>
-        <div class="rank-big" id="rank-big">—</div>
-        <div class="rank-sub" id="rank-sub">Rank #1 wins the round</div>
-        <div class="percentile-track"><div class="percentile-fill" id="percentile-fill"></div></div>
-      </div>
-
-      <form class="guess-form" id="guess-form" autocomplete="off">
-        <input class="guess-input" id="guess-input" type="text" maxlength="32"
-               placeholder="Type any word…" spellcheck="false" autocapitalize="off" autocomplete="off">
-        <button class="guess-btn" id="guess-btn" type="submit">Guess</button>
-      </form>
-
-      <div class="guess-list" id="guess-list">
-        <div class="empty-guesses" id="empty-guesses">No guesses yet. Find the hidden word — the closer your guess, the better your rank.</div>
-      </div>
-
-      <div class="instructions" id="instructions">Guess words until your guess is ranked #1. Chat guesses count in online mode.</div>
+  <main class="guess-list" id="guess-list">
+    <div class="empty-state" id="empty-state">
+      <div class="empty-emoji">🔍</div>
+      <h1>Guess the secret word</h1>
+      <p>Type any word below. The closer your rank to #1, the warmer you are. Rank #1 wins the round.</p>
     </div>
-  </div>
+  </main>
 
-  <!-- CHAT SIDEBAR -->
-  <div class="sidebar">
-    <div class="sidebar-head">
-      <div class="live-dot"></div>
-      Chat feed
-      <span style="margin-left:auto;" class="twitch-status">
-        <span class="twitch-dot" id="twitch-dot"></span>
-        <span id="twitch-label">DEMO MODE</span>
-      </span>
-    </div>
-    <div class="player-scores">
-      <div class="player-scores-head">
-        <span>Player Scores</span>
-        <span id="player-score-status">This round</span>
-      </div>
-      <div class="player-scores-list" id="player-scores-list">
-        <div class="player-score-row"><span class="player-score-name">No points yet.</span><span class="player-score-points">0</span></div>
-      </div>
-    </div>
-    <div class="chat-feed" id="chat-feed"></div>
-  </div>
+  <div class="chat-ticker" id="chat-ticker" hidden></div>
+
+  <footer class="input-bar">
+    <form class="input-wrap" id="guess-form">
+      <input class="guess-input" id="guess-input" type="text" maxlength="32"
+             placeholder="Type a word to guess…" autocomplete="off" autocapitalize="off"
+             spellcheck="false" enterkeyhint="send">
+      <button class="send-btn" id="guess-btn" type="submit">Go</button>
+    </form>
+    <div class="hint" id="instructions">Guess words until your guess is ranked #1. Chat guesses count in online mode.</div>
+  </footer>
+
+  <div class="toast" id="message-area" role="status" aria-live="polite"></div>
 </div>
 
 <script>
-// ── STATE VARS ──
-let state = {
+// ─────────────────────────────────────────────────────────────
+// Searchle — viewer page + stream overlay.
+//
+// The winner/loser logic and the rank scale come from WordTycoon's
+// Searchle player page; everything is driven by HangStream's own
+// /searchle/api/* endpoints and chat WebSocket.
+// ─────────────────────────────────────────────────────────────
+
+const state = {
   viewerId: '',
   viewerName: '',
-  viewerAvatar: '',
   streamerId: getStreamerNamespace(),
-  gameMode: 'solo', // 'solo' or 'online'
+  gameMode: 'solo', // 'solo' | 'online'
   gameId: 'searchle',
 };
 
@@ -639,22 +791,36 @@ let playerScores = {};
 let playerSessionId = null;
 let chatWS = null;
 let chatInterval = null;
+let tickerTimer = null;
 let messageTimer = null;
 
-// Searchle game state
-let roundId = null;      // server-side session id (target stays on server)
+let roundId = null;      // server-side round id (target stays on the server)
 let roundOver = false;
 let busy = false;        // guess request in flight
 let guessCount = 0;
 let bestRank = null;
-let retryTimer = null;
+let bestWord = null;
+let poolSize = 0;
+let lastGuessWord = null;
 
-const FAKE_USERS = ["xX_gamer99_Xx","streamer_fan","tiktok_live","chat_legend","just_vibing","pro_viewer","randomdude42","hyped_up_lol","lurker_no_more","gifted_sub","nochill_andy","pogchamp99"];
-const DEMO_WORDS = ["apple","river","money","happy","ghost","queen","brick","candle","planet","tiger"];
+// word -> { word, rank, total, user, isMine, isBest, won }
+const guesses = new Map();
+// Words this browser submitted, so chat/echoed guesses can be highlighted
+const myWords = new Set();
 
-// ── UTILITY ──
+const FAKE_USERS = ['xX_gamer99_Xx', 'streamer_fan', 'tiktok_live', 'chat_legend', 'just_vibing', 'pro_viewer', 'randomdude42', 'hyped_up_lol', 'lurker_no_more', 'gifted_sub', 'nochill_andy', 'pogchamp99'];
+const DEMO_WORDS = ['apple', 'river', 'money', 'happy', 'ghost', 'queen', 'brick', 'candle', 'planet', 'tiger'];
+
+// ── Utility ───────────────────────────────────────────────────
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
+
+function formatNum(n) {
+  const num = Number(n) || 0;
+  if (num >= 1e6) return (num / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (num >= 1e3) return (num / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+  return num.toLocaleString();
 }
 
 function getCookieValue(name) {
@@ -677,45 +843,23 @@ function getStreamerNamespace() {
 
 function getGameMode() {
   const path = window.location.pathname;
-  if (path.includes('/online')) return 'online';
-  if (path.includes('/solo')) return 'solo';
-  return 'solo'; // default
-}
-
-function registerPlayer() {
-  if (state.gameMode !== 'online') return;
-
-  playerSessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-
-  fetch(`/game-join/${state.gameId}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionId: playerSessionId })
-  }).catch(() => {});
-}
-
-function unregisterPlayer() {
-  if (state.gameMode !== 'online' || !playerSessionId) return;
-
-  fetch(`/game-leave/${state.gameId}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionId: playerSessionId })
-  }).catch(() => {});
-
-  playerSessionId = null;
+  return path.includes('/online') ? 'online' : 'solo';
 }
 
 function getThemeStorageKey() {
   return `hangstream-game-theme:${getStreamerNamespace()}`;
 }
 
-// ── THEME ──
+function isOverlay() {
+  return window.location.pathname.startsWith('/overlay');
+}
+
+// ── Theme ─────────────────────────────────────────────────────
 function applyTheme(themeName) {
-  currentTheme = themeName || 'dark';
+  currentTheme = themeName === 'light' ? 'light' : 'dark';
   document.body.setAttribute('data-theme', currentTheme);
   const btn = document.getElementById('theme-btn');
-  if (btn) btn.textContent = currentTheme === 'light' ? 'Light mode' : 'Dark mode';
+  if (btn) btn.textContent = currentTheme === 'light' ? 'Light' : 'Dark';
   try { localStorage.setItem(getThemeStorageKey(), currentTheme); } catch (e) {}
 }
 
@@ -723,25 +867,187 @@ function toggleTheme() {
   applyTheme(currentTheme === 'light' ? 'dark' : 'light');
 }
 
-// ── ROUND LIFECYCLE ──
+// ── Rank scale (ported from WordTycoon's play.html) ───────────
+// Logarithmic so low ranks spread out and huge ranks compress.
+function rankToPercent(rank, total) {
+  if (!rank || !total || total <= 1) return 0;
+  const logRank = Math.log(rank + 1);
+  const logTotal = Math.log(total + 1);
+  return Math.max(2, Math.round((1 - logRank / logTotal) * 100));
+}
+
+function rankColorVar(pct) {
+  if (pct >= 95) return 'var(--rank-gold)';
+  if (pct >= 75) return 'var(--rank-green)';
+  if (pct >= 55) return 'var(--rank-blue)';
+  if (pct >= 35) return 'var(--rank-purple)';
+  if (pct >= 15) return 'var(--rank-gray)';
+  return 'var(--rank-cold)';
+}
+
+function percentileText(rank, total) {
+  if (!rank || !total || total < 2) return '';
+  return `closer than ${((1 - (rank - 1) / total) * 100).toFixed(1)}%`;
+}
+
+// ── Rendering ─────────────────────────────────────────────────
+function render() {
+  const list = document.getElementById('guess-list');
+  const empty = document.getElementById('empty-state');
+
+  const rows = [...guesses.values()].sort((a, b) => {
+    if (a.rank === null && b.rank === null) return a.word.localeCompare(b.word);
+    if (a.rank === null) return 1;
+    if (b.rank === null) return -1;
+    return a.rank - b.rank;
+  });
+
+  if (!rows.length) {
+    if (empty) empty.style.display = 'flex';
+    list.querySelectorAll('.guess-row').forEach((el) => el.remove());
+    return;
+  }
+
+  if (empty) empty.style.display = 'none';
+
+  const frag = document.createDocumentFragment();
+  for (const g of rows) {
+    frag.appendChild(buildRow(g));
+  }
+
+  list.querySelectorAll('.guess-row').forEach((el) => el.remove());
+  list.appendChild(frag);
+}
+
+function buildRow(g) {
+  const pct = g.rank === null || g.rank === undefined ? 0 : rankToPercent(g.rank, g.total || poolSize);
+  const color = g.rank === null || g.rank === undefined ? 'var(--rank-cold)' : rankColorVar(pct);
+
+  const row = document.createElement('div');
+  row.className = 'guess-row'
+    + (g.isMine ? ' is-mine' : '')
+    + (g.isBest ? ' is-best' : '')
+    + (g.won ? ' won' : '');
+  row.dataset.word = g.word;
+  row.style.setProperty('--rank-color', color);
+  row.style.setProperty('--pct', pct + '%');
+
+  const rank = document.createElement('span');
+  rank.className = 'guess-rank' + (g.rank === null || g.rank === undefined ? ' is-out' : '');
+  rank.textContent = g.rank === null || g.rank === undefined ? 'OUT' : '#' + Number(g.rank).toLocaleString();
+  rank.title = g.rank === null || g.rank === undefined
+    ? 'A real word, but outside this round’s ranked pool'
+    : percentileText(g.rank, g.total || poolSize);
+
+  const word = document.createElement('span');
+  word.className = 'guess-word';
+  word.textContent = g.word;
+
+  const barWrap = document.createElement('div');
+  barWrap.className = 'guess-bar-wrap';
+  const bar = document.createElement('div');
+  bar.className = 'guess-bar';
+  barWrap.appendChild(bar);
+
+  const user = document.createElement('span');
+  user.className = 'guess-user';
+  if (g.user) {
+    const avatar = document.createElement('span');
+    avatar.className = 'guess-avatar';
+    avatar.textContent = (g.user[0] || '?').toUpperCase();
+    const name = document.createElement('span');
+    name.className = 'guess-user-name';
+    name.textContent = g.user;
+    user.appendChild(avatar);
+    user.appendChild(name);
+  } else {
+    const name = document.createElement('span');
+    name.className = 'guess-user-name';
+    name.textContent = g.rank === null ? 'not ranked' : (g.won ? 'winner' : '');
+    user.appendChild(name);
+  }
+
+  row.appendChild(rank);
+  row.appendChild(word);
+  row.appendChild(barWrap);
+  row.appendChild(user);
+  return row;
+}
+
+function addGuess(word, result, user, isMine) {
+  const rank = result.rank === undefined ? null : result.rank;
+  const total = result.poolSize || result.total || poolSize;
+  if (total) poolSize = total;
+
+  const g = guesses.get(word) || { word, user: user || '', isMine: !!isMine, won: false };
+  g.rank = rank;
+  g.total = total;
+  g.isMine = g.isMine || !!isMine;
+  if (user) g.user = user;
+  if (result.win) g.won = true;
+
+  if (rank !== null && (bestRank === null || rank < bestRank)) {
+    bestRank = rank;
+    bestWord = word;
+  }
+
+  guesses.set(word, g);
+
+  // Only one row can carry the BEST badge
+  for (const other of guesses.values()) {
+    other.isBest = bestWord !== null && other.word === bestWord;
+  }
+
+  render();
+  updateCounters();
+  highlightRow(word, isMine);
+}
+
+function highlightRow(word, scroll) {
+  const row = document.querySelector(`.guess-row[data-word="${CSS.escape(word)}"]`);
+  if (!row) return;
+  if (scroll) {
+    try { row.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
+  }
+}
+
+function updateCounters() {
+  const countEl = document.getElementById('guess-count');
+  if (countEl) countEl.textContent = guessCount + (guessCount === 1 ? ' guess' : ' guesses');
+
+  const vocab = document.getElementById('vocab-size');
+  if (vocab) vocab.textContent = poolSize ? formatNum(poolSize) + ' words' : '— words';
+
+  const pointsEl = document.getElementById('points-chip');
+  const totalPoints = Object.values(playerScores).reduce((a, b) => a + Number(b || 0), 0);
+  if (pointsEl) {
+    pointsEl.hidden = totalPoints <= 0;
+    pointsEl.textContent = totalPoints + ' pts';
+  }
+}
+
 function resetRoundUI() {
   guessCount = 0;
   bestRank = null;
+  bestWord = null;
   roundOver = false;
   busy = false;
+  lastGuessWord = null;
+  guesses.clear();
+  myWords.clear();
 
-  document.getElementById('guess-count').textContent = '0';
-  document.getElementById('best-rank').textContent = '—';
-  const rankBig = document.getElementById('rank-big');
-  rankBig.textContent = '—';
-  rankBig.classList.remove('hit');
-  document.getElementById('rank-sub').textContent = 'Rank #1 wins the round';
-  document.getElementById('percentile-fill').style.width = '0%';
-  document.getElementById('guess-list').innerHTML =
-    '<div class="empty-guesses" id="empty-guesses">No guesses yet. Find the hidden word — the closer your guess, the better your rank.</div>';
-  document.getElementById('guess-input').value = '';
-  document.getElementById('guess-input').disabled = false;
-  document.getElementById('guess-btn').disabled = false;
+  const list = document.getElementById('guess-list');
+  if (list) {
+    list.querySelectorAll('.guess-row').forEach((el) => el.remove());
+    const empty = document.getElementById('empty-state');
+    if (empty) empty.style.display = 'flex';
+  }
+
+  document.getElementById('win-banner')?.classList.remove('show');
+  document.getElementById('status-dot')?.classList.remove('won');
+  setGuessEnabled(true);
+  updateCounters();
+  setStatus('Live');
   clearMessage();
 
   const instructions = document.getElementById('instructions');
@@ -752,8 +1058,20 @@ function resetRoundUI() {
   }
 }
 
+function setGuessEnabled(on) {
+  const input = document.getElementById('guess-input');
+  const btn = document.getElementById('guess-btn');
+  if (input) input.disabled = !on || roundOver;
+  if (btn) btn.disabled = !on || roundOver;
+}
+
+function setStatus(text) {
+  const el = document.getElementById('status-text');
+  if (el) el.textContent = text;
+}
+
+// ── Round lifecycle ───────────────────────────────────────────
 async function startRound() {
-  if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
   resetRoundUI();
 
   try {
@@ -768,124 +1086,38 @@ async function startRound() {
       roundId = data.gameId;
       setGuessEnabled(true);
       showMessage('New round started — good luck!', 'info');
+      if (!isOverlay()) {
+        const input = document.getElementById('guess-input');
+        if (input) input.focus();
+      }
       return;
     }
 
     if (res.status === 503) {
-      showMessage('Warming up the ranking model… this can take a moment on first load.', 'info');
-      retryTimer = setTimeout(startRound, 4000);
+      showMessage('Warming up the ranking model — this can take a moment.', 'info');
+      setTimeout(startRound, 4000);
       return;
     }
 
     showMessage(data.error || 'Could not start a round', 'error');
-    retryTimer = setTimeout(startRound, 6000);
+    setTimeout(startRound, 6000);
   } catch (e) {
     showMessage('Connection problem — retrying…', 'error');
-    retryTimer = setTimeout(startRound, 5000);
+    setTimeout(startRound, 5000);
   }
-}
-
-function setGuessEnabled(on) {
-  const input = document.getElementById('guess-input');
-  const btn = document.getElementById('guess-btn');
-  if (input) input.disabled = !on || roundOver;
-  if (btn) btn.disabled = !on || roundOver;
-}
-
-// ── GUESSING ──
-function rankBadgeClass(rank) {
-  if (rank === 1) return 'win';
-  if (rank <= 10) return 'near';
-  if (rank <= 100) return 'close';
-  return 'ok';
-}
-
-function percentileText(rank, total) {
-  if (!rank || !total || total < 2) return '';
-  const pct = (1 - (rank - 1) / total) * 100;
-  return `closer than ${pct.toFixed(1)}%`;
-}
-
-function addGuessRow(word, rank, total, isNewBest, won) {
-  const list = document.getElementById('guess-list');
-  const empty = document.getElementById('empty-guesses');
-  if (empty) empty.remove();
-
-  const row = document.createElement('div');
-  row.className = 'guess-row';
-
-  const badge = document.createElement('span');
-  if (rank === null || rank === undefined) {
-    badge.className = 'rank-badge';
-    badge.textContent = 'OUT';
-    badge.title = 'Valid word, but outside this round\u2019s ranked pool';
-  } else {
-    badge.className = 'rank-badge ' + rankBadgeClass(rank);
-    badge.textContent = '#' + rank;
-  }
-
-  const wordEl = document.createElement('span');
-  wordEl.className = 'guess-word';
-  wordEl.textContent = word;
-
-  row.appendChild(badge);
-  row.appendChild(wordEl);
-
-  if (won) {
-    const tag = document.createElement('span');
-    tag.className = 'guess-best-tag';
-    tag.textContent = '\u2713 FOUND IT';
-    tag.style.color = 'var(--good)';
-    row.appendChild(tag);
-  } else if (isNewBest && rank !== null && rank !== undefined) {
-    const tag = document.createElement('span');
-    tag.className = 'guess-best-tag';
-    tag.textContent = 'NEW BEST';
-    row.appendChild(tag);
-  }
-
-  const meta = document.createElement('span');
-  meta.className = 'guess-meta';
-  meta.textContent = rank !== null && rank !== undefined && total
-    ? `${percentileText(rank, total)} \u00b7 pool ${Number(total).toLocaleString()}`
-    : 'not in ranked pool';
-  row.appendChild(meta);
-
-  list.appendChild(row);
-  list.scrollTop = list.scrollHeight;
-}
-
-function updateHero(rank, total) {
-  const rankBig = document.getElementById('rank-big');
-  const rankSub = document.getElementById('rank-sub');
-  const fill = document.getElementById('percentile-fill');
-  if (rank === null || rank === undefined) {
-    rankSub.textContent = total ? `Outside this round\u2019s ranked pool of ${Number(total).toLocaleString()} words` : 'Rank #1 wins the round';
-    return;
-  }
-  rankBig.textContent = '#' + rank;
-  rankBig.classList.toggle('hit', rank === 1);
-  const pct = total ? Math.max(0, (1 - (rank - 1) / total) * 100) : 0;
-  rankSub.textContent = total
-    ? `#${rank} of ${Number(total).toLocaleString()} ranked words \u00b7 ${percentileText(rank, total)}`
-    : `#${rank} \u00b7 Rank #1 wins the round`;
-  fill.style.width = pct.toFixed(1) + '%';
-}
-
-function updateCounters() {
-  document.getElementById('guess-count').textContent = String(guessCount);
-  document.getElementById('best-rank').textContent = bestRank === null ? '—' : '#' + bestRank;
 }
 
 // Returns: 'win' | 'ok' | 'outside' | 'invalid' | 'duplicate' | 'unknown' | 'error'
-async function submitGuess(word, sourceUser) {
+async function submitGuess(word, sourceUser, isMine = true) {
   const raw = String(word || '').toLowerCase().trim();
   if (!roundId || roundOver) return 'error';
-  if (!/^[a-z]+$/.test(raw)) { showMessage('Letters only', 'error'); return 'invalid'; }
+  if (!/^[a-z]{2,24}$/.test(raw)) { showMessage('Letters only', 'error'); return 'invalid'; }
   if (busy) return 'error';
+  if (guesses.has(raw)) { showMessage('Already guessed', 'info'); return 'duplicate'; }
 
   busy = true;
   setGuessEnabled(false);
+  if (isMine) myWords.add(raw);
 
   try {
     const res = await fetch('/searchle/api/guess', {
@@ -921,91 +1153,83 @@ async function submitGuess(word, sourceUser) {
     if (data.status === 'blocked') { showMessage('Not a real word', 'error'); return 'unknown'; }
     if (data.status === 'unknown') { showMessage('Not a real word', 'error'); return 'unknown'; }
 
-    // ranked or outside
-    guessCount = data.guessNumber;
-    if (data.rank !== null && data.rank !== undefined) {
-      if (bestRank === null || data.rank < bestRank) bestRank = data.rank;
-    }
-    updateCounters();
-    updateHero(data.rank, data.poolSize);
-    addGuessRow(data.word, data.rank, data.poolSize, !!data.newBest, !!data.win);
+    guessCount = data.guessNumber || guessCount + 1;
+    lastGuessWord = data.word || raw;
+    addGuess(lastGuessWord, data, sourceUser || '', isMine);
 
     if (data.win) {
       roundOver = true;
+      setGuessEnabled(false);
       const points = data.points || 10;
       awardPlayerPoints(sourceUser || 'You', points);
-      showMessage(`Found it in ${data.guessCount} ${data.guessCount === 1 ? 'guess' : 'guesses'}! +${points} points \u2014 the word was ${data.target}`, 'success');
-      const instructions = document.getElementById('instructions');
-      if (instructions) instructions.textContent = `Solved! The word was ${data.target}. Press New Round to play again.`;
+      showWin(data.target || lastGuessWord, sourceUser || 'You', `+${points} pts · ${data.guessCount || guessCount} guesses`);
+      showMessage(`Found it in ${data.guessCount || guessCount} ${(data.guessCount || guessCount) === 1 ? 'guess' : 'guesses'}! +${points} points`, 'success');
+      setStatus('Game won!');
+      document.getElementById('status-dot')?.classList.add('won');
       return 'win';
     }
 
     return data.status === 'outside' ? 'outside' : 'ok';
   } catch (e) {
-    showMessage('Connection problem \u2014 try again', 'error');
+    showMessage('Connection problem — try again', 'error');
     return 'error';
   } finally {
     busy = false;
     setGuessEnabled(!!roundId);
-    const input = document.getElementById('guess-input');
-    if (input && !roundOver) input.focus();
+    if (!roundOver && !isOverlay()) {
+      const input = document.getElementById('guess-input');
+      if (input) input.focus();
+    }
   }
 }
 
-// ── PLAYER SCORES ──
-function renderPlayerScores() {
-  const list = document.getElementById('player-scores-list');
-  if (!list) return;
-  const entries = Object.entries(playerScores)
-    .filter(([, points]) => Number(points) > 0)
-    .sort((a, b) => Number(b[1]) - Number(a[1]) || a[0].localeCompare(b[0]));
-  if (!entries.length) {
-    list.innerHTML = '<div class="player-score-row"><span class="player-score-name">No points yet.</span><span class="player-score-points">0</span></div>';
-    return;
-  }
-  list.innerHTML = entries.map(([name, points]) => {
-    return `<div class="player-score-row"><span class="player-score-name">${escapeHtml(name)}</span><span class="player-score-points">${points}</span></div>`;
-  }).join('');
+function showWin(word, winner, detail) {
+  const banner = document.getElementById('win-banner');
+  const wordEl = document.getElementById('win-word');
+  const whoEl = document.getElementById('win-winner');
+  const detailEl = document.getElementById('win-detail');
+  if (!banner) return;
+  if (wordEl) wordEl.textContent = String(word || '').toUpperCase();
+  if (whoEl) whoEl.textContent = winner || 'someone';
+  if (detailEl) detailEl.textContent = detail || '';
+  banner.classList.add('show');
 }
 
+// ── Player points (local to this browser tab) ─────────────────
 function awardPlayerPoints(username, points) {
   const name = String(username || '').trim() || 'viewer';
-  const current = Number(playerScores[name]) || 0;
-  playerScores[name] = current + Math.max(0, Number(points) || 0);
-  renderPlayerScores();
+  playerScores[name] = (Number(playerScores[name]) || 0) + Math.max(0, Number(points) || 0);
+  updateCounters();
 }
 
+// ── Toasts ────────────────────────────────────────────────────
 function showMessage(text, type) {
   const area = document.getElementById('message-area');
   if (!area) return;
-
   if (messageTimer) clearTimeout(messageTimer);
-  area.innerHTML = `<div class="message-box ${type}">${escapeHtml(text)}</div>`;
-
-  messageTimer = setTimeout(() => {
-    area.innerHTML = '';
-  }, 3200);
+  area.textContent = text;
+  area.className = 'toast show ' + (type || 'info');
+  messageTimer = setTimeout(() => area.classList.remove('show'), 3200);
 }
 
 function clearMessage() {
   const area = document.getElementById('message-area');
-  if (area) area.innerHTML = '';
-  if (messageTimer) clearTimeout(messageTimer);
+  if (area) area.classList.remove('show');
+  if (messageTimer) { clearTimeout(messageTimer); messageTimer = null; }
 }
 
-// ── CHAT INTEGRATION ──
+// ── Chat integration ──────────────────────────────────────────
 function connectChatWebSocket() {
   if (chatWS) return;
 
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  const wsUrl = `${proto}://${location.host}`;
 
   try {
-    chatWS = new WebSocket(wsUrl);
+    chatWS = new WebSocket(`${proto}://${location.host}`);
 
     chatWS.addEventListener('open', () => {
-      console.log('Chat WebSocket connected');
-      // Subscribe to the streamer's channel if available
+      document.getElementById('status-dot')?.classList.add('connected');
+      setStatus('Live');
       if (state.streamerId && state.streamerId !== 'default') {
         chatWS.send(JSON.stringify({
           type: 'watch',
@@ -1018,154 +1242,131 @@ function connectChatWebSocket() {
     });
 
     chatWS.addEventListener('message', (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        handleChatMessage(data);
-      } catch (e) {
-        console.error('Failed to parse chat message:', e);
-      }
+      try { handleChatMessage(JSON.parse(event.data)); } catch (e) {}
     });
 
     chatWS.addEventListener('close', () => {
-      console.log('Chat WebSocket disconnected, reconnecting in 5s...');
       chatWS = null;
+      document.getElementById('status-dot')?.classList.remove('connected');
+      setStatus('Reconnecting');
       setTimeout(connectChatWebSocket, 5000);
     });
 
-    chatWS.addEventListener('error', () => {
-      console.warn('Chat WebSocket error');
-    });
+    chatWS.addEventListener('error', () => {});
   } catch (e) {
     console.error('Failed to create WebSocket connection:', e);
   }
 }
 
 async function handleChatMessage(data) {
-  // Update connection status
-  const twitchDot = document.getElementById('twitch-dot');
-  const twitchLabel = document.getElementById('twitch-label');
-  if (twitchDot && twitchLabel) {
-    if (data.type === 'chat' || data.type === 'status') {
-      twitchDot.classList.add('connected');
-      twitchLabel.textContent = 'CONNECTED';
-    }
+  if (data.type === 'status') {
+    document.getElementById('status-dot')?.classList.add('connected');
+    setStatus('Live');
+    return;
   }
+  if (data.type !== 'chat') return;
 
-  if (data.type === 'chat') {
-    const user = data.user || 'viewer';
-    const message = (data.message || '').trim();
+  const user = data.user || 'viewer';
+  const message = String(data.message || '').trim();
+  if (!message) return;
 
-    // Chat word-guesses only count in online mode so solo play stays clean
-    const isWordGuess = state.gameMode === 'online' && /^[A-Za-z]{3,24}$/.test(message) && !/^[!#]/.test(message);
-    if (isWordGuess && roundId && !roundOver) {
-      const outcome = await submitGuess(message, user);
-      if (outcome === 'invalid' || outcome === 'unknown' || outcome === 'duplicate') {
-        addChatMessage(user, message.toUpperCase(), 'wrong');
-      } else if (outcome === 'win') {
-        addChatMessage(user, message.toUpperCase(), 'correct');
-      } else if (outcome === 'ok' || outcome === 'outside') {
-        addChatMessage(user, message.toUpperCase(), 'normal');
-      }
-    } else {
-      addChatMessage(user, message, 'normal');
+  // Chat word-guesses only count in online mode so solo play stays clean
+  const isWordGuess = state.gameMode === 'online' && /^[A-Za-z]{2,24}$/.test(message) && !/^[!#]/.test(message);
+
+  if (isWordGuess && roundId && !roundOver) {
+    const outcome = await submitGuess(message, user, false);
+    if (outcome === 'ok' || outcome === 'outside' || outcome === 'win') {
+      showTicker(user, message.toUpperCase(), outcome === 'win' ? 'good' : '');
+    } else if (outcome === 'invalid' || outcome === 'unknown') {
+      showTicker(user, message.toUpperCase(), 'bad');
     }
-  }
-
-  // Add demo mode fake chat if no real streamer
-  if (state.streamerId === 'default' && !chatInterval) {
-    startDemoChat();
+  } else {
+    showTicker(user, message, '');
   }
 }
 
-// Demo mode chat simulation (feed only, does not play the round)
+function showTicker(user, text, tone) {
+  const ticker = document.getElementById('chat-ticker');
+  if (!ticker || isOverlay()) return;
+  ticker.hidden = false;
+  ticker.innerHTML = `<span class="ticker-user">${escapeHtml(user)}</span>: `
+    + `<span class="ticker-word ${tone}">${escapeHtml(text)}</span>`;
+  requestAnimationFrame(() => ticker.classList.add('show'));
+  if (tickerTimer) clearTimeout(tickerTimer);
+  tickerTimer = setTimeout(() => {
+    ticker.classList.remove('show');
+    setTimeout(() => { ticker.hidden = true; }, 400);
+  }, 5000);
+}
+
+// Demo chatter for the `default` namespace so a fresh page isn't dead.
 function startDemoChat() {
   if (chatInterval) return;
-
   chatInterval = setInterval(() => {
-    const randomUser = FAKE_USERS[Math.floor(Math.random() * FAKE_USERS.length)];
-    const randomWord = DEMO_WORDS[Math.floor(Math.random() * DEMO_WORDS.length)];
-    addChatMessage(randomUser, randomWord.toUpperCase(), 'normal');
-  }, 5000); // Add a fake message every 5 seconds
+    const user = FAKE_USERS[Math.floor(Math.random() * FAKE_USERS.length)];
+    const word = DEMO_WORDS[Math.floor(Math.random() * DEMO_WORDS.length)];
+    showTicker(user, word.toUpperCase(), '');
+  }, 6000);
 }
 
-// ── CHAT FEED ──
-function addChatMessage(user, message, type = 'normal') {
-  const feed = document.getElementById('chat-feed');
-  if (!feed) return;
-
-  const msg = document.createElement('div');
-  msg.className = 'chat-msg';
-
-  if (type === 'correct') {
-    msg.innerHTML = `<span class="chat-user">${escapeHtml(user)}</span> found it with <span class="chat-correct">${escapeHtml(message)}</span>`;
-  } else if (type === 'wrong') {
-    msg.innerHTML = `<span class="chat-user">${escapeHtml(user)}</span> tried <span class="chat-wrong">${escapeHtml(message)}</span>`;
-  } else {
-    msg.innerHTML = `<span class="chat-user">${escapeHtml(user)}</span>: <span class="chat-guess">${escapeHtml(message)}</span>`;
-  }
-
-  feed.appendChild(msg);
-  feed.scrollTop = feed.scrollHeight;
+// ── Online registration ───────────────────────────────────────
+function registerPlayer() {
+  if (state.gameMode !== 'online') return;
+  playerSessionId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+  fetch(`/game-join/${state.gameId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId: playerSessionId })
+  }).catch(() => {});
 }
 
-// ── EVENT LISTENERS ──
+function unregisterPlayer() {
+  if (state.gameMode !== 'online' || !playerSessionId) return;
+  fetch(`/game-leave/${state.gameId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId: playerSessionId })
+  }).catch(() => {});
+  playerSessionId = null;
+}
+
+// ── Events ────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('theme-btn')
-    .addEventListener('click', toggleTheme);
+  document.getElementById('theme-btn')?.addEventListener('click', toggleTheme);
+  document.getElementById('new-game-btn')?.addEventListener('click', () => startRound());
 
-  document.getElementById('new-game-btn')
-    .addEventListener('click', () => startRound());
-
-  document.getElementById('guess-form')
-    .addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const input = document.getElementById('guess-input');
-      const word = input.value;
-      input.value = '';
-      const outcome = await submitGuess(word, state.viewerName || 'You');
-      if (outcome === 'invalid' || outcome === 'unknown' || outcome === 'duplicate') {
-        input.value = word; // give the player their typed word back on reject
-      }
-    });
+  document.getElementById('guess-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('guess-input');
+    const word = input.value;
+    input.value = '';
+    const outcome = await submitGuess(word, state.viewerName || 'You', true);
+    if ((outcome === 'invalid' || outcome === 'unknown' || outcome === 'duplicate') && input) {
+      input.value = word; // give the player their typed word back on reject
+      input.focus();
+    }
+  });
 });
 
-// ── INIT ──
+// ── Init ──────────────────────────────────────────────────────
 state.gameMode = getGameMode();
+if (isOverlay()) document.body.classList.add('overlay-mode');
+
 applyTheme(localStorage.getItem(getThemeStorageKey()) || 'dark');
-
-// Detect overlay mode and add body class
-if (window.location.pathname.startsWith('/overlay')) {
-  document.body.classList.add('overlay-mode');
-}
-
 resetRoundUI();
 startRound();
 
-if (state.gameMode === 'online') {
-  registerPlayer();
-}
-
-// Connect to chat WebSocket for chat integration
+if (state.gameMode === 'online') registerPlayer();
+if (state.streamerId === 'default') startDemoChat();
 connectChatWebSocket();
 
-// Cleanup on page unload
 window.addEventListener('beforeunload', () => {
   unregisterPlayer();
-  if (retryTimer) {
-    clearTimeout(retryTimer);
-    retryTimer = null;
-  }
-  if (chatInterval) {
-    clearInterval(chatInterval);
-    chatInterval = null;
-  }
-  if (chatWS) {
-    chatWS.close();
-    chatWS = null;
-  }
+  if (chatInterval) { clearInterval(chatInterval); chatInterval = null; }
+  if (tickerTimer) { clearTimeout(tickerTimer); tickerTimer = null; }
+  if (chatWS) { chatWS.close(); chatWS = null; }
 });
 
-// Storage sync
 window.addEventListener('storage', (event) => {
   if (event.key === getThemeStorageKey()) applyTheme(event.newValue || 'dark');
 });
