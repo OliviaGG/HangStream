@@ -6,8 +6,8 @@
 // is found. HangStream's client used to do all of this in the browser; now the
 // server owns the letterset, the answer set and the scores.
 
-const { Game } = require('./engine');
-const dictionary = require('./dictionary');
+const { Game } = require('../engine');
+const dictionary = require('../dictionary');
 
 const DEFAULT_MIN_ANSWERS = 12;
 

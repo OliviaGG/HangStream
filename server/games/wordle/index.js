@@ -6,8 +6,8 @@
 // shape), so chat and page guesses are judged identically and the answer can
 // never be read out of the client bundle.
 
-const { Game } = require('./engine');
-const dictionary = require('./dictionary');
+const { Game } = require('../engine');
+const dictionary = require('../dictionary');
 
 const WORD_LENGTH = 5;
 const MAX_GUESSES = 6;

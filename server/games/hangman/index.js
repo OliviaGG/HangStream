@@ -13,9 +13,9 @@
 // input path, plus a `submitWord` override that treats a full-word message as a
 // whole-word solve attempt — which is exactly what chat naturally sends.
 
-const { Game } = require('./engine');
-const dictionary = require('./dictionary');
-const policy = require('./word-policy');
+const { Game } = require('../engine');
+const dictionary = require('../dictionary');
+const policy = require('../word-policy');
 
 const MAX_WRONG = 6;
 const DEFAULT_DIFFICULTY = 'medium';

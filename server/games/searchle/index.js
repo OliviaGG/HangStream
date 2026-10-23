@@ -16,7 +16,7 @@
 // `newRound` and `submitWord` both handle a MODEL_NOT_READY state by surfacing
 // it rather than throwing. A round simply cannot start until the model exists.
 
-const { Game } = require('./engine');
+const { Game } = require('../engine');
 
 const MAX_GUESSES = 10;
 

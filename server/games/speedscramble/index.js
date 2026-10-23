@@ -11,9 +11,9 @@
 // is a single word, and finding it completes the round — so there is no
 // `submitWord` override.
 
-const { Game } = require('./engine');
-const dictionary = require('./dictionary');
-const policy = require('./word-policy');
+const { Game } = require('../engine');
+const dictionary = require('../dictionary');
+const policy = require('../word-policy');
 
 const DEFAULT_DIFFICULTY = 'normal';
 

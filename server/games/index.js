@@ -10,6 +10,7 @@ const { SpellingBeeGame } = require('./spellingbee');
 const { WordleGame, evaluateGuess } = require('./wordle');
 const { HangmanGame } = require('./hangman');
 const { SpeedScrambleGame, scrambleWord } = require('./speedscramble');
+const { SearchleGame } = require('./searchle');
 const { GameRegistry, getDailyDate, GAME_META } = require('./registry');
 
 module.exports = {
@@ -22,6 +23,7 @@ module.exports = {
   WordleGame,
   HangmanGame,
   SpeedScrambleGame,
+  SearchleGame,
   evaluateGuess,
   scrambleWord,
   // Registry + support
