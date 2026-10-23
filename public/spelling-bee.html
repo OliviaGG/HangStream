@@ -750,6 +750,41 @@ const DIFFICULTY_SETTINGS = {
   hard: { minLength: 5, scoreMultiplier: 2.5 }
 };
 
+// ── Streamer hints ───────────────────────────────────────────
+// The hint panel lists real words from the shared word bank that can be
+// traced on the current honeycomb. Loaded once, then reused per grid.
+let COMMON_WORDS = [];
+
+fetch('/word-bank.json')
+  .then((res) => (res.ok ? res.json() : null))
+  .then((bank) => {
+    if (!bank) return;
+    const lists = bank.words && typeof bank.words === 'object'
+      ? Object.values(bank.words)
+      : (Array.isArray(bank) ? [bank] : []);
+    const seen = new Set();
+    for (const list of lists) {
+      if (!Array.isArray(list)) continue;
+      for (const raw of list) {
+        const word = String(raw || '').trim().toUpperCase();
+        if (/^[A-Z]{3,}$/.test(word) && !seen.has(word)) {
+          seen.add(word);
+          COMMON_WORDS.push(word);
+        }
+      }
+    }
+    updateStreamerHints();
+  })
+  .catch(() => {});
+
+function getCommonWords(minLength) {
+  const need = Math.max(3, Number(minLength) || 4);
+  if (!currentLetters.length || !COMMON_WORDS.length) return [];
+  return COMMON_WORDS
+    .filter((word) => word.length >= need && canFormWord(word))
+    .sort((a, b) => b.length - a.length || a.localeCompare(b));
+}
+
 // Get adjacent positions in the grid
 function getAdjacentPositions(row, col) {
   const adjacent = [];
@@ -851,6 +886,11 @@ function getCookieValue(name) {
   const escaped = String(name || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const match = String(document.cookie || '').match(new RegExp('(?:^|; )' + escaped + '=([^;]*)'));
   return match ? decodeURIComponent(match[1]) : '';
+}
+
+// The `owner` cookie marks the signed-in streamer (set by the server on OAuth).
+function getOwnerKey() {
+  try { return getCookieValue('owner') || ''; } catch (e) { return ''; }
 }
 
 function getStreamerNamespace() {

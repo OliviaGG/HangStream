@@ -1042,6 +1042,11 @@ function getCookieValue(name) {
   return match ? decodeURIComponent(match[1]) : '';
 }
 
+// The `owner` cookie marks the signed-in streamer (set by the server on OAuth).
+function getOwnerKey() {
+  try { return getCookieValue('owner') || ''; } catch (e) { return ''; }
+}
+
 function getRouteNamespace() {
   const pathName = String(location.pathname || '/').replace(/\/+$/, '');
   if (!pathName || pathName === '/' || pathName === '/viewer' || pathName === '/streamer') return '';
