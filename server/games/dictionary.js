@@ -381,7 +381,8 @@ function drawFromBag(key, entries, match = null) {
     bag = { items: [], at: 0 };
     bags.set(key, bag);
   }
-  if (bag.at >= bag.items.length) {
+  // Refill the bag if it's empty or if the entries have changed (detected by length mismatch)
+  if (bag.at >= bag.items.length || bag.items.length !== entries.length) {
     bag.items = entries.slice();
     for (let i = bag.items.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -490,6 +491,15 @@ function poolSizes({ minLength = 0, maxLength = Infinity } = {}) {
 }
 
 /**
+ * Clear all draw bags, forcing a fresh shuffle on the next word selection.
+ * This is useful when the server restarts or when you want to reset the
+ * word selection cycle to avoid repeating the same words.
+ */
+function clearBags() {
+  bags.clear();
+}
+
+/**
  * Build a bee-style round: 7 distinct letters, one designated center letter,
  * and every dictionary word that uses only those letters and includes the
  * center. Returns null when the letterset has too few answers to be fun.
@@ -561,5 +571,6 @@ module.exports = {
   randomTarget,
   poolSizes,
   general,
+  clearBags,
   get total() { return allWords.size; },
 };

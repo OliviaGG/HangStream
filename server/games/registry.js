@@ -243,6 +243,7 @@ class GameRegistry {
         this.startRound(streamerId, game.slug, {
           timerSeconds: game.timerDuration,
           difficulty: game.difficulty,
+          category: game.category,
         });
       }
     }, delay);
@@ -290,6 +291,14 @@ class GameRegistry {
       if (game.slug === 'searchle') {
         // Ranking is async; a chat line can't block the chat relay.
         result = await game.submitGuessAsync(text, info);
+      } else if (game.slug === 'hangman') {
+        // Hangman handles single letters specially - route to guessLetter
+        if (text.length === 1) {
+          result = game.guessLetter(text, info);
+        } else {
+          // Full word guess for Hangman
+          result = game.submitWord(text, info);
+        }
       } else {
         result = game.submitWord(text, info);
       }

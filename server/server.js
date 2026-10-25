@@ -67,6 +67,9 @@ const gameLayer = require('./games');
 const gameVote = require('./games/game-vote');
 const voteConfig = require('./games/vote-config');
 
+// Clear word selection bags on server startup to avoid repeating the same words
+gameLayer.dictionary.clearBags();
+
 const CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY || '';
 const CLIENT_SECRET = process.env.TIKTOK_CLIENT_SECRET || '';
 const REDIRECT_URI = process.env.TIKTOK_REDIRECT_URI || `http://localhost:${port}/oauth/callback`;
@@ -188,6 +191,9 @@ function sendErrorResponse(res, statusCode, message, error = null) {
   res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify(errorResponse));
 }
+
+
+const { makeCsrfState, verifyCsrfState } = require('./oauth-state');
 
 function parseCookies(cookieHeader) {
   return (cookieHeader || '').split(';').map(s => s.trim()).reduce((acc, cur) => {
@@ -792,7 +798,7 @@ if (!session) {
     }
     const state = crypto.randomBytes(16).toString('hex');
     // set state cookie
-    res.setHeader('Set-Cookie', `csrfState=${state}; HttpOnly; Path=/; Max-Age=600`);
+    res.setHeader('Set-Cookie', `csrfState=${state}; HttpOnly; SameSite=Lax; Path=/; Max-Age=600`);
     const authUrl = new URL('https://www.tiktok.com/v2/auth/authorize/');
     authUrl.searchParams.set('client_key', CLIENT_KEY);
     authUrl.searchParams.set('scope', 'user.info.basic');
@@ -807,11 +813,22 @@ if (!session) {
   // Viewer Google OAuth entry (for viewers to sign in)
   if (pathname === '/auth/google') {
     if (!GOOGLE_CLIENT_ID) {
+      console.error('Google OAuth: GOOGLE_CLIENT_ID not configured');
       sendErrorResponse(res, 500, 'GOOGLE_CLIENT_ID not configured on server.');
       return;
     }
-    const state = crypto.randomBytes(16).toString('hex');
-    res.setHeader('Set-Cookie', `csrfState=${state}; HttpOnly; Path=/; Max-Age=600`);
+    if (!GOOGLE_CLIENT_SECRET) {
+      console.error('Google OAuth: GOOGLE_CLIENT_SECRET not configured');
+      sendErrorResponse(res, 500, 'GOOGLE_CLIENT_SECRET not configured on server.');
+      return;
+    }
+    const state = makeCsrfState(SESSION_SECRET);
+    if (!state) {
+      console.error('Google OAuth: SESSION_SECRET not configured');
+      sendErrorResponse(res, 500, 'SESSION_SECRET not configured on server.');
+      return;
+    }
+    console.log('Google OAuth: Redirecting to Google with redirect_uri:', GOOGLE_VIEWER_REDIRECT);
     const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     authUrl.searchParams.set('client_id', GOOGLE_CLIENT_ID);
     // use a dedicated viewer callback
@@ -831,8 +848,11 @@ if (!session) {
       sendErrorResponse(res, 500, 'GOOGLE_CLIENT_ID not configured on server.');
       return;
     }
-    const state = crypto.randomBytes(16).toString('hex');
-    res.setHeader('Set-Cookie', `csrfState=${state}; HttpOnly; Path=/; Max-Age=600`);
+    const state = makeCsrfState(SESSION_SECRET);
+    if (!state) {
+      sendErrorResponse(res, 500, 'SESSION_SECRET not configured on server.');
+      return;
+    }
     const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     authUrl.searchParams.set('client_id', GOOGLE_CLIENT_ID);
     authUrl.searchParams.set('redirect_uri', GOOGLE_OWNER_REDIRECT);
@@ -859,7 +879,7 @@ if (!session) {
       return;
     }
     const state = crypto.randomBytes(16).toString('hex');
-    res.setHeader('Set-Cookie', `csrfState=${state}; HttpOnly; Path=/; Max-Age=600`);
+    res.setHeader('Set-Cookie', `csrfState=${state}; HttpOnly; SameSite=Lax; Path=/; Max-Age=600`);
     const authUrl = new URL('https://accounts.spotify.com/authorize');
     authUrl.searchParams.set('client_id', SPOTIFY_CLIENT_ID);
     authUrl.searchParams.set('response_type', 'code');
@@ -886,7 +906,7 @@ if (!session) {
       return;
     }
     const state = crypto.randomBytes(16).toString('hex');
-    res.setHeader('Set-Cookie', `csrfState=${state}; HttpOnly; Path=/; Max-Age=600`);
+    res.setHeader('Set-Cookie', `csrfState=${state}; HttpOnly; SameSite=Lax; Path=/; Max-Age=600`);
     const authUrl = new URL('https://id.twitch.tv/oauth2/authorize');
     authUrl.searchParams.set('client_id', TWITCH_CLIENT_ID);
     authUrl.searchParams.set('redirect_uri', TWITCH_REDIRECT);
@@ -1020,32 +1040,30 @@ if (!session) {
     const code = params.get('code');
     const state = params.get('state');
     const error = params.get('error');
-    const cookies = parseCookies(req.headers.cookie);
+
+    console.log('Google OAuth callback received:', { hasCode: !!code, hasState: !!state, error });
 
     if (error) {
+      console.error('Google OAuth error:', error);
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Google OAuth error: ' + error);
       return;
     }
-    if (!state || cookies.csrfState !== state) {
+    if (!state || !verifyCsrfState(state, SESSION_SECRET)) {
+      console.error('Google OAuth: Invalid state or missing state');
       res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Invalid state (possible CSRF)');
       return;
     }
 
-    const session = readOwnerSession(req);
-    if (!session) {
-      res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Please log in with Google before connecting TikTok.');
-      return;
-    }
-
     if (!code) {
+      console.error('Google OAuth: Missing code');
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Missing code');
       return;
     }
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+      console.error('Google OAuth: Missing credentials');
       res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET not configured on server.');
       return;
@@ -1059,6 +1077,8 @@ if (!session) {
       redirect_uri: GOOGLE_VIEWER_REDIRECT,
     });
 
+    console.log('Google OAuth: Exchanging code for token with redirect_uri:', GOOGLE_VIEWER_REDIRECT);
+
     const tokenReqV = https.request('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: {
@@ -1069,11 +1089,13 @@ if (!session) {
       let body = '';
       tokenRes.on('data', (chunk) => body += chunk);
       tokenRes.on('end', () => {
+        console.log('Google OAuth: Token response status:', tokenRes.statusCode);
         try {
           const parsed = JSON.parse(body);
           const accessToken = parsed.access_token;
           if (!accessToken) throw new Error('Missing access token');
 
+          console.log('Google OAuth: Got access token, fetching user info');
           const userReq = https.request('https://openidconnect.googleapis.com/v1/userinfo', {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${accessToken}` },
@@ -1081,10 +1103,12 @@ if (!session) {
             let userBody = '';
             userRes.on('data', (chunk) => userBody += chunk);
             userRes.on('end', () => {
+              console.log('Google OAuth: User info response status:', userRes.statusCode);
               try {
                 const profile = JSON.parse(userBody);
                   const viewerId = `google:${profile.sub || profile.email || crypto.randomBytes(8).toString('hex')}`;
                   const viewerName = profile.name || profile.email || profile.given_name || 'Google user';
+                  console.log('Google OAuth: User info fetched:', { viewerId, viewerName });
                   // persist profile server-side and create a simple viewer session cookie
                   try {
                     const profiles = loadViewerProfiles();
@@ -1098,21 +1122,32 @@ if (!session) {
                   } catch (e) { console.warn('Failed to persist viewer profile', e); }
 
                   // set an HTTP-only cookie for the viewer session
-                  res.setHeader('Set-Cookie', `viewer_id=${encodeURIComponent(viewerId)}; HttpOnly; Path=/; Max-Age=${60*60*24*365}`);
+                  const viewerCookie = [
+                    `viewer_id=${encodeURIComponent(viewerId)}`,
+                    'HttpOnly',
+                    'SameSite=Lax',
+                    'Path=/',
+                    `Max-Age=${60 * 60 * 24 * 365}`,
+                  ];
+                  if (process.env.NODE_ENV === 'production') viewerCookie.push('Secure');
+                  res.setHeader('Set-Cookie', viewerCookie.join('; '));
                   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
                   res.end(buildViewerLoginSuccessPage(viewerId, viewerName, 'google'));
               } catch (e) {
+                console.error('Google OAuth: Failed to parse profile:', e);
                 res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
                 res.end('Failed to parse Google profile: ' + e.message);
               }
             });
           });
           userReq.on('error', (err) => {
+            console.error('Google OAuth: User info request failed:', err);
             res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
             res.end('Google userinfo request failed: ' + String(err));
           });
           userReq.end();
         } catch (e) {
+          console.error('Google OAuth: Failed to parse token response:', e);
           res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
           res.end('Failed to parse Google token response: ' + e.message + '\n' + body);
         }
@@ -1120,6 +1155,7 @@ if (!session) {
     });
 
     tokenReqV.on('error', (err) => {
+      console.error('Google OAuth: Token exchange failed:', err);
       res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Google token exchange failed: ' + String(err));
     });
@@ -1133,14 +1169,13 @@ if (!session) {
     const code = params.get('code');
     const state = params.get('state');
     const error = params.get('error');
-    const cookies = parseCookies(req.headers.cookie);
 
     if (error) {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Google OAuth error: ' + error);
       return;
     }
-    if (!state || cookies.csrfState !== state) {
+    if (!state || !verifyCsrfState(state, SESSION_SECRET)) {
       res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Invalid state (possible CSRF)');
       return;

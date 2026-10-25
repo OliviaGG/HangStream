@@ -820,28 +820,18 @@
 
     async function viewApiKey(email) {
       const app = allApplications.find(a => a.email === email);
-      if (!app) return;
-
-      // Need to fetch the API key from the server
-      try {
-        const response = await fetch(`/admin/applications/approve`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ email })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          prompt('Copy this API key:', data.apiKey);
-        } else {
-          alert('Failed to fetch API key');
-        }
-      } catch (err) {
-        alert('Failed to fetch API key');
+      if (!app) {
+        alert('Application not found');
+        return;
       }
+
+      if (!app.apiKey) {
+        alert('No API key generated for this application yet. Please approve it first.');
+        return;
+      }
+
+      // Display the API key in a prompt for easy copying
+      prompt('Copy this API key:', app.apiKey);
     }
 
     function escapeHtml(text) {

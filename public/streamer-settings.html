@@ -434,7 +434,7 @@
           <h2>Sign in with Google</h2>
           <p style="color:var(--text-muted);margin-bottom:20px;">Sign in with Google to check if your application is approved.</p>
           <div id="step-1-content">
-            <a class="btn btn-primary" href="/oauth/google" target="_blank" rel="noopener">Sign in with Google</a>
+            <a class="btn btn-primary" href="/oauth/google" id="google-login-btn">Sign in with Google</a>
             <p style="margin-top:16px;color:var(--text-muted);font-size:13px;">New streamer? <a href="/apply" style="color:var(--accent);">Apply here</a></p>
           </div>
         </div>
@@ -1903,10 +1903,28 @@
     loadMusicControls();
   });
 
+  // Handle Google Sign-in button with popup
+  const googleLoginBtn = document.getElementById('google-login-btn');
+  if (googleLoginBtn) {
+    googleLoginBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const w = window.open('/oauth/google', 'hs_owner_oauth', 'width=600,height=700');
+      if (!w) {
+        window.location.href = '/oauth/google';
+      } else {
+        w.focus();
+      }
+    });
+  }
+
   // Listen for OAuth completion
   window.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'owner-login' && event.data.provider === 'spotify') {
-      updateSpotifyStatus(true);
+    if (event.data && event.data.type === 'owner-login') {
+      if (event.data.provider === 'spotify') {
+        updateSpotifyStatus(true);
+      } else if (event.data.provider === 'google') {
+        initStepFlow();
+      }
     }
   });
 

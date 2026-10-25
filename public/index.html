@@ -149,6 +149,7 @@
     backdrop-filter: blur(16px);
     box-shadow: 0 18px 44px rgba(0, 0, 0, 0.14);
     min-width: 0;
+    overflow-x: auto;
   }
 
   .hangman-container {
@@ -179,6 +180,8 @@
     gap: 14px;
     flex-wrap: wrap;
     justify-content: center;
+    max-width: 100%;
+    overflow: visible;
   }
 
   .letter-box {
@@ -186,6 +189,7 @@
     flex-direction: column;
     align-items: center;
     gap: 6px;
+    flex-shrink: 0;
   }
 
   .letter-char {
@@ -201,6 +205,7 @@
     width: 26px;
     height: 2px;
     background: var(--secondary);
+    flex-shrink: 0;
   }
 
   .keyboard {
@@ -209,13 +214,15 @@
     align-items: center;
     gap: 10px;
     width: 100%;
-    max-width: 480px;
+    max-width: 600px;
+    overflow-x: auto;
   }
 
   .kb-row {
     display: flex;
     gap: 6px;
     justify-content: center;
+    flex-wrap: nowrap;
   }
 
   .kb-key {
@@ -233,6 +240,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
   }
 
   .kb-key:hover:not(:disabled) {
@@ -1877,6 +1885,18 @@ window.addEventListener('storage', (event) => {
 });
 
 window.addEventListener('focus', () => loadSavedSettings());
+
+// ── KEYBOARD INPUT ──
+window.addEventListener('keydown', (e) => {
+  // Only handle letter keys when not typing in an input field
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  
+  const key = e.key.toUpperCase();
+  if (/^[A-Z]$/.test(key)) {
+    e.preventDefault();
+    handleGuess(key);
+  }
+});
 
 // ── OAUTH MESSAGE LISTENER ──
 window.addEventListener('message', (ev) => {

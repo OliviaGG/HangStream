@@ -1547,6 +1547,59 @@ window.addEventListener('storage', (event) => {
   if (event.key === getSettingsStorageKey()) loadSettings();
   if (event.key === getThemeStorageKey()) applyTheme(event.newValue || 'dark');
 });
+
+// ── VIEWER GOOGLE LOGIN ──
+function renderViewerProfile() {
+  const loginBtn = document.getElementById('viewer-login-btn');
+  if (loginBtn) {
+    loginBtn.textContent = state.viewerName ? `Signed in: ${state.viewerName}` : 'Sign in with Google';
+  }
+}
+
+function startGoogleAuth() {
+  try {
+    const w = window.open('/auth/google', 'hs_google_oauth', 'width=600,height=700');
+    if (!w) {
+      window.location.href = '/auth/google';
+    } else {
+      w.focus();
+    }
+  } catch (e) {
+    console.error('Failed to open Google auth popup', e);
+  }
+}
+
+const vLoginBtn = document.getElementById('viewer-login-btn');
+if (vLoginBtn) {
+  vLoginBtn.addEventListener('click', startGoogleAuth);
+}
+
+try {
+  const saved = JSON.parse(localStorage.getItem('hangstream-viewer-profile') || '{}');
+  if (saved && saved.name) {
+    state.viewerId = saved.id || '';
+    state.viewerName = saved.name || '';
+  }
+} catch (e) {}
+renderViewerProfile();
+
+window.addEventListener('message', (ev) => {
+  if (!ev || ev.origin !== location.origin) return;
+  const data = ev.data || {};
+  if (data && data.type === 'viewer-login') {
+    const id = data.id || '';
+    const name = data.name || '';
+    if (id && name) {
+      state.viewerId = id;
+      state.viewerName = name;
+      try {
+        localStorage.setItem('hangstream-viewer-profile', JSON.stringify({ id, name, provider: data.provider || 'google' }));
+      } catch (e) {}
+      renderViewerProfile();
+    }
+  }
+});
+
 </script>
 
 </body>
