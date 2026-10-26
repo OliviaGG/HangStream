@@ -142,6 +142,45 @@
       margin-bottom: 20px;
     }
 
+    .badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge.viewer {
+      background: color-mix(in srgb, var(--accent-2) 15%, transparent);
+      border: 1px solid var(--accent-2);
+      color: var(--accent-2);
+    }
+
+    .badge.streamer {
+      background: color-mix(in srgb, var(--good) 15%, transparent);
+      border: 1px solid var(--good);
+      color: var(--good);
+    }
+
+    .badge.donor {
+      background: color-mix(in srgb, var(--accent) 15%, transparent);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .badge.hidden { display: none; }
+
     .donor-badge {
       display: inline-flex;
       align-items: center;
@@ -382,7 +421,11 @@
         <div class="profile-info">
           <div class="profile-name" id="profile-name">User</div>
           <div class="profile-id" id="profile-id">ID: unknown</div>
-          <div class="donor-badge hidden" id="donor-badge">❤️ Donor</div>
+          <div class="badges">
+            <span class="badge viewer" id="viewer-badge">👁️ Viewer</span>
+            <span class="badge streamer hidden" id="streamer-badge">🎬 Streamer</span>
+            <span class="badge donor hidden" id="donor-badge">❤️ Donor</span>
+          </div>
         </div>
       </div>
 
@@ -418,6 +461,7 @@
     const PROFILE_KEY = 'hangstream-viewer-profile';
     let profile = null;
     let isDonor = false;
+    let isStreamer = false;
 
     // Theme definitions
     const themes = [
@@ -456,35 +500,56 @@
       const avatar = document.getElementById('profile-avatar');
       const name = document.getElementById('profile-name');
       const id = document.getElementById('profile-id');
-      const donorBadge = document.getElementById('donor-badge');
       const bioText = document.getElementById('bio-text');
 
       if (avatar) avatar.textContent = profile.name.charAt(0).toUpperCase();
       if (name) name.textContent = profile.name;
       if (id) id.textContent = `ID: ${profile.id || 'unknown'}`;
 
-      // Check donor status (in a real app, this would come from the server)
+      // Check donor and streamer status (these will update badges automatically)
       checkDonorStatus();
+      checkStreamerStatus();
 
       // Load bio
       loadBio();
     }
 
     function checkDonorStatus() {
-      // In a real app, this would fetch from the server
-      // For now, we'll check localStorage
-      try {
-        const donorData = localStorage.getItem('hangstream-donor-status');
-        if (donorData) {
-          const donor = JSON.parse(donorData);
-          isDonor = donor.isDonor === true;
-        }
-      } catch (e) {}
+      // Fetch from server
+      fetch('/viewer/is-donor')
+        .then(res => res.json())
+        .then(data => {
+          isDonor = data.isDonor === true;
+          // Update badge visibility
+          const donorBadge = document.getElementById('donor-badge');
+          if (isDonor && donorBadge) {
+            donorBadge.classList.remove('hidden');
+          } else if (donorBadge) {
+            donorBadge.classList.add('hidden');
+          }
+        })
+        .catch(e => {
+          console.error('Error checking donor status:', e);
+        });
+    }
 
-      const donorBadge = document.getElementById('donor-badge');
-      if (isDonor && donorBadge) {
-        donorBadge.classList.remove('hidden');
-      }
+    function checkStreamerStatus() {
+      // Fetch from server
+      fetch('/viewer/is-streamer')
+        .then(res => res.json())
+        .then(data => {
+          isStreamer = data.isStreamer === true;
+          // Update badge visibility
+          const streamerBadge = document.getElementById('streamer-badge');
+          if (isStreamer && streamerBadge) {
+            streamerBadge.classList.remove('hidden');
+          } else if (streamerBadge) {
+            streamerBadge.classList.add('hidden');
+          }
+        })
+        .catch(e => {
+          console.error('Error checking streamer status:', e);
+        });
     }
 
     function loadBio() {

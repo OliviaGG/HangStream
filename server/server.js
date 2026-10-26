@@ -1659,6 +1659,84 @@ if (!session) {
     return;
   }
 
+  // Check if viewer is a streamer (has approved application)
+  if (pathname === '/viewer/is-streamer' && req.method === 'GET') {
+    const cookies = parseCookies(req.headers.cookie);
+    const sessionViewer = cookies.viewer_id ? decodeURIComponent(cookies.viewer_id) : '';
+    if (!sessionViewer) {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ isStreamer: false }));
+      return;
+    }
+
+    try {
+      const applicationsPath = path.join(__dirname, 'streamer-applications.json');
+      const accountsPath = path.join(__dirname, 'streamer-accounts.json');
+      
+      let applications = {};
+      let accounts = {};
+      
+      if (fs.existsSync(applicationsPath)) {
+        const data = fs.readFileSync(applicationsPath, 'utf8');
+        applications = JSON.parse(data);
+      }
+      
+      if (fs.existsSync(accountsPath)) {
+        const data = fs.readFileSync(accountsPath, 'utf8');
+        accounts = JSON.parse(data);
+      }
+
+      // Check if viewer ID matches any approved streamer
+      let isStreamer = false;
+      for (const [email, account] of Object.entries(accounts)) {
+        if (account.email && sessionViewer.includes(account.email)) {
+          isStreamer = true;
+          break;
+        }
+      }
+
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ isStreamer }));
+    } catch (e) {
+      console.error('Error checking streamer status:', e);
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'failed to check streamer status' }));
+    }
+    return;
+  }
+
+  // Check if viewer is a donor
+  if (pathname === '/viewer/is-donor' && req.method === 'GET') {
+    const cookies = parseCookies(req.headers.cookie);
+    const sessionViewer = cookies.viewer_id ? decodeURIComponent(cookies.viewer_id) : '';
+    if (!sessionViewer) {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ isDonor: false }));
+      return;
+    }
+
+    try {
+      const donations = loadDonations();
+      let isDonor = false;
+      
+      // Check if viewer has made any donations
+      for (const donation of donations) {
+        if (donation.viewerId === sessionViewer) {
+          isDonor = true;
+          break;
+        }
+      }
+
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ isDonor }));
+    } catch (e) {
+      console.error('Error checking donor status:', e);
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'failed to check donor status' }));
+    }
+    return;
+  }
+
   // Score endpoints - require authenticated viewer session via cookie
   // Updates both per-room scores and global scores
   if (pathname === '/score' && req.method === 'POST') {
