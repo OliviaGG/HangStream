@@ -627,4 +627,8 @@ function getDailyDate() {
   return `${year}-${month}-${day}`;
 }
 
-module.exports = GameRegistry;
+module.exports = {
+  GameRegistry,
+  getDailyDate,
+  GAME_META,
+};
