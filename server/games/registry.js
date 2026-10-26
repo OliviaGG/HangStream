@@ -35,30 +35,59 @@ const ROOM_TTL_MS = 6 * 60 * 60 * 1000;
 const STALE_ROUND_MS = 12 * 60 * 60 * 1000;
 
 /**
- * Check if a viewer is a donor based on their viewer ID
+ * Check if a viewer is a donor based on their viewer ID and linked accounts
  */
-function isDonor(viewerId) {
+function isDonor(viewerId, linkedAccounts = null) {
   if (!viewerId) return false;
   try {
     const donations = loadDonations();
-    // Check against viewerId (for Google OAuth) and platformUserId (for Twitch/TikTok)
-    // Also check if viewerId contains platform prefix
-    const isDonor = donations.some(donation => {
-      // Direct match
-      if (donation.viewerId === viewerId) return true;
-      
-      // Check with platform prefixes
-      const prefixes = ['google:', 'twitch:', 'tiktok:'];
-      for (const prefix of prefixes) {
-        if (donation.viewerId === `${prefix}${viewerId}`) return true;
-        if (viewerId.startsWith(prefix) && donation.viewerId === viewerId) return true;
+    
+    // If linkedAccounts not provided, try to load from viewer profiles
+    if (!linkedAccounts) {
+      try {
+        const { loadViewerProfiles } = require('../storage');
+        const profiles = loadViewerProfiles();
+        const profile = profiles[viewerId];
+        if (profile && profile.linkedAccounts) {
+          linkedAccounts = profile.linkedAccounts;
+        }
+      } catch (e) {
+        // If loading fails, continue without linked accounts
       }
-      
-      // Reverse check: if donation has prefix, try matching without it
-      for (const prefix of prefixes) {
-        if (donation.viewerId.startsWith(prefix)) {
-          const baseId = donation.viewerId.substring(prefix.length);
-          if (baseId === viewerId) return true;
+    }
+    
+    // Collect all IDs to check: primary ID + linked accounts
+    const idsToCheck = [viewerId];
+    
+    // Add linked TikTok ID
+    if (linkedAccounts && linkedAccounts.tiktok && linkedAccounts.tiktok.openId) {
+      idsToCheck.push(`tiktok:${linkedAccounts.tiktok.openId}`);
+    }
+    
+    // Add linked Twitch ID
+    if (linkedAccounts && linkedAccounts.twitch && linkedAccounts.twitch.userId) {
+      idsToCheck.push(`twitch:${linkedAccounts.twitch.userId}`);
+    }
+    
+    // Check against all IDs
+    const isDonor = donations.some(donation => {
+      for (const id of idsToCheck) {
+        // Direct match
+        if (donation.viewerId === id) return true;
+        
+        // Check with platform prefixes
+        const prefixes = ['google:', 'twitch:', 'tiktok:'];
+        for (const prefix of prefixes) {
+          if (donation.viewerId === `${prefix}${id}`) return true;
+          if (id.startsWith(prefix) && donation.viewerId === id) return true;
+        }
+        
+        // Reverse check: if donation has prefix, try matching without it
+        for (const prefix of prefixes) {
+          if (donation.viewerId.startsWith(prefix)) {
+            const baseId = donation.viewerId.substring(prefix.length);
+            if (baseId === id) return true;
+          }
         }
       }
       

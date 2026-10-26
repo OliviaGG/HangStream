@@ -794,12 +794,19 @@ const server = http.createServer((req, res) => {
 
   // OAuth entry: redirect to TikTok
   if (pathname === '/oauth') {
-    const session = readOwnerSession(req);
-if (!session) {
-  res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
-  res.end('Please log in with Google before connecting to TikTok.');
-  return;
-}
+    const redirectUriParam = reqUrl.searchParams.get('redirect_uri');
+    const isViewerLinking = redirectUriParam && redirectUriParam.includes('/auth/tiktok/callback');
+
+    if (!isViewerLinking) {
+      // Streamer linking - requires owner session
+      const session = readOwnerSession(req);
+      if (!session) {
+        res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Please log in with Google before connecting to TikTok.');
+        return;
+      }
+    }
+
     if (!CLIENT_KEY) {
       sendErrorResponse(res, 500, 'TIKTOK_CLIENT_KEY not configured on server.');
       return;
@@ -811,7 +818,7 @@ if (!session) {
     authUrl.searchParams.set('client_key', CLIENT_KEY);
     authUrl.searchParams.set('scope', 'user.info.basic');
     authUrl.searchParams.set('response_type', 'code');
-    authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
+    authUrl.searchParams.set('redirect_uri', redirectUriParam || REDIRECT_URI);
     authUrl.searchParams.set('state', state);
     res.writeHead(302, { Location: authUrl.toString() });
     res.end();
@@ -902,13 +909,19 @@ if (!session) {
 
   // Twitch OAuth entry
   if (pathname === '/oauth/twitch') {
-    const session = readOwnerSession(req);
+    const redirectUriParam = reqUrl.searchParams.get('redirect_uri');
+    const isViewerLinking = redirectUriParam && redirectUriParam.includes('/auth/twitch/callback');
 
-    if (!session) {
-  res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
-  res.end('Please log in with Google before connecting Twitch.');
-  return;
-}
+    if (!isViewerLinking) {
+      // Streamer linking - requires owner session
+      const session = readOwnerSession(req);
+      if (!session) {
+        res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Please log in with Google before connecting Twitch.');
+        return;
+      }
+    }
+
     if (!TWITCH_CLIENT_ID) {
       sendErrorResponse(res, 500, 'TWITCH_CLIENT_ID not configured on server.');
       return;
@@ -917,7 +930,7 @@ if (!session) {
     res.setHeader('Set-Cookie', `csrfState=${state}; HttpOnly; SameSite=Lax; Path=/; Max-Age=600`);
     const authUrl = new URL('https://id.twitch.tv/oauth2/authorize');
     authUrl.searchParams.set('client_id', TWITCH_CLIENT_ID);
-    authUrl.searchParams.set('redirect_uri', TWITCH_REDIRECT);
+    authUrl.searchParams.set('redirect_uri', redirectUriParam || TWITCH_REDIRECT);
     authUrl.searchParams.set('response_type', 'code');
     authUrl.searchParams.set('scope', 'user:read:email');
     authUrl.searchParams.set('state', state);
@@ -1430,6 +1443,229 @@ if (!session) {
     return;
   }
 
+  // Viewer TikTok OAuth callback (for linking accounts)
+  if (pathname === '/auth/tiktok/callback' && req.method === 'GET') {
+    const params = reqUrl.searchParams;
+    const code = params.get('code');
+    const state = params.get('state');
+    const error = params.get('error');
+    const cookies = parseCookies(req.headers.cookie);
+    const sessionViewer = cookies.viewer_id ? decodeURIComponent(cookies.viewer_id) : '';
+
+    if (error) {
+      res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end('<html><body><script>window.close();alert("TikTok OAuth error: ' + error + '");</script></body></html>');
+      return;
+    }
+
+    if (!sessionViewer) {
+      res.writeHead(401, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end('<html><body><script>window.close();alert("Please sign in with Google first");</script></body></html>');
+      return;
+    }
+
+    if (!code) {
+      res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end('<html><body><script>window.close();alert("Missing code");</script></body></html>');
+      return;
+    }
+
+    if (!CLIENT_KEY || !CLIENT_SECRET) {
+      res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end('<html><body><script>window.close();alert("TikTok OAuth not configured");</script></body></html>');
+      return;
+    }
+
+    // Exchange code for access token
+    const tokenEndpoint = 'https://open-api.tiktok.com/oauth/access_token/';
+    const postData = querystring.stringify({
+      client_key: CLIENT_KEY,
+      client_secret: CLIENT_SECRET,
+      code,
+      grant_type: 'authorization_code',
+      redirect_uri: REDIRECT_URI,
+    });
+
+    const tokenReq = https.request(tokenEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(postData),
+      },
+    }, (tokenRes) => {
+      let body = '';
+      tokenRes.on('data', (chunk) => body += chunk);
+      tokenRes.on('end', () => {
+        try {
+          const parsed = JSON.parse(body);
+          const accessToken = parsed.access_token;
+          const openId = parsed.open_id;
+          if (!accessToken || !openId) throw new Error('Missing access token or open_id');
+
+          // Get user info
+          const userReq = https.request('https://open-api.tiktok.com/oauth/v2/user/info/', {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+          }, (userRes) => {
+            let userBody = '';
+            userRes.on('data', (chunk) => userBody += chunk);
+            userRes.on('end', () => {
+              try {
+                const userProfile = JSON.parse(userBody);
+                const userData = userProfile.data || {};
+                const username = userData.display_name || userData.username || 'TikTok user';
+
+                // Link to viewer profile
+                const profiles = loadViewerProfiles();
+                profiles[sessionViewer] = profiles[sessionViewer] || {};
+                profiles[sessionViewer].linkedAccounts = profiles[sessionViewer].linkedAccounts || {};
+                profiles[sessionViewer].linkedAccounts.tiktok = {
+                  openId,
+                  username,
+                  accessToken,
+                  updatedAt: Date.now()
+                };
+                profiles[sessionViewer].updatedAt = Date.now();
+                saveViewerProfiles(profiles);
+
+                res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end('<html><body><script>window.opener.postMessage({type: "account-linked", platform: "tiktok", username: "' + username + '"}, window.location.origin); window.close();</script></body></html>');
+              } catch (e) {
+                console.error('Error parsing TikTok user info:', e);
+                res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end('<html><body><script>window.close();alert("Failed to get TikTok user info");</script></body></html>');
+              }
+            });
+          });
+          userReq.on('error', (err) => {
+            console.error('TikTok user info request failed:', err);
+            res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end('<html><body><script>window.close();alert("Failed to get TikTok user info");</script></body></html>');
+          });
+          userReq.write('');
+          userReq.end();
+        } catch (e) {
+          console.error('Error parsing TikTok token response:', e);
+          res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.end('<html><body><script>window.close();alert("Failed to exchange TikTok token");</script></body></html>');
+        }
+      });
+    });
+    tokenReq.on('error', (err) => {
+      console.error('TikTok token request failed:', err);
+      res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end('<html><body><script>window.close();alert("Failed to exchange TikTok token");</script></body></html>');
+    });
+    tokenReq.write(postData);
+    tokenReq.end();
+    return;
+  }
+
+  // Viewer Twitch OAuth callback (for linking accounts)
+  if (pathname === '/auth/twitch/callback' && req.method === 'GET') {
+    const params = reqUrl.searchParams;
+    const code = params.get('code');
+    const state = params.get('state');
+    const error = params.get('error');
+    const cookies = parseCookies(req.headers.cookie);
+    const sessionViewer = cookies.viewer_id ? decodeURIComponent(cookies.viewer_id) : '';
+
+    if (error) {
+      res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end('<html><body><script>window.close();alert("Twitch OAuth error: ' + error + '");</script></body></html>');
+      return;
+    }
+
+    if (!sessionViewer) {
+      res.writeHead(401, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end('<html><body><script>window.close();alert("Please sign in with Google first");</script></body></html>');
+      return;
+    }
+
+    if (!code) {
+      res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end('<html><body><script>window.close();alert("Missing code");</script></body></html>');
+      return;
+    }
+
+    if (!TWITCH_CLIENT_ID || !TWITCH_CLIENT_SECRET) {
+      res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end('<html><body><script>window.close();alert("Twitch OAuth not configured");</script></body></html>');
+      return;
+    }
+
+    // Exchange code for access token
+    const tokenUrl = `https://id.twitch.tv/oauth2/token?client_id=${encodeURIComponent(TWITCH_CLIENT_ID)}&client_secret=${encodeURIComponent(TWITCH_CLIENT_SECRET)}&code=${encodeURIComponent(code)}&grant_type=authorization_code&redirect_uri=${encodeURIComponent(TWITCH_REDIRECT)}`;
+
+    https.get(tokenUrl, (tRes) => {
+      let body = '';
+      tRes.on('data', (c) => body += c);
+      tRes.on('end', () => {
+        try {
+          const parsed = JSON.parse(body);
+          const accessToken = parsed.access_token;
+          if (!accessToken) throw new Error('Missing access token');
+
+          // Get user info
+          const userReq = https.request('https://api.twitch.tv/helix/users', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Client-Id': TWITCH_CLIENT_ID
+            },
+          }, (userRes) => {
+            let userBody = '';
+            userRes.on('data', (chunk) => userBody += chunk);
+            userRes.on('end', () => {
+              try {
+                const userProfile = JSON.parse(userBody);
+                const userData = userProfile.data && userProfile.data[0] ? userProfile.data[0] : {};
+                const username = userData.login || userData.display_name || 'Twitch user';
+                const userId = userData.id;
+
+                // Link to viewer profile
+                const profiles = loadViewerProfiles();
+                profiles[sessionViewer] = profiles[sessionViewer] || {};
+                profiles[sessionViewer].linkedAccounts = profiles[sessionViewer].linkedAccounts || {};
+                profiles[sessionViewer].linkedAccounts.twitch = {
+                  userId,
+                  username,
+                  accessToken,
+                  updatedAt: Date.now()
+                };
+                profiles[sessionViewer].updatedAt = Date.now();
+                saveViewerProfiles(profiles);
+
+                res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end('<html><body><script>window.opener.postMessage({type: "account-linked", platform: "twitch", username: "' + username + '"}, window.location.origin); window.close();</script></body></html>');
+              } catch (e) {
+                console.error('Error parsing Twitch user info:', e);
+                res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end('<html><body><script>window.close();alert("Failed to get Twitch user info");</script></body></html>');
+              }
+            });
+          });
+          userReq.on('error', (err) => {
+            console.error('Twitch user info request failed:', err);
+            res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end('<html><body><script>window.close();alert("Failed to get Twitch user info");</script></body></html>');
+          });
+          userReq.write('');
+          userReq.end();
+        } catch (e) {
+          console.error('Error parsing Twitch token response:', e);
+          res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.end('<html><body><script>window.close();alert("Failed to exchange Twitch token");</script></body></html>');
+        }
+      });
+    }).on('error', (err) => {
+      console.error('Twitch token request failed:', err);
+      res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end('<html><body><script>window.close();alert("Failed to exchange Twitch token");</script></body></html>');
+    });
+    return;
+  }
+
    // Token management endpoints are disabled until server-side ownership
   // checks are implemented. Never expose OAuth credentials to the browser.
   if (
@@ -1647,6 +1883,7 @@ if (!session) {
         profiles[id].name = parsed.name || parsed.viewerName || profiles[id].name || '';
         profiles[id].avatar = parsed.avatar || parsed.viewerAvatar || profiles[id].avatar || '';
         profiles[id].provider = parsed.provider || profiles[id].provider || null;
+        profiles[id].linkedAccounts = parsed.linkedAccounts || profiles[id].linkedAccounts || {};
         profiles[id].updatedAt = Date.now();
         saveViewerProfiles(profiles); // Save to global profiles
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -1654,6 +1891,46 @@ if (!session) {
       } catch (e) {
         res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ error: 'failed to save profile' }));
+      }
+    });
+    return;
+  }
+
+  // Linked accounts endpoint (link/unlink TikTok and Twitch)
+  if (pathname === '/viewer/linked-accounts' && req.method === 'POST') {
+    let body = '';
+    req.on('data', (c) => body += c);
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(body || '{}');
+        const cookies = parseCookies(req.headers.cookie);
+        const sessionViewer = cookies.viewer_id ? decodeURIComponent(cookies.viewer_id) : '';
+        if (!sessionViewer) {
+          res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'not authenticated' }));
+          return;
+        }
+
+        const { action, platform, platformData } = parsed;
+        const id = sessionViewer;
+        const profiles = loadViewerProfiles();
+        profiles[id] = profiles[id] || {};
+        profiles[id].linkedAccounts = profiles[id].linkedAccounts || {};
+
+        if (action === 'link') {
+          profiles[id].linkedAccounts[platform] = platformData || {};
+        } else if (action === 'unlink') {
+          delete profiles[id].linkedAccounts[platform];
+        }
+
+        profiles[id].updatedAt = Date.now();
+        saveViewerProfiles(profiles);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: true, linkedAccounts: profiles[id].linkedAccounts }));
+      } catch (e) {
+        console.error('Error updating linked accounts:', e);
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: 'failed to update linked accounts' }));
       }
     });
     return;

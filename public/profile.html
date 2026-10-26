@@ -177,6 +177,107 @@
       letter-spacing: 0.5px;
     }
 
+    .linked-accounts {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .linked-account {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+    }
+
+    .linked-account-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .linked-account-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .linked-account-icon.google {
+      background: #DB4437;
+    }
+
+    .linked-account-icon.tiktok {
+      background: #000000;
+    }
+
+    .linked-account-icon.twitch {
+      background: #9146FF;
+    }
+
+    .linked-account-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .linked-account-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .linked-account-status {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .linked-account-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-link {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-link-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-link-primary:hover {
+      background: var(--accent-2);
+    }
+
+    .btn-link-secondary {
+      background: var(--panel-border);
+      color: var(--text);
+    }
+
+    .btn-link-secondary:hover {
+      background: var(--card-border);
+    }
+
+    .btn-link-danger {
+      background: var(--bad);
+      color: white;
+    }
+
+    .btn-link-danger:hover {
+      background: #d43d3d;
+    }
+
     .badge.viewer {
       background: color-mix(in srgb, var(--accent-2) 15%, transparent);
       border: 1px solid var(--accent-2);
@@ -193,6 +294,18 @@
       background: color-mix(in srgb, var(--accent) 15%, transparent);
       border: 1px solid var(--accent);
       color: var(--accent);
+    }
+
+    .badge.tiktok {
+      background: color-mix(in srgb, #000000 15%, transparent);
+      border: 1px solid #666;
+      color: #ccc;
+    }
+
+    .badge.twitch {
+      background: color-mix(in srgb, #9146FF 15%, transparent);
+      border: 1px solid #9146FF;
+      color: #9146FF;
     }
 
     .badge.hidden { display: none; }
@@ -459,6 +572,13 @@
       </div>
 
       <div class="section">
+        <div class="section-title">Linked Accounts</div>
+        <div class="linked-accounts" id="linked-accounts">
+          <!-- Linked accounts will be loaded here -->
+        </div>
+      </div>
+
+      <div class="section">
         <div class="section-title">Themes</div>
         <div class="themes-grid" id="themes-grid">
           <!-- Themes will be loaded here -->
@@ -499,6 +619,8 @@
             document.getElementById('not-signed-in').style.display = 'none';
             renderProfile();
             loadThemes();
+            // Load linked accounts from server
+            loadProfileFromServer();
             return true;
           }
         }
@@ -508,6 +630,27 @@
       document.getElementById('signed-in-content').style.display = 'none';
       document.getElementById('not-signed-in').style.display = 'block';
       return false;
+    }
+
+    function loadProfileFromServer() {
+      if (!profile || !profile.id) return;
+      fetch(`/viewer/profile?id=${encodeURIComponent(profile.id)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.linkedAccounts) {
+            profile.linkedAccounts = data.linkedAccounts;
+            try {
+              localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+            } catch (e) {
+              console.error('Error saving profile:', e);
+            }
+            loadLinkedAccounts();
+            updateBadges();
+          }
+        })
+        .catch(e => {
+          console.error('Error loading profile from server:', e);
+        });
     }
 
     function renderProfile() {
@@ -528,7 +671,206 @@
 
       // Load bio
       loadBio();
+
+      // Load linked accounts
+      loadLinkedAccounts();
+
+      // Update badges with linked accounts
+      updateBadges();
     }
+
+    function loadLinkedAccounts() {
+      const container = document.getElementById('linked-accounts');
+      if (!container) return;
+
+      const linkedAccounts = profile.linkedAccounts || {};
+
+      // Always show Google (primary account)
+      let html = `
+        <div class="linked-account">
+          <div class="linked-account-info">
+            <div class="linked-account-icon google">G</div>
+            <div class="linked-account-details">
+              <div class="linked-account-name">Google</div>
+              <div class="linked-account-status">${profile.name} (Primary)</div>
+            </div>
+          </div>
+          <div class="linked-account-actions">
+            <span style="color: var(--good); font-size: 12px; font-weight: 600;">✓ Connected</span>
+          </div>
+        </div>
+      `;
+
+      // TikTok
+      if (linkedAccounts.tiktok) {
+        html += `
+          <div class="linked-account">
+            <div class="linked-account-info">
+              <div class="linked-account-icon tiktok">🎵</div>
+              <div class="linked-account-details">
+                <div class="linked-account-name">TikTok</div>
+                <div class="linked-account-status">@${linkedAccounts.tiktok.username || 'Connected'}</div>
+              </div>
+            </div>
+            <div class="linked-account-actions">
+              <button class="btn-link btn-link-danger" onclick="unlinkAccount('tiktok')">Unlink</button>
+            </div>
+          </div>
+        `;
+      } else {
+        html += `
+          <div class="linked-account">
+            <div class="linked-account-info">
+              <div class="linked-account-icon tiktok">🎵</div>
+              <div class="linked-account-details">
+                <div class="linked-account-name">TikTok</div>
+                <div class="linked-account-status">Not connected</div>
+              </div>
+            </div>
+            <div class="linked-account-actions">
+              <button class="btn-link btn-link-primary" onclick="linkTikTok()">Connect</button>
+            </div>
+          </div>
+        `;
+      }
+
+      // Twitch
+      if (linkedAccounts.twitch) {
+        html += `
+          <div class="linked-account">
+            <div class="linked-account-info">
+              <div class="linked-account-icon twitch">📺</div>
+              <div class="linked-account-details">
+                <div class="linked-account-name">Twitch</div>
+                <div class="linked-account-status">${linkedAccounts.twitch.username || 'Connected'}</div>
+              </div>
+            </div>
+            <div class="linked-account-actions">
+              <button class="btn-link btn-link-danger" onclick="unlinkAccount('twitch')">Unlink</button>
+            </div>
+          </div>
+        `;
+      } else {
+        html += `
+          <div class="linked-account">
+            <div class="linked-account-info">
+              <div class="linked-account-icon twitch">📺</div>
+              <div class="linked-account-details">
+                <div class="linked-account-name">Twitch</div>
+                <div class="linked-account-status">Not connected</div>
+              </div>
+            </div>
+            <div class="linked-account-actions">
+              <button class="btn-link btn-link-primary" onclick="linkTwitch()">Connect</button>
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function updateBadges() {
+      const badgesContainer = document.getElementById('badges');
+      if (!badgesContainer) return;
+
+      const linkedAccounts = profile.linkedAccounts || {};
+      let badgesHtml = '';
+
+      // Viewer badge (always shown if signed in)
+      badgesHtml += `<span class="badge viewer">👤 Viewer</span>`;
+
+      // Donor badge
+      if (isDonor) {
+        badgesHtml += `<span class="badge donor">❤️ Donor</span>`;
+      }
+
+      // Streamer badge
+      if (isStreamer) {
+        badgesHtml += `<span class="badge streamer">🎥 Streamer</span>`;
+      }
+
+      // TikTok badge
+      if (linkedAccounts.tiktok) {
+        badgesHtml += `<span class="badge tiktok">🎵 TikTok</span>`;
+      }
+
+      // Twitch badge
+      if (linkedAccounts.twitch) {
+        badgesHtml += `<span class="badge twitch">📺 Twitch</span>`;
+      }
+
+      badgesContainer.innerHTML = badgesHtml;
+    }
+
+    function linkTikTok() {
+      // Open TikTok OAuth in a popup with viewer-specific redirect
+      const width = 500;
+      const height = 600;
+      const left = (window.screen.width - width) / 2;
+      const top = (window.screen.height - height) / 2;
+      const authUrl = '/oauth?redirect_uri=' + encodeURIComponent(window.location.origin + '/auth/tiktok/callback');
+      window.open(authUrl, 'tiktokAuth', `width=${width},height=${height},left=${left},top=${top}`);
+    }
+
+    function linkTwitch() {
+      // Open Twitch OAuth in a popup with viewer-specific redirect
+      const width = 500;
+      const height = 600;
+      const left = (window.screen.width - width) / 2;
+      const top = (window.screen.height - height) / 2;
+      const authUrl = '/oauth/twitch?redirect_uri=' + encodeURIComponent(window.location.origin + '/auth/twitch/callback');
+      window.open(authUrl, 'twitchAuth', `width=${width},height=${height},left=${left},top=${top}`);
+    }
+
+    // Listen for account-linked messages from OAuth popups
+    window.addEventListener('message', (event) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data && event.data.type === 'account-linked') {
+        console.log('Account linked:', event.data);
+        // Reload profile to show linked account
+        loadProfile();
+      }
+    });
+
+    function unlinkAccount(platform) {
+      if (!confirm(`Are you sure you want to unlink your ${platform} account?`)) return;
+
+      if (!profile.linkedAccounts) {
+        profile.linkedAccounts = {};
+      }
+      delete profile.linkedAccounts[platform];
+
+      // Save to localStorage
+      try {
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+      } catch (e) {
+        console.error('Error saving profile:', e);
+      }
+
+      // Update server
+      fetch('/viewer/linked-accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'unlink',
+          platform
+        })
+      }).then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            loadLinkedAccounts();
+            updateBadges();
+          } else {
+            alert('Failed to unlink account: ' + (data.error || 'Unknown error'));
+          }
+        })
+        .catch(e => {
+          console.error('Error unlinking account:', e);
+          alert('Failed to unlink account');
+        });
+    }
+
 
     function checkDonorStatus() {
       // Fetch from server
