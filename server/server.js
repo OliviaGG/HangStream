@@ -305,10 +305,18 @@ function buildViewerLoginSuccessPage(viewerId, viewerName, provider) {
           const viewerName = ${nameJson};
           const provider = ${providerJson};
           if (window.opener) {
+            // Popup case: send message to opener
             window.opener.postMessage({ type: 'viewer-login', id: viewerId, name: viewerName, provider: provider }, location.origin);
+            setTimeout(() => window.close(), 400);
+          } else {
+            // Redirect case: store in localStorage and redirect back to main page
+            localStorage.setItem('hangstream-viewer-login', JSON.stringify({ id: viewerId, name: viewerName, provider: provider }));
+            window.location.href = '/';
           }
-        } catch (e) {}
-        setTimeout(() => window.close(), 400);
+        } catch (e) {
+          console.error('Login success error:', e);
+          setTimeout(() => window.close(), 400);
+        }
       })();
     </script>
   </body></html>`;

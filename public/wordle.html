@@ -1149,6 +1149,27 @@ window.addEventListener('storage', (event) => {
   if (event.key === getThemeStorageKey()) applyTheme(event.newValue || 'dark');
 });
 
+// ── CHECK FOR OAUTH REDIRECT RESULT ──
+(function() {
+  try {
+    const loginData = localStorage.getItem('hangstream-viewer-login');
+    if (loginData) {
+      const data = JSON.parse(loginData);
+      if (data && data.id && data.name) {
+        state.viewerId = data.id;
+        state.viewerName = data.name;
+        try {
+          localStorage.setItem('hangstream-viewer-profile', JSON.stringify({ id: data.id, name: data.name, provider: data.provider || 'google' }));
+        } catch (e) {}
+        renderViewerProfile();
+      }
+      localStorage.removeItem('hangstream-viewer-login');
+    }
+  } catch (e) {
+    console.error('Error checking OAuth redirect result:', e);
+  }
+})();
+
 // ── VIEWER GOOGLE LOGIN ──
 function renderViewerProfile() {
   const loginBtn = document.getElementById('viewer-login-btn');

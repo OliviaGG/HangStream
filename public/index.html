@@ -1886,6 +1886,36 @@ window.addEventListener('storage', (event) => {
 
 window.addEventListener('focus', () => loadSavedSettings());
 
+// ── CHECK FOR OAUTH REDIRECT RESULT ──
+(function() {
+  try {
+    const loginData = localStorage.getItem('hangstream-viewer-login');
+    if (loginData) {
+      const data = JSON.parse(loginData);
+      if (data && data.id && data.name) {
+        state.viewerId = data.id;
+        state.viewerName = data.name;
+        saveViewerProfile({ id: state.viewerId, name: state.viewerName });
+        const avatar = state.viewerAvatar || '';
+        setProfileForName(state.viewerName, { name: state.viewerName, avatar });
+        try {
+          fetch('/viewer/profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: state.viewerId, name: state.viewerName, avatar, provider: data.provider || 'google' })
+          }).catch(() => {});
+        } catch (e) {}
+        renderViewerProfile();
+        closeViewerLogin();
+      }
+      // Clear the temporary data
+      localStorage.removeItem('hangstream-viewer-login');
+    }
+  } catch (e) {
+    console.error('Error checking OAuth redirect result:', e);
+  }
+})();
+
 // ── KEYBOARD INPUT ──
 window.addEventListener('keydown', (e) => {
   // Only handle letter keys when not typing in an input field
