@@ -2346,8 +2346,17 @@ if (!session) {
     return;
   }  
 
-  // Get donation history
+  // Get donation history (admin only)
   if (pathname === '/donate/history' && req.method === 'GET') {
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const authHeader = req.headers['authorization'];
+
+    if (!authHeader || authHeader !== `Bearer ${adminPassword}`) {
+      res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
+
     const donations = loadDonations();
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(donations));
