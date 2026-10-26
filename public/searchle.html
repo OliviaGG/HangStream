@@ -488,6 +488,32 @@ body {
 .send-btn:active { transform: scale(0.97); }
 .send-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
 
+.hint-btn {
+  flex-shrink: 0;
+  padding: 14px 20px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(255, 77, 109, 0.3);
+}
+
+.hint-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 77, 109, 0.4);
+}
+
+.hint-btn:active {
+  transform: translateY(0);
+}
+
 .hint {
   margin-top: 8px;
   text-align: center;
@@ -763,6 +789,7 @@ body.overlay-mode .win-info { font-size: clamp(13px, 1.6vh, 20px); }
              spellcheck="false" enterkeyhint="send">
       <button class="send-btn" id="guess-btn" type="submit">Go</button>
     </form>
+    <button id="hint-btn" class="hint-btn" style="display:none;" onclick="requestHint()">💡 Hint (Donor)</button>
     <div class="hint" id="instructions">Guess words until your guess is ranked #1. Chat guesses count in online mode.</div>
   </footer>
 
@@ -1346,7 +1373,44 @@ document.addEventListener('DOMContentLoaded', () => {
       input.focus();
     }
   });
+
+  // Check donor status for hint button
+  checkDonorStatus();
 });
+
+function checkDonorStatus() {
+  fetch('/viewer/is-donor')
+    .then(res => res.json())
+    .then(data => {
+      const hintBtn = document.getElementById('hint-btn');
+      if (data.isDonor && hintBtn) {
+        hintBtn.style.display = 'block';
+      } else if (hintBtn) {
+        hintBtn.style.display = 'none';
+      }
+    })
+    .catch(e => {
+      console.error('Error checking donor status:', e);
+    });
+}
+
+function requestHint() {
+  if (!state.viewerId) {
+    alert('Please sign in to use hints');
+    return;
+  }
+
+  // Searchle uses chatWS for game messages
+  if (!chatWS || chatWS.readyState !== WebSocket.OPEN) {
+    alert('Not connected to game server');
+    return;
+  }
+
+  chatWS.send(JSON.stringify({
+    type: 'hint',
+    game: 'searchle'
+  }));
+}
 
 // ── Init ──────────────────────────────────────────────────────
 state.gameMode = getGameMode();
