@@ -57,6 +57,8 @@ class SpeedScrambleGame extends Game {
     this.category = 'General';
     this.difficulty = DEFAULT_DIFFICULTY;
     this.timeLimit = DIFFICULTY[DEFAULT_DIFFICULTY].timerSeconds;
+    this.hintsUsed = 0;
+    this.maxHints = 3;
   }
 
   reset() {
@@ -67,6 +69,7 @@ class SpeedScrambleGame extends Game {
       this.category = 'General';
       this.difficulty = DEFAULT_DIFFICULTY;
       this.timeLimit = DIFFICULTY[DEFAULT_DIFFICULTY].timerSeconds;
+      this.hintsUsed = 0;
     }
   }
 
@@ -124,6 +127,7 @@ class SpeedScrambleGame extends Game {
     this.category = chosen.cat;
     this.difficulty = level;
     this.timeLimit = seconds;
+    this.hintsUsed = 0;
     this.puzzle = { scrambled: this.scrambled, length: this.answer.length, category: this.category };
     this.status = 'idle';
     return { success: true, scrambled: this.scrambled, length: this.answer.length, category: this.category, timerSeconds: seconds };
@@ -185,6 +189,51 @@ class SpeedScrambleGame extends Game {
     this.difficulty = saved.difficulty || DEFAULT_DIFFICULTY;
     this.timeLimit = saved.timeLimit || DIFFICULTY[this.difficulty].timerSeconds;
     return this;
+  }
+
+  /** Reveal the first letter of the answer (donor perk). */
+  revealHint(playerInfo = {}) {
+    if (this.status !== 'active') {
+      return { accepted: false, result: 'not_active', error: 'Round is not active' };
+    }
+
+    // Check hint limit
+    if (this.hintsUsed >= this.maxHints) {
+      return { accepted: false, result: 'hint_limit_reached', error: `You have used all ${this.maxHints} hints for this round` };
+    }
+
+    if (!this.answer) {
+      return { accepted: false, result: 'no_hint', error: 'No answer available' };
+    }
+
+    // Reveal the first letter of the answer
+    const firstLetter = this.answer.charAt(0).toUpperCase();
+    this.hintsUsed++;
+
+    const entry = {
+      type: 'hint',
+      letter: firstLetter,
+      position: 0,
+      player: playerInfo.displayName || playerInfo.username || 'viewer',
+      platform: playerInfo.platform || 'web',
+      hintsUsed: this.hintsUsed,
+      maxHints: this.maxHints,
+      time: Date.now(),
+    };
+    this.wordHistory.unshift(entry);
+    if (this.wordHistory.length > 200) this.wordHistory.length = 200;
+
+    this.emit('guess', entry);
+
+    return { 
+      accepted: true, 
+      result: 'hint_revealed', 
+      letter: firstLetter, 
+      position: 0,
+      hint: `The word starts with "${firstLetter}"`,
+      hintsUsed: this.hintsUsed,
+      maxHints: this.maxHints
+    };
   }
 }
 

@@ -378,6 +378,42 @@ class GameRegistry {
         return result;
       }
 
+      // Try Speed Scramble
+      game = byGame && byGame.get('speedscramble');
+      if (game && game.status === 'active' && game.revealHint) {
+        const info = {
+          platform,
+          username: playerInfo.username || playerInfo.user || 'viewer',
+          displayName: playerInfo.displayName || playerInfo.username || playerInfo.user || 'viewer',
+          platformUserId: playerInfo.platformUserId || playerInfo.userId || null,
+          avatar: playerInfo.avatar || null,
+          id: playerInfo.id || null,
+        };
+        const result = game.revealHint(info);
+        if (!result.accepted && result.result === 'hint_limit_reached') {
+          return { hintLimitReached: true, error: result.error, message: result.error };
+        }
+        return result;
+      }
+
+      // Try Spelling Bee
+      game = byGame && byGame.get('spellingbee');
+      if (game && game.status === 'active' && game.revealHint) {
+        const info = {
+          platform,
+          username: playerInfo.username || playerInfo.user || 'viewer',
+          displayName: playerInfo.displayName || playerInfo.username || playerInfo.user || 'viewer',
+          platformUserId: playerInfo.platformUserId || playerInfo.userId || null,
+          avatar: playerInfo.avatar || null,
+          id: playerInfo.id || null,
+        };
+        const result = game.revealHint(info);
+        if (!result.accepted && result.result === 'hint_limit_reached') {
+          return { hintLimitReached: true, error: result.error, message: result.error };
+        }
+        return result;
+      }
+
       return null;
     }
 

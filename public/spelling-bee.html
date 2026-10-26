@@ -447,6 +447,29 @@
     }
   }
 
+  .hint-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 10px 0;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(255, 77, 109, 0.3);
+  }
+
+  .hint-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 77, 109, 0.4);
+  }
+
+  .hint-btn:active {
+    transform: translateY(0);
+  }
+
   .profile-name {
     max-width: 120px;
     overflow: hidden;
@@ -717,6 +740,8 @@
         <button id="streamer-hint-btn" class="streamer-hint-btn" style="display:none;" onclick="toggleStreamerHint()">👁️ Show Possible Words</button>
       </div>
       <div id="message-area"></div>
+
+      <button id="hint-btn" class="hint-btn" style="display:none;" onclick="requestHint()">💡 Hint (Donor)</button>
 
       <div class="honeycomb" id="honeycomb">
         <svg class="path-svg" id="path-svg">
@@ -1084,6 +1109,11 @@ function connectChatWebSocket() {
     chatWS.addEventListener('message', (event) => {
       try {
         const data = JSON.parse(event.data);
+        if (data.type === 'guess-result' && data.hintsUsed !== undefined) {
+          // Update hint counter from server response
+          updateHintButton(data.maxHints - data.hintsUsed);
+          return;
+        }
         handleChatMessage(data);
       } catch (e) {
         console.error('Failed to parse chat message:', e);
@@ -1715,15 +1745,59 @@ function checkDonorStatus() {
     .then(res => res.json())
     .then(data => {
       const avatar = document.getElementById('profile-avatar');
+      const hintBtn = document.getElementById('hint-btn');
       if (data.isDonor && avatar) {
         avatar.classList.add('donor');
       } else if (avatar) {
         avatar.classList.remove('donor');
       }
+      // Show hint button for donors
+      if (data.isDonor && hintBtn) {
+        hintBtn.style.display = 'block';
+        updateHintButton(3); // Start with 3 hints
+      } else if (hintBtn) {
+        hintBtn.style.display = 'none';
+      }
     })
     .catch(e => {
       console.error('Error checking donor status:', e);
     });
+}
+
+let hintsRemaining = 3;
+
+function updateHintButton(remaining) {
+  const hintBtn = document.getElementById('hint-btn');
+  if (hintBtn) {
+    hintsRemaining = remaining;
+    if (remaining > 0) {
+      hintBtn.textContent = `💡 Hint (${remaining}/3)`;
+      hintBtn.disabled = false;
+    } else {
+      hintBtn.textContent = '💡 No hints left';
+      hintBtn.disabled = true;
+    }
+  }
+}
+
+function requestHint() {
+  if (!gameWs || gameWs.readyState !== WebSocket.OPEN) {
+    alert('Not connected to game server');
+    return;
+  }
+
+  if (hintsRemaining <= 0) {
+    alert('You have used all your hints for this round');
+    return;
+  }
+
+  gameWs.send(JSON.stringify({
+    type: 'hint',
+    game: 'spellingbee'
+  }));
+
+  // Decrement hint counter optimistically (will be corrected by server response)
+  updateHintButton(hintsRemaining - 1);
 }
 
 function toggleProfileMenu() {

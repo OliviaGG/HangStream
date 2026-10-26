@@ -17,11 +17,16 @@ class SpellingBeeGame extends Game {
     this.letters = [];
     this.centerLetter = '';
     this.pangramSet = new Set();
+    this.hintsUsed = 0;
+    this.maxHints = 3;
   }
 
   reset() {
     super.reset();
-    if (this.letters) this.letters = [];
+    if (this.letters) {
+      this.letters = [];
+      this.hintsUsed = 0;
+    }
   }
 
   /**
@@ -73,6 +78,7 @@ class SpellingBeeGame extends Game {
       rare: round.answers.filter((w) => round.rarity.get(w) === 'rare').length,
       hidden: round.answers.filter((w) => round.rarity.get(w) === 'hidden').length,
     };
+    this.hintsUsed = 0;
     return { success: true, ...round.puzzle };
   }
 
@@ -114,6 +120,54 @@ class SpellingBeeGame extends Game {
     this.pangramSet = new Set(this.answers.filter((w) => new Set(w.split('')).size === 7));
     this.splitCounts = saved.splitCounts || this.splitCounts;
     return this;
+  }
+
+  /** Reveal a random unfound word (donor perk). */
+  revealHint(playerInfo = {}) {
+    if (this.status !== 'active') {
+      return { accepted: false, result: 'not_active', error: 'Round is not active' };
+    }
+
+    // Check hint limit
+    if (this.hintsUsed >= this.maxHints) {
+      return { accepted: false, result: 'hint_limit_reached', error: `You have used all ${this.maxHints} hints for this round` };
+    }
+
+    // Find unfound words
+    const unfoundWords = this.answers.filter(word => !this.foundWords[word]);
+    
+    if (unfoundWords.length === 0) {
+      return { accepted: false, result: 'no_hint', error: 'All words have been found' };
+    }
+
+    // Pick a random unfound word (prefer shorter, easier words)
+    const sortedWords = unfoundWords.sort((a, b) => a.length - b.length);
+    const hintWord = sortedWords[Math.min(Math.floor(Math.random() * 3), sortedWords.length - 1)];
+
+    this.hintsUsed++;
+
+    const entry = {
+      type: 'hint',
+      word: hintWord,
+      player: playerInfo.displayName || playerInfo.username || 'viewer',
+      platform: playerInfo.platform || 'web',
+      hintsUsed: this.hintsUsed,
+      maxHints: this.maxHints,
+      time: Date.now(),
+    };
+    this.wordHistory.unshift(entry);
+    if (this.wordHistory.length > 200) this.wordHistory.length = 200;
+
+    this.emit('guess', entry);
+
+    return { 
+      accepted: true, 
+      result: 'hint_revealed', 
+      word: hintWord,
+      hint: `Try the word: ${hintWord.toUpperCase()}`,
+      hintsUsed: this.hintsUsed,
+      maxHints: this.maxHints
+    };
   }
 }
 
