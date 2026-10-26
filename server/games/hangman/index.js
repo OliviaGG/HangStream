@@ -212,6 +212,58 @@ class HangmanGame extends Game {
     return { accepted: true, result: hit ? 'correct' : 'incorrect', letter, hit, mask: this.mask(), wrongCount: this.wrongCount };
   }
 
+  /** Reveal a random unrevealed letter (donor perk). */
+  revealHint(playerInfo = {}) {
+    if (this.status !== 'active') {
+      return { accepted: false, result: 'not_active', error: 'Round is not active' };
+    }
+
+    // Find all unrevealed letters in the word
+    const unrevealed = [];
+    for (let i = 0; i < this.word.length; i++) {
+      const letter = this.word[i];
+      if (!this.revealed.has(letter) && !unrevealed.includes(letter)) {
+        unrevealed.push(letter);
+      }
+    }
+
+    if (unrevealed.length === 0) {
+      return { accepted: false, result: 'no_hint', error: 'No letters to reveal' };
+    }
+
+    // Pick a random unrevealed letter
+    const randomIndex = Math.floor(Math.random() * unrevealed.length);
+    const letter = unrevealed[randomIndex];
+
+    // Reveal it
+    this.guessedLetters.add(letter);
+    this.revealed.add(letter);
+
+    const entry = {
+      type: 'hint',
+      letter,
+      player: playerInfo.displayName || playerInfo.username || 'viewer',
+      platform: playerInfo.platform || 'web',
+      wrongCount: this.wrongCount,
+      maxWrong: this.maxWrong,
+      time: Date.now(),
+    };
+    this.wordHistory.unshift(entry);
+    if (this.wordHistory.length > 200) this.wordHistory.length = 200;
+
+    this.emit('letter-guess', { ...entry, mask: this.mask() });
+
+    const complete = this.mask().every(Boolean);
+    if (complete && !this.completionEmitted) {
+      this.solved = true;
+      this._creditSolve(playerInfo);
+      this.completionEmitted = true;
+      setImmediate(() => { try { this.emit('round-complete', this.getState()); } catch (_) {} });
+    }
+
+    return { accepted: true, result: 'hint_revealed', letter, mask: this.mask(), complete };
+  }
+
   /**
    * A whole-word guess. Chat naturally sends complete words, and the Hangman
    * page's keyboard only sends letters — both funnel through here.

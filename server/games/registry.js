@@ -289,7 +289,35 @@ class GameRegistry {
   /** Handle a chat line from twitch/tiktok. Returns what the game made of it. */
   async sendChatGuess(platform, streamerId, message, playerInfo = {}) {
     const text = String(message || '').trim();
-    if (!text || !/^[a-z]+$/i.test(text)) return null;
+    if (!text) return null;
+
+    // Check for donor hint command
+    if (text.toLowerCase() === '/hint') {
+      const viewerIsDonor = isDonor(playerInfo.id || playerInfo.platformUserId);
+      if (!viewerIsDonor) {
+        return { donorOnly: true, error: 'Hint is a donor-only command' };
+      }
+
+      // Process hint command for Hangman only
+      const byGame = this.rooms.get(streamerId || 'public');
+      const game = byGame && byGame.get('hangman');
+      if (game && game.status === 'active' && game.revealHint) {
+        const info = {
+          platform,
+          username: playerInfo.username || playerInfo.user || 'viewer',
+          displayName: playerInfo.displayName || playerInfo.username || playerInfo.user || 'viewer',
+          platformUserId: playerInfo.platformUserId || playerInfo.userId || null,
+          avatar: playerInfo.avatar || null,
+          id: playerInfo.id || null,
+        };
+        const result = game.revealHint(info);
+        return result;
+      }
+      return null;
+    }
+
+    // Only allow letters for regular guesses (not commands)
+    if (!/^[a-z]+$/i.test(text)) return null;
 
     const info = {
       platform,
@@ -402,6 +430,7 @@ class GameRegistry {
           displayName: data.displayName || (ws.viewer && ws.viewer.name) || 'viewer',
           platformUserId: data.platformUserId || (ws.viewer && ws.viewer.id) || null,
           avatar: data.avatar || (ws.viewer && ws.viewer.avatar) || null,
+          id: ws.viewer && ws.viewer.id || null,
         };
         // Hangman is letter-based: a page sending `letter` (or a one-character
         // `word`) takes its native path and gets a fresh masked board back.
@@ -423,6 +452,39 @@ class GameRegistry {
           payloads.push({ type: 'game-state', game: game.slug, event: 'snapshot', state: this.state(streamerId, game.slug) });
         }
         return payloads;
+      }
+
+      case 'hint': {
+        const game = this.room(streamerId, data.game);
+        if (!game) return [{ type: 'error', error: 'game_not_found' }];
+        
+        // Check if donor
+        const viewerId = ws.viewer && ws.viewer.id;
+        const viewerIsDonor = isDonor(viewerId);
+        if (!viewerIsDonor) {
+          return [{ type: 'error', error: 'donor_only', message: 'Hint is a donor-only feature' }];
+        }
+
+        // Only Hangman supports hints
+        if (game.slug !== 'hangman' || !game.revealHint) {
+          return [{ type: 'error', error: 'not_supported', message: 'Hints not supported for this game' }];
+        }
+
+        if (game.status !== 'active') {
+          return [{ type: 'error', error: 'not_active', message: 'Round is not active' }];
+        }
+
+        const info = {
+          platform: data.platform || 'web',
+          username: data.username || (ws.viewer && ws.viewer.name) || 'viewer',
+          displayName: data.displayName || (ws.viewer && ws.viewer.name) || 'viewer',
+          platformUserId: data.platformUserId || (ws.viewer && ws.viewer.id) || null,
+          avatar: data.avatar || (ws.viewer && ws.viewer.avatar) || null,
+          id: ws.viewer && ws.viewer.id || null,
+        };
+
+        const result = game.revealHint(info);
+        return [{ type: 'guess-result', game: game.slug, ...result }];
       }
 
       case 'game-join-room': {

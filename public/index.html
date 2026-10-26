@@ -218,6 +218,29 @@
     overflow-x: auto;
   }
 
+  .hint-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 10px 0;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(255, 77, 109, 0.3);
+  }
+
+  .hint-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 77, 109, 0.4);
+  }
+
+  .hint-btn:active {
+    transform: translateY(0);
+  }
+
   .kb-row {
     display: flex;
     gap: 6px;
@@ -1053,6 +1076,7 @@
       <div class="word-category" id="word-category"></div>
       <div class="word-row" id="word-row"></div>
       <div id="streamer-answer" class="streamer-answer" style="display:none;"></div>
+      <button id="hint-btn" class="hint-btn" style="display:none;" onclick="requestHint()">💡 Hint (Donor)</button>
       <div class="keyboard" id="keyboard"></div>
     </div>
   </div>
@@ -1447,15 +1471,34 @@ function checkDonorStatus() {
     .then(res => res.json())
     .then(data => {
       const avatar = document.getElementById('profile-avatar');
+      const hintBtn = document.getElementById('hint-btn');
       if (data.isDonor && avatar) {
         avatar.classList.add('donor');
       } else if (avatar) {
         avatar.classList.remove('donor');
       }
+      // Show hint button for donors
+      if (data.isDonor && hintBtn) {
+        hintBtn.style.display = 'block';
+      } else if (hintBtn) {
+        hintBtn.style.display = 'none';
+      }
     })
     .catch(e => {
       console.error('Error checking donor status:', e);
     });
+}
+
+function requestHint() {
+  if (!gameWs || gameWs.readyState !== WebSocket.OPEN) {
+    alert('Not connected to game server');
+    return;
+  }
+
+  gameWs.send(JSON.stringify({
+    type: 'hint',
+    game: 'hangman'
+  }));
 }
 
 function toggleProfileMenu() {

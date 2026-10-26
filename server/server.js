@@ -3126,8 +3126,8 @@ wss.on('connection', (ws) => {
     }
 
     // Server-authoritative game messages ('game-list', 'game-state', 'game-new',
-    // 'game-pause'/'game-resume'/'game-end', 'game-join-room', 'guess').
-    if (['game-list', 'game-state', 'game-new', 'game-pause', 'game-resume', 'game-end', 'game-join-room', 'guess'].includes(data.type)) {
+    // 'game-pause'/'game-resume'/'game-end', 'game-join-room', 'guess', 'hint').
+    if (['game-list', 'game-state', 'game-new', 'game-pause', 'game-resume', 'game-end', 'game-join-room', 'guess', 'hint'].includes(data.type)) {
       try {
         const payloads = gameRegistry.handleMessage(ws, data);
         if (Array.isArray(payloads)) {
