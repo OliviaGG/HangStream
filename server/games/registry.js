@@ -298,9 +298,11 @@ class GameRegistry {
         return { donorOnly: true, error: 'Hint is a donor-only command' };
       }
 
-      // Process hint command for Hangman only
+      // Process hint command for Hangman, Wordle, and Searchle
       const byGame = this.rooms.get(streamerId || 'public');
-      const game = byGame && byGame.get('hangman');
+      
+      // Try Hangman first
+      let game = byGame && byGame.get('hangman');
       if (game && game.status === 'active' && game.revealHint) {
         const info = {
           platform,
@@ -313,6 +315,37 @@ class GameRegistry {
         const result = game.revealHint(info);
         return result;
       }
+
+      // Try Wordle
+      game = byGame && byGame.get('wordle');
+      if (game && game.status === 'active' && game.revealHint) {
+        const info = {
+          platform,
+          username: playerInfo.username || playerInfo.user || 'viewer',
+          displayName: playerInfo.displayName || playerInfo.username || playerInfo.user || 'viewer',
+          platformUserId: playerInfo.platformUserId || playerInfo.userId || null,
+          avatar: playerInfo.avatar || null,
+          id: playerInfo.id || null,
+        };
+        const result = game.revealHint(info);
+        return result;
+      }
+
+      // Try Searchle
+      game = byGame && byGame.get('searchle');
+      if (game && game.status === 'active' && game.revealHint) {
+        const info = {
+          platform,
+          username: playerInfo.username || playerInfo.user || 'viewer',
+          displayName: playerInfo.displayName || playerInfo.username || playerInfo.user || 'viewer',
+          platformUserId: playerInfo.platformUserId || playerInfo.userId || null,
+          avatar: playerInfo.avatar || null,
+          id: playerInfo.id || null,
+        };
+        const result = await game.revealHint(info);
+        return result;
+      }
+
       return null;
     }
 
@@ -465,8 +498,8 @@ class GameRegistry {
           return [{ type: 'error', error: 'donor_only', message: 'Hint is a donor-only feature' }];
         }
 
-        // Only Hangman supports hints
-        if (game.slug !== 'hangman' || !game.revealHint) {
+        // Only Hangman, Wordle, and Searchle support hints
+        if (!game.revealHint) {
           return [{ type: 'error', error: 'not_supported', message: 'Hints not supported for this game' }];
         }
 
@@ -482,6 +515,12 @@ class GameRegistry {
           avatar: data.avatar || (ws.viewer && ws.viewer.avatar) || null,
           id: ws.viewer && ws.viewer.id || null,
         };
+
+        // Searchle is async
+        if (game.slug === 'searchle') {
+          return game.revealHint(info)
+            .then((result) => [{ type: 'guess-result', game: game.slug, ...result }]);
+        }
 
         const result = game.revealHint(info);
         return [{ type: 'guess-result', game: game.slug, ...result }];

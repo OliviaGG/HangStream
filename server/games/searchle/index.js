@@ -255,6 +255,42 @@ class SearchleGame extends Game {
     };
   }
 
+  /** Reveal a word with better ranking (donor perk). */
+  async revealHint(playerInfo = {}) {
+    if (this.status !== 'active') {
+      return { accepted: false, result: 'not_active', error: 'Round is not active' };
+    }
+    if (!this.isReady()) {
+      return { accepted: false, result: 'not_ready', error: 'Searchle model not ready' };
+    }
+    if (!this.sessionId) {
+      return { accepted: false, result: 'not_ready', error: 'Round is still opening' };
+    }
+
+    // For Searchle, we'll return a placeholder - the actual implementation
+    // would need the ranker to support hint generation
+    // For now, we'll suggest they use the existing best rank info
+    const entry = {
+      type: 'hint',
+      message: 'Try words related to the same topic as your best guess',
+      bestRank: this.bestRank,
+      player: playerInfo.displayName || playerInfo.username || 'viewer',
+      platform: playerInfo.platform || 'web',
+      time: Date.now(),
+    };
+    this.wordHistory.unshift(entry);
+    if (this.wordHistory.length > 200) this.wordHistory.length = 200;
+
+    this.emit('guess', entry);
+
+    return { 
+      accepted: true, 
+      result: 'hint_revealed', 
+      hint: 'Try words related to the same topic as your best guess',
+      bestRank: this.bestRank 
+    };
+  }
+
   getState() {
     const base = super.getState();
     return {

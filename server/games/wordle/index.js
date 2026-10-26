@@ -169,6 +169,56 @@ class WordleGame extends Game {
     };
   }
 
+  /** Reveal a letter in the correct position (donor perk). */
+  revealHint(playerInfo = {}) {
+    if (this.status !== 'active') {
+      return { accepted: false, result: 'not_active', error: 'Round is not active' };
+    }
+
+    // Find unrevealed positions (where we haven't guessed the correct letter yet)
+    const answer = this.answer.split('');
+    const unrevealedPositions = [];
+    
+    for (let i = 0; i < answer.length; i++) {
+      let revealed = false;
+      // Check if this position has been revealed in any guess
+      for (const guess of this.guesses) {
+        if (guess.feedback[i] === 'correct') {
+          revealed = true;
+          break;
+        }
+      }
+      if (!revealed) {
+        unrevealedPositions.push(i);
+      }
+    }
+
+    if (unrevealedPositions.length === 0) {
+      return { accepted: false, result: 'no_hint', error: 'All positions already revealed' };
+    }
+
+    // Pick a random unrevealed position
+    const randomIndex = Math.floor(Math.random() * unrevealedPositions.length);
+    const position = unrevealedPositions[randomIndex];
+    const letter = answer[position];
+
+    // Create a hint entry showing which letter is correct at which position
+    const entry = {
+      type: 'hint',
+      position,
+      letter,
+      player: playerInfo.displayName || playerInfo.username || 'viewer',
+      platform: playerInfo.platform || 'web',
+      time: Date.now(),
+    };
+    this.wordHistory.unshift(entry);
+    if (this.wordHistory.length > 200) this.wordHistory.length = 200;
+
+    this.emit('guess', entry);
+
+    return { accepted: true, result: 'hint_revealed', position, letter, hint: `Position ${position + 1} is "${letter}"` };
+  }
+
   getState() {
     const base = super.getState();
     return {
