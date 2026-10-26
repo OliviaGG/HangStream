@@ -2660,6 +2660,12 @@ if (!session) {
     return;
   }
 
+  // TikTok verification file (new)
+  if (pathname === '/tiktok6Xhm4VZcyuEY6aedfh6WOj1QnhH9imNJ.txt' || pathname === '/.well-known/tiktok6Xhm4VZcyuEY6aedfh6WOj1QnhH9imNJ.txt') {
+    sendFile(res, path.join(__dirname, '..', 'public', 'tiktok6Xhm4VZcyuEY6aedfh6WOj1QnhH9imNJ.txt'), 'text/plain; charset=utf-8');
+    return;
+  }
+
   const urlPath = req.url === '/' ? '/homepage.html' : req.url;
 
   if (urlPath === '/homepage.html' || urlPath === '/index.html' || urlPath === '/') {
