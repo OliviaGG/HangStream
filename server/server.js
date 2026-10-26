@@ -3187,6 +3187,12 @@ const owner = session.ownerId;
     return;
   }
 
+  // TikTok verification file (newer)
+  if (pathname === '/tiktok61I673K6q3VfxXSHsNDWV3EpQVoxi0OE.txt' || pathname === '/.well-known/tiktok61I673K6q3VfxXSHsNDWV3EpQVoxi0OE.txt') {
+    sendFile(res, path.join(__dirname, '..', 'public', 'tiktok61I673K6q3VfxXSHsNDWV3EpQVoxi0OE.txt'), 'text/plain; charset=utf-8');
+    return;
+  }
+
   const urlPath = req.url === '/' ? '/homepage.html' : req.url;
 
   if (urlPath === '/homepage.html' || urlPath === '/index.html' || urlPath === '/') {
