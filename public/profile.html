@@ -1,18 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PPSHEVKZK8"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-PPSHEVKZK8');
-  </script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Viewer Profile - HangStream</title>
+  <title>Profile - HangStream</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -32,6 +25,7 @@
       --good: #25c27a;
       --warning: #ffbe55;
       --bad: #ff4d4d;
+      --danger: #ff4d4d;
       --glass: rgba(255,255,255,0.05);
       --radius: 24px;
       --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
@@ -51,12 +45,13 @@
       --glass: rgba(0,0,0,0.04);
     }
 
-    * { box-sizing: border-box; }
-    html, body { min-height: 100%; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      margin: 0;
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      min-height: 100vh;
+      background: var(--bg);
       color: var(--text);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       background:
         radial-gradient(circle at top left, rgba(255, 77, 109, 0.15), transparent 28%),
         radial-gradient(circle at top right, rgba(124, 92, 255, 0.12), transparent 24%),
@@ -72,17 +67,29 @@
         linear-gradient(180deg, #f8fafc, #ffffff);
     }
 
-    .page {
-      max-width: 800px;
+    .container {
+      max-width: 1000px;
       margin: 0 auto;
-      padding: 32px 20px 56px;
+      padding: 40px 20px;
     }
 
     .header {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      margin-bottom: 32px;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .header-left h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      letter-spacing: 0.02em;
     }
 
     .back-link {
@@ -94,786 +101,475 @@
 
     .back-link:hover { color: var(--text); }
 
-    .theme-toggle {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      background: var(--panel);
-      border: 1px solid var(--panel-border);
-      color: var(--muted);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      transition: all 0.2s;
-    }
-
-    .theme-toggle:hover {
-      color: var(--text);
-      border-color: var(--accent);
-    }
-
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--panel-border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(18px);
-      padding: 32px;
-    }
-
     .profile-header {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 40px;
+      margin-bottom: 30px;
       display: flex;
-      align-items: center;
-      gap: 20px;
-      margin-bottom: 32px;
+      gap: 30px;
+      align-items: flex-start;
     }
 
-    .avatar {
-      width: 80px;
-      height: 80px;
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      border-radius: 20px;
+    .profile-avatar-large {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: var(--accent);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 32px;
-      color: white;
+      font-size: 48px;
       font-weight: 700;
+      color: white;
+      flex-shrink: 0;
     }
 
-    .profile-info h1 {
-      margin: 0 0 8px;
-      font-size: 28px;
-      font-weight: 800;
-    }
-
-    .profile-info .provider {
-      color: var(--muted);
-      font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-    }
-
-    .connected-accounts {
-      margin-top: 24px;
-    }
-
-    .account-item {
-      background: rgba(255, 255, 255, 0.035);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 12px;
-      padding: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-
-    .account-info {
+    .profile-info {
       flex: 1;
     }
 
-    .account-platform {
+    .profile-name {
+      font-size: 32px;
       font-weight: 700;
-      font-size: 16px;
-      margin-bottom: 4px;
+      margin-bottom: 8px;
     }
 
-    .account-username {
-      color: var(--muted);
+    .profile-id {
+      color: var(--text-muted);
       font-size: 14px;
+      margin-bottom: 20px;
     }
 
-    .account-avatar {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      object-fit: cover;
-    }
-
-    .btn-connect {
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 999px;
-      font-family: Inter, system-ui, sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-
-    .btn-connect:hover { opacity: 0.9; }
-
-    .account-id-card {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 16px;
-      padding: 18px;
-      margin-bottom: 28px;
-    }
-
-    .account-id-value {
-      margin: 10px 0 12px;
-      padding: 12px;
-      border-radius: 12px;
-      background: var(--bg-elevated);
-      color: var(--text);
-      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-      font-size: 13px;
-      overflow-wrap: anywhere;
-      border: 1px solid var(--panel-border);
-    }
-
-    .account-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .btn-disconnect {
-      background: rgba(255, 77, 109, 0.1);
-      color: var(--accent);
-      border: 1px solid var(--accent);
+    .donor-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       padding: 8px 16px;
-      border-radius: 999px;
-      font-family: Inter, system-ui, sans-serif;
+      background: color-mix(in srgb, var(--accent) 15%, transparent);
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .donor-badge.hidden { display: none; }
+
+    .section {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 32px;
+      margin-bottom: 30px;
+    }
+
+    .section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+
+    .bio-section {
+      position: relative;
+    }
+
+    .bio-text {
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--text-muted);
+      min-height: 60px;
+    }
+
+    .bio-text.empty {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .edit-bio-btn {
+      position: absolute;
+      top: 0;
+      right: 0;
+      padding: 8px 16px;
+      background: var(--bg-alt);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: var(--text-muted);
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
     }
 
-    .btn-disconnect:hover {
+    .edit-bio-btn:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .bio-edit {
+      display: none;
+      margin-top: 16px;
+    }
+
+    .bio-edit.show { display: block; }
+
+    .bio-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      background: var(--bg-alt);
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+      resize: vertical;
+      margin-bottom: 12px;
+    }
+
+    .bio-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .bio-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .btn-primary {
       background: var(--accent);
       color: white;
     }
 
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 16px;
-      margin-bottom: 32px;
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(255, 77, 109, 0.4);
     }
 
-    .stat-card {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+    .btn-secondary {
+      background: var(--bg-alt);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent);
+    }
+
+    .themes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .theme-card {
+      background: var(--bg-alt);
+      border: 1px solid var(--card-border);
       border-radius: 16px;
       padding: 20px;
-      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
     }
 
-    .stat-label {
-      color: var(--muted);
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
+    .theme-card:hover:not(.locked) {
+      border-color: var(--accent);
+      transform: translateY(-4px);
+    }
+
+    .theme-card.locked {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .theme-card.active {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+    }
+
+    .theme-name {
+      font-weight: 600;
       margin-bottom: 8px;
     }
 
-    .stat-value {
-      font-size: 32px;
-      font-weight: 800;
-      font-family: 'Bebas Neue', sans-serif;
-      letter-spacing: 0.02em;
+    .theme-preview {
+      height: 60px;
+      border-radius: 8px;
+      margin-bottom: 12px;
     }
 
-    .section-title {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 16px;
+    .theme-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
+    }
+
+    .theme-badge.donor {
+      background: color-mix(in srgb, var(--accent) 15%, transparent);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .lock-icon {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      font-size: 18px;
+    }
+
+    .not-signed-in {
+      text-align: center;
+      padding: 80px 20px;
       color: var(--text-muted);
     }
 
-    .scores-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    .not-signed-in h2 {
+      font-size: 28px;
+      margin-bottom: 16px;
+      color: var(--text);
     }
 
-    .score-item {
-      background: rgba(255, 255, 255, 0.035);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 12px;
-      padding: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .score-item strong {
+    .btn-large {
+      padding: 14px 28px;
       font-size: 16px;
-      font-weight: 700;
     }
 
-    .score-item span {
-      color: var(--muted);
-      font-size: 14px;
-    }
+    @media (max-width: 768px) {
+      .profile-header {
+        flex-direction: column;
+        text-align: center;
+      }
 
-    .score-item .points {
-      color: var(--accent);
-      font-size: 18px;
-      font-weight: 800;
-      font-family: 'Bebas Neue', sans-serif;
-    }
+      .profile-avatar-large {
+        margin: 0 auto;
+      }
 
-    .login-prompt {
-      text-align: center;
-      padding: 40px;
-      color: var(--muted);
-    }
-
-    .login-btn {
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      color: white;
-      border: none;
-      padding: 14px 32px;
-      border-radius: 999px;
-      font-family: Inter, system-ui, sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 20px;
-      text-decoration: none;
-      display: inline-block;
-    }
-
-    .login-btn:hover { opacity: 0.9; }
-
-    @media (max-width: 640px) {
-      .page { padding: 20px 16px 40px; }
-      .panel { padding: 24px; }
-      .profile-header { flex-direction: column; text-align: center; }
-      .stats-grid { grid-template-columns: 1fr; }
+      .edit-bio-btn {
+        position: static;
+        margin-top: 12px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="page">
+  <div class="container">
     <div class="header">
-      <div style="display:flex;gap:20px;align-items:center;">
-        <a href="/" class="logo" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--text);text-decoration:none;">HANG<span style="color:var(--accent);">STREAM</span></a>
-        <a href="/viewer" class="back-link">← Back to Game</a>
-      </div>
-      <div style="display:flex;gap:12px;align-items:center;">
-        <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle" aria-label="Toggle theme">🌙</button>
+      <div class="header-left">
+        <a href="/" class="back-link">← Back to Games</a>
+        <h1>Profile</h1>
       </div>
     </div>
 
-    <div class="panel" id="profile-content">
-      <div class="login-prompt">
-        <h2>Sign in to view your profile</h2>
-        <p>Connect your account to track your scores and stats across all games.</p>
-        <button class="login-btn" onclick="startGoogleAuth()">Sign in with Google</button>
+    <div id="signed-in-content" style="display:none;">
+      <div class="profile-header">
+        <div class="profile-avatar-large" id="profile-avatar">?</div>
+        <div class="profile-info">
+          <div class="profile-name" id="profile-name">User</div>
+          <div class="profile-id" id="profile-id">ID: unknown</div>
+          <div class="donor-badge hidden" id="donor-badge">❤️ Donor</div>
+        </div>
+      </div>
+
+      <div class="section bio-section">
+        <div class="section-title">Bio</div>
+        <div class="bio-text" id="bio-text">No bio yet. Click Edit to add one!</div>
+        <button class="edit-bio-btn" onclick="toggleBioEdit()">Edit Bio</button>
+        <div class="bio-edit" id="bio-edit">
+          <textarea class="bio-textarea" id="bio-textarea" placeholder="Tell us about yourself..."></textarea>
+          <div class="bio-actions">
+            <button class="btn btn-primary" onclick="saveBio()">Save</button>
+            <button class="btn btn-secondary" onclick="toggleBioEdit()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Themes</div>
+        <div class="themes-grid" id="themes-grid">
+          <!-- Themes will be loaded here -->
+        </div>
       </div>
     </div>
 
-    <div class="panel" id="connected-accounts-panel" style="display:none; margin-top: 24px;">
-      <div class="section-title">Connected Accounts</div>
-      <div id="accounts-list" class="scores-list"></div>
+    <div id="not-signed-in" class="not-signed-in">
+      <h2>You're not signed in</h2>
+      <p style="margin-bottom: 24px;">Sign in with Google to view and edit your profile.</p>
+      <button class="btn btn-primary btn-large" onclick="window.location.href='/'">Sign in with Google</button>
     </div>
   </div>
 
   <script>
-    let currentProfile = null;
+    const PROFILE_KEY = 'hangstream-viewer-profile';
+    let profile = null;
+    let isDonor = false;
 
-    function getCookieValue(name) {
-      const escaped = String(name || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const match = String(document.cookie || '').match(new RegExp('(?:^|; )' + escaped + '=([^;]*)'));
-      return match ? decodeURIComponent(match[1]) : '';
-    }
+    // Theme definitions
+    const themes = [
+      { id: 'dark', name: 'Dark Mode', bg: '#0e0e12', donor: false },
+      { id: 'light', name: 'Light Mode', bg: '#f8fafc', donor: false },
+      { id: 'neon', name: 'Neon Glow', bg: '#1a0a2e', donor: true },
+      { id: 'sunset', name: 'Sunset', bg: '#2d1b4e', donor: true },
+      { id: 'ocean', name: 'Ocean Blue', bg: '#0a1628', donor: true },
+      { id: 'forest', name: 'Forest Green', bg: '#0a1f0a', donor: true },
+    ];
 
-    function loadViewerProfile() {
+    function loadProfile() {
       try {
-        const saved = localStorage.getItem('hangstream-viewer-profile');
+        const saved = localStorage.getItem(PROFILE_KEY);
         if (saved) {
-          currentProfile = JSON.parse(saved);
-          if (currentProfile && currentProfile.name) {
-            renderProfile();
-            return;
-          }
-        }
-      } catch (e) {}
-
-      // Check if logged in via cookie
-      const viewerId = getCookieValue('viewer_id');
-      if (viewerId) {
-        fetchProfileFromServer(viewerId);
-      } else {
-        showLoginPrompt();
-      }
-    }
-
-    async function fetchProfileFromServer(viewerId) {
-      try {
-        const res = await fetch(`/viewer/profile?id=${encodeURIComponent(viewerId)}`);
-        if (res && res.status === 200) {
-          const profile = await res.json();
+          profile = JSON.parse(saved);
           if (profile && profile.name) {
-            currentProfile = profile;
-            localStorage.setItem('hangstream-viewer-profile', JSON.stringify(profile));
+            document.getElementById('signed-in-content').style.display = 'block';
+            document.getElementById('not-signed-in').style.display = 'none';
             renderProfile();
-            return;
+            loadThemes();
+            return true;
           }
-        }
-      } catch (e) {}
-      showLoginPrompt();
-    }
-
-    async function loadScores() {
-      try {
-        const res = await fetch('/scores', { credentials: 'same-origin' });
-        if (!res || res.status !== 200) return;
-        const data = await res.json();
-
-        // Get current viewer's scores
-        if (currentProfile && currentProfile.id) {
-          const globalScores = data.globalScores || {};
-          const roomScores = data.roomScores || {};
-
-          // Find viewer's global score
-          const globalScore = globalScores[currentProfile.id] || { total: 0 };
-          const roomScore = roomScores[currentProfile.id] || { total: 0 };
-
-          // Get solo stats from profile
-          const soloStats = currentProfile.soloStats || { score: 0, played: 0, won: 0 };
-
-          renderScores({
-            global: globalScore.total || 0,
-            room: roomScore.total || 0,
-            solo: soloStats
-          });
         }
       } catch (e) {
-        console.error('Failed to load scores', e);
+        console.error('Error loading profile:', e);
       }
+      document.getElementById('signed-in-content').style.display = 'none';
+      document.getElementById('not-signed-in').style.display = 'block';
+      return false;
     }
 
     function renderProfile() {
-      const container = document.getElementById('profile-content');
+      if (!profile) return;
 
-      const avatar = currentProfile.avatar || currentProfile.name ? currentProfile.name.charAt(0).toUpperCase() : '?';
-      const provider = currentProfile.provider || 'Google';
+      const avatar = document.getElementById('profile-avatar');
+      const name = document.getElementById('profile-name');
+      const id = document.getElementById('profile-id');
+      const donorBadge = document.getElementById('donor-badge');
+      const bioText = document.getElementById('bio-text');
 
-      container.innerHTML = `
-        <div class="profile-header">
-          <div class="avatar">${avatar}</div>
-          <div class="profile-info">
-            <h1>${escapeHtml(currentProfile.name || 'Anonymous')}</h1>
-            <div class="provider">Connected via ${escapeHtml(provider)}</div>
-          </div>
-        </div>
-        <div class="account-id-card">
-          <div class="section-title" style="margin-bottom:8px;">Account ID</div>
-          <p style="color:var(--muted);font-size:14px;margin:0;">Use this ID if you request profile or score deletion.</p>
-          <div class="account-id-value" id="account-id-value">${escapeHtml(currentProfile.id || '')}</div>
-          <div class="account-actions">
-            <button class="btn-connect" onclick="copyAccountId()">Copy Account ID</button>
-            <button class="btn-disconnect" onclick="requestDataDeletion()">Request Data Deletion</button>
-          </div>
-        </div>
-      `;
+      if (avatar) avatar.textContent = profile.name.charAt(0).toUpperCase();
+      if (name) name.textContent = profile.name;
+      if (id) id.textContent = `ID: ${profile.id || 'unknown'}`;
 
-      // Show connected accounts panel
-      const accountsPanel = document.getElementById('connected-accounts-panel');
-      if (accountsPanel) accountsPanel.style.display = 'block';
-      renderConnectedAccounts();
+      // Check donor status (in a real app, this would come from the server)
+      checkDonorStatus();
 
-      loadScores();
+      // Load bio
+      loadBio();
     }
 
-    function renderScores(scores) {
-      const container = document.getElementById('profile-content');
-
-      const winRate = scores.solo.played > 0 ? Math.round((scores.solo.won / scores.solo.played) * 100) : 0;
-
-      container.innerHTML += `
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-label">Total Score</div>
-            <div class="stat-value">${scores.global.toLocaleString()}</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Current Room</div>
-            <div class="stat-value">${scores.room.toLocaleString()}</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Solo Score</div>
-            <div class="stat-value">${scores.solo.score.toLocaleString()}</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Solo Win Rate</div>
-            <div class="stat-value">${winRate}%</div>
-          </div>
-        </div>
-
-        <div class="section-title">Solo Statistics</div>
-        <div class="scores-list">
-          <div class="score-item">
-            <div>
-              <strong>Games Played</strong>
-              <span>Total solo games</span>
-            </div>
-            <div class="points">${scores.solo.played}</div>
-          </div>
-          <div class="score-item">
-            <div>
-              <strong>Games Won</strong>
-              <span>Successful solves</span>
-            </div>
-            <div class="points">${scores.solo.won}</div>
-          </div>
-          <div class="score-item">
-            <div>
-              <strong>Win Rate</strong>
-              <span>Success percentage</span>
-            </div>
-            <div class="points">${winRate}%</div>
-          </div>
-        </div>
-      `;
-    }
-
-    function renderConnectedAccounts() {
-      const container = document.getElementById('accounts-list');
-      if (!container) return;
-
-      const twitch = currentProfile.twitch;
-      const tiktok = currentProfile.tiktok;
-
-      let html = '';
-
-      // Twitch account
-      if (twitch && twitch.display_name) {
-        html += `
-          <div class="account-item">
-            <img src="${escapeHtml(twitch.profile_image_url || '')}" alt="Twitch" class="account-avatar" onerror="this.style.display='none'">
-            <div class="account-info">
-              <div class="account-platform">🎮 Twitch</div>
-              <div class="account-username">${escapeHtml(twitch.display_name)}</div>
-            </div>
-            <button class="btn-disconnect" onclick="disconnectAccount('twitch')">Disconnect</button>
-          </div>
-        `;
-      } else {
-        html += `
-          <div class="account-item">
-            <div class="account-info">
-              <div class="account-platform">🎮 Twitch</div>
-              <div class="account-username">Not connected</div>
-            </div>
-            <button class="btn-connect" onclick="connectTwitch()">Connect</button>
-          </div>
-        `;
-      }
-
-      // TikTok account
-      if (tiktok && tiktok.display_name) {
-        html += `
-          <div class="account-item">
-            <img src="${escapeHtml(tiktok.avatar_url || '')}" alt="TikTok" class="account-avatar" onerror="this.style.display='none'">
-            <div class="account-info">
-              <div class="account-platform">🎵 TikTok</div>
-              <div class="account-username">${escapeHtml(tiktok.display_name)}</div>
-            </div>
-            <button class="btn-disconnect" onclick="disconnectAccount('tiktok')">Disconnect</button>
-          </div>
-        `;
-      } else {
-        html += `
-          <div class="account-item">
-            <div class="account-info">
-              <div class="account-platform">🎵 TikTok</div>
-              <div class="account-username">Not connected</div>
-            </div>
-            <button class="btn-connect" onclick="connectTiktok()">Connect</button>
-          </div>
-        `;
-      }
-
-      container.innerHTML = html;
-    }
-
-    function connectTwitch() {
+    function checkDonorStatus() {
+      // In a real app, this would fetch from the server
+      // For now, we'll check localStorage
       try {
-        const w = window.open('/auth/twitch', 'hs_twitch_oauth', 'width=600,height=700');
-        if (!w) {
-          alert('Popup blocked. Allow popups for this site to connect Twitch.');
-          return;
-        }
-        w.focus();
-      } catch (e) {
-        console.error('Failed to open Twitch auth popup', e);
-      }
-    }
-
-    function connectTiktok() {
-      try {
-        const w = window.open('/auth/tiktok', 'hs_tiktok_oauth', 'width=600,height=700');
-        if (!w) {
-          alert('Popup blocked. Allow popups for this site to connect TikTok.');
-          return;
-        }
-        w.focus();
-      } catch (e) {
-        console.error('Failed to open TikTok auth popup', e);
-      }
-    }
-
-    function copyAccountId() {
-      const id = currentProfile && currentProfile.id ? currentProfile.id : '';
-      if (!id) return;
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(id).then(() => alert('Account ID copied.'));
-      } else {
-        const textarea = document.createElement('textarea');
-        textarea.value = id;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-        alert('Account ID copied.');
-      }
-    }
-
-    function requestDataDeletion() {
-      const params = new URLSearchParams({
-        topic: 'privacy',
-        viewerId: currentProfile && currentProfile.id ? currentProfile.id : '',
-        name: currentProfile && currentProfile.name ? currentProfile.name : '',
-        provider: currentProfile && currentProfile.provider ? currentProfile.provider : 'google'
-      });
-      window.location.href = `/contact?${params.toString()}`;
-    }
-
-    async function disconnectAccount(platform) {
-      if (!confirm(`Are you sure you want to disconnect your ${platform} account?`)) return;
-
-      try {
-        const res = await fetch('/viewer/disconnect', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({ platform })
-        });
-
-        if (res && res.status === 200) {
-          // Update local profile
-          delete currentProfile[platform];
-          localStorage.setItem('hangstream-viewer-profile', JSON.stringify(currentProfile));
-          renderConnectedAccounts();
-        } else {
-          alert('Failed to disconnect account');
-        }
-      } catch (e) {
-        console.error('Failed to disconnect account', e);
-        alert('Failed to disconnect account');
-      }
-    }
-
-    function showLoginPrompt() {
-      const container = document.getElementById('profile-content');
-      const accountsPanel = document.getElementById('connected-accounts-panel');
-      if (accountsPanel) accountsPanel.style.display = 'none';
-      
-      container.innerHTML = `
-        <div class="login-prompt">
-          <h2>Sign in to view your profile</h2>
-          <p>Connect your account to track your scores and stats across all games.</p>
-          <button class="login-btn" onclick="startGoogleAuth()">Sign in with Google</button>
-        </div>
-      `;
-    }
-
-    function startGoogleAuth() {
-      try {
-        const w = window.open('/auth/google', 'hs_google_oauth', 'width=600,height=700');
-        if (!w) {
-          alert('Popup blocked. Allow popups for this site to sign in.');
-          return;
-        }
-        w.focus();
-      } catch (e) {
-        console.error('Failed to open Google auth popup', e);
-      }
-    }
-
-    // Listen for OAuth result
-    window.addEventListener('message', (ev) => {
-      try {
-        if (!ev || ev.origin !== location.origin) return;
-        const data = ev.data || {};
-        if (data && data.type === 'viewer-login') {
-          const id = data.id || '';
-          const name = data.name || '';
-          if (id && name) {
-            currentProfile = { id, name, provider: data.provider || 'google' };
-            localStorage.setItem('hangstream-viewer-profile', JSON.stringify(currentProfile));
-            renderProfile();
-          }
-        } else if (data && data.type === 'account-connected') {
-          // Reload profile to show new connected account
-          loadViewerProfile();
+        const donorData = localStorage.getItem('hangstream-donor-status');
+        if (donorData) {
+          const donor = JSON.parse(donorData);
+          isDonor = donor.isDonor === true;
         }
       } catch (e) {}
-    });
 
-    function escapeHtml(value) {
-      return String(value).replace(/[&<>\"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-    }
-
-    // Theme toggle with localStorage persistence
-    function toggleTheme() {
-      const currentTheme = document.documentElement.getAttribute('data-theme');
-      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-      document.documentElement.setAttribute('data-theme', newTheme);
-      localStorage.setItem('theme', newTheme);
-      updateThemeToggle(newTheme);
-    }
-
-    function updateThemeToggle(theme) {
-      const toggle = document.getElementById('theme-toggle');
-      if (toggle) {
-        toggle.textContent = theme === 'light' ? '🌙' : '☀️';
+      const donorBadge = document.getElementById('donor-badge');
+      if (isDonor && donorBadge) {
+        donorBadge.classList.remove('hidden');
       }
     }
 
-    // Load saved theme on page load
-    (function() {
-      const savedTheme = localStorage.getItem('theme') || 'dark';
-      document.documentElement.setAttribute('data-theme', savedTheme);
-      updateThemeToggle(savedTheme);
-    })();
+    function loadBio() {
+      try {
+        const bioData = localStorage.getItem('hangstream-bio');
+        if (bioData) {
+          const bio = JSON.parse(bioData);
+          if (bio && bio[profile.id]) {
+            const bioText = document.getElementById('bio-text');
+            if (bioText) {
+              bioText.textContent = bio[profile.id];
+              bioText.classList.remove('empty');
+            }
+          }
+        }
+      } catch (e) {}
+    }
 
-    // Initialize
-    loadViewerProfile();
+    function toggleBioEdit() {
+      const edit = document.getElementById('bio-edit');
+      const textarea = document.getElementById('bio-textarea');
+      const bioText = document.getElementById('bio-text');
+
+      if (edit.classList.contains('show')) {
+        edit.classList.remove('show');
+      } else {
+        textarea.value = bioText.textContent === 'No bio yet. Click Edit to add one!' ? '' : bioText.textContent;
+        edit.classList.add('show');
+        textarea.focus();
+      }
+    }
+
+    function saveBio() {
+      const textarea = document.getElementById('bio-textarea');
+      const bioText = document.getElementById('bio-text');
+      const bio = textarea.value.trim();
+
+      try {
+        let bioData = {};
+        const saved = localStorage.getItem('hangstream-bio');
+        if (saved) {
+          bioData = JSON.parse(saved);
+        }
+        bioData[profile.id] = bio || '';
+        localStorage.setItem('hangstream-bio', JSON.stringify(bioData));
+
+        if (bio) {
+          bioText.textContent = bio;
+          bioText.classList.remove('empty');
+        } else {
+          bioText.textContent = 'No bio yet. Click Edit to add one!';
+          bioText.classList.add('empty');
+        }
+
+        toggleBioEdit();
+      } catch (e) {
+        alert('Failed to save bio');
+      }
+    }
+
+    function loadThemes() {
+      const grid = document.getElementById('themes-grid');
+      if (!grid) return;
+
+      const currentTheme = localStorage.getItem('theme') || 'dark';
+
+      grid.innerHTML = themes.map(theme => `
+        <div class="theme-card ${theme.id === currentTheme ? 'active' : ''} ${theme.donor && !isDonor ? 'locked' : ''}"
+             onclick="${theme.donor && !isDonor ? '' : `selectTheme('${theme.id}')`}">
+          ${theme.donor && !isDonor ? '<span class="lock-icon">🔒</span>' : ''}
+          <div class="theme-preview" style="background: ${theme.bg};"></div>
+          <div class="theme-name">${theme.name}</div>
+          ${theme.donor ? '<span class="theme-badge donor">Donor Only</span>' : ''}
+        </div>
+      `).join('');
+    }
+
+    function selectTheme(themeId) {
+      localStorage.setItem('theme', themeId);
+      document.documentElement.setAttribute('data-theme', themeId === 'light' ? 'light' : 'dark');
+      loadThemes(); // Refresh to show active state
+    }
+
+    // Load profile on page load
+    loadProfile();
   </script>
-
-<footer style="text-align:center;padding:40px 20px 60px;color:var(--text-muted);border-top:1px solid var(--border);margin-top:40px;">
-  <p style="margin:0 0 8px 0;">© 2026 HangStream — Built for streamers, by streamers</p>
-  <div style="display:flex;gap:16px;justify-content:center;align-items:center;">
-    <a href="/privacy" style="color:var(--text-muted);text-decoration:none;">Privacy</a>
-    <a href="/terms" style="color:var(--text-muted);text-decoration:none;">Terms</a>
-    <a href="https://github.com/hangstream/hangstream" target="_blank" rel="noopener" style="color:var(--text-muted);text-decoration:none;">GitHub</a>
-    <a href="#" onclick="openDonationModal();return false;" style="color:var(--text-muted);text-decoration:none;">❤ Donate</a>
-  </div>
-</footer>
-
-<!-- Donation Modal -->
-<div id="donation-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:var(--panel);padding:32px;border-radius:24px;max-width:400px;width:90%;border:1px solid var(--border);">
-    <h2 style="margin:0 0 16px 0;font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text);">❤ Support HangStream</h2>
-    <p style="margin:0 0 20px 0;color:var(--text-muted);">Enter the amount you'd like to donate (minimum $1 USD)</p>
-    
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
-      <button class="donation-amount-btn" data-amount="5" style="padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;transition:all 0.2s;">$5</button>
-      <button class="donation-amount-btn" data-amount="10" style="padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;transition:all 0.2s;">$10</button>
-      <button class="donation-amount-btn" data-amount="20" style="padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;transition:all 0.2s;">$20</button>
-      <button class="donation-amount-btn" data-amount="50" style="padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;transition:all 0.2s;">$50</button>
-      <button class="donation-amount-btn" data-amount="100" style="padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;transition:all 0.2s;">$100</button>
-      <button class="donation-amount-btn" data-amount="custom" style="padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;transition:all 0.2s;">Custom</button>
-    </div>
-    
-    <input type="number" id="donation-amount-input" placeholder="Custom amount" min="1" step="1" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg-elevated);color:var(--text);margin-bottom:16px;">
-    
-    <div style="display:flex;gap:12px;">
-      <button id="cancel-donation" style="flex:1;padding:12px;border-radius:12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);cursor:pointer;font-weight:600;">Cancel</button>
-      <button id="confirm-donation" style="flex:1;padding:12px;border-radius:12px;background:var(--accent);border:none;color:white;cursor:pointer;font-weight:600;">Donate</button>
-    </div>
-  </div>
-</div>
-
-<script>
-let selectedAmount = 5;
-
-function openDonationModal() {
-  const modal = document.getElementById('donation-modal');
-  modal.style.display = 'flex';
-  document.getElementById('donation-amount-input').value = selectedAmount;
-}
-
-function closeDonationModal() {
-  const modal = document.getElementById('donation-modal');
-  modal.style.display = 'none';
-}
-
-document.getElementById('cancel-donation').addEventListener('click', closeDonationModal);
-
-document.querySelectorAll('.donation-amount-btn').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    const amount = e.target.dataset.amount;
-    if (amount === 'custom') {
-      document.getElementById('donation-amount-input').focus();
-    } else {
-      selectedAmount = parseInt(amount);
-      document.getElementById('donation-amount-input').value = selectedAmount;
-    }
-  });
-});
-
-document.getElementById('donation-amount-input').addEventListener('input', (e) => {
-  selectedAmount = parseFloat(e.target.value) || 0;
-});
-
-document.getElementById('confirm-donation').addEventListener('click', async () => {
-  const amount = selectedAmount;
-  if (amount < 1) {
-    alert('Please enter at least $1');
-    return;
-  }
-  
-  const cookies = parseCookies(document.cookie);
-  const viewerId = cookies.viewer_id || null;
-  const viewerName = 'Profile Visitor';
-  
-  try {
-    const configRes = await fetch('/donate/config');
-    const config = await configRes.json();
-    
-    if (!config.publishableKey) {
-      alert('Donations are not currently available. Please check back later.');
-      return;
-    }
-    
-    const res = await fetch('/donate/create-checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount,
-        viewerId,
-        viewerName
-      })
-    });
-    
-    const data = await res.json();
-    
-    if (data.error) {
-      alert('Error: ' + data.error);
-      return;
-    }
-    
-    window.location.href = data.url;
-    closeDonationModal();
-  } catch (error) {
-    console.error('Donation error:', error);
-    alert('Failed to create donation. Please try again.');
-  }
-});
-
-function parseCookies(cookieHeader) {
-  return (cookieHeader || '').split(';').map(s => s.trim()).reduce((acc, cur) => {
-    const [k, v] = cur.split('='); if (k) acc[k] = v; return acc;
-  }, {});
-}
-</script>
-
 </body>
 </html>
