@@ -610,6 +610,44 @@
     ];
 
     function loadProfile() {
+      // Always load from server first (source of truth)
+      loadProfileFromServer();
+    }
+
+    function loadProfileFromServer() {
+      const idParam = new URLSearchParams(window.location.search).get('id');
+      const url = idParam ? `/viewer/profile?id=${encodeURIComponent(idParam)}` : '/viewer/profile';
+
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.id && data.name) {
+            profile = data;
+            // Save to localStorage as cache
+            try {
+              localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+            } catch (e) {
+              console.error('Error saving profile to localStorage:', e);
+            }
+            document.getElementById('signed-in-content').style.display = 'block';
+            document.getElementById('not-signed-in').style.display = 'none';
+            renderProfile();
+            loadThemes();
+            loadLinkedAccounts();
+            updateBadges();
+          } else {
+            // Try localStorage as fallback
+            loadProfileFromLocalStorage();
+          }
+        })
+        .catch(e => {
+          console.error('Error loading profile from server:', e);
+          // Try localStorage as fallback
+          loadProfileFromLocalStorage();
+        });
+    }
+
+    function loadProfileFromLocalStorage() {
       try {
         const saved = localStorage.getItem(PROFILE_KEY);
         if (saved) {
@@ -619,50 +657,20 @@
             document.getElementById('not-signed-in').style.display = 'none';
             renderProfile();
             loadThemes();
-            // Load linked accounts from server
-            loadProfileFromServer();
-            return true;
+            loadLinkedAccounts();
+            updateBadges();
+            return;
           }
         }
       } catch (e) {
-        console.error('Error loading profile:', e);
+        console.error('Error loading profile from localStorage:', e);
       }
-
-      // If not in localStorage, try to load from server using session cookie
-      loadProfileFromServerFallback();
-      return false;
+      // Not signed in
+      document.getElementById('signed-in-content').style.display = 'none';
+      document.getElementById('not-signed-in').style.display = 'block';
     }
 
-    function loadProfileFromServerFallback() {
-      fetch('/viewer/profile')
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.id && data.name) {
-            profile = data;
-            try {
-              localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-            } catch (e) {
-              console.error('Error saving profile:', e);
-            }
-            document.getElementById('signed-in-content').style.display = 'block';
-            document.getElementById('not-signed-in').style.display = 'none';
-            renderProfile();
-            loadThemes();
-            loadLinkedAccounts();
-            updateBadges();
-          } else {
-            document.getElementById('signed-in-content').style.display = 'none';
-            document.getElementById('not-signed-in').style.display = 'block';
-          }
-        })
-        .catch(e => {
-          console.error('Error loading profile from server:', e);
-          document.getElementById('signed-in-content').style.display = 'none';
-          document.getElementById('not-signed-in').style.display = 'block';
-        });
-    }
-
-    function loadProfileFromServer() {
+    function loadLinkedAccountsFromServer() {
       if (!profile || !profile.id) return;
       fetch(`/viewer/profile?id=${encodeURIComponent(profile.id)}`)
         .then(res => res.json())
@@ -679,7 +687,7 @@
           }
         })
         .catch(e => {
-          console.error('Error loading profile from server:', e);
+          console.error('Error loading linked accounts from server:', e);
         });
     }
 
@@ -858,8 +866,8 @@
       if (event.origin !== window.location.origin) return;
       if (event.data && event.data.type === 'account-linked') {
         console.log('Account linked:', event.data);
-        // Reload profile to show linked account
-        loadProfile();
+        // Reload profile from server to show linked account
+        loadProfileFromServer();
       }
     });
 
@@ -889,7 +897,7 @@
       }).then(res => res.json())
         .then(data => {
           if (data.success) {
-            loadLinkedAccounts();
+            loadLinkedAccountsFromServer();
             updateBadges();
           } else {
             alert('Failed to unlink account: ' + (data.error || 'Unknown error'));
