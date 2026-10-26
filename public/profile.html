@@ -160,6 +160,33 @@
       border-color: var(--accent);
     }
 
+    .avatar-input-group {
+      margin-bottom: 16px;
+    }
+
+    .avatar-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .avatar-file-input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--panel-border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .avatar-file-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
     .avatar-actions {
       display: flex;
       gap: 8px;
@@ -690,7 +717,14 @@
 
       <div class="avatar-edit" id="avatar-edit" style="display:none;">
         <div class="section-title">Edit Profile Picture</div>
-        <input type="text" class="avatar-url-input" id="avatar-url-input" placeholder="Paste image URL (e.g., https://example.com/image.png)">
+        <div class="avatar-input-group">
+          <label class="avatar-label">Upload Image</label>
+          <input type="file" class="avatar-file-input" id="avatar-file-input" accept="image/*">
+        </div>
+        <div class="avatar-input-group">
+          <label class="avatar-label">Or paste URL</label>
+          <input type="text" class="avatar-url-input" id="avatar-url-input" placeholder="Paste image URL (e.g., https://example.com/image.png)">
+        </div>
         <div class="avatar-actions">
           <button class="btn btn-primary" onclick="saveAvatar()">Save</button>
           <button class="btn btn-secondary" onclick="toggleAvatarEdit()">Cancel</button>
@@ -1098,59 +1132,129 @@
       const editSection = document.getElementById('avatar-edit');
       if (editSection) {
         editSection.style.display = editSection.style.display === 'none' ? 'block' : 'none';
-        const input = document.getElementById('avatar-url-input');
-        if (input && editSection.style.display === 'block') {
-          input.value = profile.avatar || '';
+        const fileInput = document.getElementById('avatar-file-input');
+        const urlInput = document.getElementById('avatar-url-input');
+        if (editSection.style.display === 'block') {
+          if (fileInput) fileInput.value = '';
+          if (urlInput) urlInput.value = profile.avatar || '';
         }
       }
     }
 
     function saveAvatar() {
-      const input = document.getElementById('avatar-url-input');
-      if (!input) return;
+      const fileInput = document.getElementById('avatar-file-input');
+      const urlInput = document.getElementById('avatar-url-input');
+      
+      // Check if file is selected
+      if (fileInput && fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          alert('Please select an image file');
+          return;
+        }
 
-      const avatarUrl = input.value.trim();
-      if (!avatarUrl) {
-        alert('Please enter an image URL');
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          alert('File too large. Maximum size is 5MB');
+          return;
+        }
+
+        // Upload file
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const base64Data = e.target.result;
+          
+          fetch('/viewer/avatar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              imageData: base64Data,
+              fileName: file.name
+            })
+          }).then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                profile.avatar = data.url;
+                
+                // Save to localStorage
+                try {
+                  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+                } catch (e) {
+                  console.error('Error saving profile:', e);
+                }
+
+                // Save to server
+                saveProfileToServer();
+                
+                // Update avatar display
+                renderProfile();
+                
+                // Hide edit section
+                toggleAvatarEdit();
+              } else {
+                alert('Failed to upload avatar: ' + (data.error || 'Unknown error'));
+              }
+            })
+            .catch(e => {
+              console.error('Error uploading avatar:', e);
+              alert('Failed to upload avatar');
+            });
+        };
+        reader.readAsDataURL(file);
         return;
       }
 
-      // Basic URL validation
-      try {
-        new URL(avatarUrl);
-      } catch (e) {
-        alert('Please enter a valid URL');
-        return;
+      // Fall back to URL input
+      if (urlInput) {
+        const avatarUrl = urlInput.value.trim();
+        if (!avatarUrl) {
+          alert('Please select a file or enter an image URL');
+          return;
+        }
+
+        // Basic URL validation
+        try {
+          new URL(avatarUrl);
+        } catch (e) {
+          alert('Please enter a valid URL');
+          return;
+        }
+
+        profile.avatar = avatarUrl;
+
+        // Save to localStorage
+        try {
+          localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+        } catch (e) {
+          console.error('Error saving profile:', e);
+        }
+
+        // Save to server
+        saveProfileToServer();
+
+        // Update avatar display
+        renderProfile();
+
+        // Hide edit section
+        toggleAvatarEdit();
       }
+    }
 
-      profile.avatar = avatarUrl;
-
-      // Save to localStorage
-      try {
-        localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-      } catch (e) {
-        console.error('Error saving profile:', e);
-      }
-
-      // Save to server
+    function saveProfileToServer() {
       fetch('/viewer/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profile)
       }).then(res => res.json())
         .then(data => {
-          if (data.success) {
-            // Update avatar display
-            renderProfile();
-            // Hide edit section
-            toggleAvatarEdit();
-          } else {
-            alert('Failed to save avatar: ' + (data.error || 'Unknown error'));
+          if (!data.success) {
+            console.error('Failed to save profile:', data.error);
           }
         })
         .catch(e => {
-          console.error('Error saving avatar:', e);
-          alert('Failed to save avatar');
+          console.error('Error saving profile:', e);
         });
     }
 

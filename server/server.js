@@ -2045,6 +2045,67 @@ const owner = session.ownerId;
     return;
   }
 
+  // Avatar upload endpoint (base64 encoded)
+  if (pathname === '/viewer/avatar' && req.method === 'POST') {
+    const cookies = parseCookies(req.headers.cookie);
+    const sessionViewer = cookies.viewer_id ? decodeURIComponent(cookies.viewer_id) : '';
+    if (!sessionViewer) {
+      res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'not authenticated' }));
+      return;
+    }
+
+    let body = '';
+    req.on('data', (chunk) => body += chunk);
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(body);
+        const { imageData, fileName } = parsed;
+
+        if (!imageData || !fileName) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'no image data' }));
+          return;
+        }
+
+        // Validate file type (images only)
+        const ext = fileName.split('.').pop().toLowerCase();
+        const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        if (!allowedExts.includes(ext)) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'invalid file type' }));
+          return;
+        }
+
+        // Generate unique filename
+        const uniqueFileName = `${sessionViewer}_${Date.now()}.${ext}`;
+        const uploadPath = `${__dirname}/../public/uploads/avatars/${uniqueFileName}`;
+
+        // Ensure upload directory exists
+        const fs = require('fs');
+        const path = require('path');
+        const uploadDir = path.dirname(uploadPath);
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        // Decode base64 and save file
+        const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+        fs.writeFileSync(uploadPath, Buffer.from(base64Data, 'base64'));
+
+        // Return URL
+        const fileUrl = `/uploads/avatars/${uniqueFileName}`;
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: true, url: fileUrl }));
+      } catch (e) {
+        console.error('Error uploading avatar:', e);
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: 'failed to upload file' }));
+      }
+    });
+    return;
+  }
+
   if (pathname === '/viewer/profile' && req.method === 'POST') {
     let body = '';
     req.on('data', (c) => body += c);
