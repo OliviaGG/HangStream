@@ -27,11 +27,26 @@ const { HangmanGame } = require('./hangman');
 const { SpeedScrambleGame } = require('./speedscramble');
 const { SearchleGame } = require('./searchle');
 const { playerKeyFor } = require('./engine');
+const { loadDonations } = require('../storage');
 
 // How long an idle public room survives before it is recycled.
 const ROOM_TTL_MS = 6 * 60 * 60 * 1000;
 // A round with no activity for this long is retired on the next guess.
 const STALE_ROUND_MS = 12 * 60 * 60 * 1000;
+
+/**
+ * Check if a viewer is a donor based on their viewer ID
+ */
+function isDonor(viewerId) {
+  if (!viewerId) return false;
+  try {
+    const donations = loadDonations();
+    return donations.some(donation => donation.viewerId === viewerId);
+  } catch (e) {
+    console.error('Error checking donor status:', e);
+    return false;
+  }
+}
 
 const GAME_FACTORIES = {
   spellingbee: () => new SpellingBeeGame(),
@@ -276,45 +291,56 @@ class GameRegistry {
       displayName: playerInfo.displayName || playerInfo.username || playerInfo.user || 'viewer',
       platformUserId: playerInfo.platformUserId || playerInfo.userId || null,
       avatar: playerInfo.avatar || null,
+      id: playerInfo.id || null, // For donor check
     };
+
+    const viewerIsDonor = isDonor(info.id || info.platformUserId);
+
+    // If donor, split message into multiple guesses (space-separated)
+    // Otherwise, treat as single guess
+    const guesses = viewerIsDonor ? text.split(/\s+/) : [text];
 
     const results = [];
     for (const gameId of Object.keys(GAME_FACTORIES)) {
       const byGame = this.rooms.get(streamerId || 'public');
       const game = byGame && byGame.get(gameId);
       if (!game || game.status !== 'active') continue;
-      // Hangman's floor is 1 (single letters are its native input); every other
-      // game's own minLength already governs.
-      if (text.length < game.minLength) continue;
 
-      let result;
-      if (game.slug === 'searchle') {
-        // Ranking is async; a chat line can't block the chat relay.
-        result = await game.submitGuessAsync(text, info);
-      } else if (game.slug === 'hangman') {
-        // Hangman handles single letters specially - route to guessLetter
-        if (text.length === 1) {
-          result = game.guessLetter(text, info);
+      // Process each guess for this game
+      for (const guess of guesses) {
+        // Hangman's floor is 1 (single letters are its native input); every other
+        // game's own minLength already governs.
+        if (guess.length < game.minLength) continue;
+
+        let result;
+        if (game.slug === 'searchle') {
+          // Ranking is async; a chat line can't block the chat relay.
+          result = await game.submitGuessAsync(guess, info);
+        } else if (game.slug === 'hangman') {
+          // Hangman handles single letters specially - route to guessLetter
+          if (guess.length === 1) {
+            result = game.guessLetter(guess, info);
+          } else {
+            // Full word guess for Hangman
+            result = game.submitWord(guess, info);
+          }
         } else {
-          // Full word guess for Hangman
-          result = game.submitWord(text, info);
+          result = game.submitWord(guess, info);
         }
-      } else {
-        result = game.submitWord(text, info);
-      }
-      if (!result) continue;
-      // Chat guesses that are simply "not a word" are noise; stay quiet on them.
-      if (result.accepted || !['too_short', 'not_a_word', 'incorrect'].includes(result.result)) {
-        results.push({ gameId, ...result });
-      }
-      // Searchle's verdict is only meaningful per-guess, so broadcast it.
-      if (game.slug === 'searchle' && result.accepted) {
-        this.broadcastFn(streamerId || 'public', {
-          type: 'guess-result',
-          game: game.slug,
-          via: 'chat',
-          ...result,
-        });
+        if (!result) continue;
+        // Chat guesses that are simply "not a word" are noise; stay quiet on them.
+        if (result.accepted || !['too_short', 'not_a_word', 'incorrect'].includes(result.result)) {
+          results.push({ gameId, guess, ...result });
+        }
+        // Searchle's verdict is only meaningful per-guess, so broadcast it.
+        if (game.slug === 'searchle' && result.accepted) {
+          this.broadcastFn(streamerId || 'public', {
+            type: 'guess-result',
+            game: game.slug,
+            via: 'chat',
+            ...result,
+          });
+        }
       }
     }
     return results.length ? results : null;

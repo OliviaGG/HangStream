@@ -3251,6 +3251,7 @@ function feedChatToGames(platform, channel, data) {
       displayName: user,
       avatar,
       platformUserId,
+      id: platformUserId, // For donor status check
     }).catch((e) => {
       console.warn('chat guess failed', e && e.message ? e.message : e);
     });
