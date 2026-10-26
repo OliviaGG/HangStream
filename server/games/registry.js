@@ -399,6 +399,11 @@ class GameRegistry {
     // Otherwise, treat as single guess
     const guesses = viewerIsDonor ? text.split(/\s+/) : [text];
 
+    // Log for debugging
+    if (guesses.length > 1) {
+      console.log(`Multi-guess attempt by ${info.username} (donor: ${viewerIsDonor}, id: ${info.id}): ${guesses.join(', ')}`);
+    }
+
     const results = [];
     for (const gameId of Object.keys(GAME_FACTORIES)) {
       const byGame = this.rooms.get(streamerId || 'public');
