@@ -883,7 +883,7 @@
       const height = 600;
       const left = (window.screen.width - width) / 2;
       const top = (window.screen.height - height) / 2;
-      const authUrl = '/oauth?redirect_uri=' + encodeURIComponent(window.location.origin + '/auth/tiktok/callback');
+      const authUrl = '/oauth?is_viewer=true';
       window.open(authUrl, 'tiktokAuth', `width=${width},height=${height},left=${left},top=${top}`);
     }
 

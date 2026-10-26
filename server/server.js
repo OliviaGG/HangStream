@@ -796,10 +796,9 @@ const server = http.createServer((req, res) => {
 
   // OAuth entry: redirect to TikTok
   if (pathname === '/oauth') {
-    const redirectUriParam = reqUrl.searchParams.get('redirect_uri');
-    const isViewerLinking = redirectUriParam && redirectUriParam.includes('/auth/tiktok/callback');
+    const isViewer = reqUrl.searchParams.get('is_viewer') === 'true';
 
-    if (!isViewerLinking) {
+    if (!isViewer) {
       // Streamer linking - requires owner session
       const session = readOwnerSession(req);
       if (!session) {
@@ -814,14 +813,16 @@ const server = http.createServer((req, res) => {
       return;
     }
     const state = crypto.randomBytes(16).toString('hex');
+    // Add is_viewer flag to state for callback
+    const stateWithFlag = isViewer ? state + '|viewer' : state;
     // set state cookie
     res.setHeader('Set-Cookie', `csrfState=${state}; HttpOnly; SameSite=Lax; Path=/; Max-Age=600`);
     const authUrl = new URL('https://www.tiktok.com/v2/auth/authorize/');
     authUrl.searchParams.set('client_key', CLIENT_KEY);
     authUrl.searchParams.set('scope', 'user.info.basic');
     authUrl.searchParams.set('response_type', 'code');
-    authUrl.searchParams.set('redirect_uri', redirectUriParam || REDIRECT_URI);
-    authUrl.searchParams.set('state', state);
+    authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
+    authUrl.searchParams.set('state', stateWithFlag);
     res.writeHead(302, { Location: authUrl.toString() });
     res.end();
     return;
@@ -960,18 +961,32 @@ if (!session) {
       return;
     }
 
-    if (!state || cookies.csrfState !== state) {
+    // Extract viewer flag from state (format: csrfState|viewer)
+    let isViewer = false;
+    let stateOnly = state;
+    if (state && state.includes('|viewer')) {
+      isViewer = true;
+      stateOnly = state.replace('|viewer', '');
+    }
+
+    if (!stateOnly || cookies.csrfState !== stateOnly) {
   res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
   res.end('Invalid state (possible CSRF)');
   return;
 }
 
-const session = readOwnerSession(req);
-if (!session) {
-  res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
-  res.end('Please log in with Google before connecting TikTok.');
-  return;
-}
+    // If viewer, redirect to viewer TikTok callback handler
+    if (isViewer) {
+      // Continue to viewer linking logic below
+    } else {
+      // Streamer linking - requires owner session
+      const session = readOwnerSession(req);
+      if (!session) {
+        res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Please log in with Google before connecting TikTok.');
+        return;
+      }
+    }
 
     if (!code) {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -1012,6 +1027,67 @@ if (!session) {
       tokenRes.on('end', () => {
         try {
           const parsed = JSON.parse(body);
+          
+          if (isViewer) {
+            // Viewer linking - link to their profile
+            const accessToken = parsed.access_token;
+            const openId = parsed.open_id;
+            if (!accessToken || !openId) throw new Error('Missing access token or open_id');
+
+            // Get user info
+            const userReq = https.request('https://open-api.tiktok.com/oauth/v2/user/info/', {
+              method: 'GET',
+              headers: { 'Authorization': `Bearer ${accessToken}` },
+            }, (userRes) => {
+              let userBody = '';
+              userRes.on('data', (chunk) => userBody += chunk);
+              userRes.on('end', () => {
+                try {
+                  const userProfile = JSON.parse(userBody);
+                  const userData = userProfile.data || {};
+                  const username = userData.display_name || userData.username || 'TikTok user';
+
+                  // Link to viewer profile
+                  const cookies = parseCookies(req.headers.cookie);
+                  const sessionViewer = cookies.viewer_id ? decodeURIComponent(cookies.viewer_id) : '';
+                  if (!sessionViewer) {
+                    res.writeHead(401, { 'Content-Type': 'text/html; charset=utf-8' });
+                    res.end('<html><body><script>window.close();alert("Please sign in with Google first");</script></body></html>');
+                    return;
+                  }
+
+                  const profiles = loadViewerProfiles();
+                  profiles[sessionViewer] = profiles[sessionViewer] || {};
+                  profiles[sessionViewer].linkedAccounts = profiles[sessionViewer].linkedAccounts || {};
+                  profiles[sessionViewer].linkedAccounts.tiktok = {
+                    openId,
+                    username,
+                    accessToken,
+                    updatedAt: Date.now()
+                  };
+                  profiles[sessionViewer].updatedAt = Date.now();
+                  saveViewerProfiles(profiles);
+
+                  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                  res.end('<html><body><script>window.opener.postMessage({type: "account-linked", platform: "tiktok", username: "' + username + '"}, window.location.origin); window.close();</script></body></html>');
+                } catch (e) {
+                  console.error('Error parsing TikTok user info:', e);
+                  res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
+                  res.end('<html><body><script>window.close();alert("Failed to get TikTok user info");</script></body></html>');
+                }
+              });
+            });
+            userReq.on('error', (err) => {
+              console.error('TikTok user info request failed:', err);
+              res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
+              res.end('<html><body><script>window.close();alert("Failed to get TikTok user info");</script></body></html>');
+            });
+            userReq.write('');
+            userReq.end();
+            return;
+          }
+
+          // Streamer linking - original logic
             const tokens = loadTokens();
             // store response under a generated id
             const id = crypto.randomBytes(8).toString('hex');
