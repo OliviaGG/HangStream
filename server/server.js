@@ -916,10 +916,9 @@ if (!session) {
 
   // Twitch OAuth entry
   if (pathname === '/oauth/twitch') {
-    const redirectUriParam = reqUrl.searchParams.get('redirect_uri');
-    const isViewerLinking = redirectUriParam && redirectUriParam.includes('/auth/twitch/callback');
+    const isViewer = reqUrl.searchParams.get('is_viewer') === 'true';
 
-    if (!isViewerLinking) {
+    if (!isViewer) {
       // Streamer linking - requires owner session
       const session = readOwnerSession(req);
       if (!session) {
@@ -934,13 +933,15 @@ if (!session) {
       return;
     }
     const state = crypto.randomBytes(16).toString('hex');
+    // Add is_viewer flag to state for callback
+    const stateWithFlag = isViewer ? state + '|viewer' : state;
     res.setHeader('Set-Cookie', `csrfState=${state}; HttpOnly; SameSite=Lax; Path=/; Max-Age=600`);
     const authUrl = new URL('https://id.twitch.tv/oauth2/authorize');
     authUrl.searchParams.set('client_id', TWITCH_CLIENT_ID);
-    authUrl.searchParams.set('redirect_uri', redirectUriParam || TWITCH_REDIRECT);
+    authUrl.searchParams.set('redirect_uri', TWITCH_REDIRECT);
     authUrl.searchParams.set('response_type', 'code');
     authUrl.searchParams.set('scope', 'user:read:email');
-    authUrl.searchParams.set('state', state);
+    authUrl.searchParams.set('state', stateWithFlag);
     res.writeHead(302, { Location: authUrl.toString() });
     res.end();
     return;
@@ -1489,18 +1490,31 @@ const owner = session.ownerId;
     const code = params.get('code');
     const state = params.get('state');
     const cookies = parseCookies(req.headers.cookie);
-    if (!state || cookies.csrfState !== state) {
+
+    // Extract viewer flag from state (format: csrfState|viewer)
+    let isViewer = false;
+    let stateOnly = state;
+    if (state && state.includes('|viewer')) {
+      isViewer = true;
+      stateOnly = state.replace('|viewer', '');
+    }
+
+    if (!stateOnly || cookies.csrfState !== stateOnly) {
   res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
   res.end('Invalid state');
   return;
 }
 
-const session = readOwnerSession(req);
-if (!session) {
-  res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
-  res.end('Please log in with Google before connecting Twitch.');
-  return;
-}
+    if (!isViewer) {
+      // Streamer linking - requires owner session
+      const session = readOwnerSession(req);
+      if (!session) {
+        res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Please log in with Google before connecting Twitch.');
+        return;
+      }
+    }
+
     if (!code) { res.writeHead(400); res.end('Missing code'); return; }
     if (!TWITCH_CLIENT_ID || !TWITCH_CLIENT_SECRET) { res.writeHead(500); res.end('Twitch OAuth not configured'); return; }
 
@@ -1512,6 +1526,67 @@ if (!session) {
       tRes.on('end', () => {
         try {
           const parsed = JSON.parse(body);
+          const accessToken = parsed.access_token;
+          if (!accessToken) throw new Error('Missing access token');
+
+          if (isViewer) {
+            // Viewer linking - link to their profile
+            const userReq = https.request('https://api.twitch.tv/helix/users', {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Client-Id': TWITCH_CLIENT_ID
+              },
+            }, (userRes) => {
+              let userBody = '';
+              userRes.on('data', (chunk) => userBody += chunk);
+              userRes.on('end', () => {
+                try {
+                  const userProfile = JSON.parse(userBody);
+                  const userData = userProfile.data && userProfile.data[0] ? userProfile.data[0] : {};
+                  const username = userData.login || userData.display_name || 'Twitch user';
+                  const userId = userData.id;
+
+                  // Link to viewer profile
+                  const sessionViewer = cookies.viewer_id ? decodeURIComponent(cookies.viewer_id) : '';
+                  if (!sessionViewer) {
+                    res.writeHead(401, { 'Content-Type': 'text/html; charset=utf-8' });
+                    res.end('<html><body><script>window.close();alert("Please sign in with Google first");</script></body></html>');
+                    return;
+                  }
+
+                  const profiles = loadViewerProfiles();
+                  profiles[sessionViewer] = profiles[sessionViewer] || {};
+                  profiles[sessionViewer].linkedAccounts = profiles[sessionViewer].linkedAccounts || {};
+                  profiles[sessionViewer].linkedAccounts.twitch = {
+                    userId,
+                    username,
+                    accessToken,
+                    updatedAt: Date.now()
+                  };
+                  profiles[sessionViewer].updatedAt = Date.now();
+                  saveViewerProfiles(profiles);
+
+                  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                  res.end('<html><body><script>window.opener.postMessage({type: "account-linked", platform: "twitch", username: "' + username + '"}, window.location.origin); window.close();</script></body></html>');
+                } catch (e) {
+                  console.error('Error parsing Twitch user info:', e);
+                  res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
+                  res.end('<html><body><script>window.close();alert("Failed to get Twitch user info");</script></body></html>');
+                }
+              });
+            });
+            userReq.on('error', (err) => {
+              console.error('Twitch user info request failed:', err);
+              res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
+              res.end('<html><body><script>window.close();alert("Failed to get Twitch user info");</script></body></html>');
+            });
+            userReq.write('');
+            userReq.end();
+            return;
+          }
+
+          // Streamer linking - original logic
           const tokens = loadTokens();
           const id = crypto.randomBytes(8).toString('hex');
           tokens[id] = { created: Date.now(), resp: parsed, platform: 'twitch', owner: session.ownerId };

@@ -893,7 +893,7 @@
       const height = 600;
       const left = (window.screen.width - width) / 2;
       const top = (window.screen.height - height) / 2;
-      const authUrl = '/oauth/twitch?redirect_uri=' + encodeURIComponent(window.location.origin + '/auth/twitch/callback');
+      const authUrl = '/oauth/twitch?is_viewer=true';
       window.open(authUrl, 'twitchAuth', `width=${width},height=${height},left=${left},top=${top}`);
     }
 
