@@ -40,6 +40,8 @@ class SearchleGame extends Game {
     this.won = false;
     this.target = null;
     this.modelError = null;
+    this.hintsUsed = 0;
+    this.maxHints = 3;
     // Guards against two chat lines racing an async submission.
     this.pendingGuesses = new Set();
   }
@@ -54,6 +56,7 @@ class SearchleGame extends Game {
       this.won = false;
       this.target = null;
       this.pendingGuesses = new Set();
+      this.hintsUsed = 0;
     }
   }
 
@@ -94,6 +97,7 @@ class SearchleGame extends Game {
     this.won = false;
     this.target = null;
     this.pendingGuesses = new Set();
+    this.hintsUsed = 0;
     this.status = 'idle';
 
     // Fire-and-forget: the session id is only needed by the first guess, and
@@ -267,15 +271,24 @@ class SearchleGame extends Game {
       return { accepted: false, result: 'not_ready', error: 'Round is still opening' };
     }
 
+    // Check hint limit
+    if (this.hintsUsed >= this.maxHints) {
+      return { accepted: false, result: 'hint_limit_reached', error: `You have used all ${this.maxHints} hints for this round` };
+    }
+
     // For Searchle, we'll return a placeholder - the actual implementation
     // would need the ranker to support hint generation
     // For now, we'll suggest they use the existing best rank info
+    this.hintsUsed++;
+    
     const entry = {
       type: 'hint',
       message: 'Try words related to the same topic as your best guess',
       bestRank: this.bestRank,
       player: playerInfo.displayName || playerInfo.username || 'viewer',
       platform: playerInfo.platform || 'web',
+      hintsUsed: this.hintsUsed,
+      maxHints: this.maxHints,
       time: Date.now(),
     };
     this.wordHistory.unshift(entry);
@@ -287,7 +300,9 @@ class SearchleGame extends Game {
       accepted: true, 
       result: 'hint_revealed', 
       hint: 'Try words related to the same topic as your best guess',
-      bestRank: this.bestRank 
+      bestRank: this.bestRank,
+      hintsUsed: this.hintsUsed,
+      maxHints: this.maxHints
     };
   }
 

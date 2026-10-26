@@ -44,6 +44,8 @@ class HangmanGame extends Game {
     this.wrongLetters = [];
     this.wrongCount = 0;
     this.solved = false;
+    this.hintsUsed = 0;
+    this.maxHints = 3;
   }
 
   reset() {
@@ -58,6 +60,7 @@ class HangmanGame extends Game {
       this.wrongLetters = [];
       this.wrongCount = 0;
       this.solved = false;
+      this.hintsUsed = 0;
     }
   }
 
@@ -128,6 +131,7 @@ class HangmanGame extends Game {
     this.wrongLetters = [];
     this.wrongCount = 0;
     this.solved = false;
+    this.hintsUsed = 0;
     this.status = 'idle';
     // The answer is stored on `foundWords`-adjacent state only for the server;
     // `getState` masks it, so this never leaves the process.
@@ -218,6 +222,11 @@ class HangmanGame extends Game {
       return { accepted: false, result: 'not_active', error: 'Round is not active' };
     }
 
+    // Check hint limit
+    if (this.hintsUsed >= this.maxHints) {
+      return { accepted: false, result: 'hint_limit_reached', error: `You have used all ${this.maxHints} hints for this round` };
+    }
+
     // Find all unrevealed letters in the word
     const unrevealed = [];
     for (let i = 0; i < this.word.length; i++) {
@@ -238,6 +247,7 @@ class HangmanGame extends Game {
     // Reveal it
     this.guessedLetters.add(letter);
     this.revealed.add(letter);
+    this.hintsUsed++;
 
     const entry = {
       type: 'hint',
@@ -246,6 +256,8 @@ class HangmanGame extends Game {
       platform: playerInfo.platform || 'web',
       wrongCount: this.wrongCount,
       maxWrong: this.maxWrong,
+      hintsUsed: this.hintsUsed,
+      maxHints: this.maxHints,
       time: Date.now(),
     };
     this.wordHistory.unshift(entry);
@@ -261,7 +273,7 @@ class HangmanGame extends Game {
       setImmediate(() => { try { this.emit('round-complete', this.getState()); } catch (_) {} });
     }
 
-    return { accepted: true, result: 'hint_revealed', letter, mask: this.mask(), complete };
+    return { accepted: true, result: 'hint_revealed', letter, mask: this.mask(), complete, hintsUsed: this.hintsUsed, maxHints: this.maxHints };
   }
 
   /**

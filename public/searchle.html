@@ -1291,6 +1291,18 @@ async function handleChatMessage(data) {
     setStatus('Live');
     return;
   }
+  if (data.type === 'guess-result' && data.hintsUsed !== undefined) {
+    // Update hint counter from server response
+    updateHintButton(data.maxHints - data.hintsUsed);
+    return;
+  }
+  if (data.type === 'error' && data.error === 'hint_limit_reached') {
+    // Show error message for hint limit
+    showMessage(data.message || 'You have used all your hints for this round', 'error');
+    // Reset hint counter to show correct state
+    updateHintButton(0);
+    return;
+  }
   if (data.type !== 'chat') return;
 
   const user = data.user || 'viewer';
@@ -1385,6 +1397,7 @@ function checkDonorStatus() {
       const hintBtn = document.getElementById('hint-btn');
       if (data.isDonor && hintBtn) {
         hintBtn.style.display = 'block';
+        updateHintButton(3); // Start with 3 hints
       } else if (hintBtn) {
         hintBtn.style.display = 'none';
       }
@@ -1392,6 +1405,22 @@ function checkDonorStatus() {
     .catch(e => {
       console.error('Error checking donor status:', e);
     });
+}
+
+let hintsRemaining = 3;
+
+function updateHintButton(remaining) {
+  const hintBtn = document.getElementById('hint-btn');
+  if (hintBtn) {
+    hintsRemaining = remaining;
+    if (remaining > 0) {
+      hintBtn.textContent = `💡 Hint (${remaining}/3)`;
+      hintBtn.disabled = false;
+    } else {
+      hintBtn.textContent = '💡 No hints left';
+      hintBtn.disabled = true;
+    }
+  }
 }
 
 function requestHint() {
@@ -1406,10 +1435,18 @@ function requestHint() {
     return;
   }
 
+  if (hintsRemaining <= 0) {
+    alert('You have used all your hints for this round');
+    return;
+  }
+
   chatWS.send(JSON.stringify({
     type: 'hint',
     game: 'searchle'
   }));
+
+  // Decrement hint counter optimistically (will be corrected by server response)
+  updateHintButton(hintsRemaining - 1);
 }
 
 // ── Init ──────────────────────────────────────────────────────

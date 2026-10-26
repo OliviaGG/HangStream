@@ -1480,6 +1480,7 @@ function checkDonorStatus() {
       // Show hint button for donors
       if (data.isDonor && hintBtn) {
         hintBtn.style.display = 'block';
+        updateHintButton(3); // Start with 3 hints
       } else if (hintBtn) {
         hintBtn.style.display = 'none';
       }
@@ -1489,9 +1490,30 @@ function checkDonorStatus() {
     });
 }
 
+let hintsRemaining = 3;
+
+function updateHintButton(remaining) {
+  const hintBtn = document.getElementById('hint-btn');
+  if (hintBtn) {
+    hintsRemaining = remaining;
+    if (remaining > 0) {
+      hintBtn.textContent = `💡 Hint (${remaining}/3)`;
+      hintBtn.disabled = false;
+    } else {
+      hintBtn.textContent = '💡 No hints left';
+      hintBtn.disabled = true;
+    }
+  }
+}
+
 function requestHint() {
   if (!gameWs || gameWs.readyState !== WebSocket.OPEN) {
     alert('Not connected to game server');
+    return;
+  }
+
+  if (hintsRemaining <= 0) {
+    alert('You have used all your hints for this round');
     return;
   }
 
@@ -1499,6 +1521,9 @@ function requestHint() {
     type: 'hint',
     game: 'hangman'
   }));
+
+  // Decrement hint counter optimistically (will be corrected by server response)
+  updateHintButton(hintsRemaining - 1);
 }
 
 function toggleProfileMenu() {
@@ -2269,6 +2294,9 @@ if (state.gameMode === 'online' && streamerNamespace) {
         } else if (data && data.type === 'gift') {
           // Handle gift event for revival
           handleGift(data);
+        } else if (data && data.type === 'guess-result' && data.hintsUsed !== undefined) {
+          // Update hint counter from server response
+          updateHintButton(data.maxHints - data.hintsUsed);
         }
       } catch (e) { console.warn('Invalid WS message', e); }
     });

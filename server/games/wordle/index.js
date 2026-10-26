@@ -37,6 +37,8 @@ class WordleGame extends Game {
     this.guesses = []; // newest-last: { word, player, feedback, time }
     this.guessedWords = new Set();
     this.maxGuesses = MAX_GUESSES;
+    this.hintsUsed = 0;
+    this.maxHints = 3;
   }
 
   reset() {
@@ -45,6 +47,7 @@ class WordleGame extends Game {
       this.answer = '';
       this.guesses = [];
       this.guessedWords = new Set();
+      this.hintsUsed = 0;
     }
   }
 
@@ -71,6 +74,7 @@ class WordleGame extends Game {
     this.answer = answer;
     this.guesses = [];
     this.guessedWords = new Set();
+    this.hintsUsed = 0;
     this.status = 'idle';
     return { success: true, length: WORD_LENGTH };
   }
@@ -175,6 +179,11 @@ class WordleGame extends Game {
       return { accepted: false, result: 'not_active', error: 'Round is not active' };
     }
 
+    // Check hint limit
+    if (this.hintsUsed >= this.maxHints) {
+      return { accepted: false, result: 'hint_limit_reached', error: `You have used all ${this.maxHints} hints for this round` };
+    }
+
     // Find unrevealed positions (where we haven't guessed the correct letter yet)
     const answer = this.answer.split('');
     const unrevealedPositions = [];
@@ -202,6 +211,9 @@ class WordleGame extends Game {
     const position = unrevealedPositions[randomIndex];
     const letter = answer[position];
 
+    // Increment hint counter
+    this.hintsUsed++;
+
     // Create a hint entry showing which letter is correct at which position
     const entry = {
       type: 'hint',
@@ -209,6 +221,8 @@ class WordleGame extends Game {
       letter,
       player: playerInfo.displayName || playerInfo.username || 'viewer',
       platform: playerInfo.platform || 'web',
+      hintsUsed: this.hintsUsed,
+      maxHints: this.maxHints,
       time: Date.now(),
     };
     this.wordHistory.unshift(entry);
@@ -216,7 +230,7 @@ class WordleGame extends Game {
 
     this.emit('guess', entry);
 
-    return { accepted: true, result: 'hint_revealed', position, letter, hint: `Position ${position + 1} is "${letter}"` };
+    return { accepted: true, result: 'hint_revealed', position, letter, hint: `Position ${position + 1} is "${letter}"`, hintsUsed: this.hintsUsed, maxHints: this.maxHints };
   }
 
   getState() {

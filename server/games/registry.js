@@ -313,6 +313,9 @@ class GameRegistry {
           id: playerInfo.id || null,
         };
         const result = game.revealHint(info);
+        if (!result.accepted && result.result === 'hint_limit_reached') {
+          return { hintLimitReached: true, error: result.error };
+        }
         return result;
       }
 
@@ -328,6 +331,9 @@ class GameRegistry {
           id: playerInfo.id || null,
         };
         const result = game.revealHint(info);
+        if (!result.accepted && result.result === 'hint_limit_reached') {
+          return { hintLimitReached: true, error: result.error };
+        }
         return result;
       }
 
@@ -343,6 +349,9 @@ class GameRegistry {
           id: playerInfo.id || null,
         };
         const result = await game.revealHint(info);
+        if (!result.accepted && result.result === 'hint_limit_reached') {
+          return { hintLimitReached: true, error: result.error };
+        }
         return result;
       }
 
@@ -519,10 +528,18 @@ class GameRegistry {
         // Searchle is async
         if (game.slug === 'searchle') {
           return game.revealHint(info)
-            .then((result) => [{ type: 'guess-result', game: game.slug, ...result }]);
+            .then((result) => {
+              if (!result.accepted && result.result === 'hint_limit_reached') {
+                return [{ type: 'error', error: 'hint_limit_reached', message: result.error }];
+              }
+              return [{ type: 'guess-result', game: game.slug, ...result }];
+            });
         }
 
         const result = game.revealHint(info);
+        if (!result.accepted && result.result === 'hint_limit_reached') {
+          return [{ type: 'error', error: 'hint_limit_reached', message: result.error }];
+        }
         return [{ type: 'guess-result', game: game.slug, ...result }];
       }
 
