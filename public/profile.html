@@ -616,6 +616,31 @@
     function loadProfile() {
       // Always load from server first (source of truth)
       loadProfileFromServer();
+
+      // Also check for login data in localStorage (from OAuth success page)
+      try {
+        const loginData = localStorage.getItem('hangstream-viewer-login');
+        if (loginData) {
+          console.log('Found login data in localStorage:', loginData);
+          const parsed = JSON.parse(loginData);
+          if (parsed && parsed.id && parsed.name) {
+            // Create a temporary profile from login data
+            profile = {
+              id: parsed.id,
+              name: parsed.name,
+              provider: parsed.provider,
+              linkedAccounts: {}
+            };
+            localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+            // Clear the login data
+            localStorage.removeItem('hangstream-viewer-login');
+            // Reload profile from server
+            setTimeout(() => loadProfileFromServer(), 500);
+          }
+        }
+      } catch (e) {
+        console.error('Error checking login data:', e);
+      }
     }
 
     function loadProfileFromServer() {
