@@ -622,9 +622,15 @@
       const idParam = new URLSearchParams(window.location.search).get('id');
       const url = idParam ? `/viewer/profile?id=${encodeURIComponent(idParam)}` : '/viewer/profile';
 
+      console.log('Loading profile from server:', url);
+
       fetch(url)
-        .then(res => res.json())
+        .then(res => {
+          console.log('Server response status:', res.status);
+          return res.json();
+        })
         .then(data => {
+          console.log('Profile data from server:', data);
           if (data && data.id && data.name) {
             profile = data;
             // Save to localStorage as cache
@@ -640,6 +646,7 @@
             loadLinkedAccounts();
             updateBadges();
           } else {
+            console.log('No valid profile data, trying localStorage fallback');
             // Try localStorage as fallback
             loadProfileFromLocalStorage();
           }
