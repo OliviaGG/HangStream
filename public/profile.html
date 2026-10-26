@@ -283,20 +283,20 @@
       border-radius: 8px;
       font-size: 13px;
       font-weight: 600;
-      cursor: not-allowed;
+      cursor: pointer;
       background: var(--panel-border);
       color: var(--text-muted);
       position: relative;
-      overflow: hidden;
+      overflow: visible;
     }
 
     .btn-link-disabled::after {
       content: 'Coming Soon';
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) rotate(-45deg);
-      padding: 4px 12px;
+      top: -10px;
+      right: -30px;
+      transform: rotate(45deg);
+      padding: 4px 16px;
       background: var(--warning);
       color: var(--bg);
       font-size: 10px;
@@ -305,6 +305,53 @@
       border-radius: 4px;
       white-space: nowrap;
       z-index: 1;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-link-primary {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      background: var(--accent);
+      color: white;
+      position: relative;
+      overflow: visible;
+    }
+
+    .btn-link-primary:hover {
+      background: var(--accent-2);
+    }
+
+    .btn-link-primary.coming-soon {
+      background: var(--panel-border);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    .btn-link-primary.coming-soon:hover {
+      background: var(--panel-border);
+    }
+
+    .btn-link-primary.coming-soon::after {
+      content: 'Coming Soon';
+      position: absolute;
+      top: -10px;
+      right: -30px;
+      transform: rotate(45deg);
+      padding: 4px 16px;
+      background: var(--warning);
+      color: var(--bg);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      border-radius: 4px;
+      white-space: nowrap;
+      z-index: 1;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
     .badge.viewer {
@@ -831,7 +878,7 @@
               </div>
             </div>
             <div class="linked-account-actions">
-              <button class="btn-link btn-link-disabled">Connect</button>
+              <button class="btn-link btn-link-primary coming-soon" onclick="return false;">Connect</button>
             </div>
           </div>
         `;
@@ -864,7 +911,7 @@
               </div>
             </div>
             <div class="linked-account-actions">
-              <button class="btn-link btn-link-disabled">Connect</button>
+              <button class="btn-link btn-link-primary coming-soon" onclick="return false;">Connect</button>
             </div>
           </div>
         `;
