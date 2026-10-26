@@ -1312,10 +1312,10 @@ function startGoogleAuth() {
   try {
     const w = window.open('/auth/google', 'hs_google_oauth', 'width=600,height=700');
     if (!w) {
-      alert('Popup blocked. Allow popups for this site to sign in.');
-      return;
+      window.location.href = '/auth/google';
+    } else {
+      w.focus();
     }
-    w.focus();
   } catch (e) {
     console.error('Failed to open Google auth popup', e);
   }
