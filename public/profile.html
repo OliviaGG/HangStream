@@ -110,6 +110,59 @@
       display: flex;
       gap: 30px;
       align-items: flex-start;
+      position: relative;
+    }
+
+    .edit-avatar-btn {
+      position: absolute;
+      top: 35px;
+      right: 35px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: var(--panel-border);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .edit-avatar-btn:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    .avatar-edit {
+      margin-bottom: 24px;
+      padding: 20px;
+      background: var(--panel);
+      border-radius: 12px;
+      border: 1px solid var(--panel-border);
+    }
+
+    .avatar-url-input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--panel-border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .avatar-url-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .avatar-actions {
+      display: flex;
+      gap: 8px;
     }
 
     .profile-avatar-large {
@@ -623,6 +676,7 @@
     <div id="signed-in-content" style="display:none;">
       <div class="profile-header">
         <div class="profile-avatar-large" id="profile-avatar">?</div>
+        <button class="edit-avatar-btn" onclick="toggleAvatarEdit()">✏️</button>
         <div class="profile-info">
           <div class="profile-name" id="profile-name">User</div>
           <div class="profile-id" id="profile-id">ID: unknown</div>
@@ -631,6 +685,15 @@
             <span class="badge streamer hidden" id="streamer-badge">🎬 Streamer</span>
             <span class="badge donor hidden" id="donor-badge">❤️ Donor</span>
           </div>
+        </div>
+      </div>
+
+      <div class="avatar-edit" id="avatar-edit" style="display:none;">
+        <div class="section-title">Edit Profile Picture</div>
+        <input type="text" class="avatar-url-input" id="avatar-url-input" placeholder="Paste image URL (e.g., https://example.com/image.png)">
+        <div class="avatar-actions">
+          <button class="btn btn-primary" onclick="saveAvatar()">Save</button>
+          <button class="btn btn-secondary" onclick="toggleAvatarEdit()">Cancel</button>
         </div>
       </div>
 
@@ -811,7 +874,17 @@
       const id = document.getElementById('profile-id');
       const bioText = document.getElementById('bio-text');
 
-      if (avatar) avatar.textContent = profile.name.charAt(0).toUpperCase();
+      if (avatar) {
+        if (profile.avatar) {
+          avatar.style.backgroundImage = `url(${profile.avatar})`;
+          avatar.style.backgroundSize = 'cover';
+          avatar.style.backgroundPosition = 'center';
+          avatar.textContent = '';
+        } else {
+          avatar.style.backgroundImage = '';
+          avatar.textContent = profile.name.charAt(0).toUpperCase();
+        }
+      }
       if (name) name.textContent = profile.name;
       if (id) id.textContent = `ID: ${profile.id || 'unknown'}`;
 
@@ -1018,6 +1091,66 @@
         .catch(e => {
           console.error('Error unlinking account:', e);
           alert('Failed to unlink account');
+        });
+    }
+
+    function toggleAvatarEdit() {
+      const editSection = document.getElementById('avatar-edit');
+      if (editSection) {
+        editSection.style.display = editSection.style.display === 'none' ? 'block' : 'none';
+        const input = document.getElementById('avatar-url-input');
+        if (input && editSection.style.display === 'block') {
+          input.value = profile.avatar || '';
+        }
+      }
+    }
+
+    function saveAvatar() {
+      const input = document.getElementById('avatar-url-input');
+      if (!input) return;
+
+      const avatarUrl = input.value.trim();
+      if (!avatarUrl) {
+        alert('Please enter an image URL');
+        return;
+      }
+
+      // Basic URL validation
+      try {
+        new URL(avatarUrl);
+      } catch (e) {
+        alert('Please enter a valid URL');
+        return;
+      }
+
+      profile.avatar = avatarUrl;
+
+      // Save to localStorage
+      try {
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+      } catch (e) {
+        console.error('Error saving profile:', e);
+      }
+
+      // Save to server
+      fetch('/viewer/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profile)
+      }).then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            // Update avatar display
+            renderProfile();
+            // Hide edit section
+            toggleAvatarEdit();
+          } else {
+            alert('Failed to save avatar: ' + (data.error || 'Unknown error'));
+          }
+        })
+        .catch(e => {
+          console.error('Error saving avatar:', e);
+          alert('Failed to save avatar');
         });
     }
 
