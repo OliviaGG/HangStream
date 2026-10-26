@@ -278,6 +278,16 @@
       background: #d43d3d;
     }
 
+    .coming-soon-badge {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      background: var(--warning);
+      color: var(--bg);
+      cursor: not-allowed;
+    }
+
     .badge.viewer {
       background: color-mix(in srgb, var(--accent-2) 15%, transparent);
       border: 1px solid var(--accent-2);
@@ -802,7 +812,7 @@
               </div>
             </div>
             <div class="linked-account-actions">
-              <button class="btn-link btn-link-primary" onclick="linkTikTok()">Connect</button>
+              <div class="coming-soon-badge">Coming Soon</div>
             </div>
           </div>
         `;
@@ -835,7 +845,7 @@
               </div>
             </div>
             <div class="linked-account-actions">
-              <button class="btn-link btn-link-primary" onclick="linkTwitch()">Connect</button>
+              <div class="coming-soon-badge">Coming Soon</div>
             </div>
           </div>
         `;
