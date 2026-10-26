@@ -70,7 +70,11 @@ function isDonor(viewerId) {
     }
     
     return isDonor;
+  } catch (e) {
+    console.error('Error checking donor status:', e);
+    return false;
   }
+}
 
 const GAME_FACTORIES = {
   spellingbee: () => new SpellingBeeGame(),
@@ -496,203 +500,131 @@ class GameRegistry {
 
     switch (data.type) {
       case 'game-list':
-        return [{ type: 'game-list', games: this.list(), rooms: this._roomSummaries(streamerId) }];
+        return { type: 'game-list', games: this.list() };
 
-      case 'game-state': {
-        const state = this.state(streamerId, data.game);
-        return [{ type: 'game-state', game: data.game, event: 'snapshot', state }];
-      }
+      case 'game-state':
+        const gameId = data.game;
+        if (!this.has(gameId)) return null;
+        return { type: 'game-state', game: gameId, state: this.state(streamerId, gameId) };
 
-      case 'game-new': {
-        const result = this.startRound(streamerId, data.game, {
-          timerSeconds: data.timerSeconds || 0,
-          word: data.word || null,
-          letters: data.letters || null,
-          centerLetter: data.centerLetter || null,
-          category: data.category || null,
-          difficulty: data.difficulty || null,
-        });
-        return [{ type: 'game-action', action: 'game-new', game: data.game, ...result }];
-      }
+      case 'game-new':
+        return this.startRound(streamerId, data.game, data.options || {});
 
       case 'game-pause':
+        const pauseGame = this.room(streamerId, data.game);
+        if (!pauseGame) return null;
+        pauseGame.pause();
+        return { type: 'game-state', game: data.game, state: this._publicState(pauseGame) };
+
       case 'game-resume':
-      case 'game-end': {
-        const game = this.room(streamerId, data.game);
-        if (!game) return [{ type: 'game-action', action: data.type, game: data.game, success: false, error: 'unknown_game' }];
-        const result = data.type === 'game-pause' ? game.pause()
-          : data.type === 'game-resume' ? game.resume()
-            : game.end();
-        return [{ type: 'game-action', action: data.type, game: data.game, ...result }];
-      }
+        const resumeGame = this.room(streamerId, data.game);
+        if (!resumeGame) return null;
+        resumeGame.resume();
+        return { type: 'game-state', game: data.game, state: this._publicState(resumeGame) };
 
-      case 'guess': {
-        const game = this.room(streamerId, data.game);
-        if (!game) return [];
-        if (game.status !== 'active') this.maybeRetire(streamerId, data.game);
-        const info = {
-          platform: data.platform || 'web',
-          username: data.username || (ws.viewer && ws.viewer.name) || 'viewer',
-          displayName: data.displayName || (ws.viewer && ws.viewer.name) || 'viewer',
-          platformUserId: data.platformUserId || (ws.viewer && ws.viewer.id) || null,
-          avatar: data.avatar || (ws.viewer && ws.viewer.avatar) || null,
-          id: ws.viewer && ws.viewer.id || null,
+      case 'game-end':
+        const endGame = this.room(streamerId, data.game);
+        if (!endGame) return null;
+        endGame.end();
+        return { type: 'game-state', game: data.game, state: this._publicState(endGame) };
+
+      case 'game-join-room':
+        const joinRoom = this.room(streamerId, data.game);
+        if (!joinRoom) return null;
+        return { type: 'game-state', game: data.game, state: this._publicState(joinRoom) };
+
+      case 'guess':
+        const guessGame = this.room(streamerId, data.game);
+        if (!guessGame) return null;
+        const playerInfo = {
+          platform: 'web',
+          username: data.username || data.viewerName || 'web',
+          displayName: data.displayName || data.username || data.viewerName || 'web',
+          platformUserId: data.viewerId || null,
+          avatar: data.avatar || null,
+          id: data.viewerId || null,
         };
-        // Hangman is letter-based: a page sending `letter` (or a one-character
-        // `word`) takes its native path and gets a fresh masked board back.
-        if (game.slug === 'hangman' && (data.letter || (data.word && String(data.word).length === 1))) {
-          const letterResult = game.guessLetter(data.letter || data.word, info);
-          return [{ type: 'guess-result', game: game.slug, ...letterResult }];
+        let guessResult;
+        if (guessGame.slug === 'searchle') {
+          guessResult = guessGame.submitGuessAsync(data.guess, playerInfo);
+        } else if (guessGame.slug === 'hangman' && data.guess.length === 1) {
+          guessResult = guessGame.guessLetter(data.guess, playerInfo);
+        } else {
+          guessResult = guessGame.submitWord(data.guess, playerInfo);
         }
-        // Searchle ranks against an embedding model, so its verdict is async.
-        // Returning the promise lets server.js land the reply when it settles.
-        if (game.slug === 'searchle') {
-          return game.submitGuessAsync(data.word, info)
-            .then((result) => [{ type: 'guess-result', game: game.slug, ...result }]);
+        if (!guessResult) return null;
+        // Handle both sync and async results
+        if (typeof guessResult.then === 'function') {
+          return guessResult.then(r => ({ type: 'guess-result', game: data.game, via: 'web', ...r }));
         }
-        // Wordle needs to accept repeat-safe validation before the round check.
-        const result = game.submitWord(data.word, info);
-        const payloads = [{ type: 'guess-result', game: data.game, ...result }];
-        if (game.slug === 'wordle' && !result.accepted && result.result === 'not_active' &&
-            Object.keys(game.foundWords).length >= game.maxGuesses) {
-          payloads.push({ type: 'game-state', game: game.slug, event: 'snapshot', state: this.state(streamerId, game.slug) });
-        }
-        return payloads;
-      }
+        return { type: 'guess-result', game: data.game, via: 'web', ...guessResult };
 
-      case 'hint': {
-        const game = this.room(streamerId, data.game);
-        if (!game) return [{ type: 'error', error: 'game_not_found' }];
-        
-        // Check if donor
-        const viewerId = ws.viewer && ws.viewer.id;
-        const viewerIsDonor = isDonor(viewerId);
+      case 'hint':
+        const hintGame = this.room(streamerId, data.game);
+        if (!hintGame) return null;
+        const hintPlayerInfo = {
+          platform: 'web',
+          username: data.username || data.viewerName || 'web',
+          displayName: data.displayName || data.username || data.viewerName || 'web',
+          platformUserId: data.viewerId || null,
+          avatar: data.avatar || null,
+          id: data.viewerId || null,
+        };
+        const viewerIsDonor = isDonor(hintPlayerInfo.id || hintPlayerInfo.platformUserId);
         if (!viewerIsDonor) {
-          return [{ type: 'error', error: 'donor_only', message: 'Hint is a donor-only feature' }];
+          return { type: 'error', error: 'hint_denied', message: 'Hint is a donor-only command. Visit https://hangstream.me/donate to support the streamer and unlock hints!' };
         }
-
-        // Only Hangman, Wordle, and Searchle support hints
-        if (!game.revealHint) {
-          return [{ type: 'error', error: 'not_supported', message: 'Hints not supported for this game' }];
+        if (!hintGame.revealHint) {
+          return { type: 'error', error: 'hint_not_supported', message: 'This game does not support hints.' };
         }
-
-        if (game.status !== 'active') {
-          return [{ type: 'error', error: 'not_active', message: 'Round is not active' }];
+        const hintResult = hintGame.revealHint(hintPlayerInfo);
+        if (!hintResult.accepted && hintResult.result === 'hint_limit_reached') {
+          return { type: 'error', error: 'hint_limit_reached', message: hintResult.error };
         }
-
-        const info = {
-          platform: data.platform || 'web',
-          username: data.username || (ws.viewer && ws.viewer.name) || 'viewer',
-          displayName: data.displayName || (ws.viewer && ws.viewer.name) || 'viewer',
-          platformUserId: data.platformUserId || (ws.viewer && ws.viewer.id) || null,
-          avatar: data.avatar || (ws.viewer && ws.viewer.avatar) || null,
-          id: ws.viewer && ws.viewer.id || null,
-        };
-
-        // Searchle is async
-        if (game.slug === 'searchle') {
-          return game.revealHint(info)
-            .then((result) => {
-              if (!result.accepted && result.result === 'hint_limit_reached') {
-                return [{ type: 'error', error: 'hint_limit_reached', message: result.error }];
-              }
-              return [{ type: 'guess-result', game: game.slug, ...result }];
-            });
-        }
-
-        const result = game.revealHint(info);
-        if (!result.accepted && result.result === 'hint_limit_reached') {
-          return [{ type: 'error', error: 'hint_limit_reached', message: result.error }];
-        }
-        return [{ type: 'guess-result', game: game.slug, ...result }];
-      }
-
-      case 'game-join-room': {
-        ws.owner = ws.owner || streamerId;
-        ws._rooms = ws._rooms || new Set();
-        ws._rooms.add(`${streamerId}:${data.game}`);
-        // Start a fresh round when entering an idle room and nothing is running.
-        const game = this.room(streamerId, data.game);
-        if (game && game.status === 'idle') {
-          // A persisted room resumes on first access after a restart; only
-          // auto-start when there is genuinely nothing to restore.
-          this.restore(streamerId, data.game).then((restored) => {
-            if (restored && restored.status === 'idle') this.startRound(streamerId, data.game, {});
-          }).catch(() => {
-            this.startRound(streamerId, data.game, {});
-          });
-        }
-        return [{
-          type: 'game-joined',
-          game: data.game,
-          streamerId,
-          state: this.state(streamerId, data.game),
-        }];
-      }
+        return { type: 'guess-result', game: data.game, via: 'web', ...hintResult };
 
       default:
         return null;
     }
   }
 
-  _roomSummaries(streamerId) {
-    const out = {};
-    for (const gameId of Object.keys(GAME_FACTORIES)) {
-      const game = this.state(streamerId, gameId);
-      out[gameId] = game
-        ? { status: game.status, foundCount: game.foundCount, isDaily: game.isDaily }
-        : null;
-    }
-    return out;
-  }
-
-  // ── Lifecycle ────────────────────────────────────────────────────
-
   /**
-   * Restore a persisted room into memory (called on first access after a
-   * restart). Rounds resume paused, so clients explicitly opt back in.
+   * Sweep idle rooms every ROOM_TTL_MS.
    */
-  async restore(streamerId, gameId) {
-    const game = this.room(streamerId, gameId);
-    if (!game || game.status !== 'idle' || Object.keys(game.foundWords).length > 0) return game;
-    const saved = await rounds.loadRound(streamerId || 'public', gameId);
-    if (saved) {
-      game.restoreState(saved);
-      this.broadcastFn(streamerId || 'public', {
-        type: 'game-state',
-        game: game.slug,
-        event: 'restored',
-        state: this._publicState(game),
-      });
-    }
-    return game;
-  }
-
-  startSweeper() {
+  startSweep() {
     if (this.sweepInterval) return;
     this.sweepInterval = setInterval(() => {
-      const cutoff = Date.now() - ROOM_TTL_MS;
-      for (const [streamerId, byGame] of Array.from(this.rooms.entries())) {
-        if (streamerId === 'public') continue; // keep the demo/default room warm
-        let empty = true;
-        for (const [gameId, game] of byGame) {
-          const last = this.lastActivity.get(`${streamerId}:${gameId}`) || 0;
-          if (last >= cutoff || game.status === 'active') { empty = false; break; }
+      const now = Date.now();
+      for (const [key, last] of this.lastActivity.entries()) {
+        if (now - last > ROOM_TTL_MS) {
+          const [streamerId, gameId] = key.split(':');
+          const byGame = this.rooms.get(streamerId);
+          if (byGame) {
+            byGame.delete(gameId);
+            if (byGame.size === 0) {
+              this.rooms.delete(streamerId);
+            }
+          }
+          this.lastActivity.delete(key);
         }
-        if (empty) this.rooms.delete(streamerId);
       }
-    }, 10 * 60 * 1000);
-    if (this.sweepInterval.unref) this.sweepInterval.unref();
+    }, ROOM_TTL_MS);
+  }
+
+  stopSweep() {
+    if (this.sweepInterval) {
+      clearInterval(this.sweepInterval);
+      this.sweepInterval = null;
+    }
   }
 }
 
-/** Daily puzzles roll over on America/Edmonton, matching Word Tycoon. */
-function getDailyDate(now = new Date()) {
-  try {
-    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Edmonton' }).format(now);
-  } catch (_) {
-    return now.toISOString().slice(0, 10);
-  }
+function getDailyDate() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
-module.exports = { GameRegistry, getDailyDate, GAME_META, GAME_FACTORIES, playerKeyFor };
+module.exports = GameRegistry;
