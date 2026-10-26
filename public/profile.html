@@ -278,14 +278,33 @@
       background: #d43d3d;
     }
 
-    .coming-soon-badge {
+    .btn-link-disabled {
       padding: 8px 16px;
       border-radius: 8px;
       font-size: 13px;
       font-weight: 600;
+      cursor: not-allowed;
+      background: var(--panel-border);
+      color: var(--text-muted);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-link-disabled::after {
+      content: 'Coming Soon';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-45deg);
+      padding: 4px 12px;
       background: var(--warning);
       color: var(--bg);
-      cursor: not-allowed;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      border-radius: 4px;
+      white-space: nowrap;
+      z-index: 1;
     }
 
     .badge.viewer {
@@ -812,7 +831,7 @@
               </div>
             </div>
             <div class="linked-account-actions">
-              <div class="coming-soon-badge">Coming Soon</div>
+              <button class="btn-link btn-link-disabled">Connect</button>
             </div>
           </div>
         `;
@@ -845,7 +864,7 @@
               </div>
             </div>
             <div class="linked-account-actions">
-              <div class="coming-soon-badge">Coming Soon</div>
+              <button class="btn-link btn-link-disabled">Connect</button>
             </div>
           </div>
         `;
