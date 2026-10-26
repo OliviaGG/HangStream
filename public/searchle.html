@@ -213,6 +213,113 @@ body {
 
 .btn.ghost:hover { color: var(--text); background: color-mix(in srgb, var(--panel) 80%, transparent); }
 
+/* ── Profile dropdown ───────────────────────────────────────── */
+.profile-dropdown {
+  position: relative;
+}
+
+.profile-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text-muted);
+  transition: all 0.15s;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.profile-trigger:hover {
+  color: var(--text);
+  border-color: var(--secondary);
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+}
+
+.profile-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+}
+
+.profile-avatar.donor {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 15px var(--accent), 0 0 30px var(--accent-2);
+  animation: donorGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes donorGlow {
+  0% {
+    box-shadow: 0 0 15px var(--accent), 0 0 30px var(--accent-2);
+  }
+  100% {
+    box-shadow: 0 0 20px var(--accent), 0 0 40px var(--accent-2), 0 0 50px var(--accent);
+  }
+}
+
+.profile-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 6px;
+  min-width: 160px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s;
+  z-index: 100;
+}
+
+.profile-menu.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.profile-menu-item {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.profile-menu-item:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.profile-menu-item.danger {
+  color: var(--bad);
+}
+
+.profile-menu-item.danger:hover {
+  background: color-mix(in srgb, var(--bad) 10%, transparent);
+}
+
 /* ── Win banner ────────────────────────────────────────────── */
 .win-banner {
   flex-shrink: 0;
@@ -762,6 +869,18 @@ body.overlay-mode .win-info { font-size: clamp(13px, 1.6vh, 20px); }
       <span class="chip" id="vocab-size">— words</span>
       <span class="chip strong" id="guess-count">0 guesses</span>
       <span class="chip points" id="points-chip" hidden>0 pts</span>
+      <div class="profile-dropdown" id="profile-dropdown" style="display:none;">
+        <div class="profile-trigger" id="profile-trigger" onclick="toggleProfileMenu()">
+          <div class="profile-avatar" id="profile-avatar">?</div>
+          <span class="profile-name" id="profile-name">User</span>
+        </div>
+        <div class="profile-menu" id="profile-menu">
+          <div class="profile-menu-item" onclick="goToProfile()">👤 Profile</div>
+          <div class="profile-menu-item" onclick="goToLeaderboard()">🏆 Leaderboard</div>
+          <div class="profile-menu-item" onclick="signOut()">🚪 Sign out</div>
+        </div>
+      </div>
+      <button id="viewer-login-btn" class="btn ghost">Sign in with Google</button>
       <button class="btn ghost" id="theme-btn" type="button">Dark</button>
       <button class="btn" id="new-game-btn" type="button">New round</button>
     </div>
@@ -1373,6 +1492,7 @@ function unregisterPlayer() {
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('theme-btn')?.addEventListener('click', toggleTheme);
   document.getElementById('new-game-btn')?.addEventListener('click', () => startRound());
+  document.getElementById('viewer-login-btn')?.addEventListener('click', startGoogleAuth);
 
   document.getElementById('guess-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1385,16 +1505,59 @@ document.addEventListener('DOMContentLoaded', () => {
       input.focus();
     }
   });
-
-  // Check donor status for hint button
-  checkDonorStatus();
 });
+
+// ── Google Auth for Searchle ─────────────────────────────────
+function startGoogleAuth() {
+  const width = 500;
+  const height = 600;
+  const left = (window.screen.width - width) / 2;
+  const top = (window.screen.height - height) / 2;
+  const authUrl = '/auth/google';
+  window.open(authUrl, 'googleAuth', `width=${width},height=${height},left=${left},top=${top}`);
+}
+
+window.addEventListener('message', (ev) => {
+  if (!ev || ev.origin !== location.origin) return;
+  const data = ev.data || {};
+  if (data && data.type === 'viewer-login') {
+    const id = data.id || '';
+    const name = data.name || '';
+    if (id && name) {
+      state.viewerId = id;
+      state.viewerName = name;
+      try {
+        localStorage.setItem('hangstream-viewer-profile', JSON.stringify({ id, name, provider: data.provider || 'google' }));
+      } catch (e) {}
+      renderViewerProfile();
+    }
+  }
+});
+
+// Load saved viewer profile on page load
+(function() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('hangstream-viewer-profile') || '{}');
+    if (saved && saved.name) {
+      state.viewerId = saved.id || '';
+      state.viewerName = saved.name || '';
+      renderViewerProfile();
+    }
+  } catch (e) {}
+})();
 
 function checkDonorStatus() {
   fetch('/viewer/is-donor')
     .then(res => res.json())
     .then(data => {
+      const avatar = document.getElementById('profile-avatar');
       const hintBtn = document.getElementById('hint-btn');
+      if (data.isDonor && avatar) {
+        avatar.classList.add('donor');
+      } else if (avatar) {
+        avatar.classList.remove('donor');
+      }
+      // Show hint button for donors
       if (data.isDonor && hintBtn) {
         hintBtn.style.display = 'block';
         updateHintButton(3); // Start with 3 hints
@@ -1406,6 +1569,69 @@ function checkDonorStatus() {
       console.error('Error checking donor status:', e);
     });
 }
+
+function renderViewerProfile() {
+  const loginBtn = document.getElementById('viewer-login-btn');
+  const profileDropdown = document.getElementById('profile-dropdown');
+  const profileAvatar = document.getElementById('profile-avatar');
+  const profileName = document.getElementById('profile-name');
+
+  if (state.viewerName) {
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (profileDropdown) profileDropdown.style.display = 'block';
+    if (profileAvatar) {
+      profileAvatar.textContent = state.viewerName.charAt(0).toUpperCase();
+    }
+    if (profileName) {
+      profileName.textContent = state.viewerName;
+    }
+    checkDonorStatus();
+  } else {
+    if (loginBtn) loginBtn.style.display = 'block';
+    if (profileDropdown) profileDropdown.style.display = 'none';
+  }
+}
+
+function toggleProfileMenu() {
+  const menu = document.getElementById('profile-menu');
+  if (menu) {
+    menu.classList.toggle('show');
+  }
+}
+
+function closeProfileMenu() {
+  const menu = document.getElementById('profile-menu');
+  if (menu) {
+    menu.classList.remove('show');
+  }
+}
+
+function signOut() {
+  state.viewerId = '';
+  state.viewerName = '';
+  state.viewerAvatar = '';
+  try {
+    localStorage.removeItem('hangstream-viewer-profile');
+  } catch (e) {}
+  renderViewerProfile();
+  closeProfileMenu();
+}
+
+function goToProfile() {
+  window.location.href = '/profile';
+}
+
+function goToLeaderboard() {
+  window.location.href = '/leaderboard';
+}
+
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('profile-dropdown');
+  const menu = document.getElementById('profile-menu');
+  if (dropdown && menu && !dropdown.contains(e.target)) {
+    menu.classList.remove('show');
+  }
+});
 
 let hintsRemaining = 3;
 
@@ -1424,11 +1650,6 @@ function updateHintButton(remaining) {
 }
 
 function requestHint() {
-  if (!state.viewerId) {
-    alert('Please sign in to use hints');
-    return;
-  }
-
   // Searchle uses chatWS for game messages
   if (!chatWS || chatWS.readyState !== WebSocket.OPEN) {
     alert('Not connected to game server');
@@ -1454,6 +1675,7 @@ state.gameMode = getGameMode();
 if (isOverlay()) document.body.classList.add('overlay-mode');
 
 applyTheme(localStorage.getItem(getThemeStorageKey()) || 'dark');
+renderViewerProfile();
 resetRoundUI();
 startRound();
 
