@@ -42,17 +42,35 @@ function isDonor(viewerId) {
   try {
     const donations = loadDonations();
     // Check against viewerId (for Google OAuth) and platformUserId (for Twitch/TikTok)
-    return donations.some(donation => 
-      donation.viewerId === viewerId || 
-      donation.viewerId === `google:${viewerId}` || // Google OAuth format
-      donation.viewerId === `twitch:${viewerId}` || // Twitch format
-      donation.viewerId === `tiktok:${viewerId}`    // TikTok format
-    );
-  } catch (e) {
-    console.error('Error checking donor status:', e);
-    return false;
+    // Also check if viewerId contains platform prefix
+    const isDonor = donations.some(donation => {
+      // Direct match
+      if (donation.viewerId === viewerId) return true;
+      
+      // Check with platform prefixes
+      const prefixes = ['google:', 'twitch:', 'tiktok:'];
+      for (const prefix of prefixes) {
+        if (donation.viewerId === `${prefix}${viewerId}`) return true;
+        if (viewerId.startsWith(prefix) && donation.viewerId === viewerId) return true;
+      }
+      
+      // Reverse check: if donation has prefix, try matching without it
+      for (const prefix of prefixes) {
+        if (donation.viewerId.startsWith(prefix)) {
+          const baseId = donation.viewerId.substring(prefix.length);
+          if (baseId === viewerId) return true;
+        }
+      }
+      
+      return false;
+    });
+    
+    if (!isDonor) {
+      console.log(`Donor check failed for viewerId: ${viewerId}`);
+    }
+    
+    return isDonor;
   }
-}
 
 const GAME_FACTORIES = {
   spellingbee: () => new SpellingBeeGame(),
@@ -295,7 +313,12 @@ class GameRegistry {
     if (text.toLowerCase() === '/hint') {
       const viewerIsDonor = isDonor(playerInfo.id || playerInfo.platformUserId);
       if (!viewerIsDonor) {
-        return { donorOnly: true, error: 'Hint is a donor-only command' };
+        // Return a result that will be shown in chat
+        return { 
+          donorOnly: true, 
+          error: 'Hint is a donor-only command. Donate to use hints!',
+          message: 'Hint is a donor-only command. Visit https://hangstream.me/donate to support the streamer and unlock hints!' 
+        };
       }
 
       // Process hint command for Hangman, Wordle, and Searchle
@@ -314,7 +337,7 @@ class GameRegistry {
         };
         const result = game.revealHint(info);
         if (!result.accepted && result.result === 'hint_limit_reached') {
-          return { hintLimitReached: true, error: result.error };
+          return { hintLimitReached: true, error: result.error, message: result.error };
         }
         return result;
       }
@@ -332,7 +355,7 @@ class GameRegistry {
         };
         const result = game.revealHint(info);
         if (!result.accepted && result.result === 'hint_limit_reached') {
-          return { hintLimitReached: true, error: result.error };
+          return { hintLimitReached: true, error: result.error, message: result.error };
         }
         return result;
       }
@@ -350,7 +373,7 @@ class GameRegistry {
         };
         const result = await game.revealHint(info);
         if (!result.accepted && result.result === 'hint_limit_reached') {
-          return { hintLimitReached: true, error: result.error };
+          return { hintLimitReached: true, error: result.error, message: result.error };
         }
         return result;
       }
