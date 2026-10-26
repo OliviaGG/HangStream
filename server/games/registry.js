@@ -41,7 +41,13 @@ function isDonor(viewerId) {
   if (!viewerId) return false;
   try {
     const donations = loadDonations();
-    return donations.some(donation => donation.viewerId === viewerId);
+    // Check against viewerId (for Google OAuth) and platformUserId (for Twitch/TikTok)
+    return donations.some(donation => 
+      donation.viewerId === viewerId || 
+      donation.viewerId === `google:${viewerId}` || // Google OAuth format
+      donation.viewerId === `twitch:${viewerId}` || // Twitch format
+      donation.viewerId === `tiktok:${viewerId}`    // TikTok format
+    );
   } catch (e) {
     console.error('Error checking donor status:', e);
     return false;
