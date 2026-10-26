@@ -3193,6 +3193,28 @@ const owner = session.ownerId;
     return;
   }
 
+  // TikTok webhook handler
+  if (pathname === '/webhooks/tiktok' && req.method === 'POST') {
+    let body = '';
+    req.on('data', (chunk) => body += chunk);
+    req.on('end', () => {
+      try {
+        const webhookData = JSON.parse(body);
+        console.log('TikTok webhook received:', JSON.stringify(webhookData, null, 2));
+
+        // TODO: Process webhook events (e.g., streamer going live, chat messages, etc.)
+        // For now, just log and acknowledge
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        console.error('Error parsing TikTok webhook:', e);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: true })); // Still return 200 to avoid retry spam
+      }
+    });
+    return;
+  }
+
   const urlPath = req.url === '/' ? '/homepage.html' : req.url;
 
   if (urlPath === '/homepage.html' || urlPath === '/index.html' || urlPath === '/') {
