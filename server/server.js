@@ -1856,9 +1856,18 @@ if (!session) {
       res.end(JSON.stringify(p));
       return;
     }
-    // return all profiles
+    // If no ID provided, try to get from session cookie
+    const cookies = parseCookies(req.headers.cookie);
+    const sessionViewer = cookies.viewer_id ? decodeURIComponent(cookies.viewer_id) : '';
+    if (sessionViewer) {
+      const p = profiles[sessionViewer] || null;
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify(p));
+      return;
+    }
+    // No ID and no session - return null
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify(profiles));
+    res.end(JSON.stringify(null));
     return;
   }
 
