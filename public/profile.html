@@ -124,6 +124,22 @@
       font-weight: 700;
       color: white;
       flex-shrink: 0;
+      position: relative;
+    }
+
+    .profile-avatar-large.donor {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 30px var(--accent), 0 0 60px var(--accent-2);
+      animation: donorGlow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes donorGlow {
+      0% {
+        box-shadow: 0 0 30px var(--accent), 0 0 60px var(--accent-2);
+      }
+      100% {
+        box-shadow: 0 0 40px var(--accent), 0 0 80px var(--accent-2), 0 0 100px var(--accent);
+      }
     }
 
     .profile-info {
@@ -522,10 +538,19 @@
           isDonor = data.isDonor === true;
           // Update badge visibility
           const donorBadge = document.getElementById('donor-badge');
+          const avatar = document.getElementById('profile-avatar');
+          
           if (isDonor && donorBadge) {
             donorBadge.classList.remove('hidden');
           } else if (donorBadge) {
             donorBadge.classList.add('hidden');
+          }
+
+          // Add donor glow effect to avatar
+          if (isDonor && avatar) {
+            avatar.classList.add('donor');
+          } else if (avatar) {
+            avatar.classList.remove('donor');
           }
         })
         .catch(e => {

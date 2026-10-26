@@ -417,6 +417,21 @@
     color: white;
   }
 
+  .profile-avatar.donor {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    box-shadow: 0 0 15px var(--accent), 0 0 30px var(--accent-2);
+    animation: donorGlow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes donorGlow {
+    0% {
+      box-shadow: 0 0 15px var(--accent), 0 0 30px var(--accent-2);
+    }
+    100% {
+      box-shadow: 0 0 20px var(--accent), 0 0 40px var(--accent-2), 0 0 50px var(--accent);
+    }
+  }
+
   .profile-name {
     max-width: 120px;
     overflow: hidden;
@@ -1340,10 +1355,27 @@ function renderViewerProfile() {
     if (profileName) {
       profileName.textContent = state.viewerName;
     }
+    checkDonorStatus();
   } else {
     if (loginBtn) loginBtn.style.display = 'block';
     if (profileDropdown) profileDropdown.style.display = 'none';
   }
+}
+
+function checkDonorStatus() {
+  fetch('/viewer/is-donor')
+    .then(res => res.json())
+    .then(data => {
+      const avatar = document.getElementById('profile-avatar');
+      if (data.isDonor && avatar) {
+        avatar.classList.add('donor');
+      } else if (avatar) {
+        avatar.classList.remove('donor');
+      }
+    })
+    .catch(e => {
+      console.error('Error checking donor status:', e);
+    });
 }
 
 function toggleProfileMenu() {
