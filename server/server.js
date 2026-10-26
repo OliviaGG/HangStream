@@ -1010,6 +1010,13 @@ if (!session) {
       redirect_uri: REDIRECT_URI,
     });
 
+    console.log('TikTok OAuth token request:', {
+      endpoint: tokenEndpoint,
+      redirect_uri: REDIRECT_URI,
+      hasCode: !!code,
+      codeLength: code ? code.length : 0
+    });
+
     const reqOptions = new URL(tokenEndpoint);
     const opts = {
       hostname: reqOptions.hostname,
@@ -1025,6 +1032,8 @@ if (!session) {
       let body = '';
       tokenRes.on('data', (chunk) => body += chunk);
       tokenRes.on('end', () => {
+        console.log('TikTok OAuth token response status:', tokenRes.statusCode);
+        console.log('TikTok OAuth token response body:', body);
         try {
           const parsed = JSON.parse(body);
           
