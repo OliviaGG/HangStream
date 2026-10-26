@@ -291,10 +291,11 @@ function buildOwnerLoginSuccessPage(ownerId, ownerName, provider, ownerEmail = '
   </body></html>`;
 }
 
-function buildViewerLoginSuccessPage(viewerId, viewerName, provider) {
+function buildViewerLoginSuccessPage(viewerId, viewerName, provider, redirectUrl = '/') {
   const idJson = JSON.stringify(viewerId || '');
   const nameJson = JSON.stringify(viewerName || '');
   const providerJson = JSON.stringify(provider || '');
+  const redirectJson = JSON.stringify(redirectUrl || '/');
   return `<!doctype html><html><head><meta charset="utf-8"><title>Login successful</title></head><body style="font-family: sans-serif; padding: 24px; background: #0e0e12; color: #f0ede8;">
     <h2>Login successful</h2>
     <p>You may close this window and return to the game.</p>
@@ -304,14 +305,15 @@ function buildViewerLoginSuccessPage(viewerId, viewerName, provider) {
           const viewerId = ${idJson};
           const viewerName = ${nameJson};
           const provider = ${providerJson};
+          const redirectUrl = ${redirectJson};
           if (window.opener) {
             // Popup case: send message to opener
             window.opener.postMessage({ type: 'viewer-login', id: viewerId, name: viewerName, provider: provider }, location.origin);
             setTimeout(() => window.close(), 400);
           } else {
-            // Redirect case: store in localStorage and redirect back to main page
+            // Redirect case: store in localStorage and redirect back to specified page
             localStorage.setItem('hangstream-viewer-login', JSON.stringify({ id: viewerId, name: viewerName, provider: provider }));
-            window.location.href = '/';
+            window.location.href = redirectUrl;
           }
         } catch (e) {
           console.error('Login success error:', e);
@@ -843,6 +845,10 @@ const server = http.createServer((req, res) => {
       sendErrorResponse(res, 500, 'SESSION_SECRET not configured on server.');
       return;
     }
+    // Get redirect URL from query param (default to profile page)
+    const redirectUrl = reqUrl.searchParams.get('redirect') || '/profile.html';
+    // Store redirect URL in state for later retrieval
+    const stateWithRedirect = state + '|' + redirectUrl;
     console.log('Google OAuth: Redirecting to Google with redirect_uri:', GOOGLE_VIEWER_REDIRECT);
     const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     authUrl.searchParams.set('client_id', GOOGLE_CLIENT_ID);
@@ -850,7 +856,7 @@ const server = http.createServer((req, res) => {
     authUrl.searchParams.set('redirect_uri', GOOGLE_VIEWER_REDIRECT);
     authUrl.searchParams.set('response_type', 'code');
     authUrl.searchParams.set('scope', 'openid email profile');
-    authUrl.searchParams.set('state', state);
+    authUrl.searchParams.set('state', stateWithRedirect);
     authUrl.searchParams.set('prompt', 'select_account');
     res.writeHead(302, { Location: authUrl.toString() });
     res.end();
@@ -1070,7 +1076,15 @@ if (!session) {
       res.end('Google OAuth error: ' + error);
       return;
     }
-    if (!state || !verifyCsrfState(state, SESSION_SECRET)) {
+    // Extract redirect URL from state (format: csrfState|redirectUrl)
+    let redirectUrl = '/profile.html';
+    let stateOnly = state;
+    if (state && state.includes('|')) {
+      const parts = state.split('|');
+      stateOnly = parts[0];
+      redirectUrl = parts[1] || '/profile.html';
+    }
+    if (!stateOnly || !verifyCsrfState(stateOnly, SESSION_SECRET)) {
       console.error('Google OAuth: Invalid state or missing state');
       res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Invalid state (possible CSRF)');
@@ -1153,7 +1167,7 @@ if (!session) {
                   if (process.env.NODE_ENV === 'production') viewerCookie.push('Secure');
                   res.setHeader('Set-Cookie', viewerCookie.join('; '));
                   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-                  res.end(buildViewerLoginSuccessPage(viewerId, viewerName, 'google'));
+                  res.end(buildViewerLoginSuccessPage(viewerId, viewerName, 'google', redirectUrl));
               } catch (e) {
                 console.error('Google OAuth: Failed to parse profile:', e);
                 res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });

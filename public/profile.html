@@ -589,7 +589,7 @@
     <div id="not-signed-in" class="not-signed-in">
       <h2>You're not signed in</h2>
       <p style="margin-bottom: 24px;">Sign in with Google to view and edit your profile.</p>
-      <button class="btn btn-primary btn-large" onclick="window.location.href='/'">Sign in with Google</button>
+      <button class="btn btn-primary btn-large" onclick="signInWithGoogle()">Sign in with Google</button>
     </div>
   </div>
 
@@ -598,6 +598,10 @@
     let profile = null;
     let isDonor = false;
     let isStreamer = false;
+
+    function signInWithGoogle() {
+      window.location.href = '/auth/google?redirect=/profile.html';
+    }
 
     // Theme definitions
     const themes = [
