@@ -3036,7 +3036,7 @@ const gameRegistry = new gameLayer.GameRegistry({
     }
   },
 });
-gameRegistry.startSweeper();
+gameRegistry.startSweep();
 
 // ── Next-game vote (server/games/game-vote.js) ──────────────────────
 // Faithful port of Word Tycoon's `gameVote`: a rotation of games, each with a
