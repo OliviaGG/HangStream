@@ -428,6 +428,31 @@
 
         <div id="approval-status" style="margin-bottom:24px;"></div>
 
+        <!-- Connection Status (for approved streamers) -->
+        <div id="connection-status-card" style="display:none;margin-bottom:24px;padding:16px;background:color-mix(in srgb,var(--good)10%,transparent);border:1px solid var(--good);border-radius:12px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div id="connection-indicator" style="width:12px;height:12px;border-radius:50%;background:var(--text-muted);"></div>
+            <div style="flex:1;">
+              <div id="connection-status-text" style="font-weight:600;font-size:14px;color:var(--text);">Not connected</div>
+              <div id="connection-status-sub" style="font-size:12px;color:var(--text-muted);">Connect to start streaming</div>
+            </div>
+            <button class="btn btn-primary" onclick="openConnectModal()" style="padding:8px 16px;">Connect to Stream</button>
+          </div>
+        </div>
+
+        <!-- Connect Modal -->
+        <div id="connect-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:1000;align-items:center;justify-content:center;">
+          <div style="background:var(--panel);border:1px solid var(--panel-border);border-radius:16px;padding:24px;max-width:400px;width:90%;">
+            <h3 style="margin:0 0 16px 0;font-size:20px;">Connect to Stream</h3>
+            <p style="color:var(--text-muted);margin-bottom:20px;">Choose which platform you want to connect to for streaming.</p>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <a class="btn btn-secondary" href="/oauth/twitch" target="_blank" rel="noopener" style="text-align:center;">Connect Twitch</a>
+              <a class="btn btn-secondary" href="/oauth" target="_blank" rel="noopener" style="text-align:center;">Connect TikTok</a>
+            </div>
+            <button class="btn btn-secondary" onclick="closeConnectModal()" style="margin-top:16px;width:100%;">Cancel</button>
+          </div>
+        </div>
+
         <!-- Step 1: Sign in with Google -->
         <div id="step-1" class="setup-step" data-step="1" style="display:block;">
           <div class="step-number">Step 1</div>
@@ -1382,6 +1407,61 @@
         updateThemeToggle(savedTheme);
       })();
 
+      // Connect modal functions
+      function openConnectModal() {
+        const modal = document.getElementById('connect-modal');
+        if (modal) {
+          modal.style.display = 'flex';
+        }
+      }
+
+      function closeConnectModal() {
+        const modal = document.getElementById('connect-modal');
+        if (modal) {
+          modal.style.display = 'none';
+        }
+      }
+
+      // Update connection status (for approved streamers)
+      function updateConnectionStatus() {
+        const statusCard = document.getElementById('connection-status-card');
+        const indicator = document.getElementById('connection-indicator');
+        const statusText = document.getElementById('connection-status-text');
+        const statusSub = document.getElementById('connection-status-sub');
+
+        if (!statusCard) return;
+
+        // Check if approved streamer
+        const isApproved = document.body.getAttribute('data-approved') === 'true';
+        if (!isApproved) {
+          statusCard.style.display = 'none';
+          return;
+        }
+
+        // Show connection status card
+        statusCard.style.display = 'block';
+
+        // Check connection status from localStorage
+        const streamerId = getStreamerId() || '';
+        const hasTwitch = localStorage.getItem(`hangstream-twitch-connected:${streamerId}`) === 'true';
+        const hasTiktok = localStorage.getItem(`hangstream-tiktok-connected:${streamerId}`) === 'true';
+
+        if (hasTwitch || hasTiktok) {
+          // Connected
+          if (indicator) indicator.style.background = 'var(--good)';
+          if (statusText) statusText.textContent = 'Connected';
+          const platforms = [];
+          if (hasTwitch) platforms.push('Twitch');
+          if (hasTiktok) platforms.push('TikTok');
+          if (statusSub) statusSub.textContent = `Streaming on ${platforms.join(' & ')}`;
+        } else {
+          // Not connected
+          if (indicator) indicator.style.background = 'var(--text-muted)';
+          if (statusText) statusText.textContent = 'Not connected';
+          if (statusSub) statusSub.textContent = 'Connect to start streaming';
+        }
+      }
+
       // Check authentication status AND approval
       checkAuth = async function checkAuth() {
         try {
@@ -1428,10 +1508,15 @@
       try {
         const authStatus = await checkAuth();
         
+        // Set approval status on body
+        document.body.setAttribute('data-approved', authStatus.approved ? 'true' : 'false');
+
         if (authStatus.authenticated && authStatus.approved) {
           // Approved - show full setup
           showStep(2);
           showAdditionalSettings();
+          // Update connection status
+          updateConnectionStatus();
         } else if (authStatus.authenticated && !authStatus.approved) {
           // Authenticated but not approved
           if (authStatus.hasApplication) {
