@@ -449,6 +449,14 @@
               <a class="btn btn-secondary" href="/oauth/twitch" target="_blank" rel="noopener" style="text-align:center;">Connect Twitch</a>
               <a class="btn btn-secondary" href="/oauth" target="_blank" rel="noopener" style="text-align:center;">Connect TikTok</a>
             </div>
+            <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--panel-border);">
+              <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px;">Or use your API key (for approved streamers while OAuth is pending):</p>
+              <div style="display:flex;gap:8px;">
+                <input id="api-key-input" type="text" placeholder="Enter your API key" style="flex:1;padding:10px;border:1px solid var(--panel-border);border-radius:8px;background:var(--bg);color:var(--text);">
+                <button class="btn btn-primary" onclick="connectWithApiKey()" style="padding:10px 16px;">Connect</button>
+              </div>
+              <p id="api-key-error" style="color:var(--bad);font-size:12px;margin-top:8px;display:none;"></p>
+            </div>
             <button class="btn btn-secondary" onclick="closeConnectModal()" style="margin-top:16px;width:100%;">Cancel</button>
           </div>
         </div>
@@ -1419,6 +1427,44 @@
         const modal = document.getElementById('connect-modal');
         if (modal) {
           modal.style.display = 'none';
+        }
+      }
+
+      function connectWithApiKey() {
+        const apiKeyInput = document.getElementById('api-key-input');
+        const errorEl = document.getElementById('api-key-error');
+        const apiKey = apiKeyInput ? apiKeyInput.value.trim() : '';
+
+        if (!apiKey) {
+          if (errorEl) {
+            errorEl.textContent = 'Please enter your API key';
+            errorEl.style.display = 'block';
+          }
+          return;
+        }
+
+        // Save API key to localStorage for use in WebSocket connection
+        const streamerId = getStreamerId() || '';
+        if (streamerId) {
+          localStorage.setItem(`hangstream-api-key:${streamerId}`, apiKey);
+          closeConnectModal();
+          // Trigger reconnection with new API key
+          if (window.gameWs && window.gameWs.readyState === WebSocket.OPEN) {
+            window.gameWs.send(JSON.stringify({
+              type: 'watch',
+              platform: 'both',
+              channel: streamerId,
+              owner: streamerId,
+              apiKey: apiKey
+            }));
+          }
+          // Update UI to show connected
+          updateConnectionStatus();
+        } else {
+          if (errorEl) {
+            errorEl.textContent = 'Please complete Step 1 first';
+            errorEl.style.display = 'block';
+          }
         }
       }
 

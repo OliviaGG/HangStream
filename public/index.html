@@ -2280,7 +2280,18 @@ if (state.gameMode === 'online' && streamerNamespace) {
     gameWs = new WebSocket(url);
     gameWs.addEventListener('open', () => {
       console.log('Game WebSocket connected');
-      gameWs.send(JSON.stringify({ type: 'watch', platform: 'both', channel: streamerNamespace, owner: streamerNamespace }));
+      // Try to get API key from localStorage for approved streamers
+      const apiKey = localStorage.getItem(`hangstream-api-key:${streamerNamespace}`) || '';
+      const watchMessage = {
+        type: 'watch',
+        platform: 'both',
+        channel: streamerNamespace,
+        owner: streamerNamespace
+      };
+      if (apiKey) {
+        watchMessage.apiKey = apiKey;
+      }
+      gameWs.send(JSON.stringify(watchMessage));
     });
 
     gameWs.addEventListener('message', (ev) => {
@@ -2297,6 +2308,14 @@ if (state.gameMode === 'online' && streamerNamespace) {
         } else if (data && data.type === 'guess-result' && data.hintsUsed !== undefined) {
           // Update hint counter from server response
           updateHintButton(data.maxHints - data.hintsUsed);
+        } else if (data && data.type === 'error') {
+          // Handle authentication errors
+          if (data.error === 'api_key_required') {
+            console.warn('API key required for this streamer');
+            // Could show UI message here
+          } else if (data.error === 'tiktok_oauth_required' || data.error === 'twitch_oauth_required') {
+            console.warn('OAuth required for this streamer:', data.message);
+          }
         }
       } catch (e) { console.warn('Invalid WS message', e); }
     });

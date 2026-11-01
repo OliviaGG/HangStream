@@ -86,6 +86,14 @@ const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '';
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || '';
 const SPOTIFY_REDIRECT = process.env.SPOTIFY_REDIRECT_URI || `http://localhost:${port}/oauth/spotify/callback`;
 
+// Approved streamers who can bypass TikTok OAuth requirement (comma-separated usernames)
+const APPROVED_STREAMERS = new Set(
+  (process.env.TIKTOK_APPROVED_STREAMERS || '')
+    .split(',')
+    .map(s => s.trim().toLowerCase())
+    .filter(Boolean)
+);
+
 // Stripe initialization
 const stripeKey = process.env.STRIPE_SECRET_KEY;
 const stripe = stripeKey && stripeKey !== 'sk_test_your_key_here' && stripeKey !== 'sk_live_your_key_here' ? require('stripe')(stripeKey) : null;
@@ -194,6 +202,60 @@ function sendErrorResponse(res, statusCode, message, error = null) {
 
 
 const { makeCsrfState, verifyCsrfState } = require('./oauth-state');
+
+// Check if a streamer has TikTok OAuth connected
+function hasTikTokOAuth(channel) {
+  const tokens = loadTokens();
+  const channelLower = String(channel || '').toLowerCase();
+
+  // Check if any token entry matches this channel
+  for (const [id, entry] of Object.entries(tokens || {})) {
+    if (entry.platform === 'tiktok') {
+      const entryUsername = (entry.username || (entry.userinfo && entry.userinfo.data && (entry.userinfo.data.unique_id || entry.userinfo.data.open_id)) || '').toLowerCase();
+      if (entryUsername === channelLower) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+// Check if a streamer has Twitch OAuth connected
+function hasTwitchOAuth(channel) {
+  const tokens = loadTokens();
+  const channelLower = String(channel || '').toLowerCase();
+
+  // Check if any token entry matches this channel
+  for (const [id, entry] of Object.entries(tokens || {})) {
+    if (entry.platform === 'twitch') {
+      const entryUsername = (entry.username || (entry.userinfo && entry.userinfo.data && entry.userinfo.data.login) || '').toLowerCase();
+      if (entryUsername === channelLower) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+// Check if a streamer is authenticated via streamer account (for approved streamers without OAuth)
+function isStreamerAuthenticated(channel, apiKey) {
+  const accounts = loadStreamerAccounts();
+  const channelLower = String(channel || '').toLowerCase();
+
+  for (const [email, account] of Object.entries(accounts || {})) {
+    const accountHandle = (account.handle || '').toLowerCase();
+    const accountApiKey = account.api_key || '';
+
+    // Match by channel name and API key
+    if (accountHandle === channelLower && accountApiKey === apiKey) {
+      return true;
+    }
+  }
+
+  return false;
+}
 
 function parseCookies(cookieHeader) {
   return (cookieHeader || '').split(';').map(s => s.trim()).reduce((acc, cur) => {
@@ -3653,6 +3715,38 @@ wss.on('connection', (ws) => {
       if (platform === 'tiktok' && data.channel) {
         const chan = data.channel.trim();
         const key = `tiktok:${chan}`;
+
+        // Check if streamer has TikTok OAuth connected
+        const hasOAuth = hasTikTokOAuth(chan);
+        const isApproved = APPROVED_STREAMERS.has(chan.toLowerCase());
+
+        if (!hasOAuth) {
+          if (isApproved) {
+            // For approved streamers without OAuth, check API key authentication
+            const apiKey = data.apiKey || '';
+            const isAuthenticated = isStreamerAuthenticated(chan, apiKey);
+
+            if (!isAuthenticated) {
+              ws.send(JSON.stringify({
+                type: 'error',
+                error: 'api_key_required',
+                message: 'Approved streamers must provide their API key to connect (OAuth not yet available)',
+                channel: chan
+              }));
+              return;
+            }
+          } else {
+            // Non-approved streamers must have OAuth
+            ws.send(JSON.stringify({
+              type: 'error',
+              error: 'tiktok_oauth_required',
+              message: 'This streamer must connect their TikTok account before anyone can watch their stream',
+              channel: chan
+            }));
+            return;
+          }
+        }
+
         let set = watchers.get(key); if (!set) { set = new Set(); watchers.set(key, set); }
         set.add(ws);
         tiktok.watch(chan);
@@ -3662,6 +3756,38 @@ wss.on('connection', (ws) => {
       if ((platform === 'twitch' || platform === 'both') && data.twitchChannel) {
         const chan = data.twitchChannel.trim();
         const key = `twitch:${chan}`;
+
+        // Check if streamer has Twitch OAuth connected
+        const hasOAuth = hasTwitchOAuth(chan);
+        const isApproved = APPROVED_STREAMERS.has(chan.toLowerCase());
+
+        if (!hasOAuth) {
+          if (isApproved) {
+            // For approved streamers without OAuth, check API key authentication
+            const apiKey = data.apiKey || '';
+            const isAuthenticated = isStreamerAuthenticated(chan, apiKey);
+
+            if (!isAuthenticated) {
+              ws.send(JSON.stringify({
+                type: 'error',
+                error: 'api_key_required',
+                message: 'Approved streamers must provide their API key to connect (OAuth not yet available)',
+                channel: chan
+              }));
+              return;
+            }
+          } else {
+            // Non-approved streamers must have OAuth
+            ws.send(JSON.stringify({
+              type: 'error',
+              error: 'twitch_oauth_required',
+              message: 'This streamer must connect their Twitch account before anyone can watch their stream',
+              channel: chan
+            }));
+            return;
+          }
+        }
+
         let set = watchers.get(key); if (!set) { set = new Set(); watchers.set(key, set); }
         set.add(ws);
         try { twitch.watch(chan); } catch (e) { console.warn('twitch.watch failed', e); }
@@ -3672,6 +3798,38 @@ wss.on('connection', (ws) => {
         // also start tiktok if both specified and tiktokChannel provided
         const chan = data.tiktokChannel.trim();
         const key = `tiktok:${chan}`;
+
+        // Check if streamer has TikTok OAuth connected
+        const hasOAuth = hasTikTokOAuth(chan);
+        const isApproved = APPROVED_STREAMERS.has(chan.toLowerCase());
+
+        if (!hasOAuth) {
+          if (isApproved) {
+            // For approved streamers without OAuth, check API key authentication
+            const apiKey = data.apiKey || '';
+            const isAuthenticated = isStreamerAuthenticated(chan, apiKey);
+
+            if (!isAuthenticated) {
+              ws.send(JSON.stringify({
+                type: 'error',
+                error: 'api_key_required',
+                message: 'Approved streamers must provide their API key to connect (OAuth not yet available)',
+                channel: chan
+              }));
+              return;
+            }
+          } else {
+            // Non-approved streamers must have OAuth
+            ws.send(JSON.stringify({
+              type: 'error',
+              error: 'tiktok_oauth_required',
+              message: 'This streamer must connect their TikTok account before anyone can watch their stream',
+              channel: chan
+            }));
+            return;
+          }
+        }
+
         let set = watchers.get(key); if (!set) { set = new Set(); watchers.set(key, set); }
         set.add(ws);
         tiktok.watch(chan);
@@ -3892,7 +4050,17 @@ try {
     const entry = saved[id];
     const uname = entry && (entry.username || (entry.userinfo && entry.userinfo.data && (entry.userinfo.data.unique_id || entry.userinfo.data.open_id)));
     if (uname) {
-      try { tiktok.watch(uname); } catch (e) { console.warn('startup auto-watch failed', uname, e); }
+      // Only auto-watch if the streamer has OAuth (which they do since they're in tokens)
+      // Approved streamers without OAuth must connect manually with their API key
+      if (entry.platform === 'tiktok' || entry.platform === 'twitch') {
+        try {
+          if (entry.platform === 'tiktok') {
+            tiktok.watch(uname);
+          } else if (entry.platform === 'twitch') {
+            twitch.watch(uname);
+          }
+        } catch (e) { console.warn('startup auto-watch failed', uname, e); }
+      }
     }
   }
 } catch (e) { /* ignore */ }

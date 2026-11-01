@@ -108,6 +108,81 @@ npm start
 4. Scores are tracked for all authenticated viewers
 5. Use the OBS overlay (`/your-streamer-name/overlay`) in your streaming software
 
+## 🔐 Platform Authentication (TikTok & Twitch)
+
+### Overview
+HangStream requires streamers to authenticate their streaming platform (TikTok or Twitch) before viewers can connect to their stream. This ensures the platform connection is legitimate and authorized.
+
+### Authentication Methods
+
+#### 1. OAuth Authentication (Standard)
+Once your TikTok or Twitch application is approved by the respective platform, streamers connect via OAuth:
+
+- **TikTok**: Connect at `/oauth` → The streamer authorizes HangStream to access their TikTok account
+- **Twitch**: Connect at `/oauth/twitch` → The streamer authorizes HangStream to access their Twitch account
+
+After OAuth connection:
+- The access token is stored securely in the database
+- Viewers can watch the stream without additional authentication
+- The stream is automatically watched on server startup
+
+#### 2. API Key Authentication (For Approved Streamers)
+While OAuth applications are pending approval, approved streamers can use API key authentication:
+
+**Setup (Admin):**
+1. Add approved streamer usernames to `.env`:
+   ```env
+   TIKTOK_APPROVED_STREAMERS=username1,username2,username3
+   ```
+2. Streamers receive an API key when their application is approved (stored in the `streamer_accounts` table)
+
+**Streamer Connection:**
+1. Go to streamer settings (`/streamer`)
+2. Click "Connect to Stream"
+3. Enter your API key in the modal
+4. The API key is saved and used for WebSocket authentication
+
+**How It Works:**
+- When a viewer tries to watch a stream, the server checks:
+  - Does the streamer have OAuth connected? → Allow connection
+  - Is the streamer in the approved list? → Check API key
+  - API key matches the streamer's account? → Allow connection
+  - Otherwise → Reject with error message
+
+**Error Messages:**
+- `api_key_required`: "Approved streamers must provide their API key to connect (OAuth not yet available)"
+- `tiktok_oauth_required`: "This streamer must connect their TikTok account before anyone can watch their stream"
+- `twitch_oauth_required`: "This streamer must connect their Twitch account before anyone can watch their stream"
+
+### Configuration
+
+**Environment Variables:**
+```env
+# OAuth credentials (required for OAuth authentication)
+TIKTOK_CLIENT_KEY=<your TikTok client key>
+TIKTOK_CLIENT_SECRET=<your TikTok client secret>
+TIKTOK_REDIRECT_URI=https://yourdomain.com/oauth/callback
+TIKTOK_VIEWER_REDIRECT_URI=https://yourdomain.com/auth/tiktok/callback
+
+TWITCH_CLIENT_ID=<your Twitch client ID>
+TWITCH_CLIENT_SECRET=<your Twitch client secret>
+TWITCH_REDIRECT_URI=https://yourdomain.com/oauth/twitch/callback
+TWITCH_VIEWER_REDIRECT_URI=https://yourdomain.com/auth/twitch/callback
+
+# Approved streamers (for API key authentication while OAuth is pending)
+TIKTOK_APPROVED_STREAMERS=username1,username2,username3
+```
+
+### Viewer Account Linking
+Viewers can optionally link their TikTok and Twitch accounts to their profile:
+- TikTok: Link via `/auth/tiktok/callback` (for account profile, not streaming)
+- Twitch: Link via `/auth/twitch/callback` (for account profile, not streaming)
+
+This is separate from streamer OAuth authentication and allows viewers to:
+- Show their platform-linked identity on their profile
+- Participate in platform-specific features
+- Maintain consistent identity across platforms
+
 ## 🧠 Game Backend
 
 Games run on a single server-authoritative engine (`server/games/`) so chat and
