@@ -1549,6 +1549,26 @@
         }
       }
 
+      window.initVoteSettings = initVoteSettings;
+      window.getWebsitePlayEnabled = getWebsitePlayEnabled;
+      window.setWebsitePlayEnabled = setWebsitePlayEnabled;
+      window.updateConnectionStatus = updateConnectionStatus;
+      window.updateStreamerLinks = updateStreamerLinks;
+      window.getScoreCombination = getScoreCombination;
+      window.setScoreCombination = setScoreCombination;
+      window.getSelectedGame = getSelectedGame;
+      window.setSelectedGame = setSelectedGame;
+      window.getGameDifficulty = getGameDifficulty;
+      window.setGameDifficulty = setGameDifficulty;
+      window.getTiktokGift = getTiktokGift;
+      window.setTiktokGift = setTiktokGift;
+      window.getTiktokCustomCoins = getTiktokCustomCoins;
+      window.setTiktokCustomCoins = setTiktokCustomCoins;
+      window.getTwitchGift = getTwitchGift;
+      window.setTwitchGift = setTwitchGift;
+      window.getTwitchCustomBits = getTwitchCustomBits;
+      window.setTwitchCustomBits = setTwitchCustomBits;
+
       // Check authentication status. Google sign-in is the streamer gate;
       // platform OAuth remains required when connecting Twitch or TikTok chat.
       checkAuth = async function checkAuth() {
@@ -1627,8 +1647,7 @@
         }
       } catch (error) {
         console.error('Error initializing step flow:', error);
-        // On error, ensure step 1 is visible
-        showStep(1);
+        // Keep the signed-in dashboard visible if an optional setup helper fails.
       }
     }
 
