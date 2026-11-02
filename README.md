@@ -84,6 +84,29 @@ npm start
 
 6. Open `http://localhost:8080` in your browser
 
+### Nginx reverse proxy
+
+The tracked Nginx configuration is [`nginx/hangstream.conf`](./nginx/hangstream.conf).
+It includes the HTTP/1.1 upgrade headers required by the HangStream WebSocket
+server.
+
+On an Ubuntu/Debian server, install it without an interactive editor:
+
+```bash
+sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.hangstream-backup
+sudo cp nginx/hangstream.conf /etc/nginx/sites-available/hangstream
+sudo ln -sfn /etc/nginx/sites-available/hangstream /etc/nginx/sites-enabled/hangstream
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+This configuration includes both HTTP-to-HTTPS redirection and the HTTPS
+`location /` block used by `wss://hangstream.me`. It expects the standard
+Certbot certificate paths under `/etc/letsencrypt/live/hangstream.me/`.
+If your certificate directory has a different name, update the two
+`ssl_certificate` paths before running `nginx -t`.
+
 ## 🎯 How It Works
 
 ### For New Users
