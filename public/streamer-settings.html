@@ -522,12 +522,14 @@
             <div class="action-row" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
               <div style="display:flex;gap:8px;align-items:center;">
                 <input id="twitch-username-input" class="setting-input" type="text" placeholder="@your_twitch_username" maxlength="30" style="flex:1;">
-                <button class="btn btn-secondary" type="button" onclick="connectTwitch()">Connect Twitch chat</button>
+                <button id="twitch-connect-btn" class="btn btn-secondary" type="button" onclick="connectTwitch()">Connect Twitch chat</button>
+                <span id="twitch-live-indicator" role="status" aria-live="polite" style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap;color:var(--text-muted);font-size:12px;font-weight:700;">● OFFLINE</span>
               </div>
               <p id="twitch-connect-status" style="color:var(--text-muted);font-size:13px;margin:10px 0 0;">Enter your Twitch username. HangStream joins the chat automatically.</p>
               <div style="display:flex;gap:8px;align-items:center;">
                 <input id="tiktok-username-input" class="setting-input" type="text" placeholder="@your_tiktok_username" maxlength="40" style="flex:1;">
-                <button class="btn btn-secondary" type="button" onclick="connectTikTok()">Connect TikTok chat</button>
+                <button id="tiktok-connect-btn" class="btn btn-secondary" type="button" onclick="connectTikTok()">Connect TikTok chat</button>
+                <span id="tiktok-live-indicator" role="status" aria-live="polite" style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap;color:var(--text-muted);font-size:12px;font-weight:700;">● OFFLINE</span>
               </div>
               <p id="tiktok-connect-status" style="color:var(--text-muted);font-size:13px;margin:10px 0 0;">Enter your TikTok username. HangStream connects when you go live.</p>
             </div>
@@ -1660,6 +1662,23 @@
 
       window.connectTwitch = connectTwitch;
 
+      function updateLiveIndicator(platform, connected, username) {
+        const indicator = document.getElementById(`${platform}-live-indicator`);
+        const button = document.getElementById(`${platform}-connect-btn`);
+        if (!indicator) return;
+        const live = Boolean(username && connected);
+        indicator.textContent = live ? '● LIVE' : '● OFFLINE';
+        indicator.style.color = live ? 'var(--good)' : 'var(--text-muted)';
+        indicator.style.textShadow = live ? '0 0 8px color-mix(in srgb,var(--good) 70%,transparent)' : 'none';
+        indicator.setAttribute('aria-label', `${platform} ${live ? 'live' : 'offline'}`);
+        if (button) {
+          button.style.borderColor = live ? 'var(--good)' : '';
+          button.style.background = live ? 'color-mix(in srgb,var(--good) 18%,transparent)' : '';
+          button.style.boxShadow = live ? '0 0 12px color-mix(in srgb,var(--good) 35%,transparent)' : '';
+          button.textContent = live ? `● ${platform === 'twitch' ? 'Twitch' : 'TikTok'} live` : `Connect ${platform === 'twitch' ? 'Twitch' : 'TikTok'} chat`;
+        }
+      }
+
       // Update connection status
       function updateConnectionStatus() {
         const statusCard = document.getElementById('connection-status-card');
@@ -1690,9 +1709,14 @@
           const input = document.getElementById('tiktok-username-input');
           try {
             const response = await fetch('/api/streamer/me', { credentials: 'same-origin', cache: 'no-store' });
-            if (!response.ok) return;
+            if (!response.ok) {
+              updateLiveIndicator('tiktok', false, '');
+              updateLiveIndicator('twitch', false, '');
+              return;
+            }
             const data = await response.json();
             const tiktok = data.tiktok || {};
+            updateLiveIndicator('tiktok', tiktok.connected, tiktok.username);
             if (input && tiktok.username && !input.value) input.value = tiktok.username;
             if (status && tiktok.username) {
               status.textContent = tiktok.connected
@@ -1700,6 +1724,7 @@
                 : `Saved @${tiktok.username}. Go live on TikTok; HangStream will connect automatically.`;
             }
             const twitch = data.twitch || {};
+            updateLiveIndicator('twitch', twitch.connected, twitch.username);
             const twitchInput = document.getElementById('twitch-username-input');
             const twitchStatus = document.getElementById('twitch-connect-status');
             if (twitchInput && twitch.username && !twitchInput.value) twitchInput.value = twitch.username;
@@ -1722,11 +1747,17 @@
             }
           } catch (error) {
             console.warn('TikTok status check failed:', error);
+            updateLiveIndicator('tiktok', false, '');
+            updateLiveIndicator('twitch', false, '');
             if (indicator) indicator.style.background = 'var(--bad)';
             if (statusText) statusText.textContent = 'Connection status unavailable';
             if (statusSub) statusSub.textContent = 'Refresh after signing in again';
           }
         }
+
+        refreshTikTokStatus();
+        window.clearInterval(window.hangstreamConnectionStatusTimer);
+        window.hangstreamConnectionStatusTimer = window.setInterval(refreshTikTokStatus, 10000);
       }
 
       window.initVoteSettings = initVoteSettings;
