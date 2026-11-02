@@ -962,8 +962,25 @@ function findOwnerAccount(req) {
   if (!session) return null;
   const accounts = loadStreamerAccounts();
   const email = String(session.email || '').trim().toLowerCase();
-  const key = Object.keys(accounts).find((candidate) => candidate.toLowerCase() === email);
-  return key ? { accounts, accountKey: key, account: accounts[key] } : null;
+  if (!email) return null;
+
+  const key = Object.keys(accounts).find((candidate) => candidate.toLowerCase() === email) || email;
+  if (!accounts[key]) {
+    accounts[key] = {
+      password_hash: '',
+      api_key: null,
+      platform: 'google',
+      handle: email.split('@')[0].replace(/[^a-z0-9_.-]/gi, '').slice(0, 40) || `streamer-${Date.now()}`,
+      score_combination: 'combined',
+      layout: null,
+      tiktok_username: null,
+      twitch_username: null,
+      created_at: Math.floor(Date.now() / 1000)
+    };
+    saveStreamerAccounts(accounts);
+  }
+
+  return { accounts, accountKey: key, account: accounts[key] };
 }
 
 const server = http.createServer((req, res) => {
@@ -3167,7 +3184,7 @@ const owner = session.ownerId;
         const owner = findOwnerAccount(req);
         if (!owner) {
           res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({ error: 'Please sign in with Google first.' }));
+          res.end(JSON.stringify({ error: 'Your HangStream session is missing. Open /auth/google?redirect=%2Fstreamer and complete Google sign-in.' }));
           return;
         }
         let body = '';
@@ -3180,7 +3197,7 @@ const owner = session.ownerId;
             const username = normalize(request.username);
             if (!username || username.length < 2 || username.length > 40) {
               res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-              res.end(JSON.stringify({ error: 'Enter a valid TikTok username.' }));
+              res.end(JSON.stringify({ error: `Enter a valid ${platform === 'twitch' ? 'Twitch' : 'TikTok'} username.` }));
               return;
             }
             const previous = normalize(owner.account[`${platform}_username`]);
@@ -3211,7 +3228,7 @@ const owner = session.ownerId;
         const owner = findOwnerAccount(req);
         if (!owner) {
           res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({ error: 'Not authenticated' }));
+          res.end(JSON.stringify({ error: 'Your HangStream session is missing. Complete Google sign-in before loading streamer connections.' }));
           return;
         }
         const tiktokUsername = normalizeTikTokUsername(owner.account.tiktok_username);
