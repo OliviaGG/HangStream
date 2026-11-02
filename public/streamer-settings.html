@@ -1553,7 +1553,10 @@
       // platform OAuth remains required when connecting Twitch or TikTok chat.
       checkAuth = async function checkAuth() {
         try {
-          const response = await fetch('/auth/check');
+          const response = await fetch('/auth/check', {
+            credentials: 'same-origin',
+            cache: 'no-store'
+          });
           const data = await response.json();
           
           if (!data.authenticated) {
@@ -2061,6 +2064,19 @@
         window.location.href = '/oauth/google';
       } else {
         w.focus();
+        // Do not rely solely on the popup postMessage. Some browsers
+        // deliver it late or suppress it after a popup navigation.
+        let attempts = 0;
+        const refreshAfterLogin = window.setInterval(async () => {
+          attempts += 1;
+          const status = await checkAuth();
+          if (status.authenticated) {
+            window.clearInterval(refreshAfterLogin);
+            await initStepFlow();
+          } else if (attempts >= 30) {
+            window.clearInterval(refreshAfterLogin);
+          }
+        }, 1000);
       }
     });
   }
