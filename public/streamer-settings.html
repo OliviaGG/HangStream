@@ -503,7 +503,7 @@
           <h2>Sign in with Google</h2>
           <p style="color:var(--text-muted);margin-bottom:20px;">Sign in with Google to start streaming. No application or approval is required.</p>
           <div id="step-1-content">
-            <a class="btn btn-primary" href="/oauth/google" id="google-login-btn">Sign in with Google</a>
+            <a class="btn btn-primary" href="/auth/google?redirect=%2Fstreamer" id="google-login-btn">Continue with Google</a>
           </div>
         </div>
 
@@ -2059,25 +2059,7 @@
   if (googleLoginBtn) {
     googleLoginBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      const w = window.open('/oauth/google', 'hs_owner_oauth', 'width=600,height=700');
-      if (!w) {
-        window.location.href = '/oauth/google';
-      } else {
-        w.focus();
-        // Do not rely solely on the popup postMessage. Some browsers
-        // deliver it late or suppress it after a popup navigation.
-        let attempts = 0;
-        const refreshAfterLogin = window.setInterval(async () => {
-          attempts += 1;
-          const status = await checkAuth();
-          if (status.authenticated) {
-            window.clearInterval(refreshAfterLogin);
-            await initStepFlow();
-          } else if (attempts >= 30) {
-            window.clearInterval(refreshAfterLogin);
-          }
-        }, 1000);
-      }
+      window.location.href = '/auth/google?redirect=%2Fstreamer';
     });
   }
 
@@ -2091,6 +2073,26 @@
       }
     }
   });
+
+  let authRefreshInProgress = false;
+  async function refreshStreamerPageIfSignedIn() {
+    if (authRefreshInProgress || document.body.getAttribute('data-approved') === 'true') return;
+    authRefreshInProgress = true;
+    try {
+      const authStatus = await checkAuth();
+      if (authStatus.authenticated) {
+        await initStepFlow();
+      }
+    } finally {
+      authRefreshInProgress = false;
+    }
+  }
+
+  window.addEventListener('focus', refreshStreamerPageIfSignedIn);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refreshStreamerPageIfSignedIn();
+  });
+  window.setInterval(refreshStreamerPageIfSignedIn, 2000);
 
   // Check Spotify status on load
   setTimeout(() => {

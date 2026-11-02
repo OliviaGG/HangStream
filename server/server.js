@@ -921,6 +921,22 @@ const server = http.createServer((req, res) => {
       sendErrorResponse(res, 500, 'GOOGLE_CLIENT_SECRET not configured on server.');
       return;
     }
+    const redirectUrl = reqUrl.searchParams.get('redirect') || '/profile.html';
+    const existingSession = readOwnerSession(req);
+    const existingViewerId = parseCookies(req.headers.cookie).viewer_id;
+    if (existingSession || existingViewerId) {
+      const headers = { Location: redirectUrl };
+      if (!existingSession && existingViewerId) {
+        const viewerId = decodeURIComponent(existingViewerId);
+        let sessionCookie = `hs_session=${createSessionToken(viewerId, '')}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800`;
+        if (process.env.NODE_ENV === 'production') sessionCookie += '; Secure';
+        headers['Set-Cookie'] = sessionCookie;
+      }
+      res.writeHead(302, headers);
+      res.end();
+      return;
+    }
+
     const state = makeCsrfState(SESSION_SECRET);
     if (!state) {
       console.error('Google OAuth: SESSION_SECRET not configured');
@@ -928,7 +944,6 @@ const server = http.createServer((req, res) => {
       return;
     }
     // Get redirect URL from query param (default to profile page)
-    const redirectUrl = reqUrl.searchParams.get('redirect') || '/profile.html';
     // Store redirect URL in state for later retrieval
     const stateWithRedirect = state + '|' + redirectUrl;
     console.log('Google OAuth: Redirecting to Google with redirect_uri:', GOOGLE_VIEWER_REDIRECT);
