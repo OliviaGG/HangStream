@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HangStream Actions Overlay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --accent: #ff4d6d; --accent-2: #7c5cff; --good: #25c27a; --bad: #ff4d4d; --panel: rgba(26,26,34,.92); --border: #2a2a35; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; font-family: Inter, system-ui, sans-serif; }
+    #stage { position: fixed; inset: 0; pointer-events: none; }
+    .overlay-image {
+      position: absolute; top: 50%; left: 50%; max-width: 70vw; max-height: 70vh;
+      opacity: 0; transform: translate(-50%, -50%) scale(.6);
+      filter: drop-shadow(0 8px 24px rgba(0,0,0,.6));
+      transition: opacity 240ms ease, transform 320ms cubic-bezier(.2,1.2,.4,1);
+    }
+    .overlay-image.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    #status { display: none; position: fixed; left: 12px; bottom: 12px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 999px; color: #f0ede8; background: var(--panel); box-shadow: 0 16px 36px rgba(0,0,0,.35); font-size: 12px; }
+    body.debug #status { display: inline-block; }
+    .ok { color: var(--good); } .bad { color: var(--bad); }
+  </style>
+</head>
+<body>
+  <div id="stage"></div>
+  <div id="status">connecting...</div>
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      const owner = String(params.get('streamer') || params.get('streamerId') || '').trim().replace(/^@+/, '');
+      const debug = params.get('debug') === '1';
+      const stage = document.getElementById('stage');
+      const status = document.getElementById('status');
+      if (debug) document.body.classList.add('debug');
+      function setStatus(text, className) {
+        status.textContent = text;
+        status.className = className || '';
+      }
+      if (!owner) {
+        setStatus('missing ?streamer=', 'bad');
+        document.body.classList.add('debug');
+        return;
+      }
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const socket = new WebSocket(`${protocol}//${location.host}`);
+      let currentImage = null;
+      let imageTimer = null;
+      function showImage(action) {
+        if (currentImage) currentImage.remove();
+        if (imageTimer) clearTimeout(imageTimer);
+        const image = document.createElement('img');
+        image.className = 'overlay-image';
+        image.src = String(action.url || '');
+        image.alt = '';
+        image.onerror = () => setStatus('image load failed', 'bad');
+        stage.appendChild(image);
+        currentImage = image;
+        requestAnimationFrame(() => image.classList.add('show'));
+        const duration = Math.max(500, Math.min(60000, Number(action.durationMs) || 4000));
+        imageTimer = setTimeout(() => {
+          image.classList.remove('show');
+          setTimeout(() => {
+            image.remove();
+            if (currentImage === image) currentImage = null;
+          }, 320);
+        }, duration);
+      }
+      function playSound(action) {
+        const audio = new Audio(String(action.url || ''));
+        audio.volume = Math.max(0, Math.min(1, Number(action.volume) || 1));
+        audio.play().catch(() => setStatus('audio blocked by browser', 'bad'));
+      }
+      socket.addEventListener('open', () => {
+        socket.send(JSON.stringify({ type: 'watch-actions', owner }));
+        setStatus(`connected · ${owner}`, 'ok');
+      });
+      socket.addEventListener('message', (event) => {
+        let payload;
+        try { payload = JSON.parse(event.data || '{}'); } catch { return; }
+        if (payload.type !== 'action-fire' || !Array.isArray(payload.actions)) return;
+        payload.actions.forEach(action => {
+          if (action.type === 'sound') playSound(action);
+          if (action.type === 'overlay-image') showImage(action);
+        });
+      });
+      socket.addEventListener('close', () => setStatus('disconnected', 'bad'));
+      socket.addEventListener('error', () => setStatus('connection error', 'bad'));
+    })();
+  </script>
+</body>
+</html>

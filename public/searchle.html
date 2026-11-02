@@ -1339,6 +1339,7 @@ function showWin(word, winner, detail) {
   if (whoEl) whoEl.textContent = winner || 'someone';
   if (detailEl) detailEl.textContent = detail || '';
   banner.classList.add('show');
+  if (window.HangStreamWinEffects) window.HangStreamWinEffects.play();
 }
 
 // ── Player points (local to this browser tab) ─────────────────
@@ -1695,5 +1696,6 @@ window.addEventListener('storage', (event) => {
 });
 </script>
 
+<script src="/win-effects.js"></script>
 </body>
 </html>

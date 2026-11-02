@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>HangStream Stream View</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0e0e12;
+      --panel: rgba(26, 26, 34, 0.92);
+      --panel-border: #2a2a35;
+      --text: #f0ede8;
+      --muted: #92a0af;
+      --accent: #ff4d6d;
+      --accent-2: #7c5cff;
+      --good: #25c27a;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; }
+    .stream-view {
+      position: relative; width: 100%; height: 100%;
+      background:
+        radial-gradient(circle at top left, rgba(255,77,109,.15), transparent 28%),
+        radial-gradient(circle at top right, rgba(124,92,255,.12), transparent 24%),
+        linear-gradient(180deg, #0b0b0f, var(--bg));
+    }
+    .stream-view::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 3;
+      background-image: linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+      background-size: 48px 48px; mask-image: linear-gradient(180deg, rgba(0,0,0,.6), transparent 85%); opacity: .35;
+    }
+    iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    #game-frame { z-index: 1; background: #0e0e12; }
+    #overlay-frame { z-index: 2; pointer-events: none; background: transparent; }
+    .toolbar {
+      position: absolute; top: max(12px, env(safe-area-inset-top)); left: 50%;
+      z-index: 5; transform: translateX(-50%); display: flex; gap: 8px; padding: 8px;
+      border: 1px solid rgba(255,255,255,.14); border-radius: 999px;
+      background: var(--panel); backdrop-filter: blur(18px); box-shadow: 0 24px 80px rgba(0,0,0,.35); opacity: .2;
+      transition: opacity .2s ease;
+    }
+    .toolbar:hover, .toolbar:focus-within { opacity: 1; }
+    .toolbar button {
+      border: 1px solid rgba(255,255,255,.08); border-radius: 999px; padding: 8px 12px;
+      color: var(--text); background: rgba(255,255,255,.06); font: inherit; cursor: pointer;
+    }
+    .toolbar button:hover, .toolbar button:focus-visible { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(255,77,109,.14); }
+    #fullscreen-btn { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border-color: transparent; color: #fff; font-weight: 700; }
+    .notice {
+      position: absolute; inset: auto 16px max(16px, env(safe-area-inset-bottom)); z-index: 4;
+      max-width: 520px; margin: auto; padding: 10px 14px; border-radius: 12px;
+      color: var(--muted); background: var(--panel); border: 1px solid var(--panel-border); box-shadow: 0 16px 36px rgba(0,0,0,.26); font-size: 12px; text-align: center;
+      pointer-events: none; opacity: 0; transition: opacity .2s ease;
+    }
+    .stream-view.show-help .notice { opacity: 1; }
+    .stream-view.landscape #game-frame { inset: 0; }
+    .stream-view.portrait #game-frame { inset: 0 0 10%; }
+    .stream-view.portrait #overlay-frame { inset: 0 0 10%; }
+  </style>
+</head>
+<body>
+  <main class="stream-view portrait" id="stream-view">
+    <iframe id="game-frame" title="HangStream game"></iframe>
+    <iframe id="overlay-frame" title="HangStream overlay" allow="autoplay"></iframe>
+    <div class="toolbar" aria-label="Stream view controls">
+      <button type="button" id="portrait-btn">Portrait</button>
+      <button type="button" id="landscape-btn">Landscape</button>
+      <button type="button" id="fullscreen-btn">Fullscreen</button>
+      <button type="button" id="help-btn">Help</button>
+    </div>
+    <div class="notice" id="notice">Share this page from your phone, or use it as a browser source. The game link remains available to viewers separately.</div>
+  </main>
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      const streamer = String(params.get('streamer') || '').trim();
+      const game = String(params.get('game') || 'hangman').toLowerCase();
+      const root = document.getElementById('stream-view');
+      const slug = encodeURIComponent(streamer.replace(/^@+/, ''));
+      const gamePath = game === 'spelling-bee'
+        ? `/spelling-bee/online?streamer=${slug}&mobile=1`
+        : game === 'speed-scramble'
+          ? `/speed-scramble/online?streamer=${slug}&mobile=1`
+          : `/viewer/${slug}?mobile=1`;
+      const overlayPath = game === 'spelling-bee'
+        ? `/overlay/spelling-bee/${slug}`
+        : game === 'speed-scramble'
+          ? `/overlay/speed-scramble/${slug}`
+          : `/overlay/${slug}`;
+      document.getElementById('game-frame').src = gamePath;
+      document.getElementById('overlay-frame').src = overlayPath;
+
+      function setMode(mode) {
+        root.classList.toggle('portrait', mode === 'portrait');
+        root.classList.toggle('landscape', mode === 'landscape');
+        const next = new URL(location.href);
+        next.searchParams.set('mode', mode);
+        history.replaceState(null, '', next);
+      }
+      setMode(params.get('mode') === 'landscape' ? 'landscape' : 'portrait');
+      document.getElementById('portrait-btn').addEventListener('click', () => setMode('portrait'));
+      document.getElementById('landscape-btn').addEventListener('click', () => setMode('landscape'));
+      document.getElementById('help-btn').addEventListener('click', () => root.classList.toggle('show-help'));
+      document.getElementById('fullscreen-btn').addEventListener('click', () => {
+        if (document.fullscreenElement) document.exitFullscreen();
+        else document.documentElement.requestFullscreen().catch(() => {});
+      });
+    })();
+  </script>
+</body>
+</html>

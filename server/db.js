@@ -93,6 +93,7 @@ function initializeSchema() {
       platform TEXT NOT NULL,
       handle TEXT NOT NULL,
       score_combination TEXT DEFAULT 'combined',
+      layout TEXT,
       created_at INTEGER DEFAULT (strftime('%s', 'now'))
     )`);
 
@@ -101,6 +102,12 @@ function initializeSchema() {
       // Ignore error if column already exists
       if (err && !err.message.includes('duplicate column name')) {
         console.error('Error adding score_combination column:', err.message);
+      }
+    });
+
+    db.run(`ALTER TABLE streamer_accounts ADD COLUMN layout TEXT`, (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.error('Error adding layout column:', err.message);
       }
     });
 
@@ -114,6 +121,27 @@ function initializeSchema() {
       status TEXT DEFAULT 'completed',
       created_at INTEGER DEFAULT (strftime('%s', 'now')),
       session_id TEXT
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS streak_state (
+      discord_user_id TEXT PRIMARY KEY,
+      current_streak INTEGER NOT NULL DEFAULT 0,
+      longest_streak INTEGER NOT NULL DEFAULT 0,
+      last_claim_date TEXT,
+      total_claims INTEGER NOT NULL DEFAULT 0,
+      total_xp_from_claims INTEGER NOT NULL DEFAULT 0,
+      milestone_titles_awarded TEXT NOT NULL DEFAULT '{}'
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS daily_claims (
+      discord_user_id TEXT NOT NULL,
+      claim_date TEXT NOT NULL,
+      xp_awarded INTEGER NOT NULL,
+      streak_day INTEGER NOT NULL,
+      is_milestone INTEGER NOT NULL DEFAULT 0,
+      milestone_type TEXT,
+      created_at INTEGER DEFAULT (strftime('%s', 'now')),
+      PRIMARY KEY (discord_user_id, claim_date)
     )`);
 
     // Server-authoritative game rounds (server/games/). One row per

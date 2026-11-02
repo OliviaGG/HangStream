@@ -1866,6 +1866,7 @@ function showWin() {
   // Set win message and reveal the word
   if (overlayTitle) overlayTitle.textContent = '🎉 YOU WIN!';
   if (reveal) reveal.textContent = activeWord;
+  if (window.HangStreamWinEffects) window.HangStreamWinEffects.play();
   
   // Hide leaderboard section if empty (solo/demo mode with no scores)
   if (leaderboardSection && leaderboardList) {
@@ -2464,5 +2465,6 @@ function parseCookies(cookieHeader) {
   </div>
 </footer>
 
+<script src="/win-effects.js"></script>
 </body>
 </html>

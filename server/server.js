@@ -43,6 +43,9 @@ const SESSION_SECRET = process.env.SESSION_SECRET || '';
 const viewerPath = path.join(__dirname, '..', 'public', 'index.html');
 const homepagePath = path.join(__dirname, '..', 'public', 'homepage.html');
 const settingsPath = path.join(__dirname, '..', 'public', 'streamer-settings.html');
+const streamViewPath = path.join(__dirname, '..', 'public', 'stream-view.html');
+const actionsOverlayPath = path.join(__dirname, '..', 'public', 'actions-overlay.html');
+const topLikersPath = path.join(__dirname, '..', 'public', 'top-likers.html');
 const profilePath = path.join(__dirname, '..', 'public', 'profile.html');
 const leaderboardPath = path.join(__dirname, '..', 'public', 'leaderboard.html');
 const applyPath = path.join(__dirname, '..', 'public', 'apply.html');
@@ -66,6 +69,7 @@ const gameLayer = require('./games');
 // "What do we play next?" chat vote (port of chat-relay/src/game-vote.js).
 const gameVote = require('./games/game-vote');
 const voteConfig = require('./games/vote-config');
+const dailyClaims = require('./daily-claims');
 
 // Clear word selection bags on server startup to avoid repeating the same words
 gameLayer.dictionary.clearBags();
@@ -110,6 +114,38 @@ const NEXT_GAME_VOTE_CHOICES = [
   { id: 'wordle', name: 'Wordle' },
   { id: 'searchle', name: 'Searchle' },
 ];
+
+const DEFAULT_OVERLAY_LAYOUT = {
+  direction: 'column',
+  scale: 1,
+  accent: '#ff4d6d',
+  visible: {
+    status: true,
+    category: true,
+    hangman: true,
+    lives: true,
+    word: true,
+    keyboard: true,
+    vote: true
+  }
+};
+
+function normalizeOverlayLayout(value) {
+  let layout = value;
+  if (typeof layout === 'string') {
+    try { layout = JSON.parse(layout); } catch (error) { layout = null; }
+  }
+  if (!layout || typeof layout !== 'object') return DEFAULT_OVERLAY_LAYOUT;
+  const visible = layout.visible && typeof layout.visible === 'object' ? layout.visible : {};
+  const scale = Number(layout.scale);
+  const accent = /^#[0-9a-f]{6}$/i.test(String(layout.accent || '')) ? String(layout.accent) : DEFAULT_OVERLAY_LAYOUT.accent;
+  return {
+    direction: layout.direction === 'row' ? 'row' : 'column',
+    scale: Number.isFinite(scale) ? Math.min(1.5, Math.max(0.7, scale)) : 1,
+    accent,
+    visible: Object.fromEntries(Object.keys(DEFAULT_OVERLAY_LAYOUT.visible).map((key) => [key, visible[key] !== false]))
+  };
+}
 
 function getNextGameName(gameId) {
   const match = NEXT_GAME_VOTE_CHOICES.find((entry) => entry.id === gameId);
@@ -857,6 +893,47 @@ function sendFile(res, filePath, contentType) {
     res.writeHead(200, { 'Content-Type': contentType });
     res.end(data);
   });
+}
+
+function getClientIp(req) {
+  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  return forwarded || String(req.socket && req.socket.remoteAddress || 'unknown');
+}
+
+function antiCheatLogValue(value) {
+  return String(value == null ? '' : value).replace(/[\r\n\t]/g, ' ').slice(0, 200);
+}
+
+function hasAntiCheatAdminAccess(req) {
+  const configuredSecret = String(process.env.GAME_API_SECRET || '').trim();
+  if (!configuredSecret) return false;
+  const header = String(req.headers['x-api-key'] || '').trim();
+  if (!header || header.length !== configuredSecret.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(header), Buffer.from(configuredSecret));
+}
+
+function hasApiSecretAccess(req) {
+  return hasAntiCheatAdminAccess(req);
+}
+
+async function handleDailyClaimRequest(req, res, pathname, discordId) {
+  try {
+    const id = String(discordId || '').trim();
+    if (!/^\d{17,20}$/.test(id)) {
+      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'A valid Discord user ID is required' }));
+      return;
+    }
+    const result = pathname === '/api/daily-claim/status'
+      ? await dailyClaims.getClaimPreview(id)
+      : await dailyClaims.claim(id);
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify(result));
+  } catch (error) {
+    console.error('Daily claim request failed:', error);
+    res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ error: 'Daily claim unavailable' }));
+  }
 }
 
 const server = http.createServer((req, res) => {
@@ -2465,7 +2542,7 @@ const owner = session.ownerId;
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
       try {
-        const { scoreCombination, selectedGame, gameDifficulty, tiktokGift, tiktokCustomCoins, twitchGift, twitchCustomBits } = JSON.parse(body);
+        const { scoreCombination, selectedGame, gameDifficulty, tiktokGift, tiktokCustomCoins, twitchGift, twitchCustomBits, layout } = JSON.parse(body);
         const owner = requireOwnerSession(req, res);
         if (!owner) return;
 
@@ -2493,6 +2570,7 @@ const owner = session.ownerId;
         if (tiktokCustomCoins) accounts[accountKey].tiktok_custom_coins = tiktokCustomCoins;
         if (twitchGift) accounts[accountKey].twitch_gift = twitchGift;
         if (twitchCustomBits) accounts[accountKey].twitch_custom_bits = twitchCustomBits;
+        if (layout !== undefined) accounts[accountKey].layout = JSON.stringify(normalizeOverlayLayout(layout));
         saveStreamerAccounts(accounts);
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ success: true }));
@@ -2502,6 +2580,15 @@ const owner = session.ownerId;
         res.end(JSON.stringify({ error: 'Invalid request' }));
       }
     });
+    return;
+  }
+
+  if (pathname === '/streamer/layout' && req.method === 'GET') {
+    const requestedOwner = String(reqUrl.searchParams.get('owner') || '').replace(/^@+/, '').toLowerCase();
+    const accounts = loadStreamerAccounts();
+    const account = Object.values(accounts).find((entry) => String(entry.handle || '').replace(/^@+/, '').toLowerCase() === requestedOwner);
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({ layout: account ? normalizeOverlayLayout(account.layout) : DEFAULT_OVERLAY_LAYOUT }));
     return;
   }
 
@@ -3009,6 +3096,47 @@ const owner = session.ownerId;
     return;
   }  
 
+  if (pathname === '/api/debug/sockets' && req.method === 'GET') {
+    if (!hasAntiCheatAdminAccess(req)) {
+      res.writeHead(process.env.GAME_API_SECRET ? 403 : 503, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: process.env.GAME_API_SECRET ? 'Unauthorized' : 'Anti-cheat API is not configured' }));
+      return;
+    }
+
+    if ((pathname === '/api/daily-claim/status' && req.method === 'GET') ||
+        (pathname === '/api/daily-claim' && req.method === 'POST')) {
+      if (!hasApiSecretAccess(req)) {
+        res.writeHead(process.env.GAME_API_SECRET ? 403 : 503, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: process.env.GAME_API_SECRET ? 'Unauthorized' : 'Daily claim API is not configured' }));
+        return;
+      }
+
+      let discordId = reqUrl.searchParams.get('discordId') || '';
+      if (req.method === 'POST') {
+        let body = '';
+        req.on('data', (chunk) => { body += chunk.toString(); });
+        req.on('end', () => {
+          try { discordId = JSON.parse(body || '{}').discordId || ''; } catch (error) {}
+          handleDailyClaimRequest(req, res, pathname, discordId);
+        });
+        return;
+      }
+      handleDailyClaimRequest(req, res, pathname, discordId);
+      return;
+    }
+
+    const sockets = Array.from(wss ? wss.clients : []).map((socket) => ({
+      id: socket.anticheatId || null,
+      ip: socket.clientIp || null,
+      owner: socket.owner || null,
+      nickname: socket.playerInfo && (socket.playerInfo.displayName || socket.playerInfo.username) || null,
+      watching: socket._watching ? Array.from(socket._watching) : []
+    }));
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({ count: sockets.length, sockets }));
+    return;
+  }
+
   // Get donation history (admin only)
   if (pathname === '/donate/history' && req.method === 'GET') {
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
@@ -3401,6 +3529,21 @@ const owner = session.ownerId;
     return;
   }
 
+  if (pathname === '/stream-view' || pathname === '/stream-view.html') {
+    sendFile(res, streamViewPath, 'text/html; charset=utf-8');
+    return;
+  }
+
+  if (pathname === '/actions-overlay' || pathname === '/actions-overlay.html') {
+    sendFile(res, actionsOverlayPath, 'text/html; charset=utf-8');
+    return;
+  }
+
+  if (pathname === '/top-likers' || pathname === '/top-likers.html') {
+    sendFile(res, topLikersPath, 'text/html; charset=utf-8');
+    return;
+  }
+
   if (urlPath === '/profile' || urlPath === '/profile.html') {
     sendFile(res, profilePath, 'text/html; charset=utf-8');
     return;
@@ -3612,6 +3755,32 @@ const twitch = require('./twitch');
 const wss = new WebSocket.Server({ server });
 // map key (platform:channel) => Set of ws clients
 const watchers = new Map();
+const topLikersByOwner = new Map();
+let nextSocketId = 1;
+
+function getTopLikers(owner) {
+  const entries = topLikersByOwner.get(String(owner || '').toLowerCase()) || new Map();
+  return [...entries.values()].sort((a, b) => b.likes - a.likes || a.name.localeCompare(b.name)).slice(0, 10);
+}
+
+function topLikersPayload(owner, type = 'top-likers-update') {
+  const normalizedOwner = String(owner || '').toLowerCase();
+  const entries = topLikersByOwner.get(normalizedOwner) || new Map();
+  return {
+    type,
+    owner: normalizedOwner,
+    top: type === 'top-likers-reset' ? [] : getTopLikers(normalizedOwner),
+    totalLikers: type === 'top-likers-reset' ? 0 : entries.size,
+  };
+}
+
+function broadcastTopLikers(owner) {
+  broadcastToChannel(`top-likers:${String(owner || '').toLowerCase()}`, topLikersPayload(owner));
+}
+
+function broadcastAction(owner, payload) {
+  broadcastToChannel(`actions:${String(owner || '').toLowerCase()}`, payload);
+}
 
 // per-channel message queues to batch broadcasts when under high load
 const channelQueues = new Map();
@@ -3782,13 +3951,27 @@ setInterval(() => {
   });
 }, WS_PING_INTERVAL);
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, request) => {
   // connection liveness for heartbeat
   ws.isAlive = true;
+  ws.anticheatId = `ws-${nextSocketId++}`;
+  ws.clientIp = getClientIp(request);
+  console.log(`[AntiCheat] CONNECT ip=${ws.clientIp} id=${ws.anticheatId}`);
   ws.on('pong', () => { ws.isAlive = true; });
   ws.on('message', (msg) => {
     let data;
     try { data = JSON.parse(msg); } catch { return; }
+    if (data.type === 'game-join-room' || data.type === 'guess') {
+      ws.playerInfo = {
+        platform: 'web',
+        platformUserId: data.viewerId || null,
+        username: data.username || data.viewerName || 'web',
+        displayName: data.displayName || data.username || data.viewerName || 'web'
+      };
+    }
+    if (data.type === 'guess') {
+      console.log(`[AntiCheat] GUESS_IP ip=${antiCheatLogValue(ws.clientIp)} socket=${antiCheatLogValue(ws.anticheatId)} platformUserId=${antiCheatLogValue(data.viewerId)} nickname=${antiCheatLogValue(data.displayName || data.username || data.viewerName)} word=${antiCheatLogValue(data.guess)}`);
+    }
     if (data.type === 'watch') {
       if (data.owner) ws.owner = data.owner;
       const platform = (data.platform || 'tiktok').toLowerCase();
@@ -3801,6 +3984,24 @@ wss.on('connection', (ws) => {
         tiktok.watch(chan);
         ws._watching = ws._watching || new Set(); ws._watching.add(key);
         ws.send(JSON.stringify({ type: 'status', status: 'watching', platform: 'tiktok', channel: chan }));
+      }
+      if (data.type === 'watch-actions' && data.owner) {
+        const owner = String(data.owner).trim().toLowerCase();
+        const key = `actions:${owner}`;
+        let set = watchers.get(key); if (!set) { set = new Set(); watchers.set(key, set); }
+        set.add(ws);
+        ws._watching = ws._watching || new Set();
+        ws._watching.add(key);
+        ws.send(JSON.stringify({ type: 'status', status: 'watching_actions', owner }));
+      }
+      if (data.type === 'watch-top-likers' && data.owner) {
+        const owner = String(data.owner).trim().toLowerCase();
+        const key = `top-likers:${owner}`;
+        let set = watchers.get(key); if (!set) { set = new Set(); watchers.set(key, set); }
+        set.add(ws);
+        ws._watching = ws._watching || new Set();
+        ws._watching.add(key);
+        ws.send(JSON.stringify(topLikersPayload(owner)));
       }
       if ((platform === 'twitch' || platform === 'both') && data.twitchChannel) {
         const chan = data.twitchChannel.trim();
@@ -3903,6 +4104,7 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
+    console.log(`[AntiCheat] DISCONNECT ip=${ws.clientIp} id=${ws.anticheatId}`);
     if (ws._watching) {
       for (const key of Array.from(ws._watching)) {
         const set = watchers.get(key);
@@ -4002,8 +4204,35 @@ tiktok.on('gift', (channel, data) => {
   broadcastToChannel(`tiktok:${channel}`, { type: 'gift', platform: 'tiktok', channel, data });
 });
 
+tiktok.on('like', (channel, data) => {
+  const owner = String(channel || '').trim().toLowerCase();
+  const user = data && data.user ? data.user : data || {};
+  const id = String((user.userId || user.uniqueId || user.unique_id || user.user_id || data.userId || data.uniqueId) || '').trim();
+  if (!owner || !id) return;
+  const name = String(user.nickname || user.uniqueId || user.unique_id || id).trim();
+  const amount = Math.max(1, Number(data && (data.likeCount || data.count || data.likes)) || 1);
+  broadcastToChannel(`tiktok:${channel}`, {
+    type: 'engagement',
+    platform: 'tiktok',
+    channel,
+    engagement: { kind: 'like', userId: id, username: name, amount }
+  });
+  let entries = topLikersByOwner.get(owner);
+  if (!entries) { entries = new Map(); topLikersByOwner.set(owner, entries); }
+  const existing = entries.get(id) || { id, name, likes: 0 };
+  existing.name = name || existing.name;
+  existing.likes += amount;
+  entries.set(id, existing);
+  broadcastTopLikers(owner);
+});
+
 tiktok.on('streamStart', (channel) => broadcastToChannel(`tiktok:${channel}`, { type: 'streamStart', platform: 'tiktok', channel }));
-tiktok.on('streamEnd', (channel) => broadcastToChannel(`tiktok:${channel}`, { type: 'streamEnd', platform: 'tiktok', channel }));
+tiktok.on('streamEnd', (channel) => {
+  const owner = String(channel || '').toLowerCase();
+  topLikersByOwner.delete(owner);
+  broadcastToChannel(`top-likers:${owner}`, topLikersPayload(owner, 'top-likers-reset'));
+  broadcastToChannel(`tiktok:${channel}`, { type: 'streamEnd', platform: 'tiktok', channel });
+});
 
 twitch.on('chat', (channel, data) => {
   broadcastToChannel(`twitch:${channel}`, { type: 'chat', platform: 'twitch', channel, data });

@@ -51,6 +51,10 @@ class TikTokManager extends EventEmitter {
       this.emit('gift', channel, data);
     });
 
+    conn.on('like', (data) => {
+      this.emit('like', channel, data);
+    });
+
     // v2.5 renamed 'connect' to 'connected' and dropped 'streamStart'. A
     // successful connect only happens while the streamer is live, so 'connected'
     // now covers both.

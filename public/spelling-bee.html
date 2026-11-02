@@ -1203,6 +1203,7 @@ function processChatWord(user, word) {
   renderFoundWords();
   updateScore();
   showMessage(`${user} found ${word} (+${score})!`, 'success');
+  if (window.HangStreamWinEffects) window.HangStreamWinEffects.play();
   
   awardPlayerPoints(user, score, word);
 }
@@ -1516,6 +1517,7 @@ function submitCurrentWord() {
   renderFoundWords();
   updateScore();
   showMessage(`+${score} points!`, 'success');
+  if (window.HangStreamWinEffects) window.HangStreamWinEffects.play();
   
   if (state.viewerName) {
     awardPlayerPoints(state.viewerName, score, word);
@@ -1890,5 +1892,6 @@ window.addEventListener('message', (ev) => {
 
 </script>
 
+<script src="/win-effects.js"></script>
 </body>
 </html>

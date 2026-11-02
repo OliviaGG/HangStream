@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HangStream Top Likers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --panel: rgba(26,26,34,.94); --border: #2a2a35; --text: #f0ede8; --muted: #92a0af; --accent: #ff4d6d; --accent-2: #7c5cff; --good: #25c27a; }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; color: var(--text); font-family: Inter, system-ui, sans-serif; }
+    #frame { width: min(560px, calc(100vw - 32px)); margin: 24px auto; padding: 20px; border: 1px solid var(--border); border-radius: 24px; background: var(--panel); box-shadow: 0 24px 80px rgba(0,0,0,.35); }
+    header { display: flex; align-items: center; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .heart { color: var(--accent); font-size: 26px; filter: drop-shadow(0 0 10px rgba(255,77,109,.45)); }
+    h1 { margin: 0; font-family: 'Bebas Neue', sans-serif; font-size: 30px; letter-spacing: .04em; font-weight: 400; }
+    #meta { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    #hero { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; margin: 16px 0; padding: 18px; border: 1px solid rgba(255,77,109,.28); border-radius: 18px; background: linear-gradient(135deg, rgba(255,77,109,.16), rgba(124,92,255,.14)); }
+    #hero-name { font-size: 18px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #hero-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .14em; }
+    #hero-likes { color: var(--accent); font-family: 'Bebas Neue', sans-serif; font-size: 42px; }
+    ol { display: grid; gap: 8px; padding: 0; margin: 0; list-style: none; }
+    li { display: grid; grid-template-columns: 32px 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid rgba(255,255,255,.06); border-radius: 14px; background: rgba(255,255,255,.035); }
+    li.gained { border-color: var(--accent); box-shadow: 0 0 18px rgba(255,77,109,.18); }
+    .rank { color: var(--accent-2); font-weight: 800; }
+    .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .likes { color: var(--good); font-weight: 800; }
+    #empty { padding: 20px; color: var(--muted); text-align: center; }
+    #status { display: none; position: fixed; left: 12px; bottom: 12px; padding: 7px 11px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); color: var(--muted); font-size: 12px; }
+    body.debug #status { display: block; }
+  </style>
+</head>
+<body>
+  <section id="frame">
+    <header><span class="heart">♥</span><div><h1>Top Likers</h1><p id="meta">This session</p></div></header>
+    <div id="hero" hidden><div><div id="hero-label">Biggest fan</div><div id="hero-name">—</div></div><div id="hero-likes">0</div></div>
+    <ol id="list"></ol>
+    <div id="empty">Waiting for likes...</div>
+  </section>
+  <div id="status">Connecting...</div>
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      const owner = String(params.get('streamer') || params.get('streamerId') || '').trim().replace(/^@+/, '').toLowerCase();
+      const debug = params.get('debug') === '1';
+      if (debug) document.body.classList.add('debug');
+      const status = document.getElementById('status');
+      const previous = new Map();
+      if (!owner) { status.textContent = 'Missing streamer'; document.body.classList.add('debug'); return; }
+      function render(payload) {
+        const top = Array.isArray(payload.top) ? payload.top : [];
+        document.getElementById('meta').textContent = `${Number(payload.totalLikers || 0).toLocaleString()} unique likers this session`;
+        const hero = document.getElementById('hero');
+        const empty = document.getElementById('empty');
+        const list = document.getElementById('list');
+        list.replaceChildren();
+        if (!top.length) { hero.hidden = true; empty.hidden = false; previous.clear(); return; }
+        empty.hidden = true; hero.hidden = false;
+        document.getElementById('hero-name').textContent = top[0].name || top[0].id;
+        document.getElementById('hero-likes').textContent = Number(top[0].likes || 0).toLocaleString();
+        top.slice(1).forEach((entry, index) => {
+          const row = document.createElement('li');
+          if (Number(entry.likes) > Number(previous.get(entry.id) || 0)) row.classList.add('gained');
+          row.innerHTML = `<span class="rank">#${index + 2}</span><span class="name"></span><span class="likes">${Number(entry.likes || 0).toLocaleString()} ♥</span>`;
+          row.querySelector('.name').textContent = entry.name || entry.id;
+          list.appendChild(row);
+        });
+        previous.clear();
+        top.forEach(entry => previous.set(entry.id, Number(entry.likes || 0)));
+      }
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const socket = new WebSocket(`${protocol}//${location.host}`);
+      socket.addEventListener('open', () => {
+        socket.send(JSON.stringify({ type: 'watch-top-likers', owner }));
+        status.textContent = `Connected · ${owner}`;
+      });
+      socket.addEventListener('message', event => {
+        try {
+          const payload = JSON.parse(event.data || '{}');
+          if (payload.type === 'top-likers-update' && payload.owner === owner) render(payload);
+          if (payload.type === 'top-likers-reset' && payload.owner === owner) render({ top: [], totalLikers: 0 });
+        } catch (error) { if (debug) console.warn('Invalid top-likers message', error); }
+      });
+      socket.addEventListener('close', () => { status.textContent = 'Disconnected'; });
+      socket.addEventListener('error', () => { status.textContent = 'Connection error'; });
+    })();
+  </script>
+</body>
+</html>

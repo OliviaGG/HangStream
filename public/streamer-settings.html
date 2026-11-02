@@ -632,6 +632,36 @@
               <button class="btn btn-secondary" id="copy-game-btn" style="padding:8px 16px;">Copy</button>
             </div>
 
+            <div class="link-card">
+              <div class="link-icon">📱</div>
+              <div class="link-content">
+                <h3>Mobile Stream View</h3>
+                <p class="link-url" id="stream-view-url-display">Loading...</p>
+                <p class="link-description">Open this on your phone to show the game and overlay together while screen sharing. It also works as a browser source in OBS.</p>
+              </div>
+              <button class="btn btn-secondary" id="copy-stream-view-btn" style="padding:8px 16px;">Copy</button>
+            </div>
+
+            <div class="link-card">
+              <div class="link-icon">✨</div>
+              <div class="link-content">
+                <h3>Actions Overlay</h3>
+                <p class="link-url" id="actions-overlay-url-display">Loading...</p>
+                <p class="link-description">Add this transparent browser source to OBS for future sound and image actions. It uses HangStream WebSockets instead of Socket.IO.</p>
+              </div>
+              <button class="btn btn-secondary" id="copy-actions-overlay-btn" style="padding:8px 16px;">Copy</button>
+            </div>
+
+            <div class="link-card">
+              <div class="link-icon">❤️</div>
+              <div class="link-content">
+                <h3>Top Likers Overlay</h3>
+                <p class="link-url" id="top-likers-url-display">Loading...</p>
+                <p class="link-description">Show your top TikTok likers in a transparent OBS browser source. Counts reset when your live session ends.</p>
+              </div>
+              <button class="btn btn-secondary" id="copy-top-likers-btn" style="padding:8px 16px;">Copy</button>
+            </div>
+
             <div style="background:rgba(37,194,122,0.1);border:1px solid var(--good);border-radius:16px;padding:16px;margin-top:20px;">
               <div style="font-weight:600;color:var(--good);margin-bottom:8px;">💡 Tip</div>
               <div style="color:var(--text-muted);font-size:13px;">You can use both at the same time! Overlay keeps viewers on your stream, the game link lets others jump in and play.</div>
@@ -778,6 +808,38 @@
               <input type="radio" name="game-difficulty" value="hard" style="width:18px;height:18px;accent-color:var(--accent);">
               <span style="font-size:14px;margin-left:8px;">Hard - Complex words, longer requirements</span>
             </label>
+          </div>
+        </div>
+
+        <div id="overlay-layout-section" class="setup-step" style="margin-top:32px;display:none;">
+          <h3 style="margin:0 0 12px 0;">Overlay Layout</h3>
+          <p style="color:var(--text-muted);margin-bottom:16px;">Choose which parts appear in your OBS overlay, then save the layout. Your overlay link will use these choices automatically.</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:20px;">
+            <label><input type="checkbox" class="overlay-layout-visibility" data-layout-key="status" checked> Game status</label>
+            <label><input type="checkbox" class="overlay-layout-visibility" data-layout-key="category" checked> Category</label>
+            <label><input type="checkbox" class="overlay-layout-visibility" data-layout-key="hangman" checked> Hangman board</label>
+            <label><input type="checkbox" class="overlay-layout-visibility" data-layout-key="lives" checked> Lives</label>
+            <label><input type="checkbox" class="overlay-layout-visibility" data-layout-key="word" checked> Word</label>
+            <label><input type="checkbox" class="overlay-layout-visibility" data-layout-key="keyboard" checked> Keyboard</label>
+            <label><input type="checkbox" class="overlay-layout-visibility" data-layout-key="vote" checked> Game vote card</label>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;align-items:end;">
+            <label style="display:flex;flex-direction:column;gap:8px;">Arrangement
+              <select id="overlay-layout-direction" class="setting-input">
+                <option value="column">Stack vertically</option>
+                <option value="row">Arrange in a row</option>
+              </select>
+            </label>
+            <label style="display:flex;flex-direction:column;gap:8px;">Size
+              <input id="overlay-layout-scale" type="range" min="0.7" max="1.5" step="0.05" value="1">
+            </label>
+            <label style="display:flex;flex-direction:column;gap:8px;">Accent color
+              <input id="overlay-layout-accent" type="color" value="#ff4d6d" style="height:40px;width:100%;">
+            </label>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:18px;">
+            <button id="save-overlay-layout" class="btn btn-primary" type="button">Save overlay layout</button>
+            <span id="overlay-layout-status" style="font-size:13px;color:var(--text-muted);" role="status"></span>
           </div>
         </div>
 
@@ -1073,6 +1135,18 @@
         }
         if (gameUrlDisplay) {
           gameUrlDisplay.textContent = `${baseUrl}${getGameRoute(selectedGame, streamerId)}`;
+        }
+        const streamViewUrlDisplay = document.getElementById('stream-view-url-display');
+        if (streamViewUrlDisplay) {
+          streamViewUrlDisplay.textContent = `${baseUrl}/stream-view?streamer=${encodeURIComponent(String(streamerId).replace('@', ''))}&game=${encodeURIComponent(selectedGame)}&mode=portrait`;
+        }
+        const actionsOverlayUrlDisplay = document.getElementById('actions-overlay-url-display');
+        if (actionsOverlayUrlDisplay) {
+          actionsOverlayUrlDisplay.textContent = `${baseUrl}/actions-overlay?streamer=${encodeURIComponent(String(streamerId).replace('@', ''))}`;
+        }
+        const topLikersUrlDisplay = document.getElementById('top-likers-url-display');
+        if (topLikersUrlDisplay) {
+          topLikersUrlDisplay.textContent = `${baseUrl}/top-likers?streamer=${encodeURIComponent(String(streamerId).replace('@', ''))}`;
         }
       }
 
@@ -1644,6 +1718,27 @@
               copyToClipboard(document.getElementById('game-url-display').textContent);
             });
           }
+
+          const copyStreamViewBtn = document.getElementById('copy-stream-view-btn');
+          if (copyStreamViewBtn) {
+            copyStreamViewBtn.addEventListener('click', () => {
+              copyToClipboard(document.getElementById('stream-view-url-display').textContent);
+            });
+          }
+
+          const copyActionsOverlayBtn = document.getElementById('copy-actions-overlay-btn');
+          if (copyActionsOverlayBtn) {
+            copyActionsOverlayBtn.addEventListener('click', () => {
+              copyToClipboard(document.getElementById('actions-overlay-url-display').textContent);
+            });
+          }
+
+          const copyTopLikersBtn = document.getElementById('copy-top-likers-btn');
+          if (copyTopLikersBtn) {
+            copyTopLikersBtn.addEventListener('click', () => {
+              copyToClipboard(document.getElementById('top-likers-url-display').textContent);
+            });
+          }
         }
       } catch (error) {
         console.error('Error initializing step flow:', error);
@@ -1705,6 +1800,77 @@
       }
     }
 
+    const defaultOverlayLayout = {
+      direction: 'column',
+      scale: 1,
+      accent: '#ff4d6d',
+      visible: { status: true, category: true, hangman: true, lives: true, word: true, keyboard: true, vote: true }
+    };
+
+    function setOverlayLayoutControls(layout) {
+      const value = layout && typeof layout === 'object' ? layout : defaultOverlayLayout;
+      const visible = value.visible && typeof value.visible === 'object' ? value.visible : defaultOverlayLayout.visible;
+      document.querySelectorAll('.overlay-layout-visibility').forEach((input) => {
+        input.checked = visible[input.dataset.layoutKey] !== false;
+      });
+      const direction = document.getElementById('overlay-layout-direction');
+      const scale = document.getElementById('overlay-layout-scale');
+      const accent = document.getElementById('overlay-layout-accent');
+      if (direction) direction.value = value.direction === 'row' ? 'row' : 'column';
+      if (scale) scale.value = String(Number(value.scale) || 1);
+      if (accent && /^#[0-9a-f]{6}$/i.test(String(value.accent || ''))) accent.value = value.accent;
+    }
+
+    function getOverlayLayoutControls() {
+      const visible = {};
+      document.querySelectorAll('.overlay-layout-visibility').forEach((input) => {
+        visible[input.dataset.layoutKey] = input.checked;
+      });
+      return {
+        direction: document.getElementById('overlay-layout-direction').value,
+        scale: Number(document.getElementById('overlay-layout-scale').value),
+        accent: document.getElementById('overlay-layout-accent').value,
+        visible
+      };
+    }
+
+    async function initOverlayLayoutSettings() {
+      const section = document.getElementById('overlay-layout-section');
+      if (section) section.style.display = 'block';
+      const status = document.getElementById('overlay-layout-status');
+      try {
+        const response = await fetch(`/streamer/layout?owner=${encodeURIComponent(getStreamerId() || '')}`, { cache: 'no-store' });
+        if (!response.ok) throw new Error('Could not load layout');
+        const data = await response.json();
+        setOverlayLayoutControls(data.layout);
+      } catch (error) {
+        console.error('Failed to load overlay layout:', error);
+        if (status) status.textContent = 'Could not load saved layout';
+      }
+      const saveButton = document.getElementById('save-overlay-layout');
+      if (saveButton && !saveButton.dataset.bound) {
+        saveButton.dataset.bound = 'true';
+        saveButton.addEventListener('click', async () => {
+          saveButton.disabled = true;
+          if (status) status.textContent = 'Saving...';
+          try {
+            const response = await fetch('/streamer/settings', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ layout: getOverlayLayoutControls() })
+            });
+            if (!response.ok) throw new Error('Could not save layout');
+            if (status) status.textContent = 'Saved. Refresh your OBS browser source to apply it.';
+          } catch (error) {
+            console.error('Failed to save overlay layout:', error);
+            if (status) status.textContent = 'Could not save layout';
+          } finally {
+            saveButton.disabled = false;
+          }
+        });
+      }
+    }
+
     function showAdditionalSettings() {
       const scoreComboSection = document.getElementById('score-combination-section');
       if (scoreComboSection) scoreComboSection.style.display = 'block';
@@ -1717,6 +1883,8 @@
       
       const gameDifficultySection = document.getElementById('game-difficulty-section');
       if (gameDifficultySection) gameDifficultySection.style.display = 'block';
+
+      initOverlayLayoutSettings();
       
       const giftSettingsSection = document.getElementById('gift-settings-section');
       if (giftSettingsSection) giftSettingsSection.style.display = 'block';

@@ -410,6 +410,16 @@ function getRouteNamespace() {
   const pathName = String(location.pathname || '/').replace(/\/+$/, '');
   if (!pathName || pathName === '/' || pathName === '/viewer' || pathName === '/streamer') return '';
   if (/^\/(oauth|auth|terms|privacy|scores|score|music)(\/|$)/.test(pathName)) return '';
+  const overlayRouteMatch = pathName.match(/^\/overlay\/(?:spelling-bee|speed-scramble|wordle|searchle)\/([^/]+)$/);
+  if (overlayRouteMatch) {
+    const slug = overlayRouteMatch[1].trim().toLowerCase();
+    return /^[a-z0-9_.@-]+$/.test(slug) ? slug : '';
+  }
+  const shortOverlayMatch = pathName.match(/^\/overlay\/([^/]+)$/);
+  if (shortOverlayMatch) {
+    const slug = shortOverlayMatch[1].trim().toLowerCase();
+    return /^[a-z0-9_.@-]+$/.test(slug) ? slug : '';
+  }
   // Extract streamer name from /streamer-name/overlay
   const overlayMatch = pathName.match(/^\/([^/]+)\/overlay\/?$/);
   if (overlayMatch) {
@@ -831,8 +841,44 @@ function hideLeaderboard() {
   }
 }
 
+async function applyStreamerLayout() {
+  const owner = getRouteNamespace();
+  if (!owner) return;
+  try {
+    const response = await fetch(`/streamer/layout?owner=${encodeURIComponent(owner)}`, { cache: 'no-store' });
+    if (!response.ok) return;
+    const data = await response.json();
+    const layout = data && data.layout;
+    if (!layout || typeof layout !== 'object') return;
+    const visible = layout.visible && typeof layout.visible === 'object' ? layout.visible : {};
+    const elements = {
+      status: document.getElementById('game-status'),
+      category: document.getElementById('word-category'),
+      hangman: document.querySelector('.hangman-container'),
+      lives: document.getElementById('lives-container'),
+      word: document.getElementById('word-row'),
+      keyboard: document.getElementById('keyboard'),
+      vote: document.getElementById('vote-slot')
+    };
+    Object.entries(elements).forEach(([key, element]) => {
+      if (element) element.style.display = visible[key] === false ? 'none' : '';
+    });
+    const container = document.querySelector('.overlay-container');
+    if (container) {
+      container.style.flexDirection = layout.direction === 'row' ? 'row' : 'column';
+      const scale = Number(layout.scale);
+      if (Number.isFinite(scale)) container.style.transform = `scale(${Math.min(1.5, Math.max(0.7, scale))})`;
+    }
+    if (/^#[0-9a-f]{6}$/i.test(String(layout.accent || ''))) {
+      document.documentElement.style.setProperty('--accent', layout.accent);
+    }
+  } catch (error) {
+    console.warn('Could not apply streamer overlay layout:', error);
+  }
+}
+
 // Initialize
-loadCustomWordsFile().then(() => {
+applyStreamerLayout().then(() => loadCustomWordsFile()).then(() => {
   setTimeout(() => {
     // Only start a local game if not in multiplayer mode
     if (!streamerNamespace) {

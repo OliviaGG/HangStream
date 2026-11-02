@@ -12,6 +12,7 @@
     "smoke:vote-ui": "node server/__tests__/vote-ui.smoke.js",
     "smoke:games": "node server/__tests__/games-live.js && node server/__tests__/games-chat.js",
     "build:word-bank": "node server/games/tools/build-curated-words.js",
+    "audit:searchle": "node server/searchle/tools/audit-target-words.js",
     "deploy-azure": "powershell -ExecutionPolicy Bypass -File deploy-azure.ps1"
   },
   "engines": {
