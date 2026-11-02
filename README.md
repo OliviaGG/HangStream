@@ -103,12 +103,83 @@ npm start
    - Enable/disable web play for viewers
    - View your API key
 
-### During a Stream
+## 📺 How to Stream with HangStream
+
+### Step 1: Get Approved
+1. Visit `/apply` and submit your streamer application
+2. Wait for admin approval (you'll receive an email notification)
+3. Once approved, you'll receive your streamer account credentials and API key
+
+### Step 2: Connect Your Platform
+
+#### Option A: OAuth Authentication (Recommended)
+If your TikTok or Twitch application is approved by the platform:
+1. Go to streamer settings (`/streamer`)
+2. Click "Connect to Stream"
+3. Choose your platform (TikTok or Twitch)
+4. Authorize HangStream to access your account
+5. Your connection is saved and will auto-connect on server restart
+
+#### Option B: API Key Authentication (While OAuth is Pending)
+If OAuth is not yet available:
+1. Go to streamer settings (`/streamer`)
+2. Click "Connect to Stream"
+3. Enter your API key (from your approval email)
+4. The API key is saved for future connections
+5. Viewers can now connect to your stream
+
+### Step 3: Set Up Your Overlay
+
+#### For Desktop Streaming (OBS, Streamlabs, etc.)
+1. In your streaming software, add a Browser Source
+2. Use your overlay URL: `https://yourdomain.com/your-streamer-name/overlay`
+3. Set width: 1920, height: 1080 (or adjust to your layout)
+4. The overlay displays the game board, timer, and leaderboard
+
+#### For Mobile Streaming (TikTok Live Studio, etc.)
+1. Open your overlay URL in a browser on your streaming device
+2. Share your screen/window with the overlay
+3. Adjust positioning as needed for your mobile layout
+
+### Step 4: Configure Game Settings
+1. Go to streamer settings (`/streamer`)
+2. Set your preferred game:
+   - Hangman (letter-based)
+   - Spelling Bee (find words from 7 letters)
+   - Wordle (5-letter word guessing)
+   - Speed Scramble (timed anagram)
+   - Searchle (semantic word ranking)
+3. Adjust difficulty (easy, normal, hard, extreme)
+4. Configure score combination (chat only, web only, or combined)
+5. Enable/disable web play for viewers
+
+### Step 5: Start Streaming
 1. Start your broadcast on Twitch or TikTok
-2. Viewers can play by typing in chat or visiting `/viewer`
-3. Chat messages are processed as game guesses
+2. Viewers can now play in two ways:
+   - **Chat**: Type guesses directly in your stream's chat
+   - **Web**: Visit `/viewer/your-streamer-name` to play with an on-screen keyboard
+3. The overlay shows the game in real-time for your audience
 4. Scores are tracked for all authenticated viewers
-5. Use the OBS overlay (`/your-streamer-name/overlay`) in your streaming software
+
+### Optional Features
+
+#### Music Requests (Spotify Integration)
+1. Connect Spotify in streamer settings
+2. Viewers can request songs using `!play <song name>` in chat
+3. Songs are added to your Spotify queue (requires Spotify Premium)
+4. If Spotify is not connected, requests stay in a local queue
+
+#### Next-Game Vote
+1. Configure a rotation of games in streamer settings
+2. Set how long each game stays on stream (in rounds or minutes)
+3. When the term expires, chat votes on the next game
+4. The winner becomes the active game automatically
+
+#### Viewer Leaderboards
+1. Viewers are tracked across all your streams
+2. Display top scores on your overlay
+3. Viewers can check their stats on `/leaderboard/your-streamer-name`
+4. Encourages competition and engagement
 
 ## 🔐 Platform Authentication (TikTok & Twitch)
 
