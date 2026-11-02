@@ -1681,25 +1681,9 @@
 
         refreshTikTokStatus();
 
-        // Twitch remains locally tracked for compatibility with existing OAuth.
-        const streamerId = getStreamerId() || '';
-        const hasTwitch = localStorage.getItem(`hangstream-twitch-connected:${streamerId}`) === 'true';
-        const hasTiktok = localStorage.getItem(`hangstream-tiktok-connected:${streamerId}`) === 'true';
-
-        if (hasTwitch || hasTiktok) {
-          // Connected
-          if (indicator) indicator.style.background = 'var(--good)';
-          if (statusText) statusText.textContent = 'Connected';
-          const platforms = [];
-          if (hasTwitch) platforms.push('Twitch');
-          if (hasTiktok) platforms.push('TikTok');
-          if (statusSub) statusSub.textContent = `Streaming on ${platforms.join(' & ')}`;
-        } else {
-          // Not connected
-          if (indicator) indicator.style.background = 'var(--text-muted)';
-          if (statusText) statusText.textContent = 'Not connected';
-          if (statusSub) statusSub.textContent = 'Connect to start streaming';
-        }
+        if (indicator) indicator.style.background = 'var(--text-muted)';
+        if (statusText) statusText.textContent = 'Checking connections...';
+        if (statusSub) statusSub.textContent = 'Loading Twitch and TikTok status';
 
         async function refreshTikTokStatus() {
           const status = document.getElementById('tiktok-connect-status');
@@ -1724,8 +1708,23 @@
                 ? `Connected to @${twitch.username}. Twitch chat is ready.`
                 : `Saved @${twitch.username}. HangStream will reconnect automatically.`;
             }
+            const connectedPlatforms = [];
+            if (tiktok.connected) connectedPlatforms.push('TikTok');
+            if (twitch.connected) connectedPlatforms.push('Twitch');
+            if (connectedPlatforms.length) {
+              if (indicator) indicator.style.background = 'var(--good)';
+              if (statusText) statusText.textContent = 'Connected';
+              if (statusSub) statusSub.textContent = `Connected to ${connectedPlatforms.join(' & ')}`;
+            } else {
+              if (indicator) indicator.style.background = 'var(--text-muted)';
+              if (statusText) statusText.textContent = 'Not connected';
+              if (statusSub) statusSub.textContent = 'Save a Twitch or TikTok username to connect chat';
+            }
           } catch (error) {
             console.warn('TikTok status check failed:', error);
+            if (indicator) indicator.style.background = 'var(--bad)';
+            if (statusText) statusText.textContent = 'Connection status unavailable';
+            if (statusSub) statusSub.textContent = 'Refresh after signing in again';
           }
         }
       }

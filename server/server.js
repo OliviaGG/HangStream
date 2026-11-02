@@ -4382,12 +4382,14 @@ try {
   const streamerAccounts = loadStreamerAccounts();
   for (const account of Object.values(streamerAccounts)) {
     const username = normalizeTikTokUsername(account.tiktok_username);
-    if (!username) continue;
-    directTikTokOwners.set(username, String(account.handle || '').replace(/^@+/, '').toLowerCase());
-    tiktok.watch(username);
+    const owner = String(account.handle || '').replace(/^@+/, '').toLowerCase();
+    if (username) {
+      directTikTokOwners.set(username, owner);
+      tiktok.watch(username);
+    }
     const twitchUsername = normalizeTwitchUsername(account.twitch_username);
     if (twitchUsername) {
-      directTwitchOwners.set(twitchUsername, String(account.handle || '').replace(/^@+/, '').toLowerCase());
+      directTwitchOwners.set(twitchUsername, owner);
       twitch.watch(twitchUsername);
     }
   }
