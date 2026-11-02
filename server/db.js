@@ -94,6 +94,8 @@ function initializeSchema() {
       handle TEXT NOT NULL,
       score_combination TEXT DEFAULT 'combined',
       layout TEXT,
+      tiktok_username TEXT,
+      twitch_username TEXT,
       created_at INTEGER DEFAULT (strftime('%s', 'now'))
     )`);
 
@@ -108,6 +110,18 @@ function initializeSchema() {
     db.run(`ALTER TABLE streamer_accounts ADD COLUMN layout TEXT`, (err) => {
       if (err && !err.message.includes('duplicate column name')) {
         console.error('Error adding layout column:', err.message);
+      }
+    });
+
+    db.run(`ALTER TABLE streamer_accounts ADD COLUMN tiktok_username TEXT`, (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.error('Error adding tiktok_username column:', err.message);
+      }
+    });
+
+    db.run(`ALTER TABLE streamer_accounts ADD COLUMN twitch_username TEXT`, (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.error('Error adding twitch_username column:', err.message);
       }
     });
 

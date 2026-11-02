@@ -482,8 +482,14 @@
             <h3 style="margin:0 0 16px 0;font-size:20px;">Connect to Stream</h3>
             <p style="color:var(--text-muted);margin-bottom:20px;">Choose which platform you want to connect to for streaming.</p>
             <div style="display:flex;flex-direction:column;gap:12px;">
-              <a class="btn btn-secondary" href="/oauth/twitch" target="_blank" rel="noopener" style="text-align:center;">Connect Twitch</a>
-              <a class="btn btn-secondary" href="/oauth" target="_blank" rel="noopener" style="text-align:center;">Connect TikTok</a>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input id="twitch-username-input-modal" class="setting-input" type="text" placeholder="@your_twitch_username" maxlength="30" style="flex:1;">
+                <button class="btn btn-secondary" type="button" onclick="connectTwitch('twitch-username-input-modal')" style="text-align:center;">Connect Twitch chat</button>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input id="tiktok-username-input-modal" class="setting-input" type="text" placeholder="@your_tiktok_username" maxlength="40" style="flex:1;">
+                <button class="btn btn-secondary" type="button" onclick="connectTikTok('tiktok-username-input-modal')" style="text-align:center;">Connect TikTok chat</button>
+              </div>
             </div>
             <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--panel-border);">
               <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px;">Or use an API key if HangStream provided one for your channel.</p>
@@ -514,8 +520,16 @@
           <p style="color:var(--text-muted);margin-bottom:20px;">Platform chat connections are optional. You can use the HangStream game and overlay right away.</p>
           <div id="step-2-content">
             <div class="action-row" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
-              <a class="btn btn-secondary" href="/oauth/twitch" target="_blank" rel="noopener">Connect Twitch</a>
-              <a class="btn btn-secondary" href="/oauth" target="_blank" rel="noopener">Connect TikTok</a>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input id="twitch-username-input" class="setting-input" type="text" placeholder="@your_twitch_username" maxlength="30" style="flex:1;">
+                <button class="btn btn-secondary" type="button" onclick="connectTwitch()">Connect Twitch chat</button>
+              </div>
+              <p id="twitch-connect-status" style="color:var(--text-muted);font-size:13px;margin:10px 0 0;">Enter your Twitch username. HangStream joins the chat automatically.</p>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input id="tiktok-username-input" class="setting-input" type="text" placeholder="@your_tiktok_username" maxlength="40" style="flex:1;">
+                <button class="btn btn-secondary" type="button" onclick="connectTikTok()">Connect TikTok chat</button>
+              </div>
+              <p id="tiktok-connect-status" style="color:var(--text-muted);font-size:13px;margin:10px 0 0;">Enter your TikTok username. HangStream connects when you go live.</p>
             </div>
             
             <!-- Optional Spotify -->
@@ -1583,6 +1597,69 @@
         }
       }
 
+      // These handlers are used by the setup markup's inline buttons.
+      window.openConnectModal = openConnectModal;
+      window.closeConnectModal = closeConnectModal;
+      window.connectWithApiKey = connectWithApiKey;
+
+      async function connectTikTok(inputId) {
+        const input = document.getElementById(inputId || 'tiktok-username-input');
+        const status = document.getElementById('tiktok-connect-status');
+        const username = input ? input.value.trim() : '';
+        if (!username) {
+          if (status) status.textContent = 'Enter your TikTok username first.';
+          return;
+        }
+        if (status) status.textContent = 'Connecting to TikTok...';
+        try {
+          const response = await fetch('/api/streamer/connect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ username })
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || 'Could not connect');
+          document.querySelectorAll('#tiktok-username-input, #tiktok-username-input-modal').forEach((field) => { field.value = data.username; });
+          if (status) status.textContent = `Saved @${data.username}. Go live on TikTok; HangStream will connect automatically.`;
+          updateConnectionStatus();
+        } catch (error) {
+          console.error('TikTok connection failed:', error);
+          if (status) status.textContent = error.message;
+        }
+      }
+
+      window.connectTikTok = connectTikTok;
+
+      async function connectTwitch(inputId) {
+        const input = document.getElementById(inputId || 'twitch-username-input');
+        const status = document.getElementById('twitch-connect-status');
+        const username = input ? input.value.trim() : '';
+        if (!username) {
+          if (status) status.textContent = 'Enter your Twitch username first.';
+          return;
+        }
+        if (status) status.textContent = 'Connecting to Twitch...';
+        try {
+          const response = await fetch('/api/streamer/connect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ platform: 'twitch', username })
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || 'Could not connect');
+          document.querySelectorAll('#twitch-username-input, #twitch-username-input-modal').forEach((field) => { field.value = data.username; });
+          if (status) status.textContent = `Connected to @${data.username}. Twitch chat is ready.`;
+          updateConnectionStatus();
+        } catch (error) {
+          console.error('Twitch connection failed:', error);
+          if (status) status.textContent = error.message;
+        }
+      }
+
+      window.connectTwitch = connectTwitch;
+
       // Update connection status
       function updateConnectionStatus() {
         const statusCard = document.getElementById('connection-status-card');
@@ -1602,7 +1679,9 @@
         // Show connection status card
         statusCard.style.display = 'block';
 
-        // Check connection status from localStorage
+        refreshTikTokStatus();
+
+        // Twitch remains locally tracked for compatibility with existing OAuth.
         const streamerId = getStreamerId() || '';
         const hasTwitch = localStorage.getItem(`hangstream-twitch-connected:${streamerId}`) === 'true';
         const hasTiktok = localStorage.getItem(`hangstream-tiktok-connected:${streamerId}`) === 'true';
@@ -1620,6 +1699,34 @@
           if (indicator) indicator.style.background = 'var(--text-muted)';
           if (statusText) statusText.textContent = 'Not connected';
           if (statusSub) statusSub.textContent = 'Connect to start streaming';
+        }
+
+        async function refreshTikTokStatus() {
+          const status = document.getElementById('tiktok-connect-status');
+          const input = document.getElementById('tiktok-username-input');
+          try {
+            const response = await fetch('/api/streamer/me', { credentials: 'same-origin', cache: 'no-store' });
+            if (!response.ok) return;
+            const data = await response.json();
+            const tiktok = data.tiktok || {};
+            if (input && tiktok.username && !input.value) input.value = tiktok.username;
+            if (status && tiktok.username) {
+              status.textContent = tiktok.connected
+                ? `Connected to @${tiktok.username}. TikTok chat is ready.`
+                : `Saved @${tiktok.username}. Go live on TikTok; HangStream will connect automatically.`;
+            }
+            const twitch = data.twitch || {};
+            const twitchInput = document.getElementById('twitch-username-input');
+            const twitchStatus = document.getElementById('twitch-connect-status');
+            if (twitchInput && twitch.username && !twitchInput.value) twitchInput.value = twitch.username;
+            if (twitchStatus && twitch.username) {
+              twitchStatus.textContent = twitch.connected
+                ? `Connected to @${twitch.username}. Twitch chat is ready.`
+                : `Saved @${twitch.username}. HangStream will reconnect automatically.`;
+            }
+          } catch (error) {
+            console.warn('TikTok status check failed:', error);
+          }
         }
       }
 

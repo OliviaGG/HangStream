@@ -936,6 +936,36 @@ async function handleDailyClaimRequest(req, res, pathname, discordId) {
   }
 }
 
+const directTikTokOwners = new Map();
+const directTwitchOwners = new Map();
+
+function normalizeTikTokUsername(value) {
+  return String(value || '').trim().replace(/^@+/, '').toLowerCase().replace(/[^a-z0-9._]/g, '');
+}
+
+function getTikTokOwner(channel) {
+  const username = normalizeTikTokUsername(channel);
+  return directTikTokOwners.get(username) || username;
+}
+
+function normalizeTwitchUsername(value) {
+  return String(value || '').trim().replace(/^@+/, '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+}
+
+function getTwitchOwner(channel) {
+  const username = normalizeTwitchUsername(channel);
+  return directTwitchOwners.get(username) || username;
+}
+
+function findOwnerAccount(req) {
+  const session = readOwnerSession(req);
+  if (!session) return null;
+  const accounts = loadStreamerAccounts();
+  const email = String(session.email || '').trim().toLowerCase();
+  const key = Object.keys(accounts).find((candidate) => candidate.toLowerCase() === email);
+  return key ? { accounts, accountKey: key, account: accounts[key] } : null;
+}
+
 const server = http.createServer((req, res) => {
   const reqUrl = new URL(req.url, `http://${req.headers.host}`);
   const pathname = reqUrl.pathname;
@@ -3103,28 +3133,6 @@ const owner = session.ownerId;
       return;
     }
 
-    if ((pathname === '/api/daily-claim/status' && req.method === 'GET') ||
-        (pathname === '/api/daily-claim' && req.method === 'POST')) {
-      if (!hasApiSecretAccess(req)) {
-        res.writeHead(process.env.GAME_API_SECRET ? 403 : 503, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ error: process.env.GAME_API_SECRET ? 'Unauthorized' : 'Daily claim API is not configured' }));
-        return;
-      }
-
-      let discordId = reqUrl.searchParams.get('discordId') || '';
-      if (req.method === 'POST') {
-        let body = '';
-        req.on('data', (chunk) => { body += chunk.toString(); });
-        req.on('end', () => {
-          try { discordId = JSON.parse(body || '{}').discordId || ''; } catch (error) {}
-          handleDailyClaimRequest(req, res, pathname, discordId);
-        });
-        return;
-      }
-      handleDailyClaimRequest(req, res, pathname, discordId);
-      return;
-    }
-
     const sockets = Array.from(wss ? wss.clients : []).map((socket) => ({
       id: socket.anticheatId || null,
       ip: socket.clientIp || null,
@@ -3135,6 +3143,88 @@ const owner = session.ownerId;
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
     res.end(JSON.stringify({ count: sockets.length, sockets }));
     return;
+  }
+
+  if ((pathname === '/api/daily-claim/status' && req.method === 'GET') ||
+      (pathname === '/api/daily-claim' && req.method === 'POST')) {
+    if (!hasApiSecretAccess(req)) {
+      res.writeHead(process.env.GAME_API_SECRET ? 403 : 503, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: process.env.GAME_API_SECRET ? 'Unauthorized' : 'Daily claim API is not configured' }));
+      return;
+    }
+    let discordId = reqUrl.searchParams.get('discordId') || '';
+    if (req.method === 'POST') {
+      let body = '';
+      req.on('data', (chunk) => { body += chunk.toString(); });
+      req.on('end', () => {
+        try { discordId = JSON.parse(body || '{}').discordId || ''; } catch (error) {}
+        handleDailyClaimRequest(req, res, pathname, discordId);
+      });
+      return;
+    }
+    handleDailyClaimRequest(req, res, pathname, discordId);
+    return;
+  }
+
+  if (pathname === '/api/streamer/connect' && req.method === 'POST') {
+        const owner = findOwnerAccount(req);
+        if (!owner) {
+          res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Please sign in with Google first.' }));
+          return;
+        }
+        let body = '';
+        req.on('data', (chunk) => { body += chunk.toString(); });
+        req.on('end', () => {
+          try {
+            const request = JSON.parse(body || '{}');
+            const platform = request.platform === 'twitch' ? 'twitch' : 'tiktok';
+            const normalize = platform === 'twitch' ? normalizeTwitchUsername : normalizeTikTokUsername;
+            const username = normalize(request.username);
+            if (!username || username.length < 2 || username.length > 40) {
+              res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ error: 'Enter a valid TikTok username.' }));
+              return;
+            }
+            const previous = normalize(owner.account[`${platform}_username`]);
+            if (previous && previous !== username) {
+              if (platform === 'twitch') twitch.stop(previous);
+              else tiktok.stop(previous);
+            }
+            const streamOwner = String(owner.account.handle || owner.accountKey).replace(/^@+/, '').toLowerCase();
+            if (platform === 'twitch') directTwitchOwners.set(username, streamOwner);
+            else directTikTokOwners.set(username, streamOwner);
+            owner.account[`${platform}_username`] = username;
+            owner.accounts[owner.accountKey] = owner.account;
+            saveStreamerAccounts(owner.accounts);
+            if (platform === 'twitch') twitch.watch(username);
+            else tiktok.watch(username);
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ success: true, platform, username, owner: streamOwner, status: 'connecting' }));
+          } catch (error) {
+            console.error('Direct TikTok connect failed:', error);
+            res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ error: 'Could not connect TikTok.' }));
+          }
+        });
+        return;
+  }
+
+  if (pathname === '/api/streamer/me' && req.method === 'GET') {
+        const owner = findOwnerAccount(req);
+        if (!owner) {
+          res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Not authenticated' }));
+          return;
+        }
+        const tiktokUsername = normalizeTikTokUsername(owner.account.tiktok_username);
+        const twitchUsername = normalizeTwitchUsername(owner.account.twitch_username);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+        res.end(JSON.stringify({
+          tiktok: { username: tiktokUsername, connected: Boolean(tiktokUsername && tiktok.rooms.has(tiktokUsername)), status: tiktokUsername && tiktok.rooms.has(tiktokUsername) ? 'connected' : 'offline' },
+          twitch: { username: twitchUsername, connected: Boolean(twitchUsername && twitch.watched.has(twitchUsername)), status: twitchUsername && twitch.watched.has(twitchUsername) ? 'connected' : 'offline' }
+        }));
+        return;
   }
 
   // Get donation history (admin only)
@@ -4194,18 +4284,20 @@ async function handleChatCommand(platform, channel, data) {
 }
 
 tiktok.on('chat', (channel, data) => {
-  broadcastToChannel(`tiktok:${channel}`, { type: 'chat', platform: 'tiktok', channel, data });
-  feedChatToGames('tiktok', channel, data);
+  const owner = getTikTokOwner(channel);
+  broadcastToChannel(`tiktok:${owner}`, { type: 'chat', platform: 'tiktok', channel: owner, data });
+  feedChatToGames('tiktok', owner, data);
   // parse commands asynchronously
-  handleChatCommand('tiktok', channel, data).catch(() => {});
+  handleChatCommand('tiktok', owner, data).catch(() => {});
 });
 
 tiktok.on('gift', (channel, data) => {
-  broadcastToChannel(`tiktok:${channel}`, { type: 'gift', platform: 'tiktok', channel, data });
+  const owner = getTikTokOwner(channel);
+  broadcastToChannel(`tiktok:${owner}`, { type: 'gift', platform: 'tiktok', channel: owner, data });
 });
 
 tiktok.on('like', (channel, data) => {
-  const owner = String(channel || '').trim().toLowerCase();
+  const owner = getTikTokOwner(channel);
   const user = data && data.user ? data.user : data || {};
   const id = String((user.userId || user.uniqueId || user.unique_id || user.user_id || data.userId || data.uniqueId) || '').trim();
   if (!owner || !id) return;
@@ -4214,7 +4306,7 @@ tiktok.on('like', (channel, data) => {
   broadcastToChannel(`tiktok:${channel}`, {
     type: 'engagement',
     platform: 'tiktok',
-    channel,
+    channel: owner,
     engagement: { kind: 'like', userId: id, username: name, amount }
   });
   let entries = topLikersByOwner.get(owner);
@@ -4226,19 +4318,23 @@ tiktok.on('like', (channel, data) => {
   broadcastTopLikers(owner);
 });
 
-tiktok.on('streamStart', (channel) => broadcastToChannel(`tiktok:${channel}`, { type: 'streamStart', platform: 'tiktok', channel }));
+tiktok.on('streamStart', (channel) => {
+  const owner = getTikTokOwner(channel);
+  broadcastToChannel(`tiktok:${owner}`, { type: 'streamStart', platform: 'tiktok', channel: owner });
+});
 tiktok.on('streamEnd', (channel) => {
-  const owner = String(channel || '').toLowerCase();
+  const owner = getTikTokOwner(channel);
   topLikersByOwner.delete(owner);
   broadcastToChannel(`top-likers:${owner}`, topLikersPayload(owner, 'top-likers-reset'));
-  broadcastToChannel(`tiktok:${channel}`, { type: 'streamEnd', platform: 'tiktok', channel });
+  broadcastToChannel(`tiktok:${owner}`, { type: 'streamEnd', platform: 'tiktok', channel: owner });
 });
 
 twitch.on('chat', (channel, data) => {
-  broadcastToChannel(`twitch:${channel}`, { type: 'chat', platform: 'twitch', channel, data });
-  feedChatToGames('twitch', channel, data);
+  const owner = getTwitchOwner(channel);
+  broadcastToChannel(`twitch:${owner}`, { type: 'chat', platform: 'twitch', channel: owner, data });
+  feedChatToGames('twitch', owner, data);
   // parse commands asynchronously
-  handleChatCommand('twitch', channel, data).catch(() => {});
+  handleChatCommand('twitch', owner, data).catch(() => {});
 });
 
 // A failed chat connection must never take the process down: both managers emit
@@ -4252,11 +4348,18 @@ tiktok.on('error', (channel, err) => {
 });
 
 twitch.on('gift', (channel, data) => {
-  broadcastToChannel(`twitch:${channel}`, { type: 'gift', platform: 'twitch', channel, data });
+  const owner = getTwitchOwner(channel);
+  broadcastToChannel(`twitch:${owner}`, { type: 'gift', platform: 'twitch', channel: owner, data });
 });
 
-twitch.on('started', (channel) => broadcastToChannel(`twitch:${channel}`, { type: 'streamStart', platform: 'twitch', channel }));
-twitch.on('stopped', (channel) => broadcastToChannel(`twitch:${channel}`, { type: 'streamEnd', platform: 'twitch', channel }));
+twitch.on('started', (channel) => {
+  const owner = getTwitchOwner(channel);
+  broadcastToChannel(`twitch:${owner}`, { type: 'streamStart', platform: 'twitch', channel: owner });
+});
+twitch.on('stopped', (channel) => {
+  const owner = getTwitchOwner(channel);
+  broadcastToChannel(`twitch:${owner}`, { type: 'streamEnd', platform: 'twitch', channel: owner });
+});
 
 // On startup, load saved tokens and auto-watch known usernames
 try {
@@ -4277,6 +4380,18 @@ try {
           }
         } catch (e) { console.warn('startup auto-watch failed', uname, e); }
       }
+    }
+  }
+  const streamerAccounts = loadStreamerAccounts();
+  for (const account of Object.values(streamerAccounts)) {
+    const username = normalizeTikTokUsername(account.tiktok_username);
+    if (!username) continue;
+    directTikTokOwners.set(username, String(account.handle || '').replace(/^@+/, '').toLowerCase());
+    tiktok.watch(username);
+    const twitchUsername = normalizeTwitchUsername(account.twitch_username);
+    if (twitchUsername) {
+      directTwitchOwners.set(twitchUsername, String(account.handle || '').replace(/^@+/, '').toLowerCase());
+      twitch.watch(twitchUsername);
     }
   }
 } catch (e) { /* ignore */ }

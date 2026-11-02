@@ -503,6 +503,8 @@ function loadStreamerAccounts(callback) {
           handle: row.handle,
           score_combination: row.score_combination || 'combined',
           layout: row.layout || null,
+          tiktok_username: row.tiktok_username || null,
+          twitch_username: row.twitch_username || null,
           created_at: row.created_at
         };
       }
@@ -529,6 +531,8 @@ function loadStreamerAccounts(callback) {
         handle: row.handle,
         score_combination: row.score_combination || 'combined',
         layout: row.layout || null,
+        tiktok_username: row.tiktok_username || null,
+        twitch_username: row.twitch_username || null,
         created_at: row.created_at
       };
     }
@@ -538,7 +542,7 @@ function loadStreamerAccounts(callback) {
 }
 
 function saveStreamerAccounts(accounts) {
-  const stmt = db.prepare('INSERT OR REPLACE INTO streamer_accounts (email, password_hash, api_key, platform, handle, score_combination, layout, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+  const stmt = db.prepare('INSERT OR REPLACE INTO streamer_accounts (email, password_hash, api_key, platform, handle, score_combination, layout, tiktok_username, twitch_username, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
 
   for (const [email, account] of Object.entries(accounts)) {
     stmt.run(
@@ -549,6 +553,8 @@ function saveStreamerAccounts(accounts) {
       account.handle,
       account.score_combination || 'combined',
       account.layout || null,
+      account.tiktok_username || null,
+      account.twitch_username || null,
       account.created_at || Math.floor(Date.now() / 1000)
     );
   }
