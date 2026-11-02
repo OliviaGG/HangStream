@@ -343,6 +343,11 @@ function buildOwnerLoginSuccessPage(ownerId, ownerName, provider, ownerEmail = '
           const ownerEmail = ${emailJson};
           if (ownerId) {
             localStorage.setItem('hangstream-streamer-id', ownerId);
+            localStorage.setItem('hangstream-viewer-profile', JSON.stringify({
+              id: ownerId,
+              name: ownerName,
+              provider: provider
+            }));
             document.cookie = 'owner=' + encodeURIComponent(ownerId) + '; Path=/;';
           }
           if (ownerEmail) {
@@ -352,6 +357,7 @@ function buildOwnerLoginSuccessPage(ownerId, ownerName, provider, ownerEmail = '
           if (provider) localStorage.setItem('hangstream-owner-provider', provider);
           if (window.opener) {
             window.opener.postMessage({ type: 'owner-login', ownerId: ownerId, ownerName: ownerName, provider: provider, email: ownerEmail }, location.origin);
+            window.opener.postMessage({ type: 'viewer-login', id: ownerId, name: ownerName, provider: provider }, location.origin);
           }
         } catch (e) {}
         setTimeout(() => window.close(), 400);
@@ -375,9 +381,15 @@ function buildViewerLoginSuccessPage(viewerId, viewerName, provider, redirectUrl
           const viewerName = ${nameJson};
           const provider = ${providerJson};
           const redirectUrl = ${redirectJson};
+          localStorage.setItem('hangstream-streamer-id', viewerId);
+          localStorage.setItem('hangstream-owner-name', viewerName);
+          localStorage.setItem('hangstream-owner-provider', provider);
+          localStorage.setItem('hangstream-viewer-profile', JSON.stringify({ id: viewerId, name: viewerName, provider: provider }));
+          document.cookie = 'owner=' + encodeURIComponent(viewerId) + '; Path=/;';
           if (window.opener) {
             // Popup case: send message to opener
             window.opener.postMessage({ type: 'viewer-login', id: viewerId, name: viewerName, provider: provider }, location.origin);
+            window.opener.postMessage({ type: 'owner-login', ownerId: viewerId, ownerName: viewerName, provider: provider }, location.origin);
             setTimeout(() => window.close(), 400);
           } else {
             // Redirect case: store in localStorage and redirect back to specified page
@@ -1311,7 +1323,7 @@ if (!session) {
                     saveViewerProfiles(profiles);
                   } catch (e) { console.warn('Failed to persist viewer profile', e); }
 
-                  // set an HTTP-only cookie for the viewer session
+                  const sessionToken = createSessionToken(viewerId, profile.email || '');
                   const viewerCookie = [
                     `viewer_id=${encodeURIComponent(viewerId)}`,
                     'HttpOnly',
@@ -1320,7 +1332,15 @@ if (!session) {
                     `Max-Age=${60 * 60 * 24 * 365}`,
                   ];
                   if (process.env.NODE_ENV === 'production') viewerCookie.push('Secure');
-                  res.setHeader('Set-Cookie', viewerCookie.join('; '));
+                  const ownerCookie = [
+                    `hs_session=${sessionToken}`,
+                    'HttpOnly',
+                    'SameSite=Lax',
+                    'Path=/',
+                    'Max-Age=604800',
+                  ];
+                  if (process.env.NODE_ENV === 'production') ownerCookie.push('Secure');
+                  res.setHeader('Set-Cookie', [viewerCookie.join('; '), ownerCookie.join('; ')]);
                   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
                   res.end(buildViewerLoginSuccessPage(viewerId, viewerName, 'google', redirectUrl));
               } catch (e) {
@@ -1426,14 +1446,22 @@ const sessionCookie = [
   'SameSite=Lax',
   'Max-Age=604800'
 ];
+const viewerCookie = [
+  `viewer_id=${encodeURIComponent(ownerId)}`,
+  'HttpOnly',
+  'SameSite=Lax',
+  'Path=/',
+  `Max-Age=${60 * 60 * 24 * 365}`,
+];
 
 if (process.env.NODE_ENV === 'production') {
   sessionCookie.push('Secure');
+  viewerCookie.push('Secure');
 }
 
 res.writeHead(200, {
   'Content-Type': 'text/html; charset=utf-8',
-  'Set-Cookie': sessionCookie.join('; ')
+  'Set-Cookie': [sessionCookie.join('; '), viewerCookie.join('; ')]
 });
                 res.end(buildOwnerLoginSuccessPage(ownerId, ownerName, 'google', ownerEmail));
               } catch (e) {

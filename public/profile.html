@@ -496,6 +496,35 @@
       margin-bottom: 20px;
     }
 
+    .account-roles {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .account-role {
+      padding: 20px;
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      background: var(--panel);
+    }
+
+    .account-role h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .account-role p {
+      margin: 0 0 16px;
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 640px) {
+      .account-roles { grid-template-columns: 1fr; }
+    }
+
     .bio-section {
       position: relative;
     }
@@ -709,7 +738,7 @@
           <div class="profile-id" id="profile-id">ID: unknown</div>
           <div class="badges">
             <span class="badge viewer" id="viewer-badge">👁️ Viewer</span>
-            <span class="badge streamer hidden" id="streamer-badge">🎬 Streamer</span>
+            <span class="badge streamer" id="streamer-badge">🎬 Streamer</span>
             <span class="badge donor hidden" id="donor-badge">❤️ Donor</span>
           </div>
         </div>
@@ -740,6 +769,22 @@
           <div class="bio-actions">
             <button class="btn btn-primary" onclick="saveBio()">Save</button>
             <button class="btn btn-secondary" onclick="toggleBioEdit()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Your HangStream account</div>
+        <div class="account-roles">
+          <div class="account-role">
+            <h3>👁️ Viewer</h3>
+            <p>Play games, join live streams, save scores, and compete on leaderboards.</p>
+            <a class="btn btn-primary" href="/games">Browse games</a>
+          </div>
+          <div class="account-role">
+            <h3>🎬 Streamer</h3>
+            <p>Set up a game, share your game link, or add the HangStream overlay to OBS or a mobile stream.</p>
+            <a class="btn btn-secondary" href="/streamer">Open streamer dashboard</a>
           </div>
         </div>
       </div>
@@ -1288,18 +1333,17 @@
     }
 
     function checkStreamerStatus() {
-      // Fetch from server
+      // Google accounts can use both viewer and streamer features.
+      isStreamer = true;
+      const streamerBadge = document.getElementById('streamer-badge');
+      if (streamerBadge) streamerBadge.classList.remove('hidden');
+
+      // Keep the legacy status check for deployments that still report
+      // streamer metadata, without hiding the unified-account badge.
       fetch('/viewer/is-streamer')
         .then(res => res.json())
         .then(data => {
-          isStreamer = data.isStreamer === true;
-          // Update badge visibility
-          const streamerBadge = document.getElementById('streamer-badge');
-          if (isStreamer && streamerBadge) {
-            streamerBadge.classList.remove('hidden');
-          } else if (streamerBadge) {
-            streamerBadge.classList.add('hidden');
-          }
+          if (data.isStreamer === true) isStreamer = true;
         })
         .catch(e => {
           console.error('Error checking streamer status:', e);
