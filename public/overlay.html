@@ -295,6 +295,57 @@
     display: none !important;
   }
 
+  @media (max-width: 700px) {
+    .overlay-container {
+      padding: 12px 8px;
+      gap: 16px;
+      justify-content: flex-start;
+    }
+
+    .hangman-container {
+      width: min(58vw, 220px);
+      height: auto;
+    }
+
+    .word-row {
+      gap: 8px;
+      max-width: 100%;
+    }
+
+    .letter-char {
+      font-size: clamp(28px, 9vw, 44px);
+      min-width: clamp(24px, 8vw, 36px);
+    }
+
+    .letter-line {
+      width: clamp(24px, 8vw, 36px);
+    }
+
+    .keyboard {
+      max-width: 100%;
+      gap: 6px;
+    }
+
+    .kb-row {
+      gap: 3px;
+      max-width: 100%;
+    }
+
+    .kb-key {
+      width: clamp(24px, 8vw, 40px);
+      height: clamp(34px, 10vw, 46px);
+      border-width: 1px;
+      border-radius: 8px;
+      font-size: clamp(11px, 3.5vw, 15px);
+    }
+
+    .leaderboard-overlay {
+      padding: 18px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+  }
+
 </style>
 </head>
 <body class="overlay-mode">

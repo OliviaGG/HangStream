@@ -2077,7 +2077,8 @@ function initMobileUI() {
 
   function applySavedLayout() {
     const saved = localStorage.getItem(getMobileLayoutKey());
-    if (saved === 'on') document.body.classList.add('mobile-stream');
+    const requested = new URLSearchParams(window.location.search).get('mobile') === '1';
+    if (saved === 'on' || requested) document.body.classList.add('mobile-stream');
     else document.body.classList.remove('mobile-stream');
   }
 

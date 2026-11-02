@@ -2722,6 +2722,17 @@ const owner = session.ownerId;
         try {
           fs.writeFileSync(applicationsPath, JSON.stringify(applications, null, 2));
           fs.writeFileSync(accountsPath, JSON.stringify(accounts, null, 2));
+          // Keep the database-backed authorization source in sync with the
+          // legacy JSON files used by the admin application.
+          saveStreamerAccounts({
+            [email]: {
+              password_hash: '',
+              api_key: apiKey,
+              platform: app.twitchHandle ? 'twitch' : 'tiktok',
+              handle: app.twitchHandle || app.tiktokHandle || email.split('@')[0],
+              created_at: Math.floor(Date.now() / 1000),
+            }
+          });
           console.log(`Approved application from ${email}`);
           
           // Send approval notification to applicant
@@ -3723,37 +3734,6 @@ wss.on('connection', (ws) => {
         const chan = data.channel.trim();
         const key = `tiktok:${chan}`;
 
-        // Check if streamer has TikTok OAuth connected
-        const hasOAuth = hasTikTokOAuth(chan);
-        const isApproved = isStreamerApproved(chan);
-
-        if (!hasOAuth) {
-          if (isApproved) {
-            // For approved streamers without OAuth, check API key authentication
-            const apiKey = data.apiKey || '';
-            const isAuthenticated = isStreamerAuthenticated(chan, apiKey);
-
-            if (!isAuthenticated) {
-              ws.send(JSON.stringify({
-                type: 'error',
-                error: 'api_key_required',
-                message: 'Approved streamers must provide their API key to connect (OAuth not yet available)',
-                channel: chan
-              }));
-              return;
-            }
-          } else {
-            // Non-approved streamers must have OAuth
-            ws.send(JSON.stringify({
-              type: 'error',
-              error: 'tiktok_oauth_required',
-              message: 'This streamer must connect their TikTok account before anyone can watch their stream',
-              channel: chan
-            }));
-            return;
-          }
-        }
-
         let set = watchers.get(key); if (!set) { set = new Set(); watchers.set(key, set); }
         set.add(ws);
         tiktok.watch(chan);
@@ -3763,37 +3743,6 @@ wss.on('connection', (ws) => {
       if ((platform === 'twitch' || platform === 'both') && data.twitchChannel) {
         const chan = data.twitchChannel.trim();
         const key = `twitch:${chan}`;
-
-        // Check if streamer has Twitch OAuth connected
-        const hasOAuth = hasTwitchOAuth(chan);
-        const isApproved = isStreamerApproved(chan);
-
-        if (!hasOAuth) {
-          if (isApproved) {
-            // For approved streamers without OAuth, check API key authentication
-            const apiKey = data.apiKey || '';
-            const isAuthenticated = isStreamerAuthenticated(chan, apiKey);
-
-            if (!isAuthenticated) {
-              ws.send(JSON.stringify({
-                type: 'error',
-                error: 'api_key_required',
-                message: 'Approved streamers must provide their API key to connect (OAuth not yet available)',
-                channel: chan
-              }));
-              return;
-            }
-          } else {
-            // Non-approved streamers must have OAuth
-            ws.send(JSON.stringify({
-              type: 'error',
-              error: 'twitch_oauth_required',
-              message: 'This streamer must connect their Twitch account before anyone can watch their stream',
-              channel: chan
-            }));
-            return;
-          }
-        }
 
         let set = watchers.get(key); if (!set) { set = new Set(); watchers.set(key, set); }
         set.add(ws);
@@ -3805,37 +3754,6 @@ wss.on('connection', (ws) => {
         // also start tiktok if both specified and tiktokChannel provided
         const chan = data.tiktokChannel.trim();
         const key = `tiktok:${chan}`;
-
-        // Check if streamer has TikTok OAuth connected
-        const hasOAuth = hasTikTokOAuth(chan);
-        const isApproved = isStreamerApproved(chan);
-
-        if (!hasOAuth) {
-          if (isApproved) {
-            // For approved streamers without OAuth, check API key authentication
-            const apiKey = data.apiKey || '';
-            const isAuthenticated = isStreamerAuthenticated(chan, apiKey);
-
-            if (!isAuthenticated) {
-              ws.send(JSON.stringify({
-                type: 'error',
-                error: 'api_key_required',
-                message: 'Approved streamers must provide their API key to connect (OAuth not yet available)',
-                channel: chan
-              }));
-              return;
-            }
-          } else {
-            // Non-approved streamers must have OAuth
-            ws.send(JSON.stringify({
-              type: 'error',
-              error: 'tiktok_oauth_required',
-              message: 'This streamer must connect their TikTok account before anyone can watch their stream',
-              channel: chan
-            }));
-            return;
-          }
-        }
 
         let set = watchers.get(key); if (!set) { set = new Set(); watchers.set(key, set); }
         set.add(ws);
