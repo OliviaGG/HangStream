@@ -962,15 +962,19 @@ function findOwnerAccount(req) {
   if (!session) return null;
   const accounts = loadStreamerAccounts();
   const email = String(session.email || '').trim().toLowerCase();
-  if (!email) return null;
+  const ownerId = String(session.ownerId || '').trim().toLowerCase();
+  const key = email
+    ? (Object.keys(accounts).find((candidate) => candidate.toLowerCase() === email) || email)
+    : (Object.keys(accounts).find((candidate) => candidate.toLowerCase() === ownerId) || ownerId);
+  if (!key) return null;
 
-  const key = Object.keys(accounts).find((candidate) => candidate.toLowerCase() === email) || email;
   if (!accounts[key]) {
     accounts[key] = {
       password_hash: '',
       api_key: null,
       platform: 'google',
-      handle: email.split('@')[0].replace(/[^a-z0-9_.-]/gi, '').slice(0, 40) || `streamer-${Date.now()}`,
+      handle: (email ? email.split('@')[0] : ownerId.replace(/^google:/, ''))
+        .replace(/[^a-z0-9_.-]/gi, '').slice(0, 40) || `streamer-${Date.now()}`,
       score_combination: 'combined',
       layout: null,
       tiktok_username: null,
