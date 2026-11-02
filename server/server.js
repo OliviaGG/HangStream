@@ -86,14 +86,6 @@ const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '';
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || '';
 const SPOTIFY_REDIRECT = process.env.SPOTIFY_REDIRECT_URI || `http://localhost:${port}/oauth/spotify/callback`;
 
-// Approved streamers who can bypass TikTok OAuth requirement (comma-separated usernames)
-const APPROVED_STREAMERS = new Set(
-  (process.env.TIKTOK_APPROVED_STREAMERS || '')
-    .split(',')
-    .map(s => s.trim().toLowerCase())
-    .filter(Boolean)
-);
-
 // Stripe initialization
 const stripeKey = process.env.STRIPE_SECRET_KEY;
 const stripe = stripeKey && stripeKey !== 'sk_test_your_key_here' && stripeKey !== 'sk_live_your_key_here' ? require('stripe')(stripeKey) : null;
@@ -250,6 +242,21 @@ function isStreamerAuthenticated(channel, apiKey) {
 
     // Match by channel name and API key
     if (accountHandle === channelLower && accountApiKey === apiKey) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// Check if a streamer is approved (has a streamer account)
+function isStreamerApproved(channel) {
+  const accounts = loadStreamerAccounts();
+  const channelLower = String(channel || '').toLowerCase();
+
+  for (const [email, account] of Object.entries(accounts || {})) {
+    const accountHandle = (account.handle || '').toLowerCase();
+    if (accountHandle === channelLower) {
       return true;
     }
   }
@@ -3718,7 +3725,7 @@ wss.on('connection', (ws) => {
 
         // Check if streamer has TikTok OAuth connected
         const hasOAuth = hasTikTokOAuth(chan);
-        const isApproved = APPROVED_STREAMERS.has(chan.toLowerCase());
+        const isApproved = isStreamerApproved(chan);
 
         if (!hasOAuth) {
           if (isApproved) {
@@ -3759,7 +3766,7 @@ wss.on('connection', (ws) => {
 
         // Check if streamer has Twitch OAuth connected
         const hasOAuth = hasTwitchOAuth(chan);
-        const isApproved = APPROVED_STREAMERS.has(chan.toLowerCase());
+        const isApproved = isStreamerApproved(chan);
 
         if (!hasOAuth) {
           if (isApproved) {
@@ -3801,7 +3808,7 @@ wss.on('connection', (ws) => {
 
         // Check if streamer has TikTok OAuth connected
         const hasOAuth = hasTikTokOAuth(chan);
-        const isApproved = APPROVED_STREAMERS.has(chan.toLowerCase());
+        const isApproved = isStreamerApproved(chan);
 
         if (!hasOAuth) {
           if (isApproved) {

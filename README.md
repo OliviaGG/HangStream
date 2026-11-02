@@ -52,7 +52,7 @@ npm install
 cp .env.example .env
 ```
 
-4. Edit `.env` with your credentials:
+4. Edit `.env` with your credentials (see `.env.example` for full configuration):
 ```env
 NODE_ENV=production
 PORT=8080
@@ -74,6 +74,8 @@ TWITCH_CLIENT_SECRET=<optional, for Twitch chat>
 TWITCH_REDIRECT_URI=https://yourdomain.com/oauth/twitch/callback
 TWITCH_VIEWER_REDIRECT_URI=https://yourdomain.com/auth/twitch/callback
 ```
+
+**Note:** Approved streamers are automatically detected from the database when you approve their application via the admin dashboard. No manual configuration needed.
 
 5. Start the server:
 ```bash
@@ -130,11 +132,9 @@ After OAuth connection:
 While OAuth applications are pending approval, approved streamers can use API key authentication:
 
 **Setup (Admin):**
-1. Add approved streamer usernames to `.env`:
-   ```env
-   TIKTOK_APPROVED_STREAMERS=username1,username2,username3
-   ```
-2. Streamers receive an API key when their application is approved (stored in the `streamer_accounts` table)
+1. Approve streamer applications via the admin dashboard (`/admin`)
+2. Approved streamers are automatically granted access to use API key authentication
+3. Streamers receive an API key when their application is approved (stored in the `streamer_accounts` table)
 
 **Streamer Connection:**
 1. Go to streamer settings (`/streamer`)
@@ -168,10 +168,9 @@ TWITCH_CLIENT_ID=<your Twitch client ID>
 TWITCH_CLIENT_SECRET=<your Twitch client secret>
 TWITCH_REDIRECT_URI=https://yourdomain.com/oauth/twitch/callback
 TWITCH_VIEWER_REDIRECT_URI=https://yourdomain.com/auth/twitch/callback
-
-# Approved streamers (for API key authentication while OAuth is pending)
-TIKTOK_APPROVED_STREAMERS=username1,username2,username3
 ```
+
+**Note:** Approved streamers are automatically detected from the `streamer_accounts` database table. No manual configuration needed.
 
 ### Viewer Account Linking
 Viewers can optionally link their TikTok and Twitch accounts to their profile:
