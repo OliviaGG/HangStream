@@ -1030,15 +1030,12 @@ const server = http.createServer((req, res) => {
     }
     const redirectUrl = reqUrl.searchParams.get('redirect') || '/profile.html';
     const existingSession = readOwnerSession(req);
-    const existingViewerId = parseCookies(req.headers.cookie).viewer_id;
-    if (existingSession || existingViewerId) {
+    // A viewer_id alone is not enough for streamer access: it does not carry
+    // the Google email used to locate the approved streamer account. Only
+    // reuse a completed owner session here; viewer sessions must complete the
+    // owner OAuth callback below.
+    if (existingSession && String(existingSession.email || '').trim()) {
       const headers = { Location: redirectUrl };
-      if (!existingSession && existingViewerId) {
-        const viewerId = decodeURIComponent(existingViewerId);
-        let sessionCookie = `hs_session=${createSessionToken(viewerId, '')}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800`;
-        if (process.env.NODE_ENV === 'production') sessionCookie += '; Secure';
-        headers['Set-Cookie'] = sessionCookie;
-      }
       res.writeHead(302, headers);
       res.end();
       return;
