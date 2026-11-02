@@ -2966,11 +2966,30 @@ const owner = session.ownerId;
 
   // Check authentication status
    if (pathname === '/auth/check' && req.method === 'GET') {
-    const session = readOwnerSession(req);
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    let session = readOwnerSession(req);
+    const cookies = parseCookies(req.headers.cookie);
+    let setCookie = null;
+
+    // Viewer Google sign-in predates the shared owner session. Upgrade that
+    // existing cookie so the same account can open streamer settings without
+    // signing in a second time.
+    if (!session && cookies.viewer_id) {
+      const viewerId = decodeURIComponent(cookies.viewer_id);
+      if (viewerId) {
+        session = { ownerId: viewerId, email: '' };
+        const sessionToken = createSessionToken(viewerId, '');
+        setCookie = `hs_session=${sessionToken}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800`;
+        if (process.env.NODE_ENV === 'production') setCookie += '; Secure';
+      }
+    }
+
+    const headers = { 'Content-Type': 'application/json; charset=utf-8' };
+    if (setCookie) headers['Set-Cookie'] = setCookie;
+    res.writeHead(200, headers);
     res.end(JSON.stringify({
       authenticated: Boolean(session),
-      email: session ? session.email : null
+      email: session ? session.email : null,
+      ownerId: session ? session.ownerId : null
     }));
     return;
   }  

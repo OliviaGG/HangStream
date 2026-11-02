@@ -859,7 +859,12 @@
 
       function getStreamerId() {
         try {
-          return sanitizeStreamerId(localStorage.getItem(streamerIdKey) || '') || '';
+          return sanitizeStreamerId(
+            localStorage.getItem(streamerIdKey)
+              || localStorage.getItem('hangstream-streamer-id')
+              || localStorage.getItem('hangstream-owner-name')
+              || ''
+          ) || '';
         } catch (e) { return ''; }
       }
 
@@ -1555,6 +1560,9 @@
             return { authenticated: false, approved: false, hasApplication: false };
           }
 
+          if (data.ownerId) {
+            setStreamerId(data.ownerId);
+          }
           return { authenticated: true, approved: true, hasApplication: false };
         } catch (error) {
           console.error('Auth check failed:', error);
