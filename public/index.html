@@ -1207,6 +1207,8 @@ function getRouteNamespace() {
 }
 
 function getStreamerNamespace() {
+  const queryOwner = new URLSearchParams(window.location.search).get('owner');
+  if (queryOwner) return queryOwner;
   try {
     const routeNamespace = getRouteNamespace();
     if (routeNamespace) return routeNamespace;

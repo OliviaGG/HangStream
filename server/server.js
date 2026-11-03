@@ -938,6 +938,11 @@ async function handleDailyClaimRequest(req, res, pathname, discordId) {
 
 const directTikTokOwners = new Map();
 const directTwitchOwners = new Map();
+const liveTikTokChannels = new Set();
+const liveTwitchChannels = new Set();
+let twitchAppToken = null;
+let twitchAppTokenExpiresAt = 0;
+const twitchLiveCache = new Map();
 
 function normalizeTikTokUsername(value) {
   return String(value || '').trim().replace(/^@+/, '').toLowerCase().replace(/[^a-z0-9._]/g, '');
@@ -982,6 +987,66 @@ function findOwnerAccount(req) {
       created_at: Math.floor(Date.now() / 1000)
     };
     saveStreamerAccounts(accounts);
+  }
+
+  function requestJson(options, body = '') {
+    return new Promise((resolve, reject) => {
+      const request = https.request(options, (response) => {
+        let data = '';
+        response.on('data', (chunk) => { data += chunk; });
+        response.on('end', () => {
+          let parsed = null;
+          try { parsed = JSON.parse(data || '{}'); } catch (error) {}
+          if (response.statusCode < 200 || response.statusCode >= 300) {
+            reject(new Error(`HTTP ${response.statusCode}`));
+            return;
+          }
+          resolve(parsed);
+        });
+      });
+      request.on('error', reject);
+      if (body) request.write(body);
+      request.end();
+    });
+  }
+
+  async function getTwitchAppToken() {
+    if (!TWITCH_CLIENT_ID || !TWITCH_CLIENT_SECRET) return null;
+    if (twitchAppToken && twitchAppTokenExpiresAt > Date.now() + 60000) return twitchAppToken;
+    const body = querystring.stringify({
+      client_id: TWITCH_CLIENT_ID,
+      client_secret: TWITCH_CLIENT_SECRET,
+      grant_type: 'client_credentials'
+    });
+    const data = await requestJson({
+      hostname: 'id.twitch.tv',
+      path: '/oauth2/token',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) }
+    }, body);
+    twitchAppToken = data.access_token || null;
+    twitchAppTokenExpiresAt = Date.now() + Number(data.expires_in || 0) * 1000;
+    return twitchAppToken;
+  }
+
+  async function getTwitchLiveChannels(usernames) {
+    const normalized = [...new Set(usernames.map(normalizeTwitchUsername).filter(Boolean))];
+    if (!normalized.length) return new Set();
+    try {
+      const token = await getTwitchAppToken();
+      if (!token) return new Set();
+      const params = normalized.map((name) => `user_login=${encodeURIComponent(name)}`).join('&');
+      const data = await requestJson({
+        hostname: 'api.twitch.tv',
+        path: `/helix/streams?${params}`,
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}`, 'Client-Id': TWITCH_CLIENT_ID }
+      });
+      return new Set((data.data || []).map((stream) => normalizeTwitchUsername(stream.user_login)));
+    } catch (error) {
+      console.warn('Twitch live directory lookup failed:', error.message);
+      return new Set();
+    }
   }
 
   return { accounts, accountKey: key, account: accounts[key] };
@@ -3235,6 +3300,35 @@ const owner = session.ownerId;
           res.end(JSON.stringify({ error: 'Your HangStream session is missing. Complete Google sign-in before loading streamer connections.' }));
           return;
         }
+
+        if (pathname === '/api/live-streams' && req.method === 'GET') {
+          const accounts = loadStreamerAccounts();
+          const entries = Object.values(accounts).map((account) => ({
+            owner: String(account.handle || '').replace(/^@+/, '').toLowerCase(),
+            game: String(account.selected_game || 'hangman').toLowerCase(),
+            twitch: normalizeTwitchUsername(account.twitch_username),
+            tiktok: normalizeTikTokUsername(account.tiktok_username)
+          })).filter((entry) => entry.owner && (entry.twitch || entry.tiktok));
+          const twitchNames = entries.map((entry) => entry.twitch).filter(Boolean);
+          getTwitchLiveChannels(twitchNames).then((liveTwitch) => {
+            const streams = [];
+            for (const entry of entries) {
+          if (entry.twitch && liveTwitch.has(entry.twitch)) {
+            streams.push({ owner: entry.owner, platform: 'Twitch', username: entry.twitch, game: entry.game });
+          }
+          if (entry.tiktok && liveTikTokChannels.has(entry.tiktok)) {
+            streams.push({ owner: entry.owner, platform: 'TikTok', username: entry.tiktok, game: entry.game });
+          }
+            }
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+            res.end(JSON.stringify({ streams }));
+          }).catch((error) => {
+            console.error('Live directory lookup failed:', error);
+            res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ error: 'Could not load live streams' }));
+          });
+          return;
+        }
         const tiktokUsername = normalizeTikTokUsername(owner.account.tiktok_username);
         const twitchUsername = normalizeTwitchUsername(owner.account.twitch_username);
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -4337,10 +4431,12 @@ tiktok.on('like', (channel, data) => {
 });
 
 tiktok.on('streamStart', (channel) => {
+  liveTikTokChannels.add(normalizeTikTokUsername(channel));
   const owner = getTikTokOwner(channel);
   broadcastToChannel(`tiktok:${owner}`, { type: 'streamStart', platform: 'tiktok', channel: owner });
 });
 tiktok.on('streamEnd', (channel) => {
+  liveTikTokChannels.delete(normalizeTikTokUsername(channel));
   const owner = getTikTokOwner(channel);
   topLikersByOwner.delete(owner);
   broadcastToChannel(`top-likers:${owner}`, topLikersPayload(owner, 'top-likers-reset'));
@@ -4371,10 +4467,12 @@ twitch.on('gift', (channel, data) => {
 });
 
 twitch.on('started', (channel) => {
+  liveTwitchChannels.add(normalizeTwitchUsername(channel));
   const owner = getTwitchOwner(channel);
   broadcastToChannel(`twitch:${owner}`, { type: 'streamStart', platform: 'twitch', channel: owner });
 });
 twitch.on('stopped', (channel) => {
+  liveTwitchChannels.delete(normalizeTwitchUsername(channel));
   const owner = getTwitchOwner(channel);
   broadcastToChannel(`twitch:${owner}`, { type: 'streamEnd', platform: 'twitch', channel: owner });
 });

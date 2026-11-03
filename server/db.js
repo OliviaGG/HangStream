@@ -125,6 +125,12 @@ function initializeSchema() {
       }
     });
 
+    db.run(`ALTER TABLE streamer_accounts ADD COLUMN selected_game TEXT DEFAULT 'hangman'`, (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.error('Error adding selected_game column:', err.message);
+      }
+    });
+
     // Donations table
     db.run(`CREATE TABLE IF NOT EXISTS donations (
       id TEXT PRIMARY KEY,

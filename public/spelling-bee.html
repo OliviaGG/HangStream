@@ -1037,6 +1037,8 @@ function getOwnerKey() {
 }
 
 function getStreamerNamespace() {
+  const queryOwner = new URLSearchParams(window.location.search).get('owner');
+  if (queryOwner) return queryOwner;
   try {
     const cookieOwner = getCookieValue('owner');
     if (cookieOwner) return cookieOwner;

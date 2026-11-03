@@ -320,6 +320,12 @@
     </div>
   </section>
 
+  <section class="game-card" style="margin-bottom:20px;" id="live-directory">
+    <div class="game-name">Live now</div>
+    <div class="game-description" id="live-directory-status">Checking Twitch and TikTok for HangStream games...</div>
+    <div id="live-directory-list" class="games-grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));"></div>
+  </section>
+
   <section class="game-card" style="margin-bottom:20px;">
     <div class="game-name">Joining someone who is live</div>
     <div class="game-description" style="margin-bottom:14px;">
@@ -469,6 +475,69 @@ function toggleTheme() {
   applyTheme(currentTheme === 'light' ? 'dark' : 'light');
 }
 
+const GAME_NAMES = {
+  hangman: 'Hangman',
+  'spelling-bee': 'Spelling Bee',
+  'speed-scramble': 'Speed Scramble',
+  searchle: 'Searchle',
+  wordle: 'Wordle'
+};
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+}
+
+function liveGamePath(game, owner) {
+  const paths = {
+    hangman: '/hangman/online',
+    'spelling-bee': '/spelling-bee/online',
+    'speed-scramble': '/speed-scramble/online',
+    searchle: '/searchle/online',
+    wordle: '/wordle/online'
+  };
+  return `${paths[game] || paths.hangman}?owner=${encodeURIComponent(owner)}`;
+}
+
+async function loadLiveDirectory() {
+  const status = document.getElementById('live-directory-status');
+  const list = document.getElementById('live-directory-list');
+  try {
+    const response = await fetch('/api/live-streams', { cache: 'no-store' });
+    if (!response.ok) throw new Error('Live directory unavailable');
+    const data = await response.json();
+    const streams = Array.isArray(data.streams) ? data.streams : [];
+    if (!streams.length) {
+      status.textContent = 'Nobody is live on HangStream right now. Check back soon, or choose Solo to practice.';
+      list.innerHTML = '';
+      return;
+    }
+    const grouped = streams.reduce((groups, stream) => {
+      const key = stream.game || 'hangman';
+      (groups[key] ||= []).push(stream);
+      return groups;
+    }, {});
+    status.textContent = 'Choose a streamer below. Multiple streamers can play the same game at the same time.';
+    list.innerHTML = Object.entries(grouped).map(([game, entries]) => `
+      <div class="game-card" style="padding:18px;">
+        <div class="game-name">${escapeHtml(GAME_NAMES[game] || game)}</div>
+        <div style="display:grid;gap:10px;">
+          ${entries.map((stream) => `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid var(--border);border-radius:12px;">
+              <div>
+                <strong>${escapeHtml(stream.username)}</strong>
+                <div class="player-count">${escapeHtml(stream.platform)} live</div>
+              </div>
+              <a class="mode-btn online" style="flex:0 0 auto;padding:10px 12px;" href="${liveGamePath(game, stream.owner)}">Join</a>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  } catch (error) {
+    status.textContent = 'Live status is temporarily unavailable. You can still use Solo mode.';
+  }
+}
+
 function renderGames() {
   const grid = document.getElementById('games-grid');
   if (!grid) return;
@@ -537,6 +606,8 @@ document.addEventListener('DOMContentLoaded', () => {
   
   applyTheme(localStorage.getItem(getThemeStorageKey()) || 'dark');
   renderGames();
+  loadLiveDirectory();
+  window.setInterval(loadLiveDirectory, 30000);
   updatePlayerCounts();
   
   // Update player counts every 10 seconds
