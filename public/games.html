@@ -249,6 +249,32 @@
     animation: pulse 1.5s infinite;
   }
 
+  .join-guide {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .join-guide-step {
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--panel) 70%, transparent);
+  }
+
+  .join-guide-step strong {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  .join-guide-step span {
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.4; }
@@ -268,6 +294,7 @@
     .game-modes { flex-direction: column; gap: 8px; }
     .mode-btn { font-size: 14px; padding: 12px 20px; }
     .player-count { font-size: 12px; }
+    .join-guide { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -290,6 +317,30 @@
     <div class="game-name">Choose a game for live chat play or solo mode</div>
     <div class="game-description">
       During a Twitch or TikTok stream, viewers can become the players by sending guesses and actions from chat. Streamers can show the game with a desktop overlay or by sharing their mobile screen. When no streamer is live, anyone can use solo mode to play from the browser whenever they want.
+    </div>
+  </section>
+
+  <section class="game-card" style="margin-bottom:20px;">
+    <div class="game-name">Joining someone who is live</div>
+    <div class="game-description" style="margin-bottom:14px;">
+      You do not need to start a stream or connect an account. Follow the streamer on Twitch or TikTok, open the HangStream game link they share, and use the streamer’s live chat to play.
+    </div>
+    <div class="join-guide">
+      <div class="join-guide-step">
+        <strong>1. Find the live stream</strong>
+        <span>Open the streamer’s Twitch or TikTok live stream and look for their HangStream game link.</span>
+      </div>
+      <div class="join-guide-step">
+        <strong>2. Open the game link</strong>
+        <span>Choose the live/online game link. The LIVE indicator means the game is connected to that stream.</span>
+      </div>
+      <div class="join-guide-step">
+        <strong>3. Play from chat</strong>
+        <span>Type the letter or word requested by the game into that streamer’s Twitch or TikTok chat.</span>
+      </div>
+    </div>
+    <div class="game-description">
+      If the streamer is not live, choose <strong style="color:var(--text);">Solo</strong> instead. Solo mode is practice and is not sent to a streamer’s chat.
     </div>
   </section>
 
@@ -451,9 +502,9 @@ function renderGames() {
         <a href="${game.onlinePath}" class="mode-btn online">
           <span style="display: flex; align-items: center; gap: 6px;">
             <span class="live-indicator"></span>
-            <span>Online</span>
+            <span>Live / Online</span>
           </span>
-          <span class="player-count" id="player-count-${game.id}">Loading...</span>
+          <span class="player-count" id="player-count-${game.id}">Open the streamer’s game link</span>
         </a>
       </div>
     </div>
