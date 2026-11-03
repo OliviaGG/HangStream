@@ -951,7 +951,7 @@
     (function(){
       const streamerIdKey = 'hangstream-streamer-user-id';
       const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-      const url = proto + '://' + location.host;
+      const url = proto + '://' + location.host + '/ws';
       const canUseWebSocket = (location.protocol === 'http:' || location.protocol === 'https:') && Boolean(location.host);
       let ws = null;
       let backoff = 1000;
