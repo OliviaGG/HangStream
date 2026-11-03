@@ -193,6 +193,15 @@ TWITCH_REDIRECT_URI=https://yourdomain.com/oauth/twitch/callback
 TWITCH_VIEWER_REDIRECT_URI=https://yourdomain.com/auth/twitch/callback
 ```
 
+### Word validation sources
+
+The server-side dictionary combines HangStream's existing word banks with
+`public/basic-english-words.json`, which is derived from the [Simple English
+Wikipedia Basic English combined wordlist](https://simple.wikipedia.org/wiki/Wikipedia:Basic_English_combined_wordlist).
+The source metadata and attribution are included in that JSON file. The
+additional words are merged into validation; the existing word banks remain
+available.
+
 **Note:** Approved streamers are automatically detected from the `streamer_accounts` database table. No manual configuration needed.
 
 ### Viewer Account Linking

@@ -13,6 +13,8 @@
 //                                     curated target list, tagged by difficulty
 //   - <repo>/server/searchle/shared/word-bank/dictionary.json
 //                                     { "<len>": [words...] } large dictionary
+//   - public/basic-english-words.json
+//                                     Wikipedia Basic English combined list
 //
 // The dictionary.json that ships with Searchle is the richest source, so we
 // prefer it when present and fall back to the smaller lists otherwise.
@@ -29,6 +31,7 @@ const PUBLIC_DIR = path.join(__dirname, '..', '..', 'public');
 const SEARCHLE_DICT = path.join(__dirname, '..', 'searchle', 'shared', 'word-bank', 'dictionary.json');
 const SEARCHLE_BANK = path.join(__dirname, '..', 'searchle', 'shared', 'word-bank');
 const WORD_BANK_PATH = path.join(PUBLIC_DIR, 'word-bank.json');
+const BASIC_ENGLISH_PATH = path.join(PUBLIC_DIR, 'basic-english-words.json');
 
 // Zipf-ish common-word tiers. Without a frequency table we approximate rarity
 // from length: short words are common, long words are rare. Word Tycoon uses a
@@ -106,6 +109,23 @@ function loadFromWordleWords() {
     return list.length;
   } catch (err) {
     console.warn('word-bank: failed to read wordle-words.js:', err.message);
+    return 0;
+  }
+}
+
+function loadFromBasicEnglish() {
+  if (!fs.existsSync(BASIC_ENGLISH_PATH)) return 0;
+  try {
+    const raw = JSON.parse(fs.readFileSync(BASIC_ENGLISH_PATH, 'utf8'));
+    const list = Array.isArray(raw) ? raw : (raw.words || []);
+    let count = 0;
+    for (const word of list) {
+      addWord(word);
+      count++;
+    }
+    return count;
+  } catch (err) {
+    console.warn('word-bank: failed to read basic-english-words.json:', err.message);
     return 0;
   }
 }
@@ -215,8 +235,9 @@ function load() {
   const fromDict = loadFromSearchleDictionary();
   const fromCustom = loadFromCustomWords();
   const fromWordle = loadFromWordleWords();
+  const fromBasicEnglish = loadFromBasicEnglish();
   loaded = true;
-  console.log(`word-bank loaded: ${allWords.size} words (searchle:${fromDict} custom:${fromCustom} wordle:${fromWordle})`);
+  console.log(`word-bank loaded: ${allWords.size} words (searchle:${fromDict} custom:${fromCustom} wordle:${fromWordle} basic-english:${fromBasicEnglish})`);
   return { sizes: sizes(), total: allWords.size };
 }
 

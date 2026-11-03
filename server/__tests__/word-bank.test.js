@@ -73,6 +73,12 @@ test('the general pool is much larger than the curated one', () => {
   assert.ok(general.length > curated.length * 5);
 });
 
+test('the shared dictionary includes the Basic English source', () => {
+  dictionary.load();
+  assert.equal(dictionary.has('ability'), true);
+  assert.equal(dictionary.has('government'), true);
+});
+
 test('every curated word carries a category and a difficulty', () => {
   for (const entry of dictionary.curated()) {
     assert.ok(entry.word, 'curated entry without a word');
