@@ -70,7 +70,7 @@
         top.forEach(entry => previous.set(entry.id, Number(entry.likes || 0)));
       }
       const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const socket = new WebSocket(`${protocol}//${location.host}`);
+      const socket = new WebSocket(`${protocol}//${location.host}/ws`);
       socket.addEventListener('open', () => {
         socket.send(JSON.stringify({ type: 'watch-top-likers', owner }));
         status.textContent = `Connected · ${owner}`;

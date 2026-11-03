@@ -1133,7 +1133,7 @@ function connectChatWebSocket() {
   if (chatWS) return;
   
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  const wsUrl = `${proto}://${location.host}`;
+  const wsUrl = `${proto}://${location.host}/ws`;
   
   try {
     chatWS = new WebSocket(wsUrl);

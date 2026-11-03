@@ -704,7 +704,7 @@ function connectWebSocket() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   const url = `${proto}://${location.host}`;
 
-  ws = new WebSocket(url);
+  ws = new WebSocket(url + '/ws');
   ws.addEventListener('open', () => {
     console.log('Overlay WebSocket connected');
     // Join the streamer's channel. `platform: both` with explicit channels is

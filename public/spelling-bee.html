@@ -1084,7 +1084,7 @@ function connectChatWebSocket() {
   if (chatWS) return;
   
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  const wsUrl = `${proto}://${location.host}`;
+  const wsUrl = `${proto}://${location.host}/ws`;
   
   try {
     chatWS = new WebSocket(wsUrl);
@@ -1352,6 +1352,15 @@ function renderHoneycomb() {
   
   // Global mouse events
   document.addEventListener('mouseup', handleHexEnd);
+  document.addEventListener('touchmove', (e) => {
+    if (!isDragging || !e.touches[0]) return;
+    e.preventDefault();
+    const target = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+    const hex = target && target.closest ? target.closest('.hex') : null;
+    if (hex) {
+      handleHexEnter(Number(hex.dataset.row), Number(hex.dataset.col), Number(hex.dataset.index));
+    }
+  }, { passive: false });
   document.addEventListener('touchend', handleHexEnd);
 }
 

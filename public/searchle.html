@@ -1372,7 +1372,7 @@ function connectChatWebSocket() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
 
   try {
-    chatWS = new WebSocket(`${proto}://${location.host}`);
+    chatWS = new WebSocket(`${proto}://${location.host}/ws`);
 
     chatWS.addEventListener('open', () => {
       document.getElementById('status-dot')?.classList.add('connected');

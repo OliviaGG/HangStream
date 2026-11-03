@@ -2279,7 +2279,7 @@ if (state.gameMode === 'online' && streamerNamespace) {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
     const url = `${proto}://${location.host}`;
 
-    gameWs = new WebSocket(url);
+    gameWs = new WebSocket(url + '/ws');
     gameWs.addEventListener('open', () => {
       console.log('Game WebSocket connected');
       // Try to get API key from localStorage for approved streamers

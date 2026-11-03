@@ -44,7 +44,7 @@
         return;
       }
       const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const socket = new WebSocket(`${protocol}//${location.host}`);
+      const socket = new WebSocket(`${protocol}//${location.host}/ws`);
       let currentImage = null;
       let imageTimer = null;
       function showImage(action) {
