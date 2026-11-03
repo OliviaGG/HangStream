@@ -393,6 +393,54 @@
       .stats { grid-template-columns: 1fr; }
     }
 
+    .platform-connect-row {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .platform-connect-row .setting-input {
+      min-width: 0;
+    }
+
+    input, select, textarea {
+      font-size: 16px;
+    }
+
+    @media (max-width: 640px) {
+      html, body { overflow-x: hidden; }
+      .page { padding: 12px 10px 40px; }
+      header {
+        align-items: flex-start !important;
+        flex-direction: column;
+        padding: 16px !important;
+      }
+      header h1 { font-size: 56px; }
+      header nav { width: 100%; justify-content: space-between; }
+      .hero { gap: 12px; }
+      .intro, .section, .sidebar { padding: 16px; }
+      .setup-step { padding: 16px; }
+      .platform-connect-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+      .platform-connect-row .btn {
+        width: auto;
+        min-height: 46px;
+        padding-inline: 12px;
+      }
+      .platform-connect-row .live-indicator {
+        grid-column: 1 / -1;
+        justify-self: start;
+      }
+      #connect-modal > div { max-height: 90vh; overflow-y: auto; padding: 18px !important; }
+      #connect-modal .platform-connect-row {
+        grid-template-columns: 1fr;
+      }
+      #connect-modal .platform-connect-row .btn,
+      #connect-modal .btn { width: 100%; }
+    }
+
     @media (max-width: 640px) {
       .page { padding-inline: 14px; }
       .intro, .section, .sidebar { padding: 18px; }
@@ -482,11 +530,11 @@
             <h3 style="margin:0 0 16px 0;font-size:20px;">Connect to Stream</h3>
             <p style="color:var(--text-muted);margin-bottom:20px;">Choose which platform you want to connect to for streaming.</p>
             <div style="display:flex;flex-direction:column;gap:12px;">
-              <div style="display:flex;gap:8px;align-items:center;">
+              <div class="platform-connect-row" style="display:flex;gap:8px;align-items:center;">
                 <input id="twitch-username-input-modal" class="setting-input" type="text" placeholder="@your_twitch_username" maxlength="30" style="flex:1;">
                 <button class="btn btn-secondary" type="button" onclick="connectTwitch('twitch-username-input-modal')" style="text-align:center;">Connect Twitch chat</button>
               </div>
-              <div style="display:flex;gap:8px;align-items:center;">
+              <div class="platform-connect-row" style="display:flex;gap:8px;align-items:center;">
                 <input id="tiktok-username-input-modal" class="setting-input" type="text" placeholder="@your_tiktok_username" maxlength="40" style="flex:1;">
                 <button class="btn btn-secondary" type="button" onclick="connectTikTok('tiktok-username-input-modal')" style="text-align:center;">Connect TikTok chat</button>
               </div>
@@ -520,16 +568,16 @@
           <p style="color:var(--text-muted);margin-bottom:20px;">Platform chat connections are optional. You can use the HangStream game and overlay right away.</p>
           <div id="step-2-content">
             <div class="action-row" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
-              <div style="display:flex;gap:8px;align-items:center;">
+              <div class="platform-connect-row" style="display:flex;gap:8px;align-items:center;">
                 <input id="twitch-username-input" class="setting-input" type="text" placeholder="@your_twitch_username" maxlength="30" style="flex:1;">
                 <button id="twitch-connect-btn" class="btn btn-secondary" type="button" onclick="connectTwitch()">Connect Twitch chat</button>
-                <span id="twitch-live-indicator" role="status" aria-live="polite" style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap;color:var(--text-muted);font-size:12px;font-weight:700;">● OFFLINE</span>
+                <span id="twitch-live-indicator" class="live-indicator" role="status" aria-live="polite" style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap;color:var(--text-muted);font-size:12px;font-weight:700;">● OFFLINE</span>
               </div>
               <p id="twitch-connect-status" style="color:var(--text-muted);font-size:13px;margin:10px 0 0;">Enter your Twitch username. HangStream joins the chat automatically.</p>
-              <div style="display:flex;gap:8px;align-items:center;">
+              <div class="platform-connect-row" style="display:flex;gap:8px;align-items:center;">
                 <input id="tiktok-username-input" class="setting-input" type="text" placeholder="@your_tiktok_username" maxlength="40" style="flex:1;">
                 <button id="tiktok-connect-btn" class="btn btn-secondary" type="button" onclick="connectTikTok()">Connect TikTok chat</button>
-                <span id="tiktok-live-indicator" role="status" aria-live="polite" style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap;color:var(--text-muted);font-size:12px;font-weight:700;">● OFFLINE</span>
+                <span id="tiktok-live-indicator" class="live-indicator" role="status" aria-live="polite" style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap;color:var(--text-muted);font-size:12px;font-weight:700;">● OFFLINE</span>
               </div>
               <p id="tiktok-connect-status" style="color:var(--text-muted);font-size:13px;margin:10px 0 0;">Enter your TikTok username. HangStream connects when you go live.</p>
             </div>
