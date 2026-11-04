@@ -901,6 +901,15 @@
               <input id="overlay-layout-accent" type="color" value="#ff4d6d" style="height:40px;width:100%;">
             </label>
           </div>
+          <div style="margin-top:20px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px;">
+              <strong>Move overlay parts</strong>
+              <span style="font-size:12px;color:var(--text-muted);">Drag the cards where you want them on stream.</span>
+            </div>
+            <div id="overlay-layout-preview" style="position:relative;min-height:280px;border:1px solid var(--panel-border);border-radius:16px;background:linear-gradient(135deg,#15151d,#242438);overflow:hidden;">
+              <div class="overlay-preview-grid" style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);background-size:10% 20%;"></div>
+            </div>
+          </div>
           <div style="display:flex;align-items:center;gap:12px;margin-top:18px;">
             <button id="save-overlay-layout" class="btn btn-primary" type="button">Save overlay layout</button>
             <span id="overlay-layout-status" style="font-size:13px;color:var(--text-muted);" role="status"></span>
@@ -2012,7 +2021,8 @@
       direction: 'column',
       scale: 1,
       accent: '#ff4d6d',
-      visible: { status: true, category: true, hangman: true, lives: true, word: true, keyboard: true, vote: true }
+      visible: { status: true, category: true, hangman: true, lives: true, word: true, keyboard: true, vote: true },
+      positions: {}
     };
 
     function setOverlayLayoutControls(layout) {
@@ -2027,6 +2037,7 @@
       if (direction) direction.value = value.direction === 'row' ? 'row' : 'column';
       if (scale) scale.value = String(Number(value.scale) || 1);
       if (accent && /^#[0-9a-f]{6}$/i.test(String(value.accent || ''))) accent.value = value.accent;
+      renderOverlayLayoutPreview(value.positions || {});
     }
 
     function getOverlayLayoutControls() {
@@ -2038,8 +2049,60 @@
         direction: document.getElementById('overlay-layout-direction').value,
         scale: Number(document.getElementById('overlay-layout-scale').value),
         accent: document.getElementById('overlay-layout-accent').value,
-        visible
+        visible,
+        positions: getOverlayLayoutPositions()
       };
+    }
+
+    const overlayPreviewItems = [
+      ['status', 'Game status'], ['category', 'Category'], ['hangman', 'Hangman board'],
+      ['lives', 'Lives'], ['word', 'Word'], ['keyboard', 'Keyboard'], ['vote', 'Vote card']
+    ];
+
+    function getOverlayLayoutPositions() {
+      const positions = {};
+      document.querySelectorAll('.overlay-preview-item').forEach((item) => {
+        positions[item.dataset.layoutKey] = {
+          x: Number(item.style.left.replace('%', '')),
+          y: Number(item.style.top.replace('%', ''))
+        };
+      });
+      return positions;
+    }
+
+    function renderOverlayLayoutPreview(savedPositions) {
+      const preview = document.getElementById('overlay-layout-preview');
+      if (!preview) return;
+      preview.querySelectorAll('.overlay-preview-item').forEach((item) => item.remove());
+      overlayPreviewItems.forEach(([key, label], index) => {
+        const saved = savedPositions[key] || { x: 50, y: 12 + index * 12 };
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'overlay-preview-item';
+        item.dataset.layoutKey = key;
+        item.textContent = label;
+        item.style.cssText = `position:absolute;left:${saved.x}%;top:${saved.y}%;transform:translate(-50%,-50%);z-index:2;padding:8px 12px;border:1px solid var(--accent);border-radius:10px;background:rgba(14,14,18,.9);color:var(--text);cursor:move;font:600 12px Inter,sans-serif;`;
+        item.addEventListener('pointerdown', (event) => {
+          event.preventDefault();
+          item.setPointerCapture(event.pointerId);
+          const move = (moveEvent) => {
+            const rect = preview.getBoundingClientRect();
+            const x = Math.max(5, Math.min(95, ((moveEvent.clientX - rect.left) / rect.width) * 100));
+            const y = Math.max(5, Math.min(95, ((moveEvent.clientY - rect.top) / rect.height) * 100));
+            item.style.left = `${x}%`;
+            item.style.top = `${y}%`;
+          };
+          const stop = () => {
+            item.removeEventListener('pointermove', move);
+            item.removeEventListener('pointerup', stop);
+            item.removeEventListener('pointercancel', stop);
+          };
+          item.addEventListener('pointermove', move);
+          item.addEventListener('pointerup', stop);
+          item.addEventListener('pointercancel', stop);
+        });
+        preview.appendChild(item);
+      });
     }
 
     async function initOverlayLayoutSettings() {

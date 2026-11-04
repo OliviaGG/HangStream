@@ -46,6 +46,7 @@
   }
 
   .overlay-container {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -868,6 +869,15 @@ async function applyStreamerLayout() {
       container.style.flexDirection = layout.direction === 'row' ? 'row' : 'column';
       const scale = Number(layout.scale);
       if (Number.isFinite(scale)) container.style.transform = `scale(${Math.min(1.5, Math.max(0.7, scale))})`;
+      const positions = layout.positions && typeof layout.positions === 'object' ? layout.positions : {};
+      Object.entries(elements).forEach(([key, element]) => {
+        const position = positions[key];
+        if (!element || !position || !Number.isFinite(Number(position.x)) || !Number.isFinite(Number(position.y))) return;
+        element.style.position = 'absolute';
+        element.style.left = `${Math.max(5, Math.min(95, Number(position.x)))}%`;
+        element.style.top = `${Math.max(5, Math.min(95, Number(position.y)))}%`;
+        element.style.transform = 'translate(-50%, -50%)';
+      });
     }
     if (/^#[0-9a-f]{6}$/i.test(String(layout.accent || ''))) {
       document.documentElement.style.setProperty('--accent', layout.accent);

@@ -119,6 +119,7 @@ const DEFAULT_OVERLAY_LAYOUT = {
   direction: 'column',
   scale: 1,
   accent: '#ff4d6d',
+  positions: {},
   visible: {
     status: true,
     category: true,
@@ -139,10 +140,25 @@ function normalizeOverlayLayout(value) {
   const visible = layout.visible && typeof layout.visible === 'object' ? layout.visible : {};
   const scale = Number(layout.scale);
   const accent = /^#[0-9a-f]{6}$/i.test(String(layout.accent || '')) ? String(layout.accent) : DEFAULT_OVERLAY_LAYOUT.accent;
+  const positions = layout.positions && typeof layout.positions === 'object' ? layout.positions : {};
+  const safePositions = {};
+  for (const key of Object.keys(DEFAULT_OVERLAY_LAYOUT.visible)) {
+    const position = positions[key];
+    if (!position || typeof position !== 'object') continue;
+    const x = Number(position.x);
+    const y = Number(position.y);
+    if (Number.isFinite(x) && Number.isFinite(y)) {
+      safePositions[key] = {
+        x: Math.min(95, Math.max(5, x)),
+        y: Math.min(95, Math.max(5, y))
+      };
+    }
+  }
   return {
     direction: layout.direction === 'row' ? 'row' : 'column',
     scale: Number.isFinite(scale) ? Math.min(1.5, Math.max(0.7, scale)) : 1,
     accent,
+    positions: safePositions,
     visible: Object.fromEntries(Object.keys(DEFAULT_OVERLAY_LAYOUT.visible).map((key) => [key, visible[key] !== false]))
   };
 }
