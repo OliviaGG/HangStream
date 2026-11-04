@@ -989,6 +989,9 @@ function findOwnerAccount(req) {
     saveStreamerAccounts(accounts);
   }
 
+  return { accounts, accountKey: key, account: accounts[key] };
+}
+
   function requestJson(options, body = '') {
     return new Promise((resolve, reject) => {
       const request = https.request(options, (response) => {
@@ -1005,6 +1008,7 @@ function findOwnerAccount(req) {
         });
       });
       request.on('error', reject);
+      request.setTimeout(8000, () => request.destroy(new Error('Request timed out')));
       if (body) request.write(body);
       request.end();
     });
@@ -1048,9 +1052,6 @@ function findOwnerAccount(req) {
       return new Set();
     }
   }
-
-  return { accounts, accountKey: key, account: accounts[key] };
-}
 
 const server = http.createServer((req, res) => {
   const reqUrl = new URL(req.url, `http://${req.headers.host}`);
