@@ -1710,20 +1710,24 @@
 
       window.connectTwitch = connectTwitch;
 
-      function updateLiveIndicator(platform, connected, username) {
+      function updateLiveIndicator(platform, connected, username, isLive) {
         const indicator = document.getElementById(`${platform}-live-indicator`);
         const button = document.getElementById(`${platform}-connect-btn`);
         if (!indicator) return;
-        const live = Boolean(username && connected);
-        indicator.textContent = live ? '● LIVE' : '● OFFLINE';
-        indicator.style.color = live ? 'var(--good)' : 'var(--text-muted)';
+        const live = Boolean(username && isLive);
+        const saved = Boolean(username && connected);
+        const state = live ? 'LIVE' : (saved ? 'CONNECTED' : 'OFFLINE');
+        indicator.textContent = `● ${state}`;
+        indicator.style.color = live ? 'var(--good)' : (saved ? 'var(--warning)' : 'var(--text-muted)');
         indicator.style.textShadow = live ? '0 0 8px color-mix(in srgb,var(--good) 70%,transparent)' : 'none';
-        indicator.setAttribute('aria-label', `${platform} ${live ? 'live' : 'offline'}`);
+        indicator.setAttribute('aria-label', `${platform} ${state.toLowerCase()}`);
         if (button) {
           button.style.borderColor = live ? 'var(--good)' : '';
           button.style.background = live ? 'color-mix(in srgb,var(--good) 18%,transparent)' : '';
           button.style.boxShadow = live ? '0 0 12px color-mix(in srgb,var(--good) 35%,transparent)' : '';
-          button.textContent = live ? `● ${platform === 'twitch' ? 'Twitch' : 'TikTok'} live` : `Connect ${platform === 'twitch' ? 'Twitch' : 'TikTok'} chat`;
+          button.textContent = live
+            ? `● ${platform === 'twitch' ? 'Twitch' : 'TikTok'} live`
+            : (saved ? `Reconnect ${platform === 'twitch' ? 'Twitch' : 'TikTok'} chat` : `Connect ${platform === 'twitch' ? 'Twitch' : 'TikTok'} chat`);
         }
       }
 
@@ -1763,8 +1767,23 @@
               return;
             }
             const data = await response.json();
+            if (data.game) {
+              const key = `hangstream-selected-game:${getStreamerId() || ''}`;
+              try { localStorage.setItem(key, data.game); } catch (error) {}
+              document.querySelectorAll('input[name="game-selection"]').forEach((radio) => {
+                radio.checked = radio.value === data.game;
+              });
+              updateStreamerLinks();
+            }
+            if (data.difficulty) {
+              const key = `hangstream-game-difficulty:${getStreamerId() || ''}`;
+              try { localStorage.setItem(key, data.difficulty); } catch (error) {}
+              document.querySelectorAll('input[name="game-difficulty"]').forEach((radio) => {
+                radio.checked = radio.value === data.difficulty;
+              });
+            }
             const tiktok = data.tiktok || {};
-            updateLiveIndicator('tiktok', tiktok.connected, tiktok.username);
+            updateLiveIndicator('tiktok', tiktok.connected, tiktok.username, tiktok.live);
             if (input && tiktok.username && !input.value) input.value = tiktok.username;
             if (status && tiktok.username) {
               status.textContent = tiktok.connected
@@ -1772,7 +1791,7 @@
                 : `Saved @${tiktok.username}. Go live on TikTok; HangStream will connect automatically.`;
             }
             const twitch = data.twitch || {};
-            updateLiveIndicator('twitch', twitch.connected, twitch.username);
+            updateLiveIndicator('twitch', twitch.connected, twitch.username, twitch.live);
             const twitchInput = document.getElementById('twitch-username-input');
             const twitchStatus = document.getElementById('twitch-connect-status');
             if (twitchInput && twitch.username && !twitchInput.value) twitchInput.value = twitch.username;
@@ -1782,12 +1801,15 @@
                 : `Saved @${twitch.username}. HangStream will reconnect automatically.`;
             }
             const connectedPlatforms = [];
-            if (tiktok.connected) connectedPlatforms.push('TikTok');
-            if (twitch.connected) connectedPlatforms.push('Twitch');
+            if (tiktok.live) connectedPlatforms.push('TikTok live');
+            else if (tiktok.connected) connectedPlatforms.push('TikTok connected');
+            if (twitch.live) connectedPlatforms.push('Twitch live');
+            else if (twitch.connected) connectedPlatforms.push('Twitch connected');
             if (connectedPlatforms.length) {
-              if (indicator) indicator.style.background = 'var(--good)';
-              if (statusText) statusText.textContent = 'Connected';
-              if (statusSub) statusSub.textContent = `Connected to ${connectedPlatforms.join(' & ')}`;
+              const anyLive = Boolean(tiktok.live || twitch.live);
+              if (indicator) indicator.style.background = anyLive ? 'var(--good)' : 'var(--warning)';
+              if (statusText) statusText.textContent = anyLive ? 'Live and connected' : 'Connected — waiting for you to go live';
+              if (statusSub) statusSub.textContent = connectedPlatforms.join(' • ');
             } else {
               if (indicator) indicator.style.background = 'var(--text-muted)';
               if (statusText) statusText.textContent = 'Not connected';

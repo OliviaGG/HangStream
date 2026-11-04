@@ -3293,50 +3293,67 @@ const owner = session.ownerId;
         return;
   }
 
-  if (pathname === '/api/streamer/me' && req.method === 'GET') {
-        const owner = findOwnerAccount(req);
-        if (!owner) {
-          res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({ error: 'Your HangStream session is missing. Complete Google sign-in before loading streamer connections.' }));
-          return;
+  if (pathname === '/api/live-streams' && req.method === 'GET') {
+    const accounts = loadStreamerAccounts();
+    const entries = Object.values(accounts).map((account) => ({
+      owner: String(account.handle || '').replace(/^@+/, '').toLowerCase(),
+      game: String(account.selected_game || 'hangman').toLowerCase(),
+      twitch: normalizeTwitchUsername(account.twitch_username),
+      tiktok: normalizeTikTokUsername(account.tiktok_username)
+    })).filter((entry) => entry.owner && (entry.twitch || entry.tiktok));
+    const twitchNames = entries.map((entry) => entry.twitch).filter(Boolean);
+    getTwitchLiveChannels(twitchNames).then((liveTwitch) => {
+      const streams = [];
+      for (const entry of entries) {
+        if (entry.twitch && liveTwitch.has(entry.twitch)) {
+          streams.push({ owner: entry.owner, platform: 'Twitch', username: entry.twitch, game: entry.game });
         }
+        if (entry.tiktok && liveTikTokChannels.has(entry.tiktok)) {
+          streams.push({ owner: entry.owner, platform: 'TikTok', username: entry.tiktok, game: entry.game });
+        }
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(JSON.stringify({ streams }));
+    }).catch((error) => {
+      console.error('Live directory lookup failed:', error);
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Could not load live streams' }));
+    });
+    return;
+  }
 
-        if (pathname === '/api/live-streams' && req.method === 'GET') {
-          const accounts = loadStreamerAccounts();
-          const entries = Object.values(accounts).map((account) => ({
-            owner: String(account.handle || '').replace(/^@+/, '').toLowerCase(),
-            game: String(account.selected_game || 'hangman').toLowerCase(),
-            twitch: normalizeTwitchUsername(account.twitch_username),
-            tiktok: normalizeTikTokUsername(account.tiktok_username)
-          })).filter((entry) => entry.owner && (entry.twitch || entry.tiktok));
-          const twitchNames = entries.map((entry) => entry.twitch).filter(Boolean);
-          getTwitchLiveChannels(twitchNames).then((liveTwitch) => {
-            const streams = [];
-            for (const entry of entries) {
-          if (entry.twitch && liveTwitch.has(entry.twitch)) {
-            streams.push({ owner: entry.owner, platform: 'Twitch', username: entry.twitch, game: entry.game });
-          }
-          if (entry.tiktok && liveTikTokChannels.has(entry.tiktok)) {
-            streams.push({ owner: entry.owner, platform: 'TikTok', username: entry.tiktok, game: entry.game });
-          }
-            }
-            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
-            res.end(JSON.stringify({ streams }));
-          }).catch((error) => {
-            console.error('Live directory lookup failed:', error);
-            res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(JSON.stringify({ error: 'Could not load live streams' }));
-          });
-          return;
-        }
-        const tiktokUsername = normalizeTikTokUsername(owner.account.tiktok_username);
-        const twitchUsername = normalizeTwitchUsername(owner.account.twitch_username);
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
-        res.end(JSON.stringify({
-          tiktok: { username: tiktokUsername, connected: Boolean(tiktokUsername && tiktok.rooms.has(tiktokUsername)), status: tiktokUsername && tiktok.rooms.has(tiktokUsername) ? 'connected' : 'offline' },
-          twitch: { username: twitchUsername, connected: Boolean(twitchUsername && twitch.watched.has(twitchUsername)), status: twitchUsername && twitch.watched.has(twitchUsername) ? 'connected' : 'offline' }
-        }));
-        return;
+  if (pathname === '/api/streamer/me' && req.method === 'GET') {
+    const owner = findOwnerAccount(req);
+    if (!owner) {
+      res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Your HangStream session is missing. Complete Google sign-in before loading streamer connections.' }));
+      return;
+    }
+
+    const tiktokUsername = normalizeTikTokUsername(owner.account.tiktok_username);
+    const twitchUsername = normalizeTwitchUsername(owner.account.twitch_username);
+    getTwitchLiveChannels(twitchUsername ? [twitchUsername] : []).then((liveTwitch) => {
+      const twitchConnected = Boolean(twitchUsername && twitch.watched.has(twitchUsername));
+      const twitchLive = Boolean(twitchUsername && liveTwitch.has(twitchUsername));
+      const tiktokConnected = Boolean(tiktokUsername && tiktok.rooms.has(tiktokUsername));
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(JSON.stringify({
+        game: String(owner.account.selected_game || 'hangman').toLowerCase(),
+        difficulty: String(owner.account.game_difficulty || 'normal').toLowerCase(),
+        tiktok: { username: tiktokUsername, connected: tiktokConnected, live: tiktokConnected, status: tiktokConnected ? 'live' : 'offline' },
+        twitch: { username: twitchUsername, connected: twitchConnected, live: twitchLive, status: twitchLive ? 'live' : (twitchConnected ? 'connected' : 'offline') }
+      }));
+    }).catch((error) => {
+      console.error('Streamer status lookup failed:', error);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(JSON.stringify({
+        game: String(owner.account.selected_game || 'hangman').toLowerCase(),
+        difficulty: String(owner.account.game_difficulty || 'normal').toLowerCase(),
+        tiktok: { username: tiktokUsername, connected: Boolean(tiktokUsername && tiktok.rooms.has(tiktokUsername)), live: false, status: 'offline' },
+        twitch: { username: twitchUsername, connected: Boolean(twitchUsername && twitch.watched.has(twitchUsername)), live: false, status: 'unknown' }
+      }));
+    });
+    return;
   }
 
   // Get donation history (admin only)
