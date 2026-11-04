@@ -876,8 +876,21 @@
         </div>
 
         <div id="overlay-layout-section" class="setup-step" style="margin-top:32px;display:none;">
-          <h3 style="margin:0 0 12px 0;">Overlay Layout</h3>
-          <p style="color:var(--text-muted);margin-bottom:16px;">Choose which parts appear in your OBS overlay, then save the layout. Your overlay link will use these choices automatically.</p>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+            <div>
+              <div class="step-number">Live preview</div>
+              <h3 style="margin:0 0 8px;">Your stream layout</h3>
+              <p style="color:var(--text-muted);margin:0;">Preview the game and widgets, then edit what viewers see in OBS or on mobile.</p>
+            </div>
+            <button id="toggle-overlay-editor" class="btn btn-secondary" type="button">Edit layout</button>
+          </div>
+          <div style="margin-top:18px;padding:14px;border:1px solid var(--panel-border);border-radius:16px;background:rgba(255,255,255,.03);">
+            <iframe id="overlay-live-preview" title="Live HangStream overlay preview" style="display:block;width:100%;height:300px;border:0;border-radius:12px;background:#0e0e12;" loading="lazy"></iframe>
+            <p style="margin:10px 0 0;color:var(--text-muted);font-size:12px;">This preview uses the same overlay link you can add to OBS.</p>
+          </div>
+          <div id="overlay-editor-controls" style="display:none;margin-top:20px;">
+            <h4 style="margin:0 0 10px;">Widgets</h4>
+            <p style="color:var(--text-muted);font-size:13px;margin:0 0 14px;">Turn parts on or off, then drag them into place in the preview editor.</p>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:20px;">
             <label><input type="checkbox" class="overlay-layout-visibility" data-layout-key="status" checked> Game status</label>
             <label><input type="checkbox" class="overlay-layout-visibility" data-layout-key="category" checked> Category</label>
@@ -909,6 +922,7 @@
             <div id="overlay-layout-preview" style="position:relative;min-height:280px;border:1px solid var(--panel-border);border-radius:16px;background:linear-gradient(135deg,#15151d,#242438);overflow:hidden;">
               <div class="overlay-preview-grid" style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);background-size:10% 20%;"></div>
             </div>
+          </div>
           </div>
           <div style="display:flex;align-items:center;gap:12px;margin-top:18px;">
             <button id="save-overlay-layout" class="btn btn-primary" type="button">Save overlay layout</button>
@@ -1205,6 +1219,10 @@
 
         if (overlayUrlDisplay) {
           overlayUrlDisplay.textContent = `${baseUrl}${getOverlayRoute(selectedGame, streamerId)}`;
+        }
+        const preview = document.getElementById('overlay-live-preview');
+        if (preview) {
+          preview.src = getOverlayRoute(selectedGame, streamerId);
         }
         if (gameUrlDisplay) {
           gameUrlDisplay.textContent = `${baseUrl}${getGameRoute(selectedGame, streamerId)}`;
@@ -2108,6 +2126,16 @@
     async function initOverlayLayoutSettings() {
       const section = document.getElementById('overlay-layout-section');
       if (section) section.style.display = 'block';
+      const editorToggle = document.getElementById('toggle-overlay-editor');
+      const editorControls = document.getElementById('overlay-editor-controls');
+      if (editorToggle && editorControls && !editorToggle.dataset.bound) {
+        editorToggle.dataset.bound = 'true';
+        editorToggle.addEventListener('click', () => {
+          const open = editorControls.style.display !== 'none';
+          editorControls.style.display = open ? 'none' : 'block';
+          editorToggle.textContent = open ? 'Edit layout' : 'Done editing';
+        });
+      }
       const status = document.getElementById('overlay-layout-status');
       try {
         const response = await fetch(`/streamer/layout?owner=${encodeURIComponent(getStreamerId() || '')}`, { cache: 'no-store' });
