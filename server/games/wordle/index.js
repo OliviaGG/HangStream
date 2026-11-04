@@ -12,6 +12,20 @@ const dictionary = require('../dictionary');
 const WORD_LENGTH = 5;
 const MAX_GUESSES = 6;
 
+function dailyWord(dailyDate) {
+  const words = [];
+  for (const length of [WORD_LENGTH]) {
+    words.push(...dictionary.wordsOfLength(length));
+  }
+  if (!dailyDate || !words.length) return null;
+  let hash = 0;
+  for (const char of String(dailyDate)) {
+    hash = ((hash << 5) - hash) + char.charCodeAt(0);
+    hash |= 0;
+  }
+  return words[Math.abs(hash) % words.length];
+}
+
 /** Classic Wordle feedback: 'correct' | 'present' | 'absent' per letter. */
 function evaluateGuess(guess, answer) {
   const g = guess.split('');
@@ -52,7 +66,7 @@ class WordleGame extends Game {
   }
 
   newRound({ word = null, isDaily = false, dailyDate = null, puzzleId = null } = {}) {
-    let answer = word ? String(word).toLowerCase() : null;
+    let answer = word ? String(word).toLowerCase() : (isDaily ? dailyWord(dailyDate) : null);
     if (!answer || answer.length !== WORD_LENGTH || !dictionary.has(answer)) {
       answer = dictionary.randomWord(WORD_LENGTH);
     }

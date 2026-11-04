@@ -95,10 +95,42 @@ async function dailyHistory(gameId, limit = 30) {
   );
 }
 
+/** Load a viewer's solo daily score for a specific game and difficulty. */
+async function loadSoloDailyScore(viewerId, gameId, difficulty, dailyDate) {
+  const row = await get(
+    `SELECT score, words_found FROM solo_daily_scores
+     WHERE viewer_id = ? AND game_id = ? AND difficulty = ? AND daily_date = ?`,
+    [viewerId || '', gameId, difficulty, dailyDate]
+  );
+  if (!row) return null;
+  try {
+    return {
+      score: row.score || 0,
+      wordsFound: JSON.parse(row.words_found || '[]')
+    };
+  } catch (_) { return { score: 0, wordsFound: [] }; }
+}
+
+/** Save or update a viewer's solo daily score. */
+async function saveSoloDailyScore(viewerId, gameId, difficulty, dailyDate, score, wordsFound = []) {
+  const wordsJson = JSON.stringify(wordsFound || []);
+  return run(
+    `INSERT INTO solo_daily_scores (viewer_id, game_id, difficulty, daily_date, score, words_found, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, strftime('%s','now'))
+     ON CONFLICT(viewer_id, game_id, difficulty, daily_date) DO UPDATE SET
+       score = excluded.score,
+       words_found = excluded.words_found,
+       updated_at = excluded.updated_at`,
+    [viewerId || '', gameId, difficulty, dailyDate, score, wordsJson]
+  );
+}
+
 module.exports = {
   loadRound,
   saveRound,
   hasPlayedDaily,
   markDailyPlayed,
   dailyHistory,
+  loadSoloDailyScore,
+  saveSoloDailyScore,
 };

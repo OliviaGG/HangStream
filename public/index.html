@@ -1288,6 +1288,50 @@ function loadSavedSettings() {
   // FIX: no longer mutating state as side-effect here
 }
 
+// Function to update difficulty options based on donor status
+function updateDifficultyOptions() {
+  const difficultySelect = document.getElementById('difficulty-select');
+  if (!difficultySelect) return;
+
+  const isDonor = document.querySelector('.profile-avatar')?.classList.contains('donor');
+  Array.from(difficultySelect.options).forEach(option => {
+    const value = option.value;
+    // Hangman: Lock Hard for non-donors
+    if (value === 'hard') {
+      if (isDonor) {
+        option.disabled = false;
+        option.textContent = 'Hard';
+      } else {
+        option.disabled = true;
+        option.textContent = 'Hard 🔒';
+      }
+    }
+  });
+
+  // If current difficulty is locked for non-donor, reset to medium
+  if (!isDonor && config.difficulty === 'hard') {
+    config.difficulty = 'medium';
+    difficultySelect.value = 'medium';
+    saveSettings();
+  }
+}
+
+function loadSavedSettings() {
+  try {
+    const raw = localStorage.getItem(getSettingsStorageKey());
+    if (raw) {
+      const saved = JSON.parse(raw);
+      if (saved && typeof saved === 'object') {
+        config = { ...config, ...saved };
+      }
+    }
+  } catch (e) {}
+
+  const difficultySelect = document.getElementById('difficulty-select');
+  if (difficultySelect) difficultySelect.value = config.difficulty || 'medium';
+  // FIX: no longer mutating state as side-effect here
+}
+
 function saveSettings() {
   try {
     localStorage.setItem(getSettingsStorageKey(), JSON.stringify(config));
@@ -1486,6 +1530,9 @@ function checkDonorStatus() {
       } else if (hintBtn) {
         hintBtn.style.display = 'none';
       }
+
+      // Update difficulty options based on donor status
+      updateDifficultyOptions();
     })
     .catch(e => {
       console.error('Error checking donor status:', e);
@@ -1685,7 +1732,25 @@ function isLetter(ch) {
 const CURATED_PREFERENCE = 0.6;
 const MIN_CURATED_STOCK = 40;
 
-function newGame() {
+function newGame(options = {}) {
+  if (state.gameMode === 'solo' && !options.dailyLoaded) {
+    const viewerId = state.viewerId || '';
+    const url = `/games/api/solo/daily/hangman?difficulty=${encodeURIComponent(config.difficulty || 'medium')}&viewerId=${encodeURIComponent(viewerId)}`;
+    fetch(url)
+      .then((response) => response.json())
+      .then((data) => {
+        if (!data.success || !data.puzzle || !data.puzzle.word) {
+          throw new Error(data.error || 'Failed to load daily puzzle');
+        }
+        newGame({ dailyLoaded: true, puzzle: data.puzzle, savedScore: data.savedScore });
+      })
+      .catch((error) => {
+        console.error('Failed to load daily Hangman puzzle:', error);
+        showNotification('Unable to load today\'s puzzle');
+      });
+    return;
+  }
+
   wrongCount = 0;
   const pool = Array.isArray(VISIBLE_WORDS) && VISIBLE_WORDS.length
     ? VISIBLE_WORDS
@@ -1696,6 +1761,13 @@ function newGame() {
 
   // If all words used, reset and start over
   let candidates = availableWords.length ? availableWords : pool;
+  if (options.puzzle && options.puzzle.word) {
+    candidates = [{
+      word: String(options.puzzle.word).toUpperCase(),
+      cat: options.puzzle.category || 'Games',
+      src: 'daily',
+    }];
+  }
   if (candidates.length === 0) {
     usedWords.clear();
     candidates = pool;
@@ -1846,10 +1918,31 @@ function updateHangmanParts() {
 function checkWinLose() {
   const allRevealed = maskedChars.every(m => m.revealed);
   if (allRevealed) {
+    saveDailyScore();
     showWin();
   } else if (wrongCount >= MAX_WRONG) {
+    saveDailyScore();
     showGameOver();
   }
+}
+
+function saveDailyScore() {
+  if (state.gameMode !== 'solo' || !state.viewerId) return;
+  const score = maskedChars.every((character) => character.revealed)
+    ? Math.max(0, MAX_WRONG - wrongCount) + SOLVE_BONUS
+    : 0;
+  fetch('/games/api/solo/score', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      viewerId: state.viewerId,
+      gameId: 'hangman',
+      difficulty: config.difficulty,
+      score,
+      wordsFound: activeWord ? [activeWord] : [],
+      dailyDate: new Date().toISOString().slice(0, 10),
+    }),
+  }).catch((error) => console.error('Failed to save daily Hangman score:', error));
 }
 
 function showWin() {
@@ -2142,7 +2235,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const difficultySelect = document.getElementById('difficulty-select');
   if (difficultySelect) {
     difficultySelect.addEventListener('change', (e) => {
-      config.difficulty = e.target.value || 'medium';
+      const selectedDifficulty = e.target.value;
+
+      // Check if trying to select a locked difficulty
+      if (selectedDifficulty === 'hard' &&
+          !document.querySelector('.profile-avatar')?.classList.contains('donor')) {
+        e.preventDefault();
+        difficultySelect.value = config.difficulty || 'medium';
+
+        // Show upgrade prompt
+        const upgradeMessage = 'Hard difficulty is available for donors only!\n\nSupport the streamer to unlock Hard difficulty puzzles.';
+        if (confirm(upgradeMessage)) {
+          // Redirect to donation page
+          window.location.href = '/donate';
+        }
+        return;
+      }
+
+      config.difficulty = selectedDifficulty || 'medium';
       try { VISIBLE_WORDS = filterByDifficulty(ALL_WORDS, config.difficulty); } catch (err) {}
       saveSettings();
     });
@@ -2243,6 +2353,10 @@ window.addEventListener('message', (ev) => {
 state.gameMode = getGameMode();
 loadSavedSettings();
 applyTheme(localStorage.getItem(getThemeStorageKey()) || 'dark');
+
+// Initialize difficulty options based on donor status
+updateDifficultyOptions();
+
 try { initMobileUI(); } catch (e) {}
 updateMusicRequestNotice();
 setTimeout(refreshScoresFromServer, 1000);

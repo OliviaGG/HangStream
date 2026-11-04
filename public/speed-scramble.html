@@ -865,6 +865,34 @@ function loadSettings() {
   } catch (e) {}
 }
 
+// Function to update difficulty options based on donor status
+function updateDifficultyOptions() {
+  const difficultySelect = document.getElementById('difficulty-select');
+  if (!difficultySelect) return;
+
+  const isDonor = document.querySelector('.profile-avatar')?.classList.contains('donor');
+  Array.from(difficultySelect.options).forEach(option => {
+    const value = option.value;
+    // Speed Scramble: Lock Medium and Hard for non-donors
+    if (value === 'medium' || value === 'hard') {
+      if (isDonor) {
+        option.disabled = false;
+        option.textContent = value.charAt(0).toUpperCase() + value.slice(1);
+      } else {
+        option.disabled = true;
+        option.textContent = `${value.charAt(0).toUpperCase() + value.slice(1)} 🔒`;
+      }
+    }
+  });
+
+  // If current difficulty is locked for non-donor, reset to normal
+  if (!isDonor && (config.difficulty === 'medium' || config.difficulty === 'hard')) {
+    config.difficulty = 'normal';
+    difficultySelect.value = 'normal';
+    saveSettings();
+  }
+}
+
 // ── THEME ──
 function applyTheme(themeName) {
   currentTheme = themeName || 'dark';
@@ -930,23 +958,48 @@ function selectWord(difficulty) {
   return validWords[Math.floor(Math.random() * validWords.length)];
 }
 
-function newGame() {
+function newGame(options = {}) {
   // Stop current timer
   if (timerInterval) {
     clearInterval(timerInterval);
     timerInterval = null;
   }
+
+  if (state.gameMode === 'solo' && !options.dailyLoaded) {
+    const viewerId = state.viewerId || '';
+    const url = `/games/api/solo/daily/speedscramble?difficulty=${encodeURIComponent(config.difficulty)}&viewerId=${encodeURIComponent(viewerId)}`;
+    fetch(url)
+      .then((response) => response.json())
+      .then((data) => {
+        if (!data.success || !data.puzzle || !data.puzzle.word) {
+          throw new Error(data.error || 'Failed to load daily puzzle');
+        }
+        newGame({ dailyLoaded: true, dailyDate: data.dailyDate, puzzle: data.puzzle, savedScore: data.savedScore });
+      })
+      .catch((error) => {
+        console.error('Failed to load daily Speed Scramble puzzle:', error);
+        showMessage('Unable to load today\'s puzzle', 'error');
+      });
+    return;
+  }
   
   // Select word based on difficulty
-  currentWord = selectWord(config.difficulty);
+  currentWord = options.puzzle && options.puzzle.word
+    ? String(options.puzzle.word).toUpperCase()
+    : selectWord(config.difficulty);
   const settings = DIFFICULTY_SETTINGS[config.difficulty] || DIFFICULTY_SETTINGS.normal;
   
   // Scramble the word
-  scrambledWord = scrambleWord(currentWord, settings.scramble);
+  scrambledWord = options.puzzle && options.puzzle.scrambled
+    ? String(options.puzzle.scrambled).toUpperCase()
+    : scrambleWord(currentWord, settings.scramble);
   
   // Reset timer
   timeLeft = settings.timer;
   gameActive = true;
+  if (options.savedScore) {
+    totalScore = Number(options.savedScore.score) || 0;
+  }
   
   renderWord();
   updateStreamerHint();
@@ -1060,6 +1113,22 @@ function submitAnswer() {
   input.value = '';
 }
 
+function saveDailyScore() {
+  if (state.gameMode !== 'solo' || !state.viewerId) return;
+  fetch('/games/api/solo/score', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      viewerId: state.viewerId,
+      gameId: 'speedscramble',
+      difficulty: config.difficulty,
+      score: totalScore,
+      wordsFound: currentWord ? [currentWord] : [],
+      dailyDate: new Date().toISOString().slice(0, 10),
+    }),
+  }).catch((error) => console.error('Failed to save daily Speed Scramble score:', error));
+}
+
 function correctAnswer() {
   gameActive = false;
   if (timerInterval) {
@@ -1072,6 +1141,7 @@ function correctAnswer() {
   
   streak++;
   totalScore += points;
+  saveDailyScore();
   
   revealWord();
   updateStreak();
@@ -1110,6 +1180,7 @@ function endRound(success) {
     streak = 0;
     updateStreak();
     showMessage(`Time's up! The word was ${currentWord}`, 'error');
+    saveDailyScore();
   }
   
   // Auto-start next round
@@ -1288,7 +1359,24 @@ document.addEventListener('DOMContentLoaded', () => {
   if (difficultySelect) {
     difficultySelect.value = config.difficulty || 'normal';
     difficultySelect.addEventListener('change', (e) => {
-      config.difficulty = e.target.value || 'normal';
+      const selectedDifficulty = e.target.value;
+
+      // Check if trying to select a locked difficulty
+      if ((selectedDifficulty === 'medium' || selectedDifficulty === 'hard') &&
+          !document.querySelector('.profile-avatar')?.classList.contains('donor')) {
+        e.preventDefault();
+        difficultySelect.value = config.difficulty || 'normal';
+
+        // Show upgrade prompt
+        const upgradeMessage = `${selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1)} difficulty is available for donors only!\n\nSupport the streamer to unlock Medium and Hard difficulty puzzles.`;
+        if (confirm(upgradeMessage)) {
+          // Redirect to donation page
+          window.location.href = '/donate';
+        }
+        return;
+      }
+
+      config.difficulty = selectedDifficulty || 'normal';
       saveSettings();
       newGame();
     });
@@ -1306,6 +1394,9 @@ document.addEventListener('DOMContentLoaded', () => {
 loadSettings();
 state.gameMode = getGameMode();
 applyTheme(localStorage.getItem(getThemeStorageKey()) || 'dark');
+
+// Initialize difficulty options based on donor status
+updateDifficultyOptions();
 
 // Detect overlay mode and add body class
 if (window.location.pathname.startsWith('/overlay')) {
@@ -1413,6 +1504,9 @@ function checkDonorStatus() {
       } else if (hintBtn) {
         hintBtn.style.display = 'none';
       }
+
+      // Update difficulty options based on donor status
+      updateDifficultyOptions();
     })
     .catch(e => {
       console.error('Error checking donor status:', e);

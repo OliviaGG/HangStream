@@ -1191,23 +1191,28 @@ function processChatWord(user, word) {
     addChatMessage(user, word, 'wrong');
     return;
   }
-  
+
   if (!isValidWord(word)) {
     addChatMessage(user, word, 'wrong');
     return;
   }
-  
+
   // Found a valid word
   foundWords.add(word);
   const score = getWordScore(word);
   totalScore += score;
-  
+
   renderFoundWords();
   updateScore();
   showMessage(`${user} found ${word} (+${score})!`, 'success');
   if (window.HangStreamWinEffects) window.HangStreamWinEffects.play();
-  
+
   awardPlayerPoints(user, score, word);
+
+  // Don't save score for chat words in solo mode
+  if (state.gameMode !== 'solo') {
+    // In online mode, scores are handled differently
+  }
 }
 
 function getThemeStorageKey() {
@@ -1251,28 +1256,153 @@ function toggleTheme() {
 
 // ── GAME LOGIC ──
 function newGame() {
-  // Pick random letter grid based on difficulty
+  // For solo mode, fetch daily puzzle from server
+  if (state.gameMode === 'solo') {
+    fetchDailyPuzzle();
+    return;
+  }
+
+  // For online mode, pick random letter grid based on difficulty
   const grids = LETTER_GRIDS[config.difficulty] || LETTER_GRIDS.normal;
   currentLetters = [...grids[Math.floor(Math.random() * grids.length)]];
   foundWords.clear();
   totalScore = 0;
   currentPath = [];
-  
+
+  // Clear player scores
+  playerScores = {};
+  renderPlayerScores();
+
+  // Clear chat feed
+  const chatFeed = document.getElementById('chat-feed');
+  if (chatFeed) {
+    chatFeed.innerHTML = '';
+  }
+
+  // Stop demo chat interval if running
+  if (chatInterval) {
+    clearInterval(chatInterval);
+    chatInterval = null;
+  }
+
+  // Restart demo chat if in demo mode
+  if (state.streamerId === 'default') {
+    startDemoChat();
+  }
+
   renderHoneycomb();
   renderFoundWords();
   updateScore();
   updateStreamerHints();
   clearMessage();
-  
+
   // Clear input
   const input = document.getElementById('word-input');
   if (input) input.value = '';
-  
+
   // Update instructions with difficulty info
   const settings = DIFFICULTY_SETTINGS[config.difficulty] || DIFFICULTY_SETTINGS.normal;
   const instructions = document.querySelector('.instructions');
   if (instructions) {
     instructions.textContent = `Drag across adjacent letters to form words (${settings.minLength}+ letters)`;
+  }
+}
+
+// Fetch daily puzzle from server for solo mode
+async function fetchDailyPuzzle() {
+  const viewerId = state.viewerId || '';
+  const url = `/games/api/solo/daily/spellingbee?difficulty=${config.difficulty}&viewerId=${encodeURIComponent(viewerId)}`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.success && data.puzzle) {
+      // Load the puzzle
+      currentLetters = data.puzzle.letters || [];
+      foundWords.clear();
+
+      // Restore saved score if exists (this is the score for THIS difficulty)
+      if (data.savedScore && data.savedScore.score > 0) {
+        totalScore = data.savedScore.score;
+        data.savedScore.wordsFound.forEach(word => foundWords.add(word));
+      } else {
+        totalScore = 0;
+      }
+
+      currentPath = [];
+
+      // Clear player scores (local sidebar scores)
+      playerScores = {};
+      renderPlayerScores();
+
+      // Clear chat feed
+      const chatFeed = document.getElementById('chat-feed');
+      if (chatFeed) {
+        chatFeed.innerHTML = '';
+      }
+
+      // Stop demo chat interval if running
+      if (chatInterval) {
+        clearInterval(chatInterval);
+        chatInterval = null;
+      }
+
+      renderHoneycomb();
+      renderFoundWords();
+      updateScore();
+      updateStreamerHints();
+      clearMessage();
+
+      // Clear input
+      const input = document.getElementById('word-input');
+      if (input) input.value = '';
+
+      // Update instructions with difficulty info
+      const settings = DIFFICULTY_SETTINGS[config.difficulty] || DIFFICULTY_SETTINGS.normal;
+      const instructions = document.querySelector('.instructions');
+      if (instructions) {
+        instructions.textContent = `Drag across adjacent letters to form words (${settings.minLength}+ letters)`;
+      }
+
+      // Show daily date
+      showMessage(`Daily puzzle for ${data.dailyDate}`, 'info');
+    } else {
+      console.error('Failed to fetch daily puzzle:', data.error);
+      showMessage('Failed to load daily puzzle', 'error');
+    }
+  } catch (err) {
+    console.error('Error fetching daily puzzle:', err);
+    showMessage('Error loading daily puzzle', 'error');
+  }
+}
+
+// Save score to server
+async function saveScore() {
+  if (state.gameMode !== 'solo' || !state.viewerId) return;
+
+  const today = new Date().toISOString().split('T')[0];
+
+  try {
+    const response = await fetch('/games/api/solo/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        viewerId: state.viewerId,
+        gameId: 'spellingbee',
+        difficulty: config.difficulty,
+        score: totalScore,
+        wordsFound: Array.from(foundWords),
+        dailyDate: today,
+      }),
+    });
+
+    const data = await response.json();
+    if (!data.success) {
+      console.error('Failed to save score:', data.error);
+    }
+  } catch (err) {
+    console.error('Error saving score:', err);
   }
 }
 
@@ -1515,26 +1645,29 @@ function updateWordInput() {
 function submitCurrentWord() {
   const word = getCurrentWord();
   if (!word || foundWords.has(word)) return;
-  
+
   if (!isValidWord(word)) {
     showMessage('Invalid path or word too short', 'error');
     return;
   }
-  
+
   foundWords.add(word);
   const score = getWordScore(word);
   totalScore += score;
-  
+
   renderFoundWords();
   updateScore();
   showMessage(`+${score} points!`, 'success');
   if (window.HangStreamWinEffects) window.HangStreamWinEffects.play();
-  
+
   if (state.viewerName) {
     awardPlayerPoints(state.viewerName, score, word);
   }
-  
+
   addChatMessage(state.viewerName || 'Viewer', word, 'correct');
+
+  // Save score to server
+  saveScore();
 }
 
 function renderFoundWords() {
@@ -1556,42 +1689,45 @@ function updateScore() {
 function submitWord() {
   const input = document.getElementById('word-input');
   if (!input) return;
-  
+
   const word = input.value.toUpperCase().trim();
   if (!word) {
     showMessage('Please enter a word', 'error');
     return;
   }
-  
+
   if (foundWords.has(word)) {
     showMessage('Already found!', 'info');
     input.value = '';
     return;
   }
-  
+
   if (!isValidWord(word)) {
     showMessage('Invalid word or uses unavailable letters', 'error');
     return;
   }
-  
+
   // Add word
   foundWords.add(word);
   const score = getWordScore(word);
   totalScore += score;
-  
+
   renderFoundWords();
   updateScore();
   showMessage(`+${score} points!`, 'success');
-  
+
   // Award points to viewer if logged in
   if (state.viewerName) {
     awardPlayerPoints(state.viewerName, score, word);
   }
-  
+
   input.value = '';
-  
+
   // Add to chat feed
   addChatMessage(state.viewerName || 'Viewer', word, 'correct');
+
+  // Save score to server
+  saveScore();
 }
 
 function showMessage(text, type) {
@@ -1664,8 +1800,29 @@ document.addEventListener('DOMContentLoaded', () => {
   const difficultySelect = document.getElementById('difficulty-select');
   if (difficultySelect) {
     difficultySelect.value = config.difficulty || 'normal';
+
     difficultySelect.addEventListener('change', (e) => {
-      config.difficulty = e.target.value || 'normal';
+      const selectedDifficulty = e.target.value;
+
+      // Check if trying to select a locked difficulty
+      if ((selectedDifficulty === 'medium' || selectedDifficulty === 'hard') &&
+          !document.querySelector('.profile-avatar')?.classList.contains('donor')) {
+        e.preventDefault();
+        difficultySelect.value = config.difficulty || 'normal';
+
+        // Show upgrade prompt
+        const upgradeMessage = `${selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1)} difficulty is available for donors only!\n\nSupport the streamer to unlock Medium and Hard difficulty puzzles.`;
+        if (confirm(upgradeMessage)) {
+          // Redirect to donation page
+          window.location.href = '/donate';
+        }
+        return;
+      }
+
+      // Save current score before changing difficulty
+      saveScore();
+
+      config.difficulty = selectedDifficulty || 'normal';
       saveSettings();
       newGame(); // Start new game with new difficulty
     });
@@ -1676,6 +1833,36 @@ document.addEventListener('DOMContentLoaded', () => {
 loadSettings();
 state.gameMode = getGameMode();
 applyTheme(localStorage.getItem(getThemeStorageKey()) || 'dark');
+
+// Function to update difficulty options based on donor status
+function updateDifficultyOptions() {
+  const difficultySelect = document.getElementById('difficulty-select');
+  if (!difficultySelect) return;
+
+  const isDonor = document.querySelector('.profile-avatar')?.classList.contains('donor');
+  Array.from(difficultySelect.options).forEach(option => {
+    const value = option.value;
+    if (value === 'medium' || value === 'hard') {
+      if (isDonor) {
+        option.disabled = false;
+        option.textContent = value.charAt(0).toUpperCase() + value.slice(1);
+      } else {
+        option.disabled = true;
+        option.textContent = `${value.charAt(0).toUpperCase() + value.slice(1)} 🔒`;
+      }
+    }
+  });
+
+  // If current difficulty is locked for non-donor, reset to normal
+  if (!isDonor && (config.difficulty === 'medium' || config.difficulty === 'hard')) {
+    config.difficulty = 'normal';
+    difficultySelect.value = 'normal';
+    saveSettings();
+  }
+}
+
+// Initialize difficulty options (will be called again after donor check)
+updateDifficultyOptions();
 
 // Detect overlay mode and add body class
 if (window.location.pathname.startsWith('/overlay')) {
@@ -1771,6 +1958,9 @@ function checkDonorStatus() {
       } else if (hintBtn) {
         hintBtn.style.display = 'none';
       }
+
+      // Update difficulty options based on donor status
+      updateDifficultyOptions();
     })
     .catch(e => {
       console.error('Error checking donor status:', e);

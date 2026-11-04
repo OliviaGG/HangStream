@@ -85,6 +85,14 @@ class SpeedScrambleGame extends Game {
     let chosen;
     if (word && /^[a-z]+$/i.test(String(word).trim())) {
       chosen = { word: String(word).trim().toLowerCase(), cat: category || 'General', difficulty: level };
+    } else if (isDaily && dailyDate) {
+      chosen = dictionary.buildSeededWordRound({
+        dailyDate,
+        difficulty: level,
+        category,
+        minLength: band.minLength,
+        maxLength: band.maxLength,
+      });
     } else {
       chosen = dictionary.randomTarget({
         difficulty: level,

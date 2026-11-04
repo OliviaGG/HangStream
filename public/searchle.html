@@ -1219,10 +1219,29 @@ function setStatus(text) {
 }
 
 // ── Round lifecycle ───────────────────────────────────────────
-async function startRound() {
+async function startRound(options = {}) {
   resetRoundUI();
 
   try {
+    if (state.gameMode === 'solo' && !options.dailyLoaded) {
+      const viewerId = state.viewerId || '';
+      const dailyUrl = `/games/api/solo/daily/searchle?difficulty=normal&viewerId=${encodeURIComponent(viewerId)}`;
+      const dailyResponse = await fetch(dailyUrl);
+      const dailyData = await dailyResponse.json().catch(() => ({}));
+      if (!dailyResponse.ok || !dailyData.success || !dailyData.puzzle || !dailyData.puzzle.roundId) {
+        throw new Error(dailyData.error || 'Could not load today\'s puzzle');
+      }
+      roundId = dailyData.puzzle.roundId;
+      setGuessEnabled(true);
+      setStatus(`Daily puzzle · ${dailyData.dailyDate}`);
+      showMessage(`Daily puzzle for ${dailyData.dailyDate}`, 'info');
+      if (!isOverlay()) {
+        const input = document.getElementById('guess-input');
+        if (input) input.focus();
+      }
+      return;
+    }
+
     const res = await fetch('/searchle/api/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1309,6 +1328,20 @@ async function submitGuess(word, sourceUser, isMine = true) {
       roundOver = true;
       setGuessEnabled(false);
       const points = data.points || 10;
+      if (state.gameMode === 'solo' && state.viewerId) {
+        fetch('/games/api/solo/score', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            viewerId: state.viewerId,
+            gameId: 'searchle',
+            difficulty: 'normal',
+            score: points,
+            wordsFound: [lastGuessWord],
+            dailyDate: new Date().toISOString().slice(0, 10),
+          }),
+        }).catch((error) => console.error('Failed to save daily Searchle score:', error));
+      }
       awardPlayerPoints(sourceUser || 'You', points);
       showWin(data.target || lastGuessWord, sourceUser || 'You', `+${points} pts · ${data.guessCount || guessCount} guesses`);
       showMessage(`Found it in ${data.guessCount || guessCount} ${(data.guessCount || guessCount) === 1 ? 'guess' : 'guesses'}! +${points} points`, 'success');

@@ -11,6 +11,17 @@ const dictionary = require('../dictionary');
 
 const DEFAULT_MIN_ANSWERS = 12;
 
+/**
+ * Get today's date in YYYY-MM-DD format for daily puzzles.
+ */
+function getDailyDate() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 class SpellingBeeGame extends Game {
   constructor(options = {}) {
     super({ slug: 'spellingbee', name: 'Spelling Bee', minLength: 4, ...options });
@@ -34,7 +45,7 @@ class SpellingBeeGame extends Game {
    * replay a specific daily puzzle; otherwise one is generated from the
    * dictionary.
    */
-  newRound({ letters = null, centerLetter = null, isDaily = false, dailyDate = null, puzzleId = null } = {}) {
+  newRound({ letters = null, centerLetter = null, isDaily = false, dailyDate = null, puzzleId = null, difficulty = 'normal' } = {}) {
     let round;
     if (Array.isArray(letters) && letters.length === 7 && centerLetter) {
       const normalized = letters.map((l) => String(l).toLowerCase());
@@ -50,7 +61,12 @@ class SpellingBeeGame extends Game {
         rarity,
       };
     } else {
-      round = dictionary.buildBeeRound({ minAnswers: DEFAULT_MIN_ANSWERS });
+      // Use seeded daily puzzle generation for daily rounds with difficulty
+      if (isDaily && dailyDate) {
+        round = dictionary.buildSeededBeeRound({ dailyDate, difficulty, minAnswers: DEFAULT_MIN_ANSWERS });
+      } else {
+        round = dictionary.buildBeeRound({ minAnswers: DEFAULT_MIN_ANSWERS });
+      }
       if (!round) return { success: false, error: 'no_puzzle' };
     }
 
@@ -68,7 +84,7 @@ class SpellingBeeGame extends Game {
       isDaily,
       dailyDate,
       id: puzzleId,
-      name: isDaily ? `Daily ${dailyDate}` : 'Random',
+      name: isDaily ? `Daily ${dailyDate} (${difficulty})` : 'Random',
     });
     this.letters = round.puzzle.letters.slice();
     this.centerLetter = round.puzzle.centerLetter;
@@ -79,6 +95,7 @@ class SpellingBeeGame extends Game {
       hidden: round.answers.filter((w) => round.rarity.get(w) === 'hidden').length,
     };
     this.hintsUsed = 0;
+    this.difficulty = difficulty;
     return { success: true, ...round.puzzle };
   }
 

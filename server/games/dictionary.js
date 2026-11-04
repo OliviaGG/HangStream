@@ -574,6 +574,151 @@ function buildBeeRound({ minAnswers = 12, preferredLengths = null } = {}) {
   return null;
 }
 
+/**
+ * Build a seeded daily bee round based on date and difficulty.
+ * This ensures every player gets the same puzzle on the same day for each difficulty.
+ */
+function buildSeededBeeRound({ dailyDate, difficulty = 'normal', minAnswers = 12 } = {}) {
+  ensureLoaded();
+  if (!dailyDate) return buildBeeRound({ minAnswers });
+
+  // Create a seeded random number generator based on date and difficulty
+  const seed = stringToSeed(`${dailyDate}-${difficulty}`);
+  const rng = seededRandom(seed);
+
+  const lengths = availableLengths(200).filter((len) => len >= 4 && len <= 9);
+  if (lengths.length === 0) return null;
+
+  // Adjust minAnswers based on difficulty
+  const difficultyMinAnswers = {
+    easy: 15,
+    normal: 20,
+    medium: 25,
+    hard: 30
+  };
+  const actualMinAnswers = difficultyMinAnswers[difficulty] || minAnswers;
+
+  for (let attempt = 0; attempt < 400; attempt++) {
+    // Use seeded random to pick a seed word
+    const seedLen = lengths[Math.floor(rng() * lengths.length)];
+    const seedPool = Array.from(wordsOfLength(seedLen));
+    if (seedPool.length === 0) continue;
+    const seed = seedPool[Math.floor(rng() * seedPool.length)];
+    if (!seed) continue;
+    if (policy.isBlockedWord(seed)) continue;
+
+    const seedLetters = Array.from(new Set(seed.split('')));
+    if (seedLetters.length > 7) continue;
+
+    let letters = seedLetters.slice();
+    // Top up to exactly 7 letters using seeded random
+    while (letters.length < 7) {
+      const fillerPool = Array.from(wordsOfLength(4));
+      if (fillerPool.length === 0) break;
+      const filler = fillerPool[Math.floor(rng() * fillerPool.length)];
+      if (!filler) break;
+      if (policy.isBlockedWord(filler)) continue;
+      for (const ch of filler) {
+        if (!letters.includes(ch)) letters.push(ch);
+        if (letters.length === 7) break;
+      }
+    }
+    if (letters.length !== 7) continue;
+
+    const center = seedLetters[Math.floor(rng() * seedLetters.length)];
+    const answers = wordsFromLetters(new Set(letters), { requiredLetter: center, minLength: 4 });
+    if (answers.length < actualMinAnswers) continue;
+
+    const rarity = new Map();
+    for (const word of answers) rarity.set(word, tierFor(word));
+    const pangrams = answers.filter((w) => new Set(w.split('')).size === 7);
+
+    return {
+      puzzle: { letters, centerLetter: center, pangrams },
+      answers,
+      required: answers,
+      rarity,
+    };
+  }
+  return null;
+}
+
+/**
+ * Convert a string to a numeric seed for the seeded random generator.
+ */
+function stringToSeed(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
+}
+
+/**
+ * Seeded random number generator (simple LCG).
+ * Returns a function that generates random numbers between 0 and 1.
+ */
+function seededRandom(seed) {
+  const m = 0x80000000;
+  const a = 1103515245;
+  const c = 12345;
+  let state = seed;
+
+  return function() {
+    state = (a * state + c) % m;
+    return state / (m - 1);
+  };
+}
+
+/**
+ * Build a seeded daily word puzzle for Hangman, Speed Scramble, etc.
+ * This ensures every player gets the same word on the same day for each difficulty.
+ */
+function buildSeededWordRound({ dailyDate, difficulty = 'normal', category = null, minLength = 4, maxLength = 20 } = {}) {
+  ensureLoaded();
+  if (!dailyDate) return null;
+
+  // Create a seeded random number generator based on date and difficulty
+  const seed = stringToSeed(`${dailyDate}-${difficulty}-${category || 'all'}`);
+  const rng = seededRandom(seed);
+
+  // Get word pool based on difficulty and length band
+  const level = LEVEL_TO_TAG[difficulty] || 'medium';
+  const curatedPool = loadCurated().filter(e => {
+    const matchesDifficulty = e.difficulty === level;
+    const matchesLength = e.word.length >= minLength && e.word.length <= maxLength;
+    const matchesCategory = !category || e.cat.toLowerCase() === String(category).toLowerCase();
+    return matchesDifficulty && matchesLength && matchesCategory;
+  });
+
+  // If curated pool is empty, fall back to general pool
+  const pool = curatedPool.length > 0 ? curatedPool : loadGeneralPool().filter(e => {
+    const matchesDifficulty = e.difficulty === level;
+    const matchesLength = e.word.length >= minLength && e.word.length <= maxLength;
+    return matchesDifficulty && matchesLength;
+  });
+
+  if (pool.length === 0) return null;
+
+  // Use seeded random to pick a word
+  const chosen = pool[Math.floor(rng() * pool.length)];
+
+  if (!chosen || policy.isBlockedWord(chosen.word)) {
+    // Try a few more times to find a non-blocked word
+    for (let i = 0; i < 10; i++) {
+      const next = pool[Math.floor(rng() * pool.length)];
+      if (next && !policy.isBlockedWord(next.word)) {
+        return next;
+      }
+    }
+    return null;
+  }
+
+  return chosen;
+}
+
 module.exports = {
   load,
   ensureLoaded,
@@ -585,6 +730,8 @@ module.exports = {
   wordsFromLetters,
   tierFor,
   buildBeeRound,
+  buildSeededBeeRound,
+  buildSeededWordRound,
   curated,
   curatedFor,
   curatedCategories,

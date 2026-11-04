@@ -489,6 +489,25 @@
     }
   }
 
+  function saveDailyScore() {
+    if (state.gameMode !== 'solo' || !state.viewerId) return;
+    const score = evaluations.length && evaluations[evaluations.length - 1].word === answer
+      ? (GUESS_POINTS[evaluations.length - 1] || 10)
+      : 0;
+    fetch('/games/api/solo/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        viewerId: state.viewerId,
+        gameId: 'wordle',
+        difficulty: 'normal',
+        score,
+        wordsFound: evaluations.map((entry) => entry.word),
+        dailyDate: new Date().toISOString().slice(0, 10),
+      }),
+    }).catch((error) => console.error('Failed to save daily Wordle score:', error));
+  }
+
   .profile-name {
     max-width: 120px;
     overflow: hidden;
@@ -995,6 +1014,7 @@ function submitGuess(word, sourceUser) {
   if (guess === answer) {
     gameOver = true;
     const points = GUESS_POINTS[currentRow - 1] || 10;
+    saveDailyScore();
     awardPlayerPoints(sourceUser || 'Viewer', points);
     showMessage(`Solved in ${currentRow} ${currentRow === 1 ? 'guess' : 'guesses'}! +${points} points — the word was ${answer}`, 'success');
     const instructions = document.getElementById('instructions');
@@ -1004,6 +1024,7 @@ function submitGuess(word, sourceUser) {
 
   if (currentRow >= ROWS) {
     gameOver = true;
+    saveDailyScore();
     showMessage(`Out of guesses — the word was ${answer}`, 'error');
     const instructions = document.getElementById('instructions');
     if (instructions) instructions.textContent = `The word was ${answer}. Press New Game to try again.`;
@@ -1039,7 +1060,9 @@ function handleKey(key) {
 }
 
 function newGame(randomize) {
-  answer = pickAnswer(randomize !== false);
+  answer = state.gameMode === 'solo'
+    ? pickAnswer(false)
+    : pickAnswer(randomize !== false);
   currentRow = 0;
   currentGuess = '';
   evaluations = [];
@@ -1054,8 +1077,27 @@ function newGame(randomize) {
   if (instructions) {
     instructions.textContent = state.gameMode === 'online'
       ? 'Guess the 5-letter word in 6 tries. Chat 5-letter guesses count in online mode.'
-      : 'Guess the 5-letter word in 6 tries. Type or tap to enter your guess.';
+      : 'Daily 5-letter puzzle. Guess the word in 6 tries. Type or tap to enter your guess.';
   }
+}
+
+function saveDailyScore() {
+  if (state.gameMode !== 'solo' || !state.viewerId) return;
+  const score = evaluations.length && evaluations[evaluations.length - 1].word === answer
+    ? (GUESS_POINTS[evaluations.length - 1] || 10)
+    : 0;
+  fetch('/games/api/solo/score', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      viewerId: state.viewerId,
+      gameId: 'wordle',
+      difficulty: 'normal',
+      score,
+      wordsFound: evaluations.map((entry) => entry.word),
+      dailyDate: new Date().toISOString().slice(0, 10),
+    }),
+  }).catch((error) => console.error('Failed to save daily Wordle score:', error));
 }
 
 function buildKeyboard() {

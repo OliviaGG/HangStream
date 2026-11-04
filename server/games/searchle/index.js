@@ -40,6 +40,7 @@ class SearchleGame extends Game {
     this.won = false;
     this.target = null;
     this.modelError = null;
+    this.sessionReadyPromise = null;
     this.hintsUsed = 0;
     this.maxHints = 3;
     // Guards against two chat lines racing an async submission.
@@ -55,6 +56,7 @@ class SearchleGame extends Game {
       this.bestRank = null;
       this.won = false;
       this.target = null;
+      this.sessionReadyPromise = null;
       this.pendingGuesses = new Set();
       this.hintsUsed = 0;
     }
@@ -102,12 +104,13 @@ class SearchleGame extends Game {
 
     // Fire-and-forget: the session id is only needed by the first guess, and
     // `createGame` also warms the ranking cache for the target.
-    this.ranker.createGame().then((game) => {
+    this.sessionReadyPromise = this.ranker.createGame().then((game) => {
       this.sessionId = game.gameId;
       this.emit('session-ready', { sessionId: this.sessionId });
     }).catch((err) => {
       this.modelError = err && err.message ? err.message : 'Searchle session failed';
       this.emit('session-failed', { error: this.modelError });
+      throw err;
     });
 
     return { success: true, maxGuesses: MAX_GUESSES };

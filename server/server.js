@@ -3627,6 +3627,110 @@ const owner = session.ownerId;
     return;
   }
 
+  // Solo daily puzzle: GET /games/api/solo/daily/<game>?difficulty=<level>&viewerId=<id>
+  if (pathname.match(/^\/games\/api\/solo\/daily\/[^/]+$/) && req.method === 'GET') {
+    const gameId = pathname.split('/').pop();
+    const difficulty = reqUrl.searchParams.get('difficulty') || 'normal';
+    const viewerId = reqUrl.searchParams.get('viewerId') || '';
+    const dailyDate = gameLayer.getDailyDate();
+
+    // Load existing score if viewer is logged in
+    const savedScorePromise = viewerId
+      ? gameLayer.rounds.loadSoloDailyScore(viewerId, gameId, difficulty, dailyDate)
+      : Promise.resolve(null);
+
+    savedScorePromise.then(async (savedScore) => {
+      // Generate the daily puzzle for this difficulty
+      const game = gameLayer.registry.room('public', gameId);
+      const result = game.newRound({ isDaily: true, dailyDate, difficulty });
+
+      if (result.success) {
+        if (gameId === 'searchle' && game.sessionReadyPromise) {
+          await game.sessionReadyPromise;
+        }
+        // Build puzzle response based on game type
+        let puzzleData = {};
+        if (gameId === 'spellingbee') {
+          puzzleData = {
+            letters: result.letters,
+            centerLetter: result.centerLetter,
+          };
+        } else if (gameId === 'hangman') {
+          puzzleData = {
+            // Solo clients need the answer locally to reveal letters; this
+            // endpoint is only used for the private daily solo round.
+            word: game.word,
+            category: game.category,
+            difficulty: game.difficulty,
+          };
+        } else if (gameId === 'speedscramble') {
+          puzzleData = {
+            word: game.word,
+            scrambled: game.scrambledWord,
+          };
+        } else if (gameId === 'wordle') {
+          puzzleData = {
+            // Don't send the answer for wordle
+          };
+        } else if (gameId === 'searchle') {
+          puzzleData = { roundId: game.sessionId };
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          success: true,
+          game: gameId,
+          dailyDate,
+          difficulty,
+          puzzle: puzzleData,
+          savedScore: savedScore || { score: 0, wordsFound: [] },
+        }));
+      } else {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: false, error: result.error || 'Failed to generate puzzle' }));
+      }
+    }).catch((err) => {
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ success: false, error: err.message || 'Server error' }));
+    });
+    return;
+  }
+
+  // Save solo daily score: POST /games/api/solo/score
+  if (pathname === '/games/api/solo/score' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body || '{}');
+        const viewerId = data.viewerId || '';
+        const gameId = data.gameId || 'spellingbee';
+        const difficulty = data.difficulty || 'normal';
+        const score = Number(data.score) || 0;
+        const wordsFound = data.wordsFound || [];
+        const dailyDate = data.dailyDate || gameLayer.getDailyDate();
+
+        if (!viewerId) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: false, error: 'viewerId required' }));
+          return;
+        }
+
+        gameLayer.rounds.saveSoloDailyScore(viewerId, gameId, difficulty, dailyDate, score, wordsFound).then(() => {
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: true }));
+        }).catch((err) => {
+          res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: false, error: err.message || 'Failed to save score' }));
+        });
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: false, error: 'Invalid JSON' }));
+      }
+    });
+    return;
+  }
+
   // ── Next-game vote API (server/games/game-vote.js) ──
   // The full vote surface: phase, ballot with tallies, term countdown.
   if (pathname === '/games/api/vote/state' && req.method === 'GET') {

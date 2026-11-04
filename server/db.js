@@ -187,6 +187,18 @@ function initializeSchema() {
       PRIMARY KEY (game_id, daily_date, streamer_id)
     )`);
 
+    // Solo daily scores table - tracks player scores per game, per difficulty, per day
+    db.run(`CREATE TABLE IF NOT EXISTS solo_daily_scores (
+      viewer_id TEXT NOT NULL,
+      game_id TEXT NOT NULL,
+      difficulty TEXT NOT NULL,
+      daily_date TEXT NOT NULL,
+      score INTEGER NOT NULL DEFAULT 0,
+      words_found TEXT DEFAULT '[]',
+      updated_at INTEGER DEFAULT (strftime('%s', 'now')),
+      PRIMARY KEY (viewer_id, game_id, difficulty, daily_date)
+    )`);
+
     // Next-game vote config (server/games/game-vote.js). One row per streamer
     // holding the rotation, ballot size, durations and flags — the equivalent
     // of Word Tycoon's per-streamer `gameVote` widget config.
