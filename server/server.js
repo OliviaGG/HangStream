@@ -962,6 +962,67 @@ function getTwitchOwner(channel) {
   return directTwitchOwners.get(username) || username;
 }
 
+async function lookupTwitchLiveChannels(usernames) {
+  const normalized = [...new Set(usernames.map(normalizeTwitchUsername).filter(Boolean))];
+  if (!normalized.length || !TWITCH_CLIENT_ID || !TWITCH_CLIENT_SECRET) return new Set();
+  try {
+    const body = querystring.stringify({
+      client_id: TWITCH_CLIENT_ID,
+      client_secret: TWITCH_CLIENT_SECRET,
+      grant_type: 'client_credentials'
+    });
+    const tokenResponse = await new Promise((resolve, reject) => {
+      const request = https.request({
+        hostname: 'id.twitch.tv',
+        path: '/oauth2/token',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) }
+      }, (response) => {
+        let data = '';
+        response.on('data', (chunk) => { data += chunk; });
+        response.on('end', () => {
+          if (response.statusCode < 200 || response.statusCode >= 300) {
+            reject(new Error(`Twitch token request returned HTTP ${response.statusCode}`));
+            return;
+          }
+          resolve(JSON.parse(data || '{}'));
+        });
+      });
+      request.on('error', reject);
+      request.setTimeout(8000, () => request.destroy(new Error('Twitch token request timed out')));
+      request.write(body);
+      request.end();
+    });
+    if (!tokenResponse.access_token) return new Set();
+    const params = normalized.map((name) => `user_login=${encodeURIComponent(name)}`).join('&');
+    const streamResponse = await new Promise((resolve, reject) => {
+      const request = https.request({
+        hostname: 'api.twitch.tv',
+        path: `/helix/streams?${params}`,
+        method: 'GET',
+        headers: { Authorization: `Bearer ${tokenResponse.access_token}`, 'Client-Id': TWITCH_CLIENT_ID }
+      }, (response) => {
+        let data = '';
+        response.on('data', (chunk) => { data += chunk; });
+        response.on('end', () => {
+          if (response.statusCode < 200 || response.statusCode >= 300) {
+            reject(new Error(`Twitch stream request returned HTTP ${response.statusCode}`));
+            return;
+          }
+          resolve(JSON.parse(data || '{}'));
+        });
+      });
+      request.on('error', reject);
+      request.setTimeout(8000, () => request.destroy(new Error('Twitch stream request timed out')));
+      request.end();
+    });
+    return new Set((streamResponse.data || []).map((stream) => normalizeTwitchUsername(stream.user_login)));
+  } catch (error) {
+    console.warn('Twitch live directory lookup failed:', error.message);
+    return new Set();
+  }
+}
+
 function findOwnerAccount(req) {
   const session = readOwnerSession(req);
   if (!session) return null;
@@ -3303,7 +3364,7 @@ const owner = session.ownerId;
       tiktok: normalizeTikTokUsername(account.tiktok_username)
     })).filter((entry) => entry.owner && (entry.twitch || entry.tiktok));
     const twitchNames = entries.map((entry) => entry.twitch).filter(Boolean);
-    getTwitchLiveChannels(twitchNames).then((liveTwitch) => {
+    lookupTwitchLiveChannels(twitchNames).then((liveTwitch) => {
       const streams = [];
       for (const entry of entries) {
         if (entry.twitch && liveTwitch.has(entry.twitch)) {
@@ -3333,7 +3394,7 @@ const owner = session.ownerId;
 
     const tiktokUsername = normalizeTikTokUsername(owner.account.tiktok_username);
     const twitchUsername = normalizeTwitchUsername(owner.account.twitch_username);
-    getTwitchLiveChannels(twitchUsername ? [twitchUsername] : []).then((liveTwitch) => {
+    lookupTwitchLiveChannels(twitchUsername ? [twitchUsername] : []).then((liveTwitch) => {
       const twitchConnected = Boolean(twitchUsername && twitch.watched.has(twitchUsername));
       const twitchLive = Boolean(twitchUsername && liveTwitch.has(twitchUsername));
       const tiktokConnected = Boolean(tiktokUsername && tiktok.rooms.has(tiktokUsername));
