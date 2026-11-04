@@ -81,15 +81,23 @@
       const root = document.getElementById('stream-view');
       const slug = encodeURIComponent(streamer.replace(/^@+/, ''));
       const gamePath = game === 'spelling-bee'
-        ? `/spelling-bee/online?streamer=${slug}&mobile=1`
+        ? `/spelling-bee/online?owner=${slug}&mobile=1`
         : game === 'speed-scramble'
-          ? `/speed-scramble/online?streamer=${slug}&mobile=1`
-          : `/viewer/${slug}?mobile=1`;
+          ? `/speed-scramble/online?owner=${slug}&mobile=1`
+          : game === 'wordle'
+            ? `/wordle/online?owner=${slug}&mobile=1`
+            : game === 'searchle'
+              ? `/searchle/online?owner=${slug}&mobile=1`
+              : `/viewer/${slug}?mobile=1`;
       const overlayPath = game === 'spelling-bee'
-        ? `/overlay/spelling-bee/${slug}`
+        ? `/overlay/spelling-bee/${slug}?owner=${slug}`
         : game === 'speed-scramble'
-          ? `/overlay/speed-scramble/${slug}`
-          : `/overlay/${slug}`;
+          ? `/overlay/speed-scramble/${slug}?owner=${slug}`
+          : game === 'wordle'
+            ? `/overlay/wordle/${slug}?owner=${slug}`
+            : game === 'searchle'
+              ? `/overlay/searchle/${slug}?owner=${slug}`
+              : `/overlay/${slug}`;
       document.getElementById('game-frame').src = gamePath;
       document.getElementById('overlay-frame').src = overlayPath;
 

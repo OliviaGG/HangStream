@@ -784,6 +784,14 @@
               <input type="radio" name="game-selection" value="speed-scramble" style="width:18px;height:18px;accent-color:var(--accent);">
               <span style="font-size:14px;margin-left:8px;">⚡ Speed Scramble - Timed word unscrambling</span>
             </label>
+            <label style="display:block;cursor:pointer;margin-bottom:8px;">
+              <input type="radio" name="game-selection" value="wordle" style="width:18px;height:18px;accent-color:var(--accent);">
+              <span style="font-size:14px;margin-left:8px;">🟩 Wordle - Guess the hidden word</span>
+            </label>
+            <label style="display:block;cursor:pointer;margin-bottom:12px;">
+              <input type="radio" name="game-selection" value="searchle" style="width:18px;height:18px;accent-color:var(--accent);">
+              <span style="font-size:14px;margin-left:8px;">🔎 Searchle - Find the mystery answer</span>
+            </label>
           </div>
         </div>
 
@@ -886,7 +894,11 @@
           </div>
           <div style="margin-top:18px;padding:14px;border:1px solid var(--panel-border);border-radius:16px;background:rgba(255,255,255,.03);">
             <iframe id="overlay-live-preview" title="Live HangStream overlay preview" style="display:block;width:100%;height:300px;border:0;border-radius:12px;background:#0e0e12;" loading="lazy"></iframe>
-            <p style="margin:10px 0 0;color:var(--text-muted);font-size:12px;">This preview uses the same overlay link you can add to OBS.</p>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;">
+              <code id="overlay-preview-url" style="flex:1;min-width:220px;padding:9px 10px;border-radius:8px;background:rgba(0,0,0,.25);color:var(--text);font-size:12px;overflow-wrap:anywhere;">Loading overlay link...</code>
+              <button id="copy-preview-url" class="btn btn-secondary" type="button" style="padding:8px 12px;">Copy overlay link</button>
+            </div>
+            <p style="margin:8px 0 0;color:var(--text-muted);font-size:12px;">Copy this link into OBS: Sources → + → Browser → paste the link.</p>
           </div>
           <div id="overlay-editor-controls" style="display:none;margin-top:20px;">
             <h4 style="margin:0 0 10px;">Widgets</h4>
@@ -1196,15 +1208,19 @@
       function getGameRoute(selectedGame, streamerId) {
         const slug = encodeURIComponent(String(streamerId || '').replace('@', ''));
         const mobile = 'mobile=1';
-        if (selectedGame === 'spelling-bee') return `/spelling-bee/online?streamer=${slug}&${mobile}`;
-        if (selectedGame === 'speed-scramble') return `/speed-scramble/online?streamer=${slug}&${mobile}`;
+        if (selectedGame === 'spelling-bee') return `/spelling-bee/online?owner=${slug}&${mobile}`;
+        if (selectedGame === 'speed-scramble') return `/speed-scramble/online?owner=${slug}&${mobile}`;
+        if (selectedGame === 'wordle') return `/wordle/online?owner=${slug}&${mobile}`;
+        if (selectedGame === 'searchle') return `/searchle/online?owner=${slug}&${mobile}`;
         return `/viewer/${slug}?${mobile}`;
       }
 
       function getOverlayRoute(selectedGame, streamerId) {
         const slug = encodeURIComponent(String(streamerId || '').replace('@', ''));
-        if (selectedGame === 'spelling-bee') return `/overlay/spelling-bee/${slug}`;
-        if (selectedGame === 'speed-scramble') return `/overlay/speed-scramble/${slug}`;
+        if (selectedGame === 'spelling-bee') return `/overlay/spelling-bee/${slug}?owner=${slug}`;
+        if (selectedGame === 'speed-scramble') return `/overlay/speed-scramble/${slug}?owner=${slug}`;
+        if (selectedGame === 'wordle') return `/overlay/wordle/${slug}?owner=${slug}`;
+        if (selectedGame === 'searchle') return `/overlay/searchle/${slug}?owner=${slug}`;
         return `/overlay/${slug}`;
       }
 
@@ -1220,9 +1236,12 @@
         if (overlayUrlDisplay) {
           overlayUrlDisplay.textContent = `${baseUrl}${getOverlayRoute(selectedGame, streamerId)}`;
         }
+        const previewUrl = `${baseUrl}${getOverlayRoute(selectedGame, streamerId)}`;
+        const previewUrlDisplay = document.getElementById('overlay-preview-url');
+        if (previewUrlDisplay) previewUrlDisplay.textContent = previewUrl;
         const preview = document.getElementById('overlay-live-preview');
         if (preview) {
-          preview.src = getOverlayRoute(selectedGame, streamerId);
+          preview.src = previewUrl;
         }
         if (gameUrlDisplay) {
           gameUrlDisplay.textContent = `${baseUrl}${getGameRoute(selectedGame, streamerId)}`;
@@ -1944,6 +1963,12 @@
           if (copyOverlayBtn) {
             copyOverlayBtn.addEventListener('click', () => {
               copyToClipboard(document.getElementById('overlay-url-display').textContent);
+            });
+          }
+          const copyPreviewBtn = document.getElementById('copy-preview-url');
+          if (copyPreviewBtn) {
+            copyPreviewBtn.addEventListener('click', () => {
+              copyToClipboard(document.getElementById('overlay-preview-url').textContent);
             });
           }
 
