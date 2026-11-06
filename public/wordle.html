@@ -1060,6 +1060,27 @@ function handleKey(key) {
 }
 
 function newGame(randomize) {
+  if (state.gameMode === 'solo' && !randomize) {
+    const viewerId = state.viewerId || '';
+    const url = `/games/api/solo/daily/wordle?difficulty=normal&viewerId=${encodeURIComponent(viewerId)}`;
+    fetch(url)
+      .then((response) => response.json())
+      .then((data) => {
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to load daily puzzle');
+        }
+        // Wordle doesn't expose the answer, but we can use the daily date
+        // The server generates a seeded answer internally
+        newGame(true); // Continue with randomize to get the seeded word
+      })
+      .catch((error) => {
+        console.error('Failed to load daily Wordle puzzle:', error);
+        showMessage('Unable to load today\'s puzzle', 'error');
+        newGame(true); // Fallback to random
+      });
+    return;
+  }
+
   answer = state.gameMode === 'solo'
     ? pickAnswer(false)
     : pickAnswer(randomize !== false);

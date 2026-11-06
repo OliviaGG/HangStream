@@ -3654,6 +3654,8 @@ const owner = session.ownerId;
           puzzleData = {
             letters: result.letters,
             centerLetter: result.centerLetter,
+            // Include valid answers so client can validate words
+            answers: game.answers,
           };
         } else if (gameId === 'hangman') {
           puzzleData = {

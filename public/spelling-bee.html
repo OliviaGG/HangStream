@@ -812,6 +812,7 @@ let playerSessionId = null;
 let currentPath = [];
 let isDragging = false;
 let chatWS = null;
+let validAnswers = new Set(); // Server-provided valid words for daily puzzles
 
 // ── NEXT-GAME VOTE ──
 // The sidebar ballot is interactive: tapping a row sends the same
@@ -1001,6 +1002,11 @@ function canFormWord(word) {
 
 // Basic word validation (in real app, you'd use a proper dictionary)
 function isValidWord(word) {
+  // For daily puzzles, check against server-provided valid answers
+  if (state.gameMode === 'solo' && validAnswers.size > 0) {
+    return validAnswers.has(word.toLowerCase());
+  }
+  // For online mode, use local word-bank validation
   return canFormWord(word);
 }
 
@@ -1321,6 +1327,9 @@ async function fetchDailyPuzzle() {
       // Load the puzzle
       currentLetters = data.puzzle.letters || [];
       foundWords.clear();
+
+      // Load valid answers from server for validation
+      validAnswers = new Set(data.puzzle.answers || []);
 
       // Restore saved score if exists (this is the score for THIS difficulty)
       if (data.savedScore && data.savedScore.score > 0) {

@@ -1789,6 +1789,22 @@ function newGame(options = {}) {
   usedWords.add(currentWord); // Track this word as used
   
   prepareMasked(currentWord);
+
+  // Restore saved score if exists (already completed puzzle)
+  if (options.savedScore && options.savedScore.score > 0 && options.savedScore.wordsFound.length > 0) {
+    const savedWord = options.savedScore.wordsFound[0];
+    if (savedWord && savedWord.toUpperCase() === currentWord) {
+      // Word was already solved, mark as completed
+      wrongCount = MAX_WRONG - options.savedScore.score;
+      if (wrongCount < 0) wrongCount = 0;
+      for (let i = 0; i < currentWord.length; i++) {
+        if (maskedChars[i]) {
+          maskedChars[i].revealed = true;
+        }
+      }
+    }
+  }
+
   renderWordRow();
   buildKeyboard();
   updateHangmanParts();
@@ -2252,9 +2268,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      // Save current score before changing difficulty
+      saveDailyScore();
+
       config.difficulty = selectedDifficulty || 'medium';
       try { VISIBLE_WORDS = filterByDifficulty(ALL_WORDS, config.difficulty); } catch (err) {}
       saveSettings();
+      newGame();
     });
   }
 });
