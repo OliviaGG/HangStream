@@ -675,6 +675,15 @@ const GRID_MIN_ANSWERS = { easy: 25, normal: 35, medium: 45, hard: 20 };
 /** Daily grid puzzles are deterministic, so cache them per date+difficulty. */
 const gridRounds = new Map();
 
+/**
+ * Words a specific daily grid must contain, keyed `date|difficulty`.
+ * Used when a viewer asks for a reroll so a word they want is formable.
+ */
+const GRID_REQUIRED_WORDS = {
+  // Rerolled 2026-11-08 easy board so ARISE can be spelled.
+  '2026-11-08|easy': 'arise',
+};
+
 /** Can `word` be traced on `grid` (16 lowercase letters) without reuse? */
 function wordOnGrid(word, grid) {
   const starts = [];
@@ -724,34 +733,114 @@ function gridAnswers(grid, minLength, maxLength = 16) {
 }
 
 /**
+ * A self-avoiding walk of `len` cells on the 4x4 grid, or null.
+ * Every consecutive pair is adjacent, so letters placed along it can be
+ * traced as a word. Falls back to a snake path that covers the whole grid.
+ */
+function gridPath(len, rng) {
+  for (let attempt = 0; attempt < 200; attempt++) {
+    const path = [Math.floor(rng() * 16)];
+    const used = new Set(path);
+    while (path.length < len) {
+      const last = path[path.length - 1];
+      const r = (last / 4) | 0;
+      const c = last % 4;
+      const options = [];
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          if (!dr && !dc) continue;
+          const nr = r + dr;
+          const nc = c + dc;
+          if (nr < 0 || nr > 3 || nc < 0 || nc > 3) continue;
+          const ni = nr * 4 + nc;
+          if (!used.has(ni)) options.push(ni);
+        }
+      }
+      if (!options.length) break;
+      const next = options[Math.floor(rng() * options.length)];
+      path.push(next);
+      used.add(next);
+    }
+    if (path.length === len) return path;
+  }
+  // Snake fallback: row 0 left-to-right, row 1 right-to-left, etc.
+  const path = [];
+  for (let r = 0; r < 4 && path.length < len; r++) {
+    const cols = r % 2 === 0 ? [0, 1, 2, 3] : [3, 2, 1, 0];
+    for (const c of cols) {
+      if (path.length < len) path.push(r * 4 + c);
+    }
+  }
+  return path.length === len ? path : null;
+}
+
+/**
  * Build the solo daily grid puzzle: { letters (16 uppercase), answers }.
  *
  * Seeded by `${dailyDate}-${difficulty}` so every player gets the same board.
  * A grid with too few answers is reshuffled (still seeded) rather than served.
+ * When a word is required (GRID_REQUIRED_WORDS or `mustForm`), its letters are
+ * placed along a traceable path so the word is always formable.
  */
-function buildGridRound({ dailyDate, difficulty = 'normal' } = {}) {
+function buildGridRound({ dailyDate, difficulty = 'normal', mustForm = null } = {}) {
   ensureLoaded();
-  const key = `${dailyDate || 'random'}|${difficulty}`;
+  const level = String(difficulty || 'normal').toLowerCase();
+  const key = `${dailyDate || 'random'}|${level}`;
   if (gridRounds.has(key)) return gridRounds.get(key);
 
-  const level = String(difficulty || 'normal').toLowerCase();
   const minLength = GRID_MIN_LENGTH[level] || GRID_MIN_LENGTH.normal;
   const minAnswers = GRID_MIN_ANSWERS[level] || GRID_MIN_ANSWERS.normal;
-  const rng = seededRandom(stringToSeed(`grid-${key}`));
+  const required = String(mustForm || GRID_REQUIRED_WORDS[key] || '')
+    .toLowerCase().replace(/[^a-z]/g, '');
+  // Seed version is bumped when the generator changes so a reroll does not
+  // silently re-deal boards players may already have seen.
+  const rng = seededRandom(stringToSeed(`grid-v2-${key}`));
+
+  const pickVowel = () => GRID_VOWELS[Math.floor(rng() * GRID_VOWELS.length)];
+  const pickConsonant = () => GRID_CONSONANTS[Math.floor(rng() * GRID_CONSONANTS.length)];
 
   let result = null;
-  for (let attempt = 0; attempt < 20 && !result; attempt++) {
-    const vowelCount = 5 + Math.floor(rng() * 2);
-    const letters = [];
-    for (let i = 0; i < vowelCount; i++) letters.push(GRID_VOWELS[Math.floor(rng() * GRID_VOWELS.length)]);
-    for (let i = vowelCount; i < 16; i++) letters.push(GRID_CONSONANTS[Math.floor(rng() * GRID_CONSONANTS.length)]);
-    for (let i = letters.length - 1; i > 0; i--) {
-      const j = Math.floor(rng() * (i + 1));
-      [letters[i], letters[j]] = [letters[j], letters[i]];
+  for (let attempt = 0; attempt < 60 && !result; attempt++) {
+    let letters;
+    if (required.length >= 3 && required.length <= 16) {
+      // Place the required word on a guaranteed-traceable path, then fill the
+      // remaining cells with the usual vowel/consonant mix.
+      const path = gridPath(required.length, rng);
+      if (!path) continue;
+      letters = new Array(16).fill(null);
+      path.forEach((cell, i) => { letters[cell] = required[i].toUpperCase(); });
+      const placedVowels = required.split('').filter((ch) => 'aeiou'.includes(ch)).length;
+      const vowelTarget = 5 + Math.floor(rng() * 2);
+      const remainingVowels = Math.max(0, vowelTarget - placedVowels);
+      const empty = letters.map((l, i) => (l ? -1 : i)).filter((i) => i >= 0);
+      for (let i = empty.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [empty[i], empty[j]] = [empty[j], empty[i]];
+      }
+      empty.forEach((cell, i) => {
+        letters[cell] = i < remainingVowels ? pickVowel() : pickConsonant();
+      });
+      // Shuffle the non-word cells so the placed path is not obvious.
+      const free = letters.map((l, i) => (path.includes(i) ? -1 : i)).filter((i) => i >= 0);
+      const bag = free.map((i) => letters[i]);
+      for (let i = bag.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [bag[i], bag[j]] = [bag[j], bag[i]];
+      }
+      free.forEach((cell, i) => { letters[cell] = bag[i]; });
+    } else {
+      const vowelCount = 5 + Math.floor(rng() * 2);
+      letters = [];
+      for (let i = 0; i < vowelCount; i++) letters.push(pickVowel());
+      for (let i = vowelCount; i < 16; i++) letters.push(pickConsonant());
+      for (let i = letters.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [letters[i], letters[j]] = [letters[j], letters[i]];
+      }
     }
     const grid = letters.map((l) => l.toLowerCase());
     const answers = gridAnswers(grid, minLength);
-    if (answers.length >= minAnswers) {
+    if (answers.length >= minAnswers && (!required || answers.includes(required))) {
       result = { letters: letters.map((l) => l.toUpperCase()), answers };
     }
   }
