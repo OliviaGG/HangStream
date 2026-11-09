@@ -900,25 +900,35 @@ const DIFFICULTY_SETTINGS = {
 // ── Streamer hints ───────────────────────────────────────────
 // The hint panel lists real words from the shared word bank that can be
 // traced on the current honeycomb. Loaded once, then reused per grid.
+// BANK_WORDS doubles as the online-mode dictionary: a traced path only counts
+// if the result is a real word, so letter-salad like "CRSE" is rejected.
 let COMMON_WORDS = [];
+const BANK_WORDS = new Set();
 
 fetch('/word-bank.json')
   .then((res) => (res.ok ? res.json() : null))
   .then((bank) => {
     if (!bank) return;
-    const lists = bank.words && typeof bank.words === 'object'
-      ? Object.values(bank.words)
-      : (Array.isArray(bank) ? [bank] : []);
+    const lists = [];
+    const general = bank.general && typeof bank.general === 'object'
+      ? Object.values(bank.general)
+      : [];
+    lists.push(...general);
+    if (Array.isArray(bank.fiveLetter)) lists.push(bank.fiveLetter);
+    if (Array.isArray(bank.basicEnglish)) lists.push(bank.basicEnglish);
     const seen = new Set();
+    const addWord = (raw) => {
+      const word = String(raw || '').trim().toUpperCase();
+      if (/^[A-Z]{3,}$/.test(word) && !seen.has(word)) {
+        seen.add(word);
+        COMMON_WORDS.push(word);
+        BANK_WORDS.add(word);
+      }
+    };
+    for (const item of (bank.curated || [])) addWord(item && item.word);
     for (const list of lists) {
       if (!Array.isArray(list)) continue;
-      for (const raw of list) {
-        const word = String(raw || '').trim().toUpperCase();
-        if (/^[A-Z]{3,}$/.test(word) && !seen.has(word)) {
-          seen.add(word);
-          COMMON_WORDS.push(word);
-        }
-      }
+      for (const raw of list) addWord(raw);
     }
     updateStreamerHints();
   })
@@ -1009,8 +1019,11 @@ function isValidWord(word) {
   if (state.gameMode === 'solo' && validAnswers.size > 0) {
     return validAnswers.has(word.toLowerCase());
   }
-  // For online mode, use local word-bank validation
-  return canFormWord(word);
+  // Otherwise the letters must trace on the grid AND the result must be a
+  // real word from the shared bank - tracing alone would accept nonsense.
+  // While the bank is still loading (BANK_WORDS empty) fall back to the
+  // trace check so early guesses are not wrongly rejected.
+  return canFormWord(word) && (BANK_WORDS.size === 0 || BANK_WORDS.has(word));
 }
 
 function getWordScore(word) {
