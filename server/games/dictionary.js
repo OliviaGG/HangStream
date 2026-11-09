@@ -2,19 +2,21 @@
 //
 // Mirrors the word-tycoon-ecosystem pattern where each game server owns an
 // authoritative answer set instead of trusting the browser. HangStream ships
-// three word sources:
+// one word file for every game:
 //
-//   - public/custom-words.json        [{ word, cat, difficulty }] curated pool
-//                                     (hand-picked words that carry a real
-//                                     category, so the on-stream badge is a
-//                                     usable hint)
-//   - public/word-bank.json           { words: { easy, medium, hard } } the
-//                                     general pool - the ecosystem's own
-//                                     curated target list, tagged by difficulty
+//   - public/word-bank.json           { curated, general, fiveLetter,
+//                                     basicEnglish } built by
+//                                     server/games/tools/build-curated-words.js
+//                                     - curated: [{ word, cat, difficulty }]
+//                                       hand-picked words that carry a real
+//                                       category, so the on-stream badge is a
+//                                       usable hint
+//                                     - general: { easy, medium, hard } the
+//                                       ecosystem's own curated target list,
+//                                       tagged by difficulty
+//                                     - fiveLetter / basicEnglish: flat lists
 //   - <repo>/server/searchle/shared/word-bank/dictionary.json
 //                                     { "<len>": [words...] } large dictionary
-//   - public/basic-english-words.json
-//                                     Wikipedia Basic English combined list
 //
 // The dictionary.json that ships with Searchle is the richest source, so we
 // prefer it when present and fall back to the smaller lists otherwise.
@@ -31,7 +33,6 @@ const PUBLIC_DIR = path.join(__dirname, '..', '..', 'public');
 const SEARCHLE_DICT = path.join(__dirname, '..', 'searchle', 'shared', 'word-bank', 'dictionary.json');
 const SEARCHLE_BANK = path.join(__dirname, '..', 'searchle', 'shared', 'word-bank');
 const WORD_BANK_PATH = path.join(PUBLIC_DIR, 'word-bank.json');
-const BASIC_ENGLISH_PATH = path.join(PUBLIC_DIR, 'basic-english-words.json');
 
 // Zipf-ish common-word tiers. Without a frequency table we approximate rarity
 // from length: short words are common, long words are rare. Word Tycoon uses a
@@ -40,7 +41,8 @@ const BASIC_ENGLISH_PATH = path.join(PUBLIC_DIR, 'basic-english-words.json');
 const RARE_LENGTH = 9;
 const HIDDEN_LENGTH = 12;
 
-// Curated Hangman entries ({ word, cat, difficulty }) from custom-words.json.
+// Curated Hangman entries ({ word, cat, difficulty }) from the `curated`
+// section of word-bank.json.
 // Kept separately because these are the words the existing Hangman page and
 // streamer hint UI already expose — a server round should draw from the same
 // pool so a streamer recognises what chat is guessing.
@@ -56,6 +58,9 @@ let wordsByLength = new Map(); // length -> Set<word>
 let allWords = new Set();
 let loaded = false;
 
+// Parsed word-bank.json, loaded once and shared by every section reader.
+let bankFile = null;
+
 function addWord(raw) {
   const word = String(raw || '').toLowerCase().trim();
   if (!/^[a-z]+$/.test(word)) return;
@@ -63,6 +68,49 @@ function addWord(raw) {
   let set = wordsByLength.get(word.length);
   if (!set) { set = new Set(); wordsByLength.set(word.length, set); }
   set.add(word);
+}
+
+/**
+ * Read public/word-bank.json once. Every section is optional so a partial or
+ * older file still loads.
+ */
+function loadBankFile() {
+  if (bankFile) return bankFile;
+  bankFile = { curated: [], general: {}, fiveLetter: [], basicEnglish: [] };
+  if (!fs.existsSync(WORD_BANK_PATH)) return bankFile;
+  try {
+    const data = JSON.parse(fs.readFileSync(WORD_BANK_PATH, 'utf8'));
+    if (Array.isArray(data.curated)) bankFile.curated = data.curated;
+    if (data.general && typeof data.general === 'object') bankFile.general = data.general;
+    if (Array.isArray(data.fiveLetter)) bankFile.fiveLetter = data.fiveLetter;
+    if (Array.isArray(data.basicEnglish)) bankFile.basicEnglish = data.basicEnglish;
+  } catch (err) {
+    console.warn('word-bank: failed to read word-bank.json:', err.message);
+  }
+  return bankFile;
+}
+
+/**
+ * Add every word in the merged bank to the shared dictionary: the curated and
+ * general pools (which may carry objects or bare strings), plus the flat
+ * five-letter and Basic English lists.
+ */
+function loadFromWordBank() {
+  const bank = loadBankFile();
+  let count = 0;
+  const add = (raw) => {
+    const before = allWords.size;
+    addWord(typeof raw === 'string' ? raw : raw && raw.word);
+    if (allWords.size > before) count++;
+  };
+  for (const item of bank.curated) add(item);
+  for (const list of Object.values(bank.general)) {
+    if (!Array.isArray(list)) continue;
+    for (const word of list) add(word);
+  }
+  for (const word of bank.fiveLetter) add(word);
+  for (const word of bank.basicEnglish) add(word);
+  return count;
 }
 
 function loadFromSearchleDictionary() {
@@ -82,60 +130,13 @@ function loadFromSearchleDictionary() {
   }
 }
 
-function loadFromCustomWords() {
-  const file = path.join(PUBLIC_DIR, 'custom-words.json');
-  if (!fs.existsSync(file)) return 0;
-  try {
-    const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
-    const list = Array.isArray(raw) ? raw : (raw.words || []);
-    let count = 0;
-    for (const item of list) { addWord(typeof item === 'string' ? item : item.word); count++; }
-    return count;
-  } catch (err) {
-    console.warn('word-bank: failed to read custom-words.json:', err.message);
-    return 0;
-  }
-}
-
-function loadFromWordleWords() {
-  const file = path.join(PUBLIC_DIR, 'wordle-words.js');
-  if (!fs.existsSync(file)) return 0;
-  try {
-    const src = fs.readFileSync(file, 'utf8');
-    const match = src.match(/=\s*(\[[\s\S]*\])\s*;?/);
-    if (!match) return 0;
-    const list = JSON.parse(match[1]);
-    for (const word of list) addWord(word);
-    return list.length;
-  } catch (err) {
-    console.warn('word-bank: failed to read wordle-words.js:', err.message);
-    return 0;
-  }
-}
-
-function loadFromBasicEnglish() {
-  if (!fs.existsSync(BASIC_ENGLISH_PATH)) return 0;
-  try {
-    const raw = JSON.parse(fs.readFileSync(BASIC_ENGLISH_PATH, 'utf8'));
-    const list = Array.isArray(raw) ? raw : (raw.words || []);
-    let count = 0;
-    for (const word of list) {
-      addWord(word);
-      count++;
-    }
-    return count;
-  } catch (err) {
-    console.warn('word-bank: failed to read basic-english-words.json:', err.message);
-    return 0;
-  }
-}
-
 /**
  * Load the curated word list once, preserving `cat` and `difficulty`.
  *
- * custom-words.json is the source the Spielend Hangman page uses, so it is also
- * the right fountainhead for a server-authoritative round: the category shown
- * on stream stays meaningful and the difficulty slider keeps working.
+ * The `curated` section of word-bank.json is the source the Spielend Hangman
+ * page uses, so it is also the right fountainhead for a server-authoritative
+ * round: the category shown on stream stays meaningful and the difficulty
+ * slider keeps working.
  *
  * Blocked words are dropped here rather than at pick time so no caller can
  * accidentally serve one.
@@ -143,23 +144,15 @@ function loadFromBasicEnglish() {
 function loadCurated() {
   if (curatedLoaded) return curatedWords;
   curatedLoaded = true;
-  const file = path.join(PUBLIC_DIR, 'custom-words.json');
-  if (!fs.existsSync(file)) return curatedWords;
-  try {
-    const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
-    const list = Array.isArray(raw) ? raw : (raw.words || []);
-    for (const item of list) {
-      const word = String((typeof item === 'string' ? item : item.word) || '').trim();
-      if (!/^[a-z]+$/i.test(word)) continue;
-      if (policy.isBlockedWord(word)) continue;
-      curatedWords.push({
-        word: word.toLowerCase(),
-        cat: (typeof item === 'object' && item.cat) || 'General',
-        difficulty: (typeof item === 'object' && item.difficulty) || 'medium',
-      });
-    }
-  } catch (err) {
-    console.warn('word-bank: failed to read curated words:', err.message);
+  for (const item of loadBankFile().curated) {
+    const word = String((typeof item === 'string' ? item : item && item.word) || '').trim();
+    if (!/^[a-z]+$/i.test(word)) continue;
+    if (policy.isBlockedWord(word)) continue;
+    curatedWords.push({
+      word: word.toLowerCase(),
+      cat: (typeof item === 'object' && item.cat) || 'General',
+      difficulty: (typeof item === 'object' && item.difficulty) || 'medium',
+    });
   }
   return curatedWords;
 }
@@ -174,7 +167,8 @@ function loadCurated() {
 function loadGeneralPool() {
   if (generalLoaded) return generalWords;
   generalLoaded = true;
-  if (!fs.existsSync(WORD_BANK_PATH)) return generalWords;
+  const buckets = loadBankFile().general;
+  if (!buckets || typeof buckets !== 'object') return generalWords;
   try {
     const readList = (file) => {
       const full = path.join(SEARCHLE_BANK, file);
@@ -185,9 +179,9 @@ function loadGeneralPool() {
     const veryEasy = new Set(readList('searchle-very-easy-targets.json').map((w) => String(w).toLowerCase()));
     const easyTier = new Set(readList('searchle-easy-targets.json').map((w) => String(w).toLowerCase()));
 
-    const bank = JSON.parse(fs.readFileSync(WORD_BANK_PATH, 'utf8'));
     const seen = new Set();
-    for (const [difficulty, list] of Object.entries(bank.words || {})) {
+    for (const [difficulty, list] of Object.entries(buckets)) {
+      if (!Array.isArray(list)) continue;
       for (const raw of list) {
         const word = String(raw || '').toLowerCase();
         if (!/^[a-z]+$/.test(word)) continue;
@@ -233,11 +227,9 @@ function curatedCategories() {
 function load() {
   if (loaded) return { sizes: sizes(), total: allWords.size };
   const fromDict = loadFromSearchleDictionary();
-  const fromCustom = loadFromCustomWords();
-  const fromWordle = loadFromWordleWords();
-  const fromBasicEnglish = loadFromBasicEnglish();
+  const fromBank = loadFromWordBank();
   loaded = true;
-  console.log(`word-bank loaded: ${allWords.size} words (searchle:${fromDict} custom:${fromCustom} wordle:${fromWordle} basic-english:${fromBasicEnglish})`);
+  console.log(`word-bank loaded: ${allWords.size} words (searchle:${fromDict} bank:${fromBank})`);
   return { sizes: sizes(), total: allWords.size };
 }
 
@@ -643,6 +635,139 @@ function buildSeededBeeRound({ dailyDate, difficulty = 'normal', minAnswers = 12
   return null;
 }
 
+// ── 4x4 grid rounds (solo Spelling Bee) ────────────────────────────────────
+//
+// The solo Spelling Bee page plays Boggle-style: 16 letters in a 4x4 grid,
+// words traced along adjacent cells without reusing a letter. That is a
+// different puzzle shape from the hive-style SpellingBeeGame used for online
+// rounds, so the solo daily endpoint builds its puzzle here instead.
+
+/** 8-direction adjacency for the 4x4 grid, as neighbour cell indexes. */
+const GRID_NEIGHBORS = (() => {
+  const out = [];
+  for (let i = 0; i < 16; i++) {
+    const r = (i / 4) | 0;
+    const c = i % 4;
+    const n = [];
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        const nr = r + dr;
+        const nc = c + dc;
+        if (nr >= 0 && nr < 4 && nc >= 0 && nc < 4) n.push(nr * 4 + nc);
+      }
+    }
+    out.push(n);
+  }
+  return out;
+})();
+
+/** Letter pools for grid generation, weighted like the page's own grids. */
+const GRID_VOWELS = 'AAEEEIIIOOOUU';
+const GRID_CONSONANTS = 'NNRRSSTTLLCCDDMMGGHHBBKKPPFJ';
+
+/** Page difficulty -> minimum word length (public/spelling-bee.html). */
+const GRID_MIN_LENGTH = { easy: 3, normal: 4, medium: 4, hard: 5 };
+
+/** Fewest answers a generated grid may have before it is reshuffled. */
+const GRID_MIN_ANSWERS = { easy: 25, normal: 35, medium: 45, hard: 20 };
+
+/** Daily grid puzzles are deterministic, so cache them per date+difficulty. */
+const gridRounds = new Map();
+
+/** Can `word` be traced on `grid` (16 lowercase letters) without reuse? */
+function wordOnGrid(word, grid) {
+  const starts = [];
+  for (let i = 0; i < 16; i++) if (grid[i] === word[0]) starts.push(i);
+  if (!starts.length) return false;
+  const visited = new Uint8Array(16);
+  const letters = word.split('');
+  function dfs(cell, pos) {
+    if (pos === letters.length) return true;
+    visited[cell] = 1;
+    for (const nb of GRID_NEIGHBORS[cell]) {
+      if (!visited[nb] && grid[nb] === letters[pos] && dfs(nb, pos + 1)) {
+        visited[cell] = 0;
+        return true;
+      }
+    }
+    visited[cell] = 0;
+    return false;
+  }
+  for (const start of starts) {
+    if (dfs(start, 1)) return true;
+  }
+  return false;
+}
+
+/** Every dictionary word traceable on the grid, lowercase, policy-filtered. */
+function gridAnswers(grid, minLength, maxLength = 16) {
+  ensureLoaded();
+  const counts = {};
+  for (const ch of grid) counts[ch] = (counts[ch] || 0) + 1;
+  const out = [];
+  for (let len = minLength; len <= maxLength; len++) {
+    const candidates = wordsByLength.get(len);
+    if (!candidates || candidates.size === 0) continue;
+    for (const word of candidates) {
+      const needed = {};
+      let feasible = true;
+      for (const ch of word) {
+        needed[ch] = (needed[ch] || 0) + 1;
+        if (needed[ch] > (counts[ch] || 0)) { feasible = false; break; }
+      }
+      if (!feasible) continue;
+      if (wordOnGrid(word, grid)) out.push(word);
+    }
+  }
+  return policy.filterWordsForGame(out, 'spellingbee', 'board_word');
+}
+
+/**
+ * Build the solo daily grid puzzle: { letters (16 uppercase), answers }.
+ *
+ * Seeded by `${dailyDate}-${difficulty}` so every player gets the same board.
+ * A grid with too few answers is reshuffled (still seeded) rather than served.
+ */
+function buildGridRound({ dailyDate, difficulty = 'normal' } = {}) {
+  ensureLoaded();
+  const key = `${dailyDate || 'random'}|${difficulty}`;
+  if (gridRounds.has(key)) return gridRounds.get(key);
+
+  const level = String(difficulty || 'normal').toLowerCase();
+  const minLength = GRID_MIN_LENGTH[level] || GRID_MIN_LENGTH.normal;
+  const minAnswers = GRID_MIN_ANSWERS[level] || GRID_MIN_ANSWERS.normal;
+  const rng = seededRandom(stringToSeed(`grid-${key}`));
+
+  let result = null;
+  for (let attempt = 0; attempt < 20 && !result; attempt++) {
+    const vowelCount = 5 + Math.floor(rng() * 2);
+    const letters = [];
+    for (let i = 0; i < vowelCount; i++) letters.push(GRID_VOWELS[Math.floor(rng() * GRID_VOWELS.length)]);
+    for (let i = vowelCount; i < 16; i++) letters.push(GRID_CONSONANTS[Math.floor(rng() * GRID_CONSONANTS.length)]);
+    for (let i = letters.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [letters[i], letters[j]] = [letters[j], letters[i]];
+    }
+    const grid = letters.map((l) => l.toLowerCase());
+    const answers = gridAnswers(grid, minLength);
+    if (answers.length >= minAnswers) {
+      result = { letters: letters.map((l) => l.toUpperCase()), answers };
+    }
+  }
+
+  // Last resort: serve the best grid seen even if it is thin.
+  if (!result) {
+    const letters = [];
+    for (let i = 0; i < 16; i++) letters.push(GRID_VOWELS[i % GRID_VOWELS.length] || 'A');
+    const grid = letters.map((l) => l.toLowerCase());
+    result = { letters: letters.map((l) => l.toUpperCase()), answers: gridAnswers(grid, minLength) };
+  }
+
+  gridRounds.set(key, result);
+  return result;
+}
+
 /**
  * Convert a string to a numeric seed for the seeded random generator.
  */
@@ -732,6 +857,7 @@ module.exports = {
   buildBeeRound,
   buildSeededBeeRound,
   buildSeededWordRound,
+  buildGridRound,
   curated,
   curatedFor,
   curatedCategories,

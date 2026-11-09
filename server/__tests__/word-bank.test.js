@@ -1,9 +1,12 @@
 // Word bank and blocklist tests.
 //
-// The word bank is two pools with one contract:
-//   public/custom-words.json  curated  - hand-picked, carries a real category
-//   public/word-bank.json     general  - the ecosystem's target list, tagged by
-//                                       difficulty but without a category
+// The word bank is one file with sections, all sharing one contract:
+//   public/word-bank.json
+//     curated       hand-picked, carries a real category
+//     general       the ecosystem's target list, tagged by difficulty but
+//                   without a category
+//     fiveLetter    Wordle's guess/answer list
+//     basicEnglish  Wikipedia Basic English combined list
 //
 // The blocklist is the ecosystem's own, so a word blocked upstream is blocked
 // here too, in every role a word can play (answer, board word, guess).
@@ -15,7 +18,7 @@ const path = require('node:path');
 
 const dictionary = require('../games/dictionary');
 const policy = require('../games/word-policy');
-const { buildCuratedWords, CURATED_PATH, BANK_PATH } = require('../games/tools/build-curated-words');
+const { buildCuratedWords, BANK_PATH } = require('../games/tools/build-curated-words');
 const { HangmanGame } = require('../games/hangman');
 
 const ROOT = path.join(__dirname, '..', '..');
@@ -155,41 +158,58 @@ test('poolSizes counts each pool by difficulty inside a band', () => {
 
 // ── the shipped artefacts ──────────────────────────────────────────────────
 
-test('the committed word bank files match what the build produces', () => {
-  const { curated, bank } = buildCuratedWords();
+test('the committed word bank file matches what the build produces', () => {
+  const { bank } = buildCuratedWords();
 
-  const shippedCurated = JSON.parse(fs.readFileSync(CURATED_PATH, 'utf8'));
   const shippedBank = JSON.parse(fs.readFileSync(BANK_PATH, 'utf8'));
 
-  assert.deepEqual(shippedCurated, curated, 'public/custom-words.json is stale - re-run the build');
   assert.deepEqual(shippedBank, bank, 'public/word-bank.json is stale - re-run the build');
 });
 
-test('the shipped word bank keeps the { word, cat, difficulty } contract', () => {
-  const curated = JSON.parse(fs.readFileSync(CURATED_PATH, 'utf8'));
-  assert.ok(Array.isArray(curated) && curated.length > 0);
-  for (const entry of curated) {
+test('the shipped word bank keeps the section contracts', () => {
+  const bank = JSON.parse(fs.readFileSync(BANK_PATH, 'utf8'));
+  assert.ok(bank.meta);
+
+  // curated: { word, cat, difficulty } entries
+  assert.ok(Array.isArray(bank.curated) && bank.curated.length > 0);
+  for (const entry of bank.curated) {
     assert.deepEqual(Object.keys(entry).sort(), ['cat', 'difficulty', 'word']);
     assert.equal(typeof entry.word, 'string');
     assert.equal(typeof entry.cat, 'string');
     assert.equal(typeof entry.difficulty, 'string');
   }
 
-  const bank = JSON.parse(fs.readFileSync(BANK_PATH, 'utf8'));
-  assert.ok(bank.meta && bank.words);
-  assert.ok(Array.isArray(bank.words.easy));
-  assert.ok(Array.isArray(bank.words.medium));
-  assert.ok(Array.isArray(bank.words.hard));
-  // The general pool carries no category, so the pages label it "Common".
+  // general: difficulty buckets of bare words; no category, pages label it "Common"
+  assert.ok(bank.general && typeof bank.general === 'object');
+  assert.ok(Array.isArray(bank.general.easy));
+  assert.ok(Array.isArray(bank.general.medium));
+  assert.ok(Array.isArray(bank.general.hard));
   assert.equal(bank.meta.category, 'Common');
-  assert.equal(bank.meta.counts.total, bank.words.easy.length + bank.words.medium.length + bank.words.hard.length);
+  assert.equal(
+    bank.meta.counts.general,
+    bank.general.easy.length + bank.general.medium.length + bank.general.hard.length
+  );
+
+  // the flat lists the other games read
+  assert.ok(Array.isArray(bank.fiveLetter) && bank.fiveLetter.every((w) => /^[a-z]{5}$/.test(w)));
+  assert.ok(Array.isArray(bank.basicEnglish) && bank.basicEnglish.length > 0);
+});
+
+test('the old per-game word files are gone', () => {
+  for (const file of ['custom-words.json', 'basic-english-words.json', 'wordle-words.js']) {
+    assert.equal(
+      fs.existsSync(path.join(ROOT, 'public', file)),
+      false,
+      `public/${file} should have been merged into word-bank.json`
+    );
+  }
 });
 
 test('the shipped word bank is referenced by the pages that serve it', () => {
-  for (const page of ['public/index.html', 'public/overlay.html']) {
+  for (const page of ['public/index.html', 'public/overlay.html', 'public/spelling-bee.html', 'public/wordle.html']) {
     const html = fs.readFileSync(path.join(ROOT, page), 'utf8');
-    assert.match(html, /\/word-bank\.json/, `${page} does not fetch the general pool`);
-    assert.match(html, /\/custom-words\.json/, `${page} does not fetch the curated pool`);
+    assert.match(html, /\/word-bank\.json/, `${page} does not fetch the word bank`);
+    assert.doesNotMatch(html, /custom-words\.json|wordle-words\.js|basic-english-words\.json/, `${page} still references a retired word file`);
   }
   const server = fs.readFileSync(path.join(ROOT, 'server', 'server.js'), 'utf8');
   assert.match(server, /'\/word-bank\.json'/, 'the server does not serve /word-bank.json');

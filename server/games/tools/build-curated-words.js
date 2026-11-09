@@ -1,27 +1,33 @@
-// Builds the two word pools HangStream serves to the browser.
+// Builds the single word bank HangStream serves to the browser and the
+// server-side games.
 //
-//   public/custom-words.json  the curated pool - hand-picked words that carry a
-//                              real category, so the on-stream category badge
-//                              is a usable hint.
-//   public/word-bank.json     the general pool - the Word Tycoon ecosystem's
-//                              own curated target list, tagged by difficulty.
+//   public/word-bank.json   the one word file every game reads, with sections:
+//                             curated      hand-picked words that carry a real
+//                                          category, so the on-stream badge is
+//                                          a usable hint
+//                             general      the Word Tycoon ecosystem's own
+//                                          curated target list, tagged by
+//                                          difficulty
+//                             fiveLetter   Wordle's guess/answer list
+//                             basicEnglish Wikipedia Basic English combined
+//                                          list
 //
-// Both keep the `{ word, cat, difficulty }` contract the pages already parse.
 // The build is deterministic and offline: every input is vendored in the repo.
 //
 //   node server/games/tools/build-curated-words.js            # write
 //   node server/games/tools/build-curated-words.js --check    # report only
 //
 // Inputs
-//   server/games/data/themed-words.json     hand-curated themed entries
-//   server/games/data/basic-words.json      hand-curated Wikipedia basic words
+//   server/games/data/themed-words.json          hand-curated themed entries
+//   server/games/data/basic-words.json           hand-curated Wikipedia basic words
+//   server/games/data/five-letter-words.json     Wordle's five-letter list
+//   server/games/data/basic-english-words.json   Wikipedia Basic English list
 //   server/searchle/shared/word-bank/targets.json               upstream targets
 //   server/searchle/shared/word-bank/searchle-easy-targets.json
 //   server/searchle/shared/word-bank/searchle-very-easy-targets.json
 //
-// Outputs
-//   public/custom-words.json   merged curated pool
-//   public/word-bank.json      tagged general pool
+// Output
+//   public/word-bank.json      the merged bank
 
 const fs = require('fs');
 const path = require('path');
@@ -33,7 +39,8 @@ const PUBLIC_DIR = path.join(ROOT, 'public');
 
 const THEMED_PATH = path.join(DATA_DIR, 'themed-words.json');
 const BASIC_PATH = path.join(DATA_DIR, 'basic-words.json');
-const CURATED_PATH = path.join(PUBLIC_DIR, 'custom-words.json');
+const FIVE_LETTER_PATH = path.join(DATA_DIR, 'five-letter-words.json');
+const BASIC_ENGLISH_PATH = path.join(DATA_DIR, 'basic-english-words.json');
 const BANK_PATH = path.join(PUBLIC_DIR, 'word-bank.json');
 
 /** The general pool carries no category of its own. */
@@ -79,11 +86,18 @@ function readJson(file, fallback) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
+/** Accepts a bare array or a { words: [...] } / { meta, words } wrapper. */
+function readWordList(file) {
+  const raw = readJson(file, []);
+  if (Array.isArray(raw)) return raw;
+  return Array.isArray(raw.words) ? raw.words : [];
+}
+
 /**
- * Build both pools from the vendored inputs.
+ * Build the merged bank from the vendored inputs.
  *
  * Pure: it reads the inputs and returns the result without writing anything,
- * so the test suite can check the committed artefacts still match the inputs.
+ * so the test suite can check the committed artefact still matches the inputs.
  */
 function buildCuratedWords() {
   // ---- curated pool ------------------------------------------------------
@@ -140,75 +154,93 @@ function buildCuratedWords() {
     }
   }
 
+  // ---- wordle + basic english ---------------------------------------------
+  const fiveLetter = readWordList(FIVE_LETTER_PATH)
+    .map((w) => String(w).toLowerCase())
+    .filter((w) => /^[a-z]{5}$/.test(w));
+  const basicEnglish = readWordList(BASIC_ENGLISH_PATH)
+    .map((w) => String(w).toLowerCase())
+    .filter((w) => /^[a-z]+$/.test(w));
+
   const bank = {
     meta: {
-      source: 'Word Tycoon ecosystem - shared word bank (searchle/server/shared/word-bank/targets.json)',
-      sourceUrl: 'https://github.com/johnrstanley11-gif/word-tycoon-ecosystem',
-      licence: 'MIT (ecosystem code and data). Word lists keep their own terms.',
+      source: 'HangStream word bank - built by server/games/tools/build-curated-words.js',
+      licence: 'MIT (ecosystem code and data). Word lists keep their own terms; Wikipedia-derived content is CC BY-SA 4.0.',
       category: GENERAL_CATEGORY,
       counts: {
-        easy: buckets.easy.length,
-        medium: buckets.medium.length,
-        hard: buckets.hard.length,
-        total: targetSet.size,
+        curated: curated.length,
+        general: targetSet.size,
+        fiveLetter: fiveLetter.length,
+        basicEnglish: basicEnglish.length,
+        total: curated.length + targetSet.size + fiveLetter.length + basicEnglish.length,
       },
-      note: 'Difficulty combines word length with the upstream frequency tier. Length dominates: a long word is a hard board whatever it means.',
+      sections: {
+        curated: 'hand-picked words with a real category (themed-words.json + basic-words.json)',
+        general: 'ecosystem target list tagged by difficulty; difficulty combines word length with the upstream frequency tier',
+        fiveLetter: "Wordle's guess/answer list",
+        basicEnglish: 'Wikipedia Basic English combined list',
+      },
+      note: 'Length dominates the general pool difficulty: a long word is a hard board whatever it means.',
     },
-    words: buckets,
+    curated,
+    general: buckets,
+    fiveLetter,
+    basicEnglish,
   };
 
   return { curated, bank, themedCount, basicCount };
 }
 
-/**
- * Format the curated pool with one entry per line.
- *
- * The file is generated, but it is committed, so keeping it diff-friendly
- * matters: a one-line JSON blob would make every regeneration unreadable.
- */
+/** Format the curated pool with one entry per line. */
 function formatCurated(list) {
   const lines = list.map((e) =>
-    `  { "word": ${JSON.stringify(e.word)}, "cat": ${JSON.stringify(e.cat)}, "difficulty": ${JSON.stringify(e.difficulty)} }`
+    `    { "word": ${JSON.stringify(e.word)}, "cat": ${JSON.stringify(e.cat)}, "difficulty": ${JSON.stringify(e.difficulty)} }`
   );
-  return `[\n${lines.join(',\n')}\n]\n`;
+  return `[\n${lines.join(',\n')}\n  ]`;
 }
 
-/** Format the general pool the same way: one word per line, grouped by tag. */
+/** Format a flat word list, one word per line. */
+function formatWordList(list, indent) {
+  const pad = ' '.repeat(indent);
+  const inner = ' '.repeat(indent + 2);
+  return `[\n${list.map((w) => `${inner}${JSON.stringify(w)}`).join(',\n')}\n${pad}]`;
+}
+
+/** Format the merged bank so the committed file stays diff-friendly. */
 function formatBank(bank) {
   const meta = JSON.stringify(bank.meta, null, 2)
     .split('\n')
     .map((line, i) => (i === 0 ? line : `  ${line}`))
     .join('\n');
-  const buckets = Object.entries(bank.words)
-    .map(([tag, list]) => {
-      const words = list.map((w) => `      ${JSON.stringify(w)}`).join(',\n');
-      return `    ${JSON.stringify(tag)}: [\n${words}\n    ]`;
-    })
+
+  const generalBuckets = Object.entries(bank.general)
+    .map(([tag, list]) => `      ${JSON.stringify(tag)}: ${formatWordList(list, 8)}`)
     .join(',\n');
-  return `{\n  "meta": ${meta},\n  "words": {\n${buckets}\n  }\n}\n`;
+
+  return `{\n  "meta": ${meta},\n  "curated": ${formatCurated(bank.curated)},\n  "general": {\n${generalBuckets}\n    },\n  "fiveLetter": ${formatWordList(bank.fiveLetter, 2)},\n  "basicEnglish": ${formatWordList(bank.basicEnglish, 2)}\n}\n`;
 }
 
 function main() {
   const checkOnly = process.argv.includes('--check');
 
-  const { curated, bank, themedCount, basicCount } = buildCuratedWords();
+  const { bank, themedCount, basicCount } = buildCuratedWords();
 
   // ---- report ------------------------------------------------------------
-  console.log(`curated pool : ${curated.length} words (${themedCount} themed + ${basicCount} wikipedia basic)`);
+  console.log(`curated pool : ${bank.meta.counts.curated} words (${themedCount} themed + ${basicCount} wikipedia basic)`);
   const byCat = {};
-  for (const e of curated) byCat[e.cat] = (byCat[e.cat] || 0) + 1;
+  for (const e of bank.curated) byCat[e.cat] = (byCat[e.cat] || 0) + 1;
   console.log(`  categories : ${Object.keys(byCat).length} -> ${Object.entries(byCat).map(([c, n]) => `${c}(${n})`).join(', ')}`);
-  console.log(`general pool : ${bank.meta.counts.total} words (easy ${bank.meta.counts.easy}, medium ${bank.meta.counts.medium}, hard ${bank.meta.counts.hard})`);
+  console.log(`general pool : ${bank.meta.counts.general} words (easy ${bank.general.easy.length}, medium ${bank.general.medium.length}, hard ${bank.general.hard.length})`);
+  console.log(`five-letter  : ${bank.meta.counts.fiveLetter} words`);
+  console.log(`basic english: ${bank.meta.counts.basicEnglish} words`);
 
   if (checkOnly) {
     console.log('\n--check: nothing written.');
     return;
   }
 
-  fs.writeFileSync(CURATED_PATH, formatCurated(curated), 'utf8');
   fs.writeFileSync(BANK_PATH, formatBank(bank), 'utf8');
-  console.log(`\nwrote ${path.relative(ROOT, CURATED_PATH)} (${(fs.statSync(CURATED_PATH).size / 1024).toFixed(1)} KB)`);
-  console.log(`wrote ${path.relative(ROOT, BANK_PATH)} (${(fs.statSync(BANK_PATH).size / 1024).toFixed(1)} KB)`);
+  console.log(`\nwrote ${path.relative(ROOT, BANK_PATH)} (${(fs.statSync(BANK_PATH).size / 1024).toFixed(1)} KB)`);
 }
 
 if (require.main === module) {
@@ -220,4 +252,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { buildCuratedWords, tagFor, curatedTagFor, CURATED_PATH, BANK_PATH };
+module.exports = { buildCuratedWords, tagFor, curatedTagFor, BANK_PATH };

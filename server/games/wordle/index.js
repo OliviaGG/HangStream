@@ -1,6 +1,7 @@
 // Wordle — server-authoritative round.
 //
-// HangStream already ships a 5-letter list (public/wordle-words.js) and a
+// HangStream ships a 5-letter list (the `fiveLetter` section of
+// public/word-bank.json) and a
 // client-only board. Here the secret word, the guesses and the colour feedback
 // all live on the server (word-tycoon-ecosystem wordle follows the same
 // shape), so chat and page guesses are judged identically and the answer can

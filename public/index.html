@@ -1398,51 +1398,39 @@ function filterByDifficulty(list, difficulty) {
   return medium.length ? medium : list;
 }
 
-// The general pool: the ecosystem's curated target list, tagged by difficulty.
-// It carries no category of its own, so those rounds show "Common".
-async function loadWordBankFile() {
+// The one word bank every game shares: public/word-bank.json carries the
+// curated pool (with real categories), the general pool (tagged by
+// difficulty, shown as "Common") and the flat lists the other games use.
+async function loadCustomWordsFile() {
   try {
     const res = await fetch('/word-bank.json', { cache: 'no-store' });
-    if (!res || res.status !== 200) return [];
+    if (!res || res.status !== 200) throw new Error('word bank unavailable');
     const data = await res.json();
-    const buckets = (data && data.words) || {};
-    const out = [];
+
+    const normalized = [];
+    for (const item of (data && data.curated) || []) {
+      if (!item || typeof item !== 'object') continue;
+      const word = String(item.word || '').toUpperCase().trim();
+      if (!word) continue;
+      normalized.push({
+        word,
+        cat: String(item.cat || 'Custom'),
+        difficulty: String(item.difficulty || 'medium').toLowerCase(),
+        src: 'curated'
+      });
+    }
+
+    const general = [];
+    const buckets = (data && data.general) || {};
     for (const [difficulty, list] of Object.entries(buckets)) {
       if (!Array.isArray(list)) continue;
       for (const raw of list) {
         const word = String(raw || '').toUpperCase().trim();
         if (!word) continue;
-        out.push({ word, cat: 'Common', difficulty: String(difficulty || 'medium').toLowerCase(), src: 'general' });
+        general.push({ word, cat: 'Common', difficulty: String(difficulty || 'medium').toLowerCase(), src: 'general' });
       }
     }
-    return out;
-  } catch (e) {
-    return [];
-  }
-}
 
-// FIX: returns promise so callers can chain .then(newGame)
-async function loadCustomWordsFile() {
-  try {
-    const [curatedRes, general] = await Promise.all([
-      fetch('/custom-words.json', { cache: 'no-store' }),
-      loadWordBankFile(),
-    ]);
-    const normalized = [];
-    if (curatedRes && curatedRes.status === 200) {
-      const data = await curatedRes.json();
-      if (Array.isArray(data) && data.length > 0) {
-        for (const item of data) {
-          if (!item || typeof item !== 'object') continue;
-          normalized.push({
-            word: String(item.word || '').toUpperCase().trim(),
-            cat: String(item.cat || 'Custom'),
-            difficulty: String(item.difficulty || 'medium').toLowerCase(),
-            src: 'curated'
-          });
-        }
-      }
-    }
     const merged = normalized.concat(general);
     if (merged.length) {
       ALL_WORDS = merged.slice();

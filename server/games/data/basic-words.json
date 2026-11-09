@@ -1,0 +1,35 @@
+{
+  "_meta": {
+    "source": "Simple English Wikipedia - list of 1000 basic words",
+    "sourceUrl": "https://simple.wikipedia.org/wiki/Wikipedia:List_of_1000_basic_words",
+    "licence": "CC BY-SA 4.0",
+    "licenceNote": "Wikipedia content is CC BY-SA 4.0. The words themselves are not copyrightable, but the selection is; attribution is kept here and in README.md.",
+    "regenerate": "node server/games/tools/fetch-basic-words.js  (writes basic-words.txt, the unfiltered-by-category word list this file is curated from)",
+    "note": "Hand-curated from the fetched list. Only concrete nouns and unmistakable verbs survive - function words and abstract nouns make poor Hangman answers because no viewer ever guesses them. Each word carries a category so the on-stream category badge is a real hint."
+  },
+  "words": {
+    "Animals": ["bear", "bird", "deer", "duck", "elephant", "fish", "goat", "horse", "lion", "monkey", "sheep"],
+    "Food & Drink": ["apple", "bean", "beer", "bowl", "bread", "breakfast", "cake", "cheese", "chicken", "chocolate", "coffee", "corn", "dinner", "dish", "flour", "food", "fork", "fruit", "jelly", "juice", "meal", "meat", "milk", "orange", "pepper", "plate", "potato", "rice", "salt", "soup", "spoon", "sugar", "sweet", "taste", "vegetable", "wine"],
+    "Body & Health": ["bath", "blood", "bone", "brush", "comb", "fever", "finger", "foot", "hair", "hand", "head", "heart", "hurt", "knee", "mouth", "neck", "nose", "pain", "poison", "shoulder", "sick", "skin", "soap", "stomach", "tooth"],
+    "Home & Furniture": ["basket", "bedroom", "bell", "bottle", "chair", "clock", "cupboard", "door", "dust", "floor", "furniture", "gate", "glass", "kitchen", "lamp", "room", "shelf", "sink", "table", "window", "yard"],
+    "Clothing": ["cloth", "clothes", "coat", "dress", "pocket", "shirt", "shoe", "skirt", "sock"],
+    "Family & People": ["aunt", "baby", "brother", "child", "children", "daughter", "family", "father", "female", "friend", "gentleman", "grandfather", "grandmother", "husband", "king", "lady", "male", "mother", "neighbor", "parent", "partner", "people", "person", "prince", "queen", "sister", "uncle", "wife", "woman"],
+    "Nature & Outdoors": ["autumn", "branch", "copper", "earth", "fire", "forest", "grass", "ground", "hill", "island", "land", "leaf", "moon", "mountain", "nature", "ocean", "pool", "rock", "sand", "spring", "star", "stone", "tree", "wild", "world"],
+    "Garden & Plants": ["flower", "garden", "plant"],
+    "Weather & Sky": ["cloud", "cloudy", "cold", "rain", "rainy", "shade", "shadow", "snow", "storm", "sunny", "weather", "wind"],
+    "Places & Buildings": ["bank", "border", "bridge", "city", "corner", "east", "entrance", "flag", "hall", "hospital", "house", "library", "north", "prison", "south", "street", "town", "village", "west"],
+    "Travel & Transport": ["arrive", "boat", "direction", "drive", "hotel", "petrol", "plane", "ride", "road", "sail", "ship", "station", "taxi", "train", "tram", "travel"],
+    "Jobs & Work": ["army", "business", "cook", "earn", "farm", "office", "police", "work"],
+    "School & Study": ["book", "class", "desk", "education", "examination", "lesson", "paper", "pencil", "pupil", "ruler", "school", "science", "sentence", "subject", "student", "study", "test"],
+    "Sports & Games": ["ball", "dance", "exercise", "football", "game", "jump", "sport", "swim", "team", "tennis"],
+    "Music & Art": ["film", "paint", "photograph", "piano", "picture", "radio", "record", "show", "sing", "television", "voice"],
+    "Tools & Devices": ["hammer", "iron", "knife", "ladder", "machine", "needle", "plastic", "rubber", "scissors", "sword", "tool", "wheel", "wire"],
+    "Toys & Play": ["card", "gift", "hobby", "prize"],
+    "Money & Shopping": ["change", "cheap", "coin", "cost", "gold", "market", "offer", "price", "rent", "sell", "shop", "silver", "spend", "store"],
+    "Time & Calendar": ["birthday", "century", "evening", "event", "future", "hour", "minute", "moment", "month", "morning", "night", "period", "second", "summer", "today", "tomorrow", "tonight", "week", "winter"],
+    "Communication": ["letter", "news", "newspaper", "press", "reply", "report", "signal", "stamp", "talk", "telephone"],
+    "Shapes & Colors": ["black", "blue", "brown", "circle", "dark", "gray", "green", "pink", "shape", "square", "white"],
+    "Feelings": ["afraid", "angry", "excited", "fear", "glad", "happy", "hungry", "lonely", "love", "pleased", "sorry"],
+    "Tech": ["computer"]
+  }
+}

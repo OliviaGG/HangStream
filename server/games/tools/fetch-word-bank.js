@@ -71,7 +71,7 @@ async function main() {
   console.log('  targets    : curated by the ecosystem authors; used as the general');
   console.log('               target pool for Hangman / Speed Scramble.');
   console.log('  blocked    : shared blocklist applied to every target and guess.');
-  console.log('  wikipedia  : see public/custom-words.json header (CC BY-SA 4.0).');
+  console.log('  wikipedia  : see public/word-bank.json meta (CC BY-SA 4.0).');
 }
 
 main().catch((err) => { console.error('ERR', err.message); process.exitCode = 1; });

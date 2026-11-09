@@ -3640,6 +3640,27 @@ const owner = session.ownerId;
       : Promise.resolve(null);
 
     savedScorePromise.then(async (savedScore) => {
+      // Spelling Bee solo plays the page's 4x4 letter grid, not the hive-style
+      // online round - build the daily puzzle in the format the page renders.
+      if (gameId === 'spellingbee') {
+        const grid = gameLayer.dictionary.buildGridRound({ dailyDate, difficulty });
+        if (grid) {
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({
+            success: true,
+            game: gameId,
+            dailyDate,
+            difficulty,
+            puzzle: { letters: grid.letters, answers: grid.answers },
+            savedScore: savedScore || { score: 0, wordsFound: [] },
+          }));
+        } else {
+          res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: false, error: 'Failed to generate puzzle' }));
+        }
+        return;
+      }
+
       // Generate the daily puzzle for this difficulty
       const game = gameLayer.registry.room('public', gameId);
       const result = game.newRound({ isDaily: true, dailyDate, difficulty });
@@ -3650,14 +3671,7 @@ const owner = session.ownerId;
         }
         // Build puzzle response based on game type
         let puzzleData = {};
-        if (gameId === 'spellingbee') {
-          puzzleData = {
-            letters: result.letters,
-            centerLetter: result.centerLetter,
-            // Include valid answers so client can validate words
-            answers: game.answers,
-          };
-        } else if (gameId === 'hangman') {
+        if (gameId === 'hangman') {
           puzzleData = {
             // Solo clients need the answer locally to reveal letters; this
             // endpoint is only used for the private daily solo round.
@@ -3922,11 +3936,6 @@ const owner = session.ownerId;
     return;
   }
 
-  if (urlPath === '/wordle-words.js') {
-    sendFile(res, path.join(__dirname, '..', 'public', 'wordle-words.js'), 'application/javascript; charset=utf-8');
-    return;
-  }
-
   if (urlPath === '/streamer' || urlPath === '/streamer/' || urlPath === '/streamer-settings.html') {
     sendFile(res, settingsPath, 'text/html; charset=utf-8');
     return;
@@ -3967,14 +3976,9 @@ const owner = session.ownerId;
     return;
   }
 
-  if (urlPath === '/custom-words.json') {
-    sendFile(res, path.join(__dirname, '..', 'public', 'custom-words.json'), 'application/json; charset=utf-8');
-    return;
-  }
-
-  // The general word pool: the ecosystem's curated target list, tagged by
-  // difficulty. Served separately from /custom-words.json because it carries
-  // no category - only the curated pool has hints worth showing on stream.
+  // The single word bank every game shares: the curated pool (with real
+  // categories), the general pool tagged by difficulty, Wordle's five-letter
+  // list and the Basic English list, all in one file.
   if (urlPath === '/word-bank.json') {
     sendFile(res, path.join(__dirname, '..', 'public', 'word-bank.json'), 'application/json; charset=utf-8');
     return;
