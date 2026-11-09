@@ -31,6 +31,7 @@
     --border: #2a2a35;
     --accent: #ff4d6d;
     --accent-hover: #ff6b85;
+    --accent-2: #7c5cff;
     --good: #2ecc71;
     --bad: #ff7a7a;
     --secondary: #3a3a45;
@@ -48,6 +49,7 @@
     --border: #d7cfc6;
     --accent: #c93f5c;
     --accent-hover: #e15a76;
+    --accent-2: #6a4de0;
     --good: #1f8f53;
     --bad: #c74444;
     --secondary: #7b7681;
@@ -812,6 +814,7 @@ let playerSessionId = null;
 let currentPath = [];
 let isDragging = false;
 let chatWS = null;
+let chatInterval = null;
 let validAnswers = new Set(); // Server-provided valid words for daily puzzles
 
 // ── NEXT-GAME VOTE ──
@@ -903,13 +906,9 @@ fetch('/word-bank.json')
   .then((res) => (res.ok ? res.json() : null))
   .then((bank) => {
     if (!bank) return;
-    const lists = [];
-    const general = bank.general && typeof bank.general === 'object'
-      ? Object.values(bank.general)
-      : [];
-    lists.push(...general);
-    if (Array.isArray(bank.fiveLetter)) lists.push(bank.fiveLetter);
-    if (Array.isArray(bank.basicEnglish)) lists.push(bank.basicEnglish);
+    const lists = bank.words && typeof bank.words === 'object'
+      ? Object.values(bank.words)
+      : (Array.isArray(bank) ? [bank] : []);
     const seen = new Set();
     for (const list of lists) {
       if (!Array.isArray(list)) continue;
@@ -1753,7 +1752,7 @@ function showMessage(text, type) {
   const area = document.getElementById('message-area');
   if (!area) return;
   
-  area.innerHTML = `<div class="message-box ${type}">${text}</div>`;
+  area.innerHTML = `<div class="message-box ${type}">${escapeHtml(text)}</div>`;
   
   setTimeout(() => {
     area.innerHTML = '';
@@ -2003,7 +2002,7 @@ function updateHintButton(remaining) {
 }
 
 function requestHint() {
-  if (!gameWs || gameWs.readyState !== WebSocket.OPEN) {
+  if (!chatWS || chatWS.readyState !== WebSocket.OPEN) {
     alert('Not connected to game server');
     return;
   }
@@ -2013,7 +2012,7 @@ function requestHint() {
     return;
   }
 
-  gameWs.send(JSON.stringify({
+  chatWS.send(JSON.stringify({
     type: 'hint',
     game: 'spellingbee'
   }));

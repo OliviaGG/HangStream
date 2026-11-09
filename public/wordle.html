@@ -30,6 +30,7 @@
     --border: #2a2a35;
     --accent: #ff4d6d;
     --accent-hover: #ff6b85;
+    --accent-2: #7c5cff;
     --good: #2ecc71;
     --bad: #ff7a7a;
     --secondary: #3a3a45;
@@ -47,6 +48,7 @@
     --border: #d7cfc6;
     --accent: #c93f5c;
     --accent-hover: #e15a76;
+    --accent-2: #6a4de0;
     --good: #1f8f53;
     --bad: #c74444;
     --secondary: #7b7681;
@@ -63,14 +65,15 @@
       linear-gradient(180deg, color-mix(in srgb, var(--bg) 90%, #000 10%), var(--bg));
     color: var(--text);
     font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     touch-action: manipulation;
   }
 
   .game-wrap {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 340px;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto 1fr;
     min-height: 100vh;
     gap: 16px;
     padding: 20px;
@@ -319,6 +322,37 @@
     line-height: 1.5;
   }
 
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 18px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .legend-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  .legend-swatch.correct { background: var(--good); color: #ffffff; }
+  .legend-swatch.present { background: #f0b429; color: #1f1f28; }
+  .legend-swatch.absent { background: var(--secondary); color: var(--text-muted); }
+
   /* ── SIDEBAR ── */
   .sidebar {
     border: 1px solid var(--border);
@@ -489,25 +523,6 @@
     }
   }
 
-  function saveDailyScore() {
-    if (state.gameMode !== 'solo' || !state.viewerId) return;
-    const score = evaluations.length && evaluations[evaluations.length - 1].word === answer
-      ? (GUESS_POINTS[evaluations.length - 1] || 10)
-      : 0;
-    fetch('/games/api/solo/score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        viewerId: state.viewerId,
-        gameId: 'wordle',
-        difficulty: 'normal',
-        score,
-        wordsFound: evaluations.map((entry) => entry.word),
-        dailyDate: new Date().toISOString().slice(0, 10),
-      }),
-    }).catch((error) => console.error('Failed to save daily Wordle score:', error));
-  }
-
   .profile-name {
     max-width: 120px;
     overflow: hidden;
@@ -630,6 +645,8 @@
     color: var(--accent);
   }
 
+  body.overlay-mode { overflow: hidden; }
+
   body.overlay-mode .topbar,
   body.overlay-mode .sidebar,
   body.overlay-mode .settings-btn,
@@ -716,6 +733,12 @@
       </div>
 
       <div class="instructions" id="instructions">Guess the 5-letter word in 6 tries.</div>
+      <div class="legend" aria-label="Color key">
+        <span class="legend-item"><span class="legend-swatch correct">A</span> Right letter, right spot</span>
+        <span class="legend-item"><span class="legend-swatch present">B</span> Right letter, wrong spot</span>
+        <span class="legend-item"><span class="legend-swatch absent">C</span> Not in the word</span>
+      </div>
+
     </div>
   </div>
 
@@ -742,6 +765,7 @@
   </div>
 </div>
 
+<script src="/wordle-words.js"></script>
 <script>
 // ── STATE VARS ──
 let state = {
@@ -849,15 +873,13 @@ function toggleTheme() {
 }
 
 // ── WORD LIST ──
-// The five-letter section of the shared word bank (public/word-bank.json).
 function loadWordList() {
-  return fetch('/word-bank.json', { cache: 'no-store' })
-    .then((res) => (res.ok ? res.json() : null))
-    .then((bank) => {
-      const list = bank && Array.isArray(bank.fiveLetter) ? bank.fiveLetter : [];
-      WORDS = list.map((w) => String(w).toLowerCase()).filter((w) => /^[a-z]{5}$/.test(w));
-    })
-    .catch(() => {});
+  try {
+    // Top-level const in a classic script is a global lexical binding, not a window property
+    if (typeof WORDLE_WORDS !== 'undefined' && Array.isArray(WORDLE_WORDS) && WORDLE_WORDS.length) {
+      WORDS = WORDLE_WORDS.map((w) => String(w).toLowerCase());
+    }
+  } catch (e) {}
 }
 
 function isValidGuess(word) {
@@ -867,30 +889,17 @@ function isValidGuess(word) {
 }
 
 function pickAnswer(randomize) {
-  // The board is COLS tiles wide, so only words that fit exactly may be the
-  // answer. A bad entry is skipped silently and the next candidate drawn -
-  // players never see the swap.
-  const fits = (w) => typeof w === 'string' && w.length === COLS;
-  if (!WORDS.some(fits)) return 'CRANE';
-
+  if (!WORDS.length) return 'crane';
   if (randomize) {
-    for (let attempt = 0; attempt < 50; attempt++) {
-      const candidate = WORDS[Math.floor(Math.random() * WORDS.length)];
-      if (!fits(candidate)) continue;
-      if (candidate.toUpperCase() === answer && WORDS.length > 1) continue;
-      return candidate.toUpperCase();
+    let idx = Math.floor(Math.random() * WORDS.length);
+    if (WORDS[idx].toUpperCase() === answer && WORDS.length > 1) {
+      idx = (idx + 1) % WORDS.length;
     }
-    return 'CRANE';
+    return WORDS[idx].toUpperCase();
   }
-
-  // Deterministic daily word: same offset every day, scanning forward past
-  // any entry that doesn't fit the board so the pick stays stable.
+  // Deterministic daily word
   const dayIndex = Math.floor(Date.now() / 86400000);
-  for (let i = 0; i < WORDS.length; i++) {
-    const candidate = WORDS[(((dayIndex + i) % WORDS.length) + WORDS.length) % WORDS.length];
-    if (fits(candidate)) return candidate.toUpperCase();
-  }
-  return 'CRANE';
+  return WORDS[((dayIndex % WORDS.length) + WORDS.length) % WORDS.length].toUpperCase();
 }
 
 // ── GAME LOGIC ──
@@ -1158,6 +1167,7 @@ function buildKeyboard() {
   keyboard.addEventListener('click', (e) => {
     const btn = e.target.closest('.key');
     if (!btn) return;
+    btn.blur();
     handleKey(btn.dataset.key);
     renderCurrentRow();
   });
@@ -1331,10 +1341,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('.key')) e.preventDefault();
   handleKey(e.key);
 });
 
 // ── INIT ──
+loadWordList();
 state.gameMode = getGameMode();
 applyTheme(localStorage.getItem(getThemeStorageKey()) || 'dark');
 
@@ -1344,19 +1356,14 @@ if (window.location.pathname.startsWith('/overlay')) {
 }
 
 buildKeyboard();
+newGame(false);
 
-// Wait for the word bank so pickAnswer/isValidGuess see the real list; the
-// page still works if the fetch fails (WORDS stays empty and the fallbacks kick in).
-loadWordList().then(() => {
-  newGame(false);
+if (state.gameMode === 'online') {
+  registerPlayer();
+}
 
-  if (state.gameMode === 'online') {
-    registerPlayer();
-  }
-
-  // Connect to chat WebSocket for chat integration
-  connectChatWebSocket();
-});
+// Connect to chat WebSocket for chat integration
+connectChatWebSocket();
 
 // Cleanup on page unload
 window.addEventListener('beforeunload', () => {
@@ -1461,7 +1468,7 @@ function updateHintButton(remaining) {
 }
 
 function requestHint() {
-  if (!gameWs || gameWs.readyState !== WebSocket.OPEN) {
+  if (!chatWS || chatWS.readyState !== WebSocket.OPEN) {
     alert('Not connected to game server');
     return;
   }
@@ -1471,7 +1478,7 @@ function requestHint() {
     return;
   }
 
-  gameWs.send(JSON.stringify({
+  chatWS.send(JSON.stringify({
     type: 'hint',
     game: 'wordle'
   }));
