@@ -1,0 +1,40 @@
+{
+  "tiers": [
+    {
+      "id": "free",
+      "displayName": "Free",
+      "priceUsd": 0,
+      "vipLevel": 0,
+      "premiumPassUnlocked": false,
+      "theme": {
+        "primary": "#3b82f6",
+        "secondary": "#60a5fa",
+        "gradient": "linear-gradient(135deg, #1d4ed8, #60a5fa)"
+      }
+    },
+    {
+      "id": "supporter",
+      "displayName": "Supporter",
+      "priceUsd": 2,
+      "vipLevel": 1,
+      "premiumPassUnlocked": true,
+      "theme": {
+        "primary": "#60a5fa",
+        "secondary": "#8b5cf6",
+        "gradient": "linear-gradient(135deg, #3b82f6, #8b5cf6)"
+      }
+    },
+    {
+      "id": "tycoon",
+      "displayName": "Tycoon",
+      "priceUsd": 10,
+      "vipLevel": 2,
+      "premiumPassUnlocked": true,
+      "theme": {
+        "primary": "#facc15",
+        "secondary": "#a855f7",
+        "gradient": "linear-gradient(135deg, #facc15, #a855f7)"
+      }
+    }
+  ]
+}

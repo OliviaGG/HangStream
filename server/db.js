@@ -143,6 +143,21 @@ function initializeSchema() {
       session_id TEXT
     )`);
 
+    // Stripe membership subscriptions (ported from word-tycoon-ecosystem).
+    // One row per viewer; perks are active only while status is
+    // 'active' or 'trialing' — cancellation flips status and revokes them.
+    db.run(`CREATE TABLE IF NOT EXISTS memberships (
+      viewer_id TEXT PRIMARY KEY,
+      tier TEXT DEFAULT 'free',
+      status TEXT DEFAULT 'inactive',
+      stripe_customer_id TEXT,
+      stripe_subscription_id TEXT,
+      current_period_start INTEGER,
+      current_period_end INTEGER,
+      cancel_at_period_end INTEGER DEFAULT 0,
+      updated_at INTEGER DEFAULT (strftime('%s', 'now'))
+    )`);
+
     db.run(`CREATE TABLE IF NOT EXISTS streak_state (
       discord_user_id TEXT PRIMARY KEY,
       current_streak INTEGER NOT NULL DEFAULT 0,

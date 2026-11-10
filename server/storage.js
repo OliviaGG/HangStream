@@ -4,6 +4,60 @@ const crypto = require('crypto');
 // In-memory cache for synchronous access
 let tokensCache = null;
 
+// node-sqlite3 Statement reads without a callback return the Statement
+// object (the query runs async and results are discarded), so synchronous
+// SELECTs silently yield nothing. Hot paths — chat guesses, /viewer/is-donor,
+// difficulty gating — need real sync reads, so memberships and donations are
+// kept in memory and hydrated once the schema is ready. Writes go through
+// saveDonations/upsertMembership which update the cache immediately.
+const membershipsCache = new Map(); // viewer_id -> membership row
+let membershipsHydrated = false;
+const donationsCache = [];
+let donationsHydrated = false;
+
+function rowToDonation(row) {
+  return {
+    id: row.id,
+    viewer_id: row.viewer_id,
+    viewer_name: row.viewer_name,
+    amount: row.amount,
+    currency: row.currency,
+    status: row.status,
+    createdAt: row.created_at
+      ? new Date(row.created_at * 1000).toISOString()
+      : (row.createdAt || new Date().toISOString()),
+    sessionId: row.session_id || row.sessionId || null,
+  };
+}
+
+function hydrateCaches() {
+  db.all('SELECT * FROM memberships', (err, rows) => {
+    if (err) { console.error('Error hydrating memberships cache:', err.message); return; }
+    for (const row of rows || []) {
+      membershipsCache.set(row.viewer_id, {
+        viewer_id: row.viewer_id,
+        tier: row.tier || 'free',
+        status: row.status || 'inactive',
+        stripe_customer_id: row.stripe_customer_id || null,
+        stripe_subscription_id: row.stripe_subscription_id || null,
+        current_period_start: row.current_period_start || null,
+        current_period_end: row.current_period_end || null,
+        cancel_at_period_end: !!row.cancel_at_period_end,
+        updated_at: row.updated_at || null,
+      });
+    }
+    membershipsHydrated = true;
+  });
+  db.all('SELECT * FROM donations ORDER BY created_at DESC', (err, rows) => {
+    if (err) { console.error('Error hydrating donations cache:', err.message); return; }
+    donationsCache.length = 0;
+    for (const row of rows || []) donationsCache.push(rowToDonation(row));
+    donationsHydrated = true;
+  });
+}
+
+db.ready.then(hydrateCaches).catch((e) => console.error('Cache hydration failed:', e.message));
+
 function ensureOAuthTokensTable() {
   db.run(`CREATE TABLE IF NOT EXISTS oauth_tokens (
     provider TEXT PRIMARY KEY,
@@ -566,60 +620,40 @@ function saveStreamerAccounts(accounts) {
   console.log('Streamer accounts saved to database');
 }
 
-// Donations
-function loadDonations(callback) {
-  if (!callback) {
-    try {
-      const rows = db.prepare('SELECT * FROM donations ORDER BY created_at DESC').all() || [];
-      return Array.isArray(rows) ? rows.map(row => ({
-        id: row.id,
-        viewer_id: row.viewer_id,
-        viewer_name: row.viewer_name,
-        amount: row.amount,
-        currency: row.currency,
-        status: row.status,
-        createdAt: new Date(row.created_at * 1000).toISOString(),
-        sessionId: row.session_id
-      })) : [];
-    } catch (err) {
-      console.error('Error loading donations synchronously:', err);
-      return [];
-    }
-  }
-
-  db.all('SELECT * FROM donations ORDER BY created_at DESC', (err, rows) => {
-    if (err) {
-      console.error('Error loading donations:', err);
-      callback([]);
-      return;
-    }
-
-    callback(rows.map(row => ({
-      id: row.id,
-      viewer_id: row.viewer_id,
-      viewer_name: row.viewer_name,
-      amount: row.amount,
-      currency: row.currency,
-      status: row.status,
-      createdAt: new Date(row.created_at * 1000).toISOString(),
-      sessionId: row.session_id
-    })));
-  });
+// Donations — served from the in-memory cache (see hydrateCaches). The DB
+// write in saveDonations is still authoritative for persistence.
+function normalizeDonationForCache(donation) {
+  return {
+    id: donation.id,
+    viewer_id: donation.viewer_id || donation.viewerId || null,
+    viewer_name: donation.viewer_name || donation.viewerName || 'Anonymous',
+    amount: donation.amount,
+    currency: donation.currency || 'usd',
+    status: donation.status || 'completed',
+    createdAt: donation.createdAt || new Date().toISOString(),
+    sessionId: donation.sessionId || donation.session_id || null,
+  };
 }
 
-function saveDonations(donations) {
+function loadDonations(callback) {
+  const snapshot = donationsCache.map(d => ({ ...d }));
+  if (!callback) return snapshot;
+  callback(snapshot);
+}
+
+function persistDonations(donations) {
   const stmt = db.prepare('INSERT OR REPLACE INTO donations (id, viewer_id, viewer_name, amount, currency, status, created_at, session_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
 
   for (const donation of donations) {
     stmt.run(
       donation.id,
-      donation.viewer_id || null,
-      donation.viewer_name,
+      donation.viewer_id || donation.viewerId || null,
+      donation.viewer_name || donation.viewerName || 'Anonymous',
       donation.amount,
       donation.currency || 'usd',
       donation.status || 'completed',
       donation.createdAt ? Math.floor(new Date(donation.createdAt).getTime() / 1000) : Math.floor(Date.now() / 1000),
-      donation.sessionId || null
+      donation.sessionId || donation.session_id || null
     );
   }
 
@@ -627,37 +661,87 @@ function saveDonations(donations) {
   console.log('Donations saved to database');
 }
 
+function saveDonations(donations) {
+  donationsCache.length = 0;
+  for (const d of donations || []) donationsCache.push(normalizeDonationForCache(d));
+  persistDonations(donations);
+}
+
 function saveDonationsAsync(donations) {
+  donationsCache.length = 0;
+  for (const d of donations || []) donationsCache.push(normalizeDonationForCache(d));
   return new Promise((resolve, reject) => {
-    const stmt = db.prepare('INSERT OR REPLACE INTO donations (id, viewer_id, viewer_name, amount, currency, status, created_at, session_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-    const promises = [];
-
-    for (const donation of donations) {
-      promises.push(
-        new Promise((res, rej) => {
-          stmt.run(
-            donation.id,
-            donation.viewer_id || null,
-            donation.viewer_name,
-            donation.amount,
-            donation.currency || 'usd',
-            donation.status || 'completed',
-            donation.createdAt ? Math.floor(new Date(donation.createdAt).getTime() / 1000) : Math.floor(Date.now() / 1000),
-            donation.sessionId || null,
-            (err) => err ? rej(err) : res()
-          );
-        })
-      );
+    try {
+      persistDonations(donations);
+      resolve();
+    } catch (err) {
+      reject(err);
     }
-
-    stmt.finalize();
-    Promise.all(promises)
-      .then(() => {
-        console.log('Donations saved to database');
-        resolve();
-      })
-      .catch(reject);
   });
+}
+
+// Memberships (Stripe subscriptions) — served from the in-memory cache.
+function getMembership(viewerId) {
+  const row = membershipsCache.get(viewerId);
+  return row ? { ...row } : null;
+}
+
+function getMembershipByStripeSubscription(subscriptionId) {
+  for (const row of membershipsCache.values()) {
+    if (row.stripe_subscription_id === subscriptionId) return { ...row };
+  }
+  return null;
+}
+
+function getMembershipByStripeCustomer(customerId) {
+  for (const row of membershipsCache.values()) {
+    if (row.stripe_customer_id === customerId) return { ...row };
+  }
+  return null;
+}
+
+function upsertMembership(viewerId, fields = {}) {
+  const membership = {
+    viewer_id: viewerId,
+    tier: fields.tier || 'free',
+    status: fields.status || 'inactive',
+    stripe_customer_id: fields.stripe_customer_id || null,
+    stripe_subscription_id: fields.stripe_subscription_id || null,
+    current_period_start: fields.current_period_start || null,
+    current_period_end: fields.current_period_end || null,
+    cancel_at_period_end: !!fields.cancel_at_period_end,
+    updated_at: Math.floor(Date.now() / 1000),
+  };
+  membershipsCache.set(viewerId, membership);
+
+  // INSERT OR REPLACE keeps any columns not listed at their defaults, so
+  // write the full row explicitly.
+  const stmt = db.prepare(`INSERT OR REPLACE INTO memberships
+    (viewer_id, tier, status, stripe_customer_id, stripe_subscription_id,
+     current_period_start, current_period_end, cancel_at_period_end, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  stmt.run(
+    membership.viewer_id,
+    membership.tier,
+    membership.status,
+    membership.stripe_customer_id,
+    membership.stripe_subscription_id,
+    membership.current_period_start,
+    membership.current_period_end,
+    membership.cancel_at_period_end ? 1 : 0,
+    membership.updated_at
+  );
+  stmt.finalize();
+  return { ok: true };
+}
+
+// Perks (donor difficulties, hints, multi-guess) are active only while the
+// subscription is in a paid-and-current state. past_due/unpaid keep the row
+// Stripe-managed but do not unlock perks, matching word-tycoon.
+function isActiveSubscriber(viewerId) {
+  const membership = getMembership(viewerId);
+  return !!membership && membership.tier !== 'free' &&
+    (membership.status === 'active' || membership.status === 'trialing');
 }
 
 module.exports = {
@@ -685,6 +769,11 @@ module.exports = {
   loadDonations,
   saveDonations,
   saveDonationsAsync,
+  getMembership,
+  getMembershipByStripeSubscription,
+  getMembershipByStripeCustomer,
+  upsertMembership,
+  isActiveSubscriber,
 };
 
 // Owner-specific storage functions (for streamer-specific data)

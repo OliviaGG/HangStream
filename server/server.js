@@ -36,6 +36,11 @@ const {
   saveGlobalViewerScores,
   loadDonations,
   saveDonations,
+  getMembership,
+  getMembershipByStripeSubscription,
+  getMembershipByStripeCustomer,
+  upsertMembership,
+  isActiveSubscriber,
 } = require('./storage');
 
 const port = process.env.PORT || 8080;
@@ -60,6 +65,7 @@ const spellingBeePath = path.join(__dirname, '..', 'public', 'spelling-bee.html'
 const speedScramblePath = path.join(__dirname, '..', 'public', 'speed-scramble.html');
 const wordlePath = path.join(__dirname, '..', 'public', 'wordle.html');
 const searchlePath = path.join(__dirname, '..', 'public', 'searchle.html');
+const donatePath = path.join(__dirname, '..', 'public', 'donate.html');
 // Searchle ranker (port wt-eco searchle engine). Loads embedding models
 // lazily on first API call — safe to require at boot.
 const searchleRanker = require('./searchle/ranker');
@@ -94,6 +100,92 @@ const SPOTIFY_REDIRECT = process.env.SPOTIFY_REDIRECT_URI || `http://localhost:$
 const stripeKey = process.env.STRIPE_SECRET_KEY;
 const stripe = stripeKey && stripeKey !== 'sk_test_your_key_here' && stripeKey !== 'sk_live_your_key_here' ? require('stripe')(stripeKey) : null;
 const stripePublishableKey = (stripe && process.env.STRIPE_PUBLISHABLE_KEY) || '';
+
+// Membership tiers (ported from word-tycoon-ecosystem). Prices and perks live
+// in data/membership-tiers.json so they can be retuned without a deploy.
+const MEMBERSHIP_TIERS_PATH = path.join(__dirname, '..', 'data', 'membership-tiers.json');
+let cachedTierConfig = null;
+function loadTierConfig() {
+  if (cachedTierConfig) return cachedTierConfig;
+  try {
+    const raw = JSON.parse(fs.readFileSync(MEMBERSHIP_TIERS_PATH, 'utf8'));
+    const tiers = Array.isArray(raw.tiers) ? raw.tiers : [];
+    cachedTierConfig = { tiers, byId: Object.fromEntries(tiers.map(t => [t.id, t])) };
+  } catch (e) {
+    console.error('Failed to load membership tiers:', e.message);
+    cachedTierConfig = { tiers: [], byId: {} };
+  }
+  return cachedTierConfig;
+}
+const TIER_ALIASES = {
+  donor: 'supporter',
+  donor_class: 'supporter',
+  vip: 'tycoon',
+  pookie: 'tycoon',
+  pookie_pass: 'tycoon',
+};
+function normalizeTier(tier) {
+  const n = String(tier || 'free').trim().toLowerCase();
+  const id = TIER_ALIASES[n] || n;
+  return loadTierConfig().byId[id] ? id : 'free';
+}
+function getTierConfig(tier) {
+  return loadTierConfig().byId[normalizeTier(tier)] || null;
+}
+// Statuses where Stripe still owns the subscription — a second checkout would
+// create a duplicate, so these route to the billing portal instead.
+const STRIPE_MANAGED_STATUSES = new Set(['trialing', 'active', 'past_due', 'unpaid', 'incomplete']);
+
+// Sync a Stripe subscription object into the memberships table. Called from
+// the webhook for customer.subscription.* events and after subscription
+// checkout completes. Viewer identity comes from subscription metadata,
+// falling back to the stored row or the Stripe customer's metadata.
+async function syncStripeSubscription(subscription) {
+  if (!subscription || !subscription.id) return;
+  const customerId = typeof subscription.customer === 'string'
+    ? subscription.customer
+    : (subscription.customer && subscription.customer.id) || '';
+
+  let membership = getMembershipByStripeSubscription(subscription.id)
+    || (customerId ? getMembershipByStripeCustomer(customerId) : null);
+  let viewerId = (subscription.metadata && subscription.metadata.viewerId) || '';
+  if (!viewerId && membership) viewerId = membership.viewer_id;
+  if (!viewerId && customerId) {
+    try {
+      const customer = await stripe.customers.retrieve(customerId);
+      viewerId = (customer.metadata && customer.metadata.viewerId) || '';
+    } catch (e) {
+      console.warn('Could not resolve Stripe customer for subscription', subscription.id, e.message);
+    }
+  }
+  if (!viewerId) {
+    console.warn('Stripe subscription webhook missing viewerId:', subscription.id);
+    return;
+  }
+
+  const item = Array.isArray(subscription.items && subscription.items.data)
+    ? subscription.items.data[0] : null;
+  const periodStart = subscription.current_period_start ?? (item && item.current_period_start) ?? null;
+  const periodEnd = subscription.current_period_end ?? (item && item.current_period_end) ?? null;
+
+  // If metadata lost the tier, keep the member's existing paid tier rather
+  // than downgrading them to free.
+  const tierMeta = (subscription.metadata && subscription.metadata.tier) || '';
+  const tier = normalizeTier(tierMeta);
+  const finalTier = tier !== 'free' ? tier
+    : (membership && membership.tier !== 'free' ? membership.tier : 'supporter');
+
+  upsertMembership(viewerId, {
+    tier: finalTier,
+    status: String(subscription.status || 'inactive').toLowerCase(),
+    stripe_customer_id: customerId || null,
+    stripe_subscription_id: subscription.id,
+    current_period_start: periodStart,
+    current_period_end: periodEnd,
+    cancel_at_period_end: !!subscription.cancel_at_period_end,
+  });
+  console.log(`Membership synced: ${viewerId} -> ${finalTier} (${subscription.status})`);
+}
 
 // Game player count tracking
 const gamePlayers = {
@@ -2618,13 +2710,16 @@ const owner = session.ownerId;
 
     try {
       const donations = loadDonations();
-      let isDonor = false;
-      
-      // Check if viewer has made any donations
-      for (const donation of donations) {
-        if (donation.viewerId === sessionViewer) {
-          isDonor = true;
-          break;
+      let isDonor = isActiveSubscriber(sessionViewer);
+
+      // Check if viewer has made any donations. loadDonations() maps the
+      // column to viewer_id; viewerId is kept for older in-memory shapes.
+      if (!isDonor) {
+        for (const donation of donations) {
+          if (donation.viewer_id === sessionViewer || donation.viewerId === sessionViewer) {
+            isDonor = true;
+            break;
+          }
         }
       }
 
@@ -3142,6 +3237,142 @@ const owner = session.ownerId;
     return;
   }
 
+  // Membership status for the /donate page (signed-in viewer only)
+  if (pathname === '/subscribe/status' && req.method === 'GET') {
+    const cookies = parseCookies(req.headers.cookie);
+    const viewerId = cookies.viewer_id ? decodeURIComponent(cookies.viewer_id) : '';
+    const membership = viewerId ? getMembership(viewerId) : null;
+    const donations = viewerId ? loadDonations() : [];
+    const hasDonation = donations.some(d => d.viewer_id === viewerId || d.viewerId === viewerId);
+    const active = isActiveSubscriber(viewerId);
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({
+      signedIn: !!viewerId,
+      viewerId: viewerId || null,
+      isDonor: hasDonation || active,
+      subscriber: active,
+      membership: membership ? {
+        tier: membership.tier,
+        status: membership.status,
+        cancelAtPeriodEnd: membership.cancel_at_period_end,
+        currentPeriodEnd: membership.current_period_end
+          ? new Date(membership.current_period_end * 1000).toISOString() : null,
+      } : null,
+      tiers: loadTierConfig().tiers.filter(t => t.id !== 'free'),
+      stripeEnabled: !!stripe,
+    }));
+    return;
+  }
+
+  // Membership subscription checkout (Supporter / Tycoon tiers)
+  if (pathname === '/subscribe/create-checkout' && req.method === 'POST') {
+    if (!stripe) {
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Stripe not configured' }));
+      return;
+    }
+
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const cookies = parseCookies(req.headers.cookie);
+        const viewerId = cookies.viewer_id ? decodeURIComponent(cookies.viewer_id) : '';
+        if (!viewerId) {
+          res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Sign in required to subscribe' }));
+          return;
+        }
+
+        let tier = 'supporter';
+        try { tier = normalizeTier(JSON.parse(body || '{}').tier); } catch (e) { /* default */ }
+        const tierConfig = getTierConfig(tier);
+        if (!tierConfig || tierConfig.id === 'free' || !tierConfig.priceUsd) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Invalid tier' }));
+          return;
+        }
+
+        const existing = getMembership(viewerId);
+        if (existing && existing.stripe_subscription_id && STRIPE_MANAGED_STATUSES.has(existing.status)) {
+          res.writeHead(409, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({
+            code: 'subscription_exists',
+            error: 'You already have a subscription. Manage it from the billing portal to change tiers.',
+          }));
+          return;
+        }
+
+        const origin = req.headers.origin || `http://localhost:${port}`;
+        const session = await stripe.checkout.sessions.create({
+          mode: 'subscription',
+          customer: existing && existing.stripe_customer_id ? existing.stripe_customer_id : undefined,
+          client_reference_id: viewerId,
+          metadata: { viewerId, tier: tierConfig.id },
+          subscription_data: { metadata: { viewerId, tier: tierConfig.id } },
+          line_items: [{
+            price_data: {
+              currency: 'usd',
+              unit_amount: Math.round(tierConfig.priceUsd * 100),
+              recurring: { interval: 'month' },
+              product_data: {
+                name: `HangStream ${tierConfig.displayName}`,
+                description: 'Unlock all game difficulties, chat hints, and donor perks.',
+              },
+            },
+            quantity: 1,
+          }],
+          success_url: `${origin}/donate?checkout=success`,
+          cancel_url: `${origin}/donate?checkout=cancelled`,
+          allow_promotion_codes: true,
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ url: session.url, sessionId: session.id }));
+      } catch (error) {
+        console.error('Subscription checkout error:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: error.message }));
+      }
+    });
+    return;
+  }
+
+  // Stripe billing portal — lets subscribers update payment / cancel
+  if (pathname === '/subscribe/portal' && req.method === 'POST') {
+    if (!stripe) {
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Stripe not configured' }));
+      return;
+    }
+
+    const cookies = parseCookies(req.headers.cookie);
+    const viewerId = cookies.viewer_id ? decodeURIComponent(cookies.viewer_id) : '';
+    const membership = viewerId ? getMembership(viewerId) : null;
+    if (!membership || !membership.stripe_customer_id) {
+      res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'No subscription found for this account' }));
+      return;
+    }
+
+    const origin = req.headers.origin || `http://localhost:${port}`;
+    (async () => {
+      try {
+        const session = await stripe.billingPortal.sessions.create({
+          customer: membership.stripe_customer_id,
+          return_url: `${origin}/donate`,
+        });
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ url: session.url }));
+      } catch (error) {
+        console.error('Billing portal error:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: error.message }));
+      }
+    })();
+    return;
+  }
+
   // Stripe donation checkout
   if (pathname === '/donate/create-checkout' && req.method === 'POST') {
     if (!stripe) {
@@ -3154,7 +3385,13 @@ const owner = session.ownerId;
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
       try {
-        const { amount, viewerId, viewerName } = JSON.parse(body);
+        const parsed = JSON.parse(body);
+        const amount = parsed.amount;
+        const viewerName = parsed.viewerName;
+        // viewer_id is HttpOnly so the client can't always read it — fall
+        // back to the server-side cookie so donations attach to the account.
+        const cookieViewer = parseCookies(req.headers.cookie).viewer_id;
+        const viewerId = parsed.viewerId || (cookieViewer ? decodeURIComponent(cookieViewer) : '');
 
         if (!amount || amount < 1) {
           res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -3228,9 +3465,39 @@ const owner = session.ownerId;
         return;
       }
 
+      // Subscription lifecycle events keep the memberships table in sync.
+      // customer.subscription.deleted flips status to 'canceled', which
+      // revokes perks on the next isActiveSubscriber check.
+      if (event.type === 'customer.subscription.created' ||
+          event.type === 'customer.subscription.updated' ||
+          event.type === 'customer.subscription.deleted') {
+        await syncStripeSubscription(event.data.object);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ received: true }));
+        return;
+      }
+
       // Handle checkout.session.completed event
       if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
+
+        // Subscription checkouts are synced via the subscription object so
+        // status/period fields are authoritative; the
+        // customer.subscription.* events will also arrive and re-sync.
+        if (session.mode === 'subscription') {
+          if (session.subscription) {
+            try {
+              const subscription = await stripe.subscriptions.retrieve(session.subscription);
+              await syncStripeSubscription(subscription);
+            } catch (e) {
+              console.error('Failed to sync subscription after checkout:', e.message);
+            }
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ received: true }));
+          return;
+        }
+
         const metadata = session.metadata;
 
         const donation = {
@@ -4058,6 +4325,10 @@ const owner = session.ownerId;
   if (urlPath === '/searchle' || urlPath === '/searchle.html') {
     sendFile(res, searchlePath, 'text/html; charset=utf-8');
     return;
+  }
+
+  if (urlPath === '/donate' || urlPath === '/donate.html') {
+    if (fs.existsSync(donatePath)) { sendFile(res, donatePath, 'text/html; charset=utf-8'); return; }
   }
 
   // Overlay routes

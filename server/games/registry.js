@@ -27,7 +27,7 @@ const { HangmanGame } = require('./hangman');
 const { SpeedScrambleGame } = require('./speedscramble');
 const { SearchleGame } = require('./searchle');
 const { playerKeyFor } = require('./engine');
-const { loadDonations } = require('../storage');
+const { loadDonations, isActiveSubscriber } = require('../storage');
 
 // How long an idle public room survives before it is recycled.
 const ROOM_TTL_MS = 6 * 60 * 60 * 1000;
@@ -70,22 +70,24 @@ function isDonor(viewerId, linkedAccounts = null) {
     }
     
     // Check against all IDs
-    const isDonor = donations.some(donation => {
+    let isDonor = donations.some(donation => {
       for (const id of idsToCheck) {
-        // Direct match
-        if (donation.viewerId === id) return true;
-        
+        // Direct match (viewer_id is the column name; viewerId kept for
+        // older in-memory shapes)
+        if (donation.viewer_id === id || donation.viewerId === id) return true;
+
         // Check with platform prefixes
         const prefixes = ['google:', 'twitch:', 'tiktok:'];
         for (const prefix of prefixes) {
-          if (donation.viewerId === `${prefix}${id}`) return true;
-          if (id.startsWith(prefix) && donation.viewerId === id) return true;
+          if ((donation.viewer_id === `${prefix}${id}`) || (donation.viewerId === `${prefix}${id}`)) return true;
+          if (id.startsWith(prefix) && (donation.viewer_id === id || donation.viewerId === id)) return true;
         }
-        
+
         // Reverse check: if donation has prefix, try matching without it
         for (const prefix of prefixes) {
-          if (donation.viewerId.startsWith(prefix)) {
-            const baseId = donation.viewerId.substring(prefix.length);
+          const donationId = donation.viewer_id || donation.viewerId || '';
+          if (donationId.startsWith(prefix)) {
+            const baseId = donationId.substring(prefix.length);
             if (baseId === id) return true;
           }
         }
@@ -94,10 +96,15 @@ function isDonor(viewerId, linkedAccounts = null) {
       return false;
     });
     
+    // Active Stripe subscribers get the same perks as lifetime donors.
+    if (!isDonor) {
+      isDonor = idsToCheck.some(id => isActiveSubscriber(id));
+    }
+
     if (!isDonor) {
       console.log(`Donor check failed for viewerId: ${viewerId}`);
     }
-    
+
     return isDonor;
   } catch (e) {
     console.error('Error checking donor status:', e);

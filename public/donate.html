@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Support HangStream</title>
+  <meta name="description" content="Support HangStream with a monthly subscription or one-time donation. Subscribers unlock all game difficulties, chat hints, and donor perks.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0e0e12;
+      --bg-elevated: #0b0b0f;
+      --card: #1a1a22;
+      --card-border: #2a2a35;
+      --text: #f0ede8;
+      --text-muted: #92a0af;
+      --accent: #ff4d6d;
+      --accent-2: #ff6b85;
+      --accent-3: #7c5cff;
+      --good: #25c27a;
+      --warning: #ffbe55;
+      --glass: rgba(255,255,255,0.05);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(255, 77, 109, 0.15), transparent 28%),
+        radial-gradient(circle at top right, rgba(124, 92, 255, 0.12), transparent 24%),
+        linear-gradient(180deg, color-mix(in srgb, var(--bg) 95%, #000), var(--bg));
+    }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 48px 20px 80px; }
+    .brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 15px;
+      letter-spacing: 3px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    h1 { font-family: 'Bebas Neue', sans-serif; font-size: 52px; letter-spacing: 1px; margin-bottom: 8px; }
+    .sub { color: var(--text-muted); font-size: 16px; margin-bottom: 32px; max-width: 520px; line-height: 1.5; }
+    .banner {
+      padding: 14px 18px; border-radius: 12px; margin-bottom: 24px;
+      font-size: 14px; border: 1px solid var(--card-border); background: var(--glass);
+    }
+    .banner.success { border-color: rgba(37,194,122,.4); color: var(--good); }
+    .banner.error { border-color: rgba(255,77,109,.4); color: var(--accent-2); }
+    .tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 40px; }
+    .tier {
+      background: var(--card); border: 1px solid var(--card-border); border-radius: 16px;
+      padding: 24px; display: flex; flex-direction: column; gap: 12px; position: relative; overflow: hidden;
+    }
+    .tier.featured { border-color: var(--accent-3); box-shadow: 0 0 0 1px var(--accent-3), 0 8px 30px rgba(124,92,255,.15); }
+    .tier .name { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 1px; }
+    .tier .price { font-size: 34px; font-weight: 800; }
+    .tier .price span { font-size: 14px; font-weight: 500; color: var(--text-muted); }
+    .tier ul { list-style: none; margin: 4px 0 8px; }
+    .tier li { font-size: 13.5px; color: var(--text-muted); padding: 5px 0 5px 22px; position: relative; }
+    .tier li::before { content: '✓'; position: absolute; left: 0; color: var(--good); font-weight: 700; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 13px 20px; border-radius: 12px; border: none; cursor: pointer;
+      font-weight: 700; font-size: 14px; font-family: inherit; text-decoration: none;
+      background: var(--accent); color: #fff; transition: filter .15s, transform .05s;
+    }
+    .btn:hover { filter: brightness(1.1); }
+    .btn:active { transform: scale(.98); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn.secondary { background: var(--glass); border: 1px solid var(--card-border); color: var(--text); }
+    .btn.gold { background: linear-gradient(135deg, #facc15, #a855f7); color: #1a1200; }
+    .status-card {
+      background: var(--card); border: 1px solid var(--card-border); border-radius: 16px;
+      padding: 24px; margin-bottom: 32px;
+    }
+    .status-card h2 { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 1px; margin-bottom: 6px; }
+    .status-card p { color: var(--text-muted); font-size: 14px; line-height: 1.5; }
+    .status-card .row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+    .tip { color: var(--warning); font-size: 13px; margin-top: 10px; }
+    .section-title { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 1px; margin: 8px 0 16px; }
+    .amounts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .amount-btn {
+      padding: 10px 16px; border-radius: 10px; background: var(--glass);
+      border: 1px solid var(--card-border); color: var(--text); cursor: pointer; font-weight: 600;
+    }
+    .amount-btn.selected { border-color: var(--accent); color: var(--accent-2); }
+    input[type=number] {
+      width: 100%; padding: 12px 14px; border-radius: 10px;
+      border: 1px solid var(--card-border); background: var(--bg-elevated); color: var(--text);
+      font-family: inherit; font-size: 14px; margin-bottom: 12px;
+    }
+    .muted { color: var(--text-muted); font-size: 13px; }
+    .hidden { display: none !important; }
+    a { color: var(--accent-2); }
+    .footer { margin-top: 48px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">HangStream</div>
+    <h1>Support the Stream</h1>
+    <p class="sub">Subscriptions keep HangStream free for every streamer and unlock donor perks for you — all game difficulties, chat hints, and multi-letter guesses.</p>
+
+    <div id="banner" class="banner hidden"></div>
+
+    <!-- Signed-out state -->
+    <div id="signed-out" class="hidden">
+      <div class="status-card">
+        <h2>Sign in to subscribe</h2>
+        <p>Subscriptions are tied to your HangStream account so perks follow you across streams. Sign in with Google to continue.</p>
+        <div class="row">
+          <a class="btn" href="/auth/google?redirect=%2Fdonate">Sign in with Google</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active subscriber state -->
+    <div id="subscriber" class="hidden">
+      <div class="status-card">
+        <h2 id="sub-tier-name">Member</h2>
+        <p id="sub-status-text">Your subscription is active.</p>
+        <p class="tip hidden" id="sub-cancel-warning">Your subscription is set to cancel at the end of the current period — perks stay active until then.</p>
+        <div class="row">
+          <button class="btn secondary" id="manage-sub-btn">Manage subscription</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tier picker -->
+    <div id="tiers-wrap">
+      <div class="section-title">Choose a membership</div>
+      <div class="tiers" id="tiers"></div>
+    </div>
+
+    <!-- One-time donation -->
+    <div id="tip-wrap" class="hidden">
+      <div class="section-title">Or leave a one-time tip</div>
+      <div class="status-card">
+        <p class="muted" style="margin-bottom:14px;">One-time donations support HangStream directly. A completed donation keeps donor perks active.</p>
+        <div class="amounts" id="tip-amounts"></div>
+        <input type="number" id="tip-custom" placeholder="Custom amount (min $1)" min="1" step="1">
+        <button class="btn secondary" id="tip-btn">Donate</button>
+      </div>
+    </div>
+
+    <div class="footer muted">
+      <a href="/homepage.html">← Back to HangStream</a> ·
+      <a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a>
+    </div>
+  </div>
+
+  <script>
+    const PERKS = [
+      'All game difficulties (Medium & Hard)',
+      'Chat hints with /hint',
+      'Multi-letter guesses in chat',
+      'Donor perks on every stream'
+    ];
+
+    let status = null;
+    let selectedTip = 5;
+
+    function showBanner(msg, kind) {
+      const el = document.getElementById('banner');
+      el.textContent = msg;
+      el.className = 'banner ' + kind;
+    }
+
+    function hide(id) { document.getElementById(id).classList.add('hidden'); }
+    function show(id) { document.getElementById(id).classList.remove('hidden'); }
+
+    async function loadStatus() {
+      try {
+        const res = await fetch('/subscribe/status');
+        status = await res.json();
+      } catch (e) {
+        status = { signedIn: false, stripeEnabled: false, tiers: [] };
+      }
+      render();
+    }
+
+    function render() {
+      const params = new URLSearchParams(location.search);
+      if (params.get('checkout') === 'success') {
+        showBanner('Subscription activated — your perks are live. Enjoy!', 'success');
+      } else if (params.get('checkout') === 'cancelled') {
+        showBanner('Checkout was cancelled — no charge was made.', 'error');
+      }
+
+      if (!status.stripeEnabled) {
+        showBanner('Payments are not configured yet. Check back soon!', 'error');
+      }
+
+      if (!status.signedIn) {
+        show('signed-out');
+        hide('tiers-wrap');
+        hide('tip-wrap');
+        return;
+      }
+      hide('signed-out');
+
+      if (status.subscriber && status.membership) {
+        show('subscriber');
+        const tierName = (status.tiers.find(t => t.id === status.membership.tier) || {}).displayName
+          || status.membership.tier;
+        document.getElementById('sub-tier-name').textContent = tierName + ' membership';
+        let text = 'Your subscription is active.';
+        if (status.membership.currentPeriodEnd) {
+          text += ' Renews ' + new Date(status.membership.currentPeriodEnd).toLocaleDateString() + '.';
+        }
+        document.getElementById('sub-status-text').textContent = text;
+        document.getElementById('sub-cancel-warning').classList.toggle('hidden', !status.membership.cancelAtPeriodEnd);
+        // Subscribers still see tiers? No — they manage via portal.
+        hide('tiers-wrap');
+      } else {
+        hide('subscriber');
+        renderTiers();
+        show('tiers-wrap');
+      }
+
+      show('tip-wrap');
+      renderTipAmounts();
+    }
+
+    function renderTiers() {
+      const wrap = document.getElementById('tiers');
+      wrap.innerHTML = '';
+      const tiers = status.tiers || [];
+      tiers.forEach((tier, i) => {
+        const card = document.createElement('div');
+        card.className = 'tier' + (i === tiers.length - 1 ? ' featured' : '');
+        card.innerHTML = `
+          <div class="name">${escapeHtml(tier.displayName)}</div>
+          <div class="price">$${tier.priceUsd}<span>/month</span></div>
+          <ul>${PERKS.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>
+          <button class="btn ${i === tiers.length - 1 ? 'gold' : ''}" data-tier="${tier.id}">Subscribe</button>
+        `;
+        wrap.appendChild(card);
+      });
+      wrap.querySelectorAll('button[data-tier]').forEach(btn => {
+        btn.addEventListener('click', () => subscribe(btn.dataset.tier, btn));
+      });
+    }
+
+    async function subscribe(tier, btn) {
+      btn.disabled = true;
+      btn.textContent = 'Redirecting…';
+      try {
+        const res = await fetch('/subscribe/create-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tier })
+        });
+        const data = await res.json();
+        if (res.status === 409 || data.code === 'subscription_exists') {
+          showBanner('You already have a subscription — use "Manage subscription" to change plans.', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Subscribe';
+          return;
+        }
+        if (data.error) throw new Error(data.error);
+        window.location.href = data.url;
+      } catch (e) {
+        showBanner(e.message || 'Could not start checkout.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Subscribe';
+      }
+    }
+
+    document.getElementById('manage-sub-btn').addEventListener('click', async () => {
+      try {
+        const res = await fetch('/subscribe/portal', { method: 'POST' });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        window.location.href = data.url;
+      } catch (e) {
+        showBanner(e.message || 'Could not open billing portal.', 'error');
+      }
+    });
+
+    function renderTipAmounts() {
+      const wrap = document.getElementById('tip-amounts');
+      wrap.innerHTML = '';
+      [5, 10, 20, 50].forEach(amount => {
+        const b = document.createElement('button');
+        b.className = 'amount-btn' + (amount === selectedTip ? ' selected' : '');
+        b.textContent = '$' + amount;
+        b.addEventListener('click', () => {
+          selectedTip = amount;
+          document.getElementById('tip-custom').value = '';
+          wrap.querySelectorAll('.amount-btn').forEach(x => x.classList.remove('selected'));
+          b.classList.add('selected');
+        });
+        wrap.appendChild(b);
+      });
+    }
+
+    document.getElementById('tip-custom').addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      if (v >= 1) selectedTip = v;
+      document.querySelectorAll('#tip-amounts .amount-btn').forEach(x => x.classList.remove('selected'));
+    });
+
+    document.getElementById('tip-btn').addEventListener('click', async () => {
+      const amount = parseFloat(document.getElementById('tip-custom').value) || selectedTip;
+      if (amount < 1) { showBanner('Please enter at least $1', 'error'); return; }
+      try {
+        const res = await fetch('/donate/create-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        window.location.href = data.url;
+      } catch (e) {
+        showBanner(e.message || 'Could not start donation checkout.', 'error');
+      }
+    });
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    loadStatus();
+  </script>
+</body>
+</html>
