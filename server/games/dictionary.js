@@ -782,19 +782,23 @@ function gridPath(len, rng) {
  * When a word is required (GRID_REQUIRED_WORDS or `mustForm`), its letters are
  * placed along a traceable path so the word is always formable.
  */
-function buildGridRound({ dailyDate, difficulty = 'normal', mustForm = null } = {}) {
+function buildGridRound({ dailyDate, difficulty = 'normal', mustForm = null, random = false } = {}) {
   ensureLoaded();
   const level = String(difficulty || 'normal').toLowerCase();
-  const key = `${dailyDate || 'random'}|${level}`;
-  if (gridRounds.has(key)) return gridRounds.get(key);
+  // `random` rounds (live stream games) skip the daily cache entirely so every
+  // round gets a fresh board; seeded dailies stay deterministic per date.
+  const key = random ? null : `${dailyDate || 'random'}|${level}`;
+  if (key && gridRounds.has(key)) return gridRounds.get(key);
 
   const minLength = GRID_MIN_LENGTH[level] || GRID_MIN_LENGTH.normal;
   const minAnswers = GRID_MIN_ANSWERS[level] || GRID_MIN_ANSWERS.normal;
-  const required = String(mustForm || GRID_REQUIRED_WORDS[key] || '')
+  const required = String(mustForm || (key ? GRID_REQUIRED_WORDS[key] : '') || '')
     .toLowerCase().replace(/[^a-z]/g, '');
   // Seed version is bumped when the generator changes so a reroll does not
   // silently re-deal boards players may already have seen.
-  const rng = seededRandom(stringToSeed(`grid-v2-${key}`));
+  const rng = random
+    ? seededRandom(((Date.now() + Math.floor(Math.random() * 1e9)) % 0x7ffffffe) + 1)
+    : seededRandom(stringToSeed(`grid-v2-${key}`));
 
   const pickVowel = () => GRID_VOWELS[Math.floor(rng() * GRID_VOWELS.length)];
   const pickConsonant = () => GRID_CONSONANTS[Math.floor(rng() * GRID_CONSONANTS.length)];

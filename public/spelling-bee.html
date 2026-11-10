@@ -1567,8 +1567,10 @@ function handleHexEnd() {
   if (!isDragging) return;
   isDragging = false;
   
-  // Submit the word if it's valid
-  if (currentPath.length >= 4) {
+  // Submit the word if it's valid - the minimum length follows the
+  // difficulty (easy allows 3-letter words, not just 4+).
+  const minLen = (DIFFICULTY_SETTINGS[config.difficulty] || DIFFICULTY_SETTINGS.normal).minLength;
+  if (currentPath.length >= minLen) {
     const word = getCurrentWord();
     if (isValidWord(word) && !foundWords.has(word)) {
       submitCurrentWord();

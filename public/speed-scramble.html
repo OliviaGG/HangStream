@@ -1332,7 +1332,7 @@ function showMessage(text, type) {
   const area = document.getElementById('message-area');
   if (!area) return;
   
-  area.innerHTML = `<div class="message-box ${type}">${text}</div>`;
+  area.innerHTML = `<div class="message-box ${type}">${escapeHtml(text)}</div>`;
   
   setTimeout(() => {
     area.innerHTML = '';
