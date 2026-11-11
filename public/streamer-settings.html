@@ -935,6 +935,38 @@
               <div class="overlay-preview-grid" style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);background-size:10% 20%;"></div>
             </div>
           </div>
+          <div id="overlay-setups-panel" style="margin-top:18px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px;">
+              <strong>Saved layouts</strong>
+              <span style="font-size:12px;color:var(--text-muted);">Keep a layout per stream format and switch between them.</span>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <input id="overlay-setup-name" class="setting-input" type="text" maxlength="40" placeholder="Layout name (e.g. FPS mode)" style="flex:1;">
+              <button id="save-overlay-setup" class="btn btn-secondary" type="button">Save current as setup</button>
+            </div>
+            <div id="overlay-setups-list" style="display:grid;gap:8px;margin-top:10px;"></div>
+          </div>
+          <div id="overlay-widget-inspector" style="display:none;margin-top:18px;padding:14px;border:1px solid var(--panel-border);border-radius:12px;background:rgba(255,255,255,.03);">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;">
+              <strong id="overlay-inspector-title">Widget</strong>
+              <span style="font-size:12px;color:var(--text-muted);">Click a card in the preview to fine-tune it.</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <label style="display:flex;flex-direction:column;gap:6px;">Horizontal
+                <input id="overlay-inspector-x" type="range" min="5" max="95" step="1" value="50">
+                <span id="overlay-inspector-x-val" style="font-size:12px;color:var(--text-muted);">50%</span>
+              </label>
+              <label style="display:flex;flex-direction:column;gap:6px;">Vertical
+                <input id="overlay-inspector-y" type="range" min="5" max="95" step="1" value="50">
+                <span id="overlay-inspector-y-val" style="font-size:12px;color:var(--text-muted);">50%</span>
+              </label>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+              <button id="overlay-inspector-center" class="btn btn-secondary" type="button" style="padding:8px 14px;">Center</button>
+              <button id="overlay-inspector-reset-pos" class="btn btn-secondary" type="button" style="padding:8px 14px;">Reset position</button>
+              <button id="overlay-reset-all-positions" class="btn btn-secondary" type="button" style="padding:8px 14px;">Reset all positions</button>
+            </div>
+          </div>
           </div>
           <div style="display:flex;align-items:center;gap:12px;margin-top:18px;">
             <button id="save-overlay-layout" class="btn btn-primary" type="button">Save overlay layout</button>
@@ -2113,12 +2145,63 @@
       return positions;
     }
 
+    // Named layout setups fetched from /streamer/layouts; the live layout is
+    // what /streamer/layout serves to the OBS overlay.
+    let overlaySetups = {};
+    let activeOverlaySetup = '';
+    let selectedOverlayKey = null;
+
+    function overlayItemDefaultPos(key) {
+      const index = overlayPreviewItems.findIndex(([k]) => k === key);
+      return { x: 50, y: 12 + Math.max(0, index) * 12 };
+    }
+
+    function setOverlayItemPos(item, x, y) {
+      const clampedX = Math.max(5, Math.min(95, x));
+      const clampedY = Math.max(5, Math.min(95, y));
+      item.style.left = `${clampedX}%`;
+      item.style.top = `${clampedY}%`;
+      syncOverlayInspector();
+    }
+
+    function selectOverlayWidget(key) {
+      selectedOverlayKey = key;
+      document.querySelectorAll('.overlay-preview-item').forEach((el) => {
+        const active = el.dataset.layoutKey === key;
+        el.style.borderColor = active ? '#fff' : 'var(--accent)';
+        el.style.boxShadow = active ? '0 0 0 2px rgba(255,255,255,.35)' : 'none';
+      });
+      const inspector = document.getElementById('overlay-widget-inspector');
+      if (inspector) inspector.style.display = key ? 'block' : 'none';
+      const title = document.getElementById('overlay-inspector-title');
+      const found = overlayPreviewItems.find(([k]) => k === key);
+      if (title && found) title.textContent = found[1];
+      syncOverlayInspector();
+    }
+
+    function syncOverlayInspector() {
+      if (!selectedOverlayKey) return;
+      const item = document.querySelector(`.overlay-preview-item[data-layout-key="${selectedOverlayKey}"]`);
+      if (!item) return;
+      const x = Number.parseFloat(item.style.left) || 50;
+      const y = Number.parseFloat(item.style.top) || 50;
+      const xInput = document.getElementById('overlay-inspector-x');
+      const yInput = document.getElementById('overlay-inspector-y');
+      const xVal = document.getElementById('overlay-inspector-x-val');
+      const yVal = document.getElementById('overlay-inspector-y-val');
+      if (xInput) xInput.value = String(Math.round(x));
+      if (yInput) yInput.value = String(Math.round(y));
+      if (xVal) xVal.textContent = `${Math.round(x)}%`;
+      if (yVal) yVal.textContent = `${Math.round(y)}%`;
+    }
+
     function renderOverlayLayoutPreview(savedPositions) {
       const preview = document.getElementById('overlay-layout-preview');
       if (!preview) return;
       preview.querySelectorAll('.overlay-preview-item').forEach((item) => item.remove());
       overlayPreviewItems.forEach(([key, label], index) => {
-        const saved = savedPositions[key] || { x: 50, y: 12 + index * 12 };
+        const fallback = overlayItemDefaultPos(key);
+        const saved = savedPositions[key] || fallback;
         const item = document.createElement('button');
         item.type = 'button';
         item.className = 'overlay-preview-item';
@@ -2127,13 +2210,13 @@
         item.style.cssText = `position:absolute;left:${saved.x}%;top:${saved.y}%;transform:translate(-50%,-50%);z-index:2;padding:8px 12px;border:1px solid var(--accent);border-radius:10px;background:rgba(14,14,18,.9);color:var(--text);cursor:move;font:600 12px Inter,sans-serif;`;
         item.addEventListener('pointerdown', (event) => {
           event.preventDefault();
+          selectOverlayWidget(key);
           item.setPointerCapture(event.pointerId);
           const move = (moveEvent) => {
             const rect = preview.getBoundingClientRect();
-            const x = Math.max(5, Math.min(95, ((moveEvent.clientX - rect.left) / rect.width) * 100));
-            const y = Math.max(5, Math.min(95, ((moveEvent.clientY - rect.top) / rect.height) * 100));
-            item.style.left = `${x}%`;
-            item.style.top = `${y}%`;
+            const x = ((moveEvent.clientX - rect.left) / rect.width) * 100;
+            const y = ((moveEvent.clientY - rect.top) / rect.height) * 100;
+            setOverlayItemPos(item, x, y);
           };
           const stop = () => {
             item.removeEventListener('pointermove', move);
@@ -2146,6 +2229,174 @@
         });
         preview.appendChild(item);
       });
+      selectOverlayWidget(selectedOverlayKey);
+    }
+
+    function bindOverlayInspector() {
+      const xInput = document.getElementById('overlay-inspector-x');
+      const yInput = document.getElementById('overlay-inspector-y');
+      const applySlider = () => {
+        if (!selectedOverlayKey) return;
+        const item = document.querySelector(`.overlay-preview-item[data-layout-key="${selectedOverlayKey}"]`);
+        if (!item) return;
+        setOverlayItemPos(item, Number(xInput.value), Number(yInput.value));
+      };
+      if (xInput && !xInput.dataset.bound) { xInput.dataset.bound = '1'; xInput.addEventListener('input', applySlider); }
+      if (yInput && !yInput.dataset.bound) { yInput.dataset.bound = '1'; yInput.addEventListener('input', applySlider); }
+
+      const centerBtn = document.getElementById('overlay-inspector-center');
+      if (centerBtn && !centerBtn.dataset.bound) {
+        centerBtn.dataset.bound = '1';
+        centerBtn.addEventListener('click', () => {
+          const item = selectedOverlayKey && document.querySelector(`.overlay-preview-item[data-layout-key="${selectedOverlayKey}"]`);
+          if (item) setOverlayItemPos(item, 50, 50);
+        });
+      }
+      const resetPosBtn = document.getElementById('overlay-inspector-reset-pos');
+      if (resetPosBtn && !resetPosBtn.dataset.bound) {
+        resetPosBtn.dataset.bound = '1';
+        resetPosBtn.addEventListener('click', () => {
+          if (!selectedOverlayKey) return;
+          const fallback = overlayItemDefaultPos(selectedOverlayKey);
+          const item = document.querySelector(`.overlay-preview-item[data-layout-key="${selectedOverlayKey}"]`);
+          if (item) setOverlayItemPos(item, fallback.x, fallback.y);
+        });
+      }
+      const resetAllBtn = document.getElementById('overlay-reset-all-positions');
+      if (resetAllBtn && !resetAllBtn.dataset.bound) {
+        resetAllBtn.dataset.bound = '1';
+        resetAllBtn.addEventListener('click', () => {
+          renderOverlayLayoutPreview({});
+          selectOverlayWidget(selectedOverlayKey);
+        });
+      }
+    }
+
+    function renderOverlaySetups() {
+      const list = document.getElementById('overlay-setups-list');
+      if (!list) return;
+      list.innerHTML = '';
+      const names = Object.keys(overlaySetups).sort();
+      if (!names.length) {
+        list.innerHTML = '<div style="font-size:13px;color:var(--text-muted);">No saved layouts yet — save your current one above.</div>';
+        return;
+      }
+      names.forEach((name) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--panel-border);border-radius:10px;background:rgba(255,255,255,.03);';
+        const label = document.createElement('span');
+        label.style.cssText = 'flex:1;font-weight:600;font-size:14px;';
+        label.textContent = name + (name === activeOverlaySetup ? ' (active)' : '');
+        const applyBtn = document.createElement('button');
+        applyBtn.className = 'btn btn-secondary';
+        applyBtn.type = 'button';
+        applyBtn.textContent = 'Load';
+        applyBtn.style.padding = '6px 12px';
+        applyBtn.addEventListener('click', () => applyOverlaySetup(name));
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn btn-secondary';
+        delBtn.type = 'button';
+        delBtn.textContent = 'Delete';
+        delBtn.style.padding = '6px 12px';
+        delBtn.addEventListener('click', () => {
+          delete overlaySetups[name];
+          if (activeOverlaySetup === name) activeOverlaySetup = '';
+          renderOverlaySetups();
+          persistOverlaySetupsOnly();
+        });
+        row.appendChild(label);
+        row.appendChild(applyBtn);
+        row.appendChild(delBtn);
+        list.appendChild(row);
+      });
+    }
+
+    // Persist setups + active name without touching the live layout (used by
+    // delete). Load/save-as-setup go through saveOverlayState instead.
+    async function persistOverlaySetupsOnly() {
+      const status = document.getElementById('overlay-layout-status');
+      try {
+        const response = await fetch('/streamer/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ layoutSetups: overlaySetups, activeLayoutName: activeOverlaySetup })
+        });
+        if (!response.ok) throw new Error('save failed');
+        if (status) status.textContent = 'Setups updated.';
+      } catch (e) {
+        if (status) status.textContent = 'Could not update setups';
+      }
+    }
+
+    async function loadOverlaySetups() {
+      try {
+        const response = await fetch('/streamer/layouts', { cache: 'no-store' });
+        if (!response.ok) return;
+        const data = await response.json();
+        overlaySetups = {};
+        (data.setups || []).forEach((entry) => { overlaySetups[entry.name] = entry.layout; });
+        activeOverlaySetup = String(data.active || '');
+        renderOverlaySetups();
+      } catch (e) {
+        console.warn('Could not load layout setups:', e);
+      }
+    }
+
+    async function saveOverlayState(extraStatus) {
+      const status = document.getElementById('overlay-layout-status');
+      const saveButton = document.getElementById('save-overlay-layout');
+      if (saveButton) saveButton.disabled = true;
+      if (status) status.textContent = 'Saving...';
+      try {
+        const response = await fetch('/streamer/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            layout: getOverlayLayoutControls(),
+            layoutSetups: overlaySetups,
+            activeLayoutName: activeOverlaySetup
+          })
+        });
+        if (!response.ok) throw new Error('Could not save layout');
+        if (status) status.textContent = extraStatus || 'Saved. Refresh your OBS browser source to apply it.';
+        return true;
+      } catch (error) {
+        console.error('Failed to save overlay layout:', error);
+        if (status) status.textContent = 'Could not save layout';
+        return false;
+      } finally {
+        if (saveButton) saveButton.disabled = false;
+      }
+    }
+
+    async function applyOverlaySetup(name) {
+      const setup = overlaySetups[name];
+      if (!setup) return;
+      activeOverlaySetup = name;
+      setOverlayLayoutControls(setup);
+      renderOverlaySetups();
+      await saveOverlayState(`Loaded "${name}". Refresh your OBS browser source to apply it.`);
+    }
+
+    function bindOverlaySetups() {
+      const saveSetupBtn = document.getElementById('save-overlay-setup');
+      if (saveSetupBtn && !saveSetupBtn.dataset.bound) {
+        saveSetupBtn.dataset.bound = '1';
+        saveSetupBtn.addEventListener('click', async () => {
+          const input = document.getElementById('overlay-setup-name');
+          const name = String(input && input.value || '').trim().slice(0, 40);
+          if (!name) {
+            const status = document.getElementById('overlay-layout-status');
+            if (status) status.textContent = 'Enter a name for the setup first.';
+            return;
+          }
+          overlaySetups[name] = getOverlayLayoutControls();
+          activeOverlaySetup = name;
+          if (input) input.value = '';
+          renderOverlaySetups();
+          await saveOverlayState(`Saved setup "${name}". Refresh OBS to apply it.`);
+        });
+      }
     }
 
     async function initOverlayLayoutSettings() {
@@ -2162,6 +2413,9 @@
         });
       }
       const status = document.getElementById('overlay-layout-status');
+      bindOverlayInspector();
+      bindOverlaySetups();
+      loadOverlaySetups();
       try {
         const response = await fetch(`/streamer/layout?owner=${encodeURIComponent(getStreamerId() || '')}`, { cache: 'no-store' });
         if (!response.ok) throw new Error('Could not load layout');
@@ -2174,24 +2428,7 @@
       const saveButton = document.getElementById('save-overlay-layout');
       if (saveButton && !saveButton.dataset.bound) {
         saveButton.dataset.bound = 'true';
-        saveButton.addEventListener('click', async () => {
-          saveButton.disabled = true;
-          if (status) status.textContent = 'Saving...';
-          try {
-            const response = await fetch('/streamer/settings', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ layout: getOverlayLayoutControls() })
-            });
-            if (!response.ok) throw new Error('Could not save layout');
-            if (status) status.textContent = 'Saved. Refresh your OBS browser source to apply it.';
-          } catch (error) {
-            console.error('Failed to save overlay layout:', error);
-            if (status) status.textContent = 'Could not save layout';
-          } finally {
-            saveButton.disabled = false;
-          }
-        });
+        saveButton.addEventListener('click', () => { saveOverlayState(); });
       }
     }
 

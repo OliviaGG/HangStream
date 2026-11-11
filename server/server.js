@@ -2746,7 +2746,7 @@ const owner = session.ownerId;
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
       try {
-        const { scoreCombination, selectedGame, gameDifficulty, tiktokGift, tiktokCustomCoins, twitchGift, twitchCustomBits, layout } = JSON.parse(body);
+        const { scoreCombination, selectedGame, gameDifficulty, tiktokGift, tiktokCustomCoins, twitchGift, twitchCustomBits, layout, layoutSetups, activeLayoutName } = JSON.parse(body);
         const owner = requireOwnerSession(req, res);
         if (!owner) return;
 
@@ -2775,6 +2775,21 @@ const owner = session.ownerId;
         if (twitchGift) accounts[accountKey].twitch_gift = twitchGift;
         if (twitchCustomBits) accounts[accountKey].twitch_custom_bits = twitchCustomBits;
         if (layout !== undefined) accounts[accountKey].layout = JSON.stringify(normalizeOverlayLayout(layout));
+        // Named overlay layout setups ("FPS mode", "Just Chatting", ...). Each
+        // entry is normalized like the live layout; capped so the account file
+        // can't grow without bound.
+        if (layoutSetups !== undefined && layoutSetups && typeof layoutSetups === 'object' && !Array.isArray(layoutSetups)) {
+          const setups = {};
+          for (const [rawName, rawLayout] of Object.entries(layoutSetups).slice(0, 12)) {
+            const name = String(rawName || '').trim().slice(0, 40);
+            if (!name) continue;
+            setups[name] = normalizeOverlayLayout(rawLayout);
+          }
+          accounts[accountKey].layout_setups = JSON.stringify(setups);
+        }
+        if (typeof activeLayoutName === 'string') {
+          accounts[accountKey].active_layout_name = activeLayoutName.trim().slice(0, 40);
+        }
         saveStreamerAccounts(accounts);
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ success: true }));
@@ -2793,6 +2808,29 @@ const owner = session.ownerId;
     const account = Object.values(accounts).find((entry) => String(entry.handle || '').replace(/^@+/, '').toLowerCase() === requestedOwner);
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
     res.end(JSON.stringify({ layout: account ? normalizeOverlayLayout(account.layout) : DEFAULT_OVERLAY_LAYOUT }));
+    return;
+  }
+
+  // Saved overlay layout setups — owner session required (the public
+  // /streamer/layout endpoint only exposes the live layout).
+  if (pathname === '/streamer/layouts' && req.method === 'GET') {
+    const session = readOwnerSession(req);
+    if (!session) {
+      res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Not authenticated' }));
+      return;
+    }
+    const ownerEmail = String(session.email || '').trim().toLowerCase();
+    const accounts = loadStreamerAccounts();
+    const accountKey = Object.keys(accounts).find((email) => email.toLowerCase() === ownerEmail);
+    const account = accountKey ? accounts[accountKey] : null;
+    let setups = {};
+    try { setups = account && account.layout_setups ? JSON.parse(account.layout_setups) : {}; } catch (e) { setups = {}; }
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({
+      setups: Object.entries(setups).map(([name, layout]) => ({ name, layout: normalizeOverlayLayout(layout) })),
+      active: String(account && account.active_layout_name || '').slice(0, 40)
+    }));
     return;
   }
 
