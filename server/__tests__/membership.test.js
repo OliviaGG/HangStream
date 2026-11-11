@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { after } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
@@ -8,6 +9,7 @@ try { fs.unlinkSync(tempDb); } catch (e) {}
 process.env.DB_PATH = tempDb;
 
 const db = require('../db');
+const membership = require('../membership');
 const {
   getMembership,
   getMembershipByStripeSubscription,
@@ -62,11 +64,39 @@ test('membership upsert, lookup, and active-subscriber check', async () => {
   // Free tier never counts as a subscriber
   upsertMembership('google:free-user', { tier: 'free', status: 'active' });
   assert.equal(isActiveSubscriber('google:free-user'), false);
-
-  db.close();
 });
 
-process.on('exit', () => {
+test('membership module tier helpers', async () => {
+  await db.ready;
+
+  // Config-driven tiers
+  assert.equal(membership.normalizeTier('supporter'), 'supporter');
+  assert.equal(membership.normalizeTier('tycoon'), 'tycoon');
+  // word-tycoon aliases map onto the HangStream tiers
+  assert.equal(membership.normalizeTier('donor_class'), 'supporter');
+  assert.equal(membership.normalizeTier('pookie_pass'), 'tycoon');
+  assert.equal(membership.normalizeTier('bogus'), 'free');
+
+  const supporter = membership.getTierConfig('supporter');
+  assert.equal(supporter.priceUsd, 2);
+  assert.equal(supporter.premiumPassUnlocked, true);
+  const tycoon = membership.getTierConfig('tycoon');
+  assert.equal(tycoon.priceUsd, 10);
+  assert.ok(membership.getTierRank('tycoon') > membership.getTierRank('supporter'));
+  assert.ok(membership.getTierRank('supporter') > membership.getTierRank('free'));
+
+  // State reflects stored membership
+  upsertMembership('google:state-user', { tier: 'tycoon', status: 'active' });
+  const state = membership.getMembershipState('google:state-user');
+  assert.equal(state.active, true);
+  assert.equal(state.premiumPassUnlocked, true);
+  assert.equal(state.tierRank, membership.getTierRank('tycoon'));
+
+  upsertMembership('google:state-user', { tier: 'tycoon', status: 'canceled' });
+  assert.equal(membership.getMembershipState('google:state-user').active, false);
+});
+
+after(() => {
   try { db.close(); } catch (e) {}
   try { fs.unlinkSync(tempDb); } catch (e) {}
 });

@@ -735,6 +735,10 @@ function upsertMembership(viewerId, fields = {}) {
   return { ok: true };
 }
 
+function loadMemberships() {
+  return Array.from(membershipsCache.values()).map((row) => ({ ...row }));
+}
+
 // Perks (donor difficulties, hints, multi-guess) are active only while the
 // subscription is in a paid-and-current state. past_due/unpaid keep the row
 // Stripe-managed but do not unlock perks, matching word-tycoon.
@@ -770,6 +774,7 @@ module.exports = {
   saveDonations,
   saveDonationsAsync,
   getMembership,
+  loadMemberships,
   getMembershipByStripeSubscription,
   getMembershipByStripeCustomer,
   upsertMembership,

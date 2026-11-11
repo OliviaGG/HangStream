@@ -393,6 +393,7 @@
 <div class="hs-vote-overlay-slot" id="vote-slot"></div>
 
 <script src="/hangstream-vote-card.js"></script>
+<script src="/tts.js"></script>
 
 <script>
 // Overlay-specific game logic - simplified for streaming
@@ -405,6 +406,20 @@ let revealedWord = '';
 let ALL_WORDS = [];
 let VISIBLE_WORDS = [];
 let usedWords = new Set();
+
+// Optional spoken announcements — off by default. Enable per-overlay with
+// ?tts=1 in the OBS browser-source URL, or persist with localStorage
+// 'hangstream-tts' = '1'. Voice/rate/pitch/volume are tunable via TTS.*.
+const TTS_ENABLED = new URLSearchParams(location.search).get('tts') === '1'
+  || localStorage.getItem('hangstream-tts') === '1';
+let ttsAnnounced = false;
+if (TTS_ENABLED && window.TTS) {
+  TTS.init();
+  TTS.setEnabled(true);
+}
+function ttsSay(text) {
+  if (TTS_ENABLED && window.TTS) TTS.speak(text);
+}
 
 // Namespace handling (same as main game)
 function getRouteNamespace() {
@@ -526,6 +541,7 @@ async function loadCustomWordsFile() {
 }
 
 function prepareMasked(word) {
+  ttsAnnounced = false; // new word = new round of announcements
   maskedChars = Array.from(word).map(ch => {
     const c = String(ch || '');
     const upper = c.toUpperCase();
@@ -614,8 +630,10 @@ function checkWinLose() {
   const status = document.getElementById('game-status');
   if (allRevealed) {
     if (status) status.textContent = '🎉 SOLVED!';
+    if (!ttsAnnounced) { ttsAnnounced = true; ttsSay('Solved!'); }
   } else if (wrongCount >= MAX_WRONG) {
     if (status) status.textContent = `Game over! Word: ${revealedWord}`;
+    if (!ttsAnnounced) { ttsAnnounced = true; ttsSay(`Game over! The word was ${revealedWord}.`); }
   } else {
     if (status) status.textContent = getStreamerNamespace() ? `@${getStreamerNamespace()}'s Game` : 'HangStream';
   }

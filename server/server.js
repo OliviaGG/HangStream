@@ -37,8 +37,7 @@ const {
   loadDonations,
   saveDonations,
   getMembership,
-  getMembershipByStripeSubscription,
-  getMembershipByStripeCustomer,
+  loadMemberships,
   upsertMembership,
   isActiveSubscriber,
 } = require('./storage');
@@ -101,91 +100,10 @@ const stripeKey = process.env.STRIPE_SECRET_KEY;
 const stripe = stripeKey && stripeKey !== 'sk_test_your_key_here' && stripeKey !== 'sk_live_your_key_here' ? require('stripe')(stripeKey) : null;
 const stripePublishableKey = (stripe && process.env.STRIPE_PUBLISHABLE_KEY) || '';
 
-// Membership tiers (ported from word-tycoon-ecosystem). Prices and perks live
-// in data/membership-tiers.json so they can be retuned without a deploy.
-const MEMBERSHIP_TIERS_PATH = path.join(__dirname, '..', 'data', 'membership-tiers.json');
-let cachedTierConfig = null;
-function loadTierConfig() {
-  if (cachedTierConfig) return cachedTierConfig;
-  try {
-    const raw = JSON.parse(fs.readFileSync(MEMBERSHIP_TIERS_PATH, 'utf8'));
-    const tiers = Array.isArray(raw.tiers) ? raw.tiers : [];
-    cachedTierConfig = { tiers, byId: Object.fromEntries(tiers.map(t => [t.id, t])) };
-  } catch (e) {
-    console.error('Failed to load membership tiers:', e.message);
-    cachedTierConfig = { tiers: [], byId: {} };
-  }
-  return cachedTierConfig;
-}
-const TIER_ALIASES = {
-  donor: 'supporter',
-  donor_class: 'supporter',
-  vip: 'tycoon',
-  pookie: 'tycoon',
-  pookie_pass: 'tycoon',
-};
-function normalizeTier(tier) {
-  const n = String(tier || 'free').trim().toLowerCase();
-  const id = TIER_ALIASES[n] || n;
-  return loadTierConfig().byId[id] ? id : 'free';
-}
-function getTierConfig(tier) {
-  return loadTierConfig().byId[normalizeTier(tier)] || null;
-}
-// Statuses where Stripe still owns the subscription — a second checkout would
-// create a duplicate, so these route to the billing portal instead.
-const STRIPE_MANAGED_STATUSES = new Set(['trialing', 'active', 'past_due', 'unpaid', 'incomplete']);
-
-// Sync a Stripe subscription object into the memberships table. Called from
-// the webhook for customer.subscription.* events and after subscription
-// checkout completes. Viewer identity comes from subscription metadata,
-// falling back to the stored row or the Stripe customer's metadata.
-async function syncStripeSubscription(subscription) {
-  if (!subscription || !subscription.id) return;
-  const customerId = typeof subscription.customer === 'string'
-    ? subscription.customer
-    : (subscription.customer && subscription.customer.id) || '';
-
-  let membership = getMembershipByStripeSubscription(subscription.id)
-    || (customerId ? getMembershipByStripeCustomer(customerId) : null);
-  let viewerId = (subscription.metadata && subscription.metadata.viewerId) || '';
-  if (!viewerId && membership) viewerId = membership.viewer_id;
-  if (!viewerId && customerId) {
-    try {
-      const customer = await stripe.customers.retrieve(customerId);
-      viewerId = (customer.metadata && customer.metadata.viewerId) || '';
-    } catch (e) {
-      console.warn('Could not resolve Stripe customer for subscription', subscription.id, e.message);
-    }
-  }
-  if (!viewerId) {
-    console.warn('Stripe subscription webhook missing viewerId:', subscription.id);
-    return;
-  }
-
-  const item = Array.isArray(subscription.items && subscription.items.data)
-    ? subscription.items.data[0] : null;
-  const periodStart = subscription.current_period_start ?? (item && item.current_period_start) ?? null;
-  const periodEnd = subscription.current_period_end ?? (item && item.current_period_end) ?? null;
-
-  // If metadata lost the tier, keep the member's existing paid tier rather
-  // than downgrading them to free.
-  const tierMeta = (subscription.metadata && subscription.metadata.tier) || '';
-  const tier = normalizeTier(tierMeta);
-  const finalTier = tier !== 'free' ? tier
-    : (membership && membership.tier !== 'free' ? membership.tier : 'supporter');
-
-  upsertMembership(viewerId, {
-    tier: finalTier,
-    status: String(subscription.status || 'inactive').toLowerCase(),
-    stripe_customer_id: customerId || null,
-    stripe_subscription_id: subscription.id,
-    current_period_start: periodStart,
-    current_period_end: periodEnd,
-    cancel_at_period_end: !!subscription.cancel_at_period_end,
-  });
-  console.log(`Membership synced: ${viewerId} -> ${finalTier} (${subscription.status})`);
-}
+// Membership billing — ported from word-tycoon-ecosystem/src/membership.js.
+// Tier config lives in data/membership-tiers.json; Stripe Price IDs can be
+// set per tier via STRIPE_PRICE_<TIER_ID> (otherwise inline price_data is used).
+const membership = require('./membership');
 
 // Game player count tracking
 const gamePlayers = {
@@ -3241,24 +3159,28 @@ const owner = session.ownerId;
   if (pathname === '/subscribe/status' && req.method === 'GET') {
     const cookies = parseCookies(req.headers.cookie);
     const viewerId = cookies.viewer_id ? decodeURIComponent(cookies.viewer_id) : '';
-    const membership = viewerId ? getMembership(viewerId) : null;
+    const state = viewerId ? membership.getMembershipState(viewerId) : null;
     const donations = viewerId ? loadDonations() : [];
     const hasDonation = donations.some(d => d.viewer_id === viewerId || d.viewerId === viewerId);
-    const active = isActiveSubscriber(viewerId);
+    const active = !!(state && state.active);
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({
       signedIn: !!viewerId,
       viewerId: viewerId || null,
       isDonor: hasDonation || active,
       subscriber: active,
-      membership: membership ? {
-        tier: membership.tier,
-        status: membership.status,
-        cancelAtPeriodEnd: membership.cancel_at_period_end,
-        currentPeriodEnd: membership.current_period_end
-          ? new Date(membership.current_period_end * 1000).toISOString() : null,
+      membership: state ? {
+        tier: state.tier,
+        status: state.status,
+        cancelAtPeriodEnd: !!(state.cancel_at_period_end),
+        currentPeriodEnd: state.current_period_end
+          ? new Date(typeof state.current_period_end === 'number'
+              ? state.current_period_end * 1000
+              : Date.parse(state.current_period_end)).toISOString()
+          : null,
+        tierConfig: state.tierConfig,
       } : null,
-      tiers: loadTierConfig().tiers.filter(t => t.id !== 'free'),
+      tiers: membership.listTierConfigs().filter(t => t.id !== 'free' && !t.retired),
       stripeEnabled: !!stripe,
     }));
     return;
@@ -3285,52 +3207,29 @@ const owner = session.ownerId;
         }
 
         let tier = 'supporter';
-        try { tier = normalizeTier(JSON.parse(body || '{}').tier); } catch (e) { /* default */ }
-        const tierConfig = getTierConfig(tier);
-        if (!tierConfig || tierConfig.id === 'free' || !tierConfig.priceUsd) {
-          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({ error: 'Invalid tier' }));
-          return;
-        }
-
-        const existing = getMembership(viewerId);
-        if (existing && existing.stripe_subscription_id && STRIPE_MANAGED_STATUSES.has(existing.status)) {
-          res.writeHead(409, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({
-            code: 'subscription_exists',
-            error: 'You already have a subscription. Manage it from the billing portal to change tiers.',
-          }));
-          return;
-        }
+        try { tier = JSON.parse(body || '{}').tier; } catch (e) { /* default */ }
 
         const origin = req.headers.origin || `http://localhost:${port}`;
-        const session = await stripe.checkout.sessions.create({
-          mode: 'subscription',
-          payment_method_types: ['card'],
-          customer: existing && existing.stripe_customer_id ? existing.stripe_customer_id : undefined,
-          client_reference_id: viewerId,
-          metadata: { viewerId, tier: tierConfig.id },
-          subscription_data: { metadata: { viewerId, tier: tierConfig.id } },
-          line_items: [{
-            price_data: {
-              currency: 'usd',
-              unit_amount: Math.round(tierConfig.priceUsd * 100),
-              recurring: { interval: 'month' },
-              product_data: {
-                name: `HangStream ${tierConfig.displayName}`,
-                description: 'Unlock all game difficulties, chat hints, and donor perks.',
-              },
-            },
-            quantity: 1,
-          }],
-          success_url: `${origin}/donate?checkout=success`,
-          cancel_url: `${origin}/donate?checkout=cancelled`,
-          allow_promotion_codes: true,
-        });
+        const result = await membership.createCheckoutSession({ viewerId, tier, origin });
 
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ url: session.url, sessionId: session.id }));
+        res.end(JSON.stringify({ url: result.url, sessionId: result.sessionId, tier: result.tier }));
       } catch (error) {
+        if (error.code === 'subscription_exists') {
+          res.writeHead(409, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ code: 'subscription_exists', portalUrl: error.portalUrl || '', error: error.message }));
+          return;
+        }
+        if (error.code === 'tier_retired') {
+          res.writeHead(410, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ code: 'tier_retired', error: error.message }));
+          return;
+        }
+        if (/Free Tier|Invalid tier|not configured/i.test(error.message || '')) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: error.message }));
+          return;
+        }
         console.error('Subscription checkout error:', error);
         res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ error: error.message }));
@@ -3349,8 +3248,8 @@ const owner = session.ownerId;
 
     const cookies = parseCookies(req.headers.cookie);
     const viewerId = cookies.viewer_id ? decodeURIComponent(cookies.viewer_id) : '';
-    const membership = viewerId ? getMembership(viewerId) : null;
-    if (!membership || !membership.stripe_customer_id) {
+    const member = viewerId ? getMembership(viewerId) : null;
+    if (!member || !member.stripe_customer_id) {
       res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ error: 'No subscription found for this account' }));
       return;
@@ -3359,12 +3258,9 @@ const owner = session.ownerId;
     const origin = req.headers.origin || `http://localhost:${port}`;
     (async () => {
       try {
-        const session = await stripe.billingPortal.sessions.create({
-          customer: membership.stripe_customer_id,
-          return_url: `${origin}/donate`,
-        });
+        const result = await membership.createPortalSession({ viewerId, origin });
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ url: session.url }));
+        res.end(JSON.stringify({ url: result.url }));
       } catch (error) {
         console.error('Billing portal error:', error);
         res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -3466,39 +3362,36 @@ const owner = session.ownerId;
         return;
       }
 
-      // Subscription lifecycle events keep the memberships table in sync.
-      // customer.subscription.deleted flips status to 'canceled', which
-      // revokes perks on the next isActiveSubscriber check.
-      if (event.type === 'customer.subscription.created' ||
-          event.type === 'customer.subscription.updated' ||
-          event.type === 'customer.subscription.deleted') {
-        await syncStripeSubscription(event.data.object);
+      // Membership/subscription events are owned by server/membership.js
+      // (port of the word-tycoon membership webhook handler): subscription
+      // lifecycle, invoice paid/failed, and subscription-mode checkouts.
+      const isMembershipEvent =
+        event.type === 'customer.subscription.created' ||
+        event.type === 'customer.subscription.updated' ||
+        event.type === 'customer.subscription.deleted' ||
+        event.type === 'invoice.paid' ||
+        event.type === 'invoice.payment_failed' ||
+        (event.type === 'checkout.session.completed' &&
+          event.data && event.data.object && event.data.object.mode === 'subscription');
+
+      if (isMembershipEvent) {
+        try {
+          await membership.handleStripeWebhookEvent(event);
+        } catch (err) {
+          console.error('Membership webhook error:', err);
+          res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: err.message }));
+          return;
+        }
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ received: true }));
         return;
       }
 
-      // Handle checkout.session.completed event
+      // Handle checkout.session.completed event (one-time payments only —
+      // subscription checkouts were handled above)
       if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
-
-        // Subscription checkouts are synced via the subscription object so
-        // status/period fields are authoritative; the
-        // customer.subscription.* events will also arrive and re-sync.
-        if (session.mode === 'subscription') {
-          if (session.subscription) {
-            try {
-              const subscription = await stripe.subscriptions.retrieve(session.subscription);
-              await syncStripeSubscription(subscription);
-            } catch (e) {
-              console.error('Failed to sync subscription after checkout:', e.message);
-            }
-          }
-          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({ received: true }));
-          return;
-        }
-
         const metadata = session.metadata;
 
         const donation = {
@@ -3716,6 +3609,106 @@ const owner = session.ownerId;
     const donations = loadDonations();
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(donations));
+    return;
+  }
+
+  // ── Admin membership management (port of word-tycoon routes/membership.js)
+  function isAdminRequest(req) {
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    return req.headers['authorization'] === `Bearer ${adminPassword}`;
+  }
+  function adminUnauthorized(res) {
+    res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
+  }
+
+  // List all memberships + tier catalog
+  if (pathname === '/admin/memberships' && req.method === 'GET') {
+    if (!isAdminRequest(req)) { adminUnauthorized(res); return; }
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({
+      memberships: loadMemberships(),
+      tiers: membership.listTierConfigs(),
+    }));
+    return;
+  }
+
+  // Membership overview for one viewer
+  if (pathname.startsWith('/admin/membership/') && req.method === 'GET' && !pathname.endsWith('/grant') && !pathname.endsWith('/revoke')) {
+    if (!isAdminRequest(req)) { adminUnauthorized(res); return; }
+    const viewerId = decodeURIComponent(pathname.slice('/admin/membership/'.length));
+    if (!viewerId) {
+      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Missing viewerId' }));
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({
+      ok: true,
+      membership: membership.getMembershipState(viewerId),
+      tiers: membership.listTierConfigs(),
+    }));
+    return;
+  }
+
+  // Manual tier grant/revoke. Both REFUSE rows carrying a stripe_subscription_id
+  // in a managed status — a local flip can't stop billing and the next Stripe
+  // webhook would overwrite it anyway (same guard as word-tycoon).
+  if (pathname.startsWith('/admin/membership/') && (pathname.endsWith('/grant') || pathname.endsWith('/revoke')) && req.method === 'POST') {
+    if (!isAdminRequest(req)) { adminUnauthorized(res); return; }
+    const revoking = pathname.endsWith('/revoke');
+    const viewerId = decodeURIComponent(pathname.slice('/admin/membership/'.length, pathname.lastIndexOf('/')));
+    if (!viewerId) {
+      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Missing viewerId' }));
+      return;
+    }
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', () => {
+      try {
+        const existing = getMembership(viewerId);
+        if (existing && existing.stripe_subscription_id && membership.STRIPE_MANAGED_STATUSES.has(existing.status)) {
+          res.writeHead(409, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({
+            ok: false,
+            code: 'stripe_managed',
+            error: 'This membership is managed by Stripe — cancel or change it in the Stripe dashboard / billing portal instead.',
+          }));
+          return;
+        }
+
+        if (revoking) {
+          upsertMembership(viewerId, {
+            tier: 'free',
+            status: 'inactive',
+            stripe_customer_id: existing ? existing.stripe_customer_id : null,
+            stripe_subscription_id: existing ? existing.stripe_subscription_id : null,
+          });
+        } else {
+          let tier = 'supporter';
+          try { tier = membership.normalizeTier(JSON.parse(body || '{}').tier); } catch (e) { /* default */ }
+          const tierConfig = membership.getTierConfig(tier);
+          if (!tierConfig || tierConfig.id === 'free') {
+            res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ error: 'Invalid tier' }));
+            return;
+          }
+          upsertMembership(viewerId, {
+            tier: tierConfig.id,
+            status: 'active',
+            stripe_customer_id: existing ? existing.stripe_customer_id : null,
+            stripe_subscription_id: existing ? existing.stripe_subscription_id : null,
+          });
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: true, membership: membership.getMembershipState(viewerId) }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
     return;
   }
 
@@ -4201,6 +4194,11 @@ const owner = session.ownerId;
 
   if (urlPath === '/hangstream-vote-card.js') {
     sendFile(res, path.join(__dirname, '..', 'public', 'hangstream-vote-card.js'), 'application/javascript; charset=utf-8');
+    return;
+  }
+
+  if (urlPath === '/tts.js') {
+    sendFile(res, path.join(__dirname, '..', 'public', 'tts.js'), 'application/javascript; charset=utf-8');
     return;
   }
 
