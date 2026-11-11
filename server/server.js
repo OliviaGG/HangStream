@@ -3306,6 +3306,7 @@ const owner = session.ownerId;
         const origin = req.headers.origin || `http://localhost:${port}`;
         const session = await stripe.checkout.sessions.create({
           mode: 'subscription',
+          payment_method_types: ['card'],
           customer: existing && existing.stripe_customer_id ? existing.stripe_customer_id : undefined,
           client_reference_id: viewerId,
           metadata: { viewerId, tier: tierConfig.id },
@@ -4724,6 +4725,10 @@ wss.on('connection', (ws, request) => {
           }).catch((err) => {
             console.warn('async game message failed', data.type, err && err.message);
           });
+        } else if (payloads && ws.readyState === WebSocket.OPEN) {
+          // Single-payload replies (game-join-room, game-state, game-list,
+          // guess-result, ...) come back as a plain object, not an array.
+          ws.send(JSON.stringify(payloads));
         }
       } catch (err) {
         console.warn('game message failed', data.type, err && err.message);

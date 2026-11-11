@@ -89,7 +89,8 @@ async function main() {
   ws.send(JSON.stringify({ type: 'watch', platform: 'both', owner: 'smoke', twitchChannel: 'smoke', tiktokChannel: 'smoke' }));
   ws.send(JSON.stringify({ type: 'game-join-room', game: 'spellingbee', owner: 'smoke' }));
 
-  const joined = await waitFor(ws, 'game-joined');
+  // The protocol replies to game-join-room with a 'game-state' payload.
+  const joined = await waitFor(ws, 'game-state');
   check('socket joins the bee room', Boolean(joined));
   check('join returns round state', Boolean(joined && joined.state && joined.state.letters));
 
@@ -101,7 +102,7 @@ async function main() {
   // (answers are not exposed), so instead guess the best-effort word using the
   // centre letter and see the server's verdict — a rejection still proves the
   // round judged it rather than the client.
-  ws.send(JSON.stringify({ type: 'guess', game: 'spellingbee', owner: 'smoke', word: 'zzzzzzz', platform: 'web', username: 'smoker' }));
+  ws.send(JSON.stringify({ type: 'guess', game: 'spellingbee', owner: 'smoke', guess: 'zzzzzzz', platform: 'web', username: 'smoker' }));
   const verdict = await waitFor(ws, 'guess-result');
   check('socket guess is judged by the server', Boolean(verdict));
   check('invalid guess is rejected with a reason', Boolean(verdict && verdict.accepted === false && verdict.result), verdict && verdict.result);
