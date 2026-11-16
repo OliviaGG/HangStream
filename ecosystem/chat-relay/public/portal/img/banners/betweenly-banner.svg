@@ -1,0 +1,24 @@
+<svg width="1600" height="500" viewBox="0 0 1600 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="500">
+      <stop stop-color="#160F2B"/>
+      <stop offset="0.55" stop-color="#2A1E58"/>
+      <stop offset="1" stop-color="#101423"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="500" rx="34" fill="url(#bg)"/>
+  <rect x="24" y="24" width="1552" height="452" rx="28" stroke="#8B7CFF" stroke-opacity="0.22" stroke-width="2"/>
+  <g opacity="0.92">
+    <rect x="1030" y="92" width="436" height="316" rx="28" fill="#181A2F"/>
+    <path d="M1090 170H1240" stroke="#27D3CC" stroke-width="16" stroke-linecap="round"/>
+    <path d="M1265 170H1410" stroke="#8B7CFF" stroke-width="16" stroke-linecap="round"/>
+    <path d="M1110 252H1328" stroke="#8B7CFF" stroke-width="16" stroke-linecap="round"/>
+    <path d="M1148 334H1396" stroke="#27D3CC" stroke-width="16" stroke-linecap="round"/>
+    <circle cx="1250" cy="252" r="20" fill="#F97316"/>
+  </g>
+  <text x="92" y="122" fill="#B8AFFF" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="7">BETWEENLY</text>
+  <text x="92" y="228" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="98" font-weight="800">Bridge the gap between clues.</text>
+  <text x="92" y="292" fill="#E0D9FF" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="500">A sleek purple lane of word logic, spacing, and satisfying pivots.</text>
+  <rect x="92" y="338" width="206" height="62" rx="31" fill="#8B7CFF"/>
+  <text x="143" y="380" fill="#181226" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="800">PUZZLE FLOW</text>
+</svg>

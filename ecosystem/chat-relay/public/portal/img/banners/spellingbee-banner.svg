@@ -1,0 +1,24 @@
+<svg width="1600" height="500" viewBox="0 0 1600 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="500">
+      <stop stop-color="#201406"/>
+      <stop offset="0.5" stop-color="#5A3A04"/>
+      <stop offset="1" stop-color="#161012"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="500" rx="34" fill="url(#bg)"/>
+  <rect x="24" y="24" width="1552" height="452" rx="28" stroke="#FFB300" stroke-opacity="0.22" stroke-width="2"/>
+  <g opacity="0.95">
+    <polygon points="1200,104 1265,142 1265,218 1200,256 1135,218 1135,142" fill="#FFB300"/>
+    <polygon points="1316,146 1376,180 1376,250 1316,284 1256,250 1256,180" fill="#F59E0B"/>
+    <polygon points="1200,266 1260,300 1260,370 1200,404 1140,370 1140,300" fill="#FACC15"/>
+    <polygon points="1088,146 1148,180 1148,250 1088,284 1028,250 1028,180" fill="#FFD54A"/>
+    <circle cx="1200" cy="254" r="40" fill="#1F1306"/>
+    <circle cx="1200" cy="254" r="18" fill="#FFB300"/>
+  </g>
+  <text x="92" y="122" fill="#FFD166" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="7">SPELLING BEE</text>
+  <text x="92" y="228" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="98" font-weight="800">Sweet pressure. Sharp word play.</text>
+  <text x="92" y="292" fill="#FFE5A6" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="500">Honeycomb energy, fast scanning, and high-value daily clears.</text>
+  <rect x="92" y="338" width="208" height="62" rx="31" fill="#FFB300"/>
+  <text x="147" y="380" fill="#241703" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="800">HONEYCOMB</text>
+</svg>

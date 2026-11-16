@@ -1,0 +1,1065 @@
+/* ════════════════════════════════════════════════════════════════════
+   WORD TYCOON — EMPIRE MODULE ("Toon Tower" skin, v2)
+   One unified idle-tycoon screen. Everything is scoped under
+   .emp-scope — the JS module adds that class to whatever container it
+   mounts into (the portal's #tab-businesses included) and to the
+   sheet / toast / coin-burst roots it appends to <body>, so the skin
+   can travel outside the portal (Toon Tower landing embed).
+   Language mirrors /portal/home.html: cream paper, candy colors,
+   2.5px ink outlines, hard slab shadows (0 6px 0), glossy 45%
+   two-tone fills, rotated chips, bob animations.
+
+   v2: rigid uniform cards (fixed-row card faces — every card is the
+   same height in every state) + a management sheet overlay (centered
+   modal ≥900px, slide-up bottom sheet below) replacing the old
+   inline accordion.
+   ════════════════════════════════════════════════════════════════════ */
+
+.emp-scope {
+  --emp-ink: #1b1430;
+  --emp-paper: #fdf6e9;
+  --emp-paper-2: #f7ecd6;
+  --emp-card: #ffffff;
+  --emp-text: #1b1430;
+  --emp-muted: #6f6486;
+  --emp-blue: #4a9eff;
+  --emp-cyan: #22d3ee;
+  --emp-green: #44bb88;
+  --emp-lime: #4fc34f;
+  --emp-mint: #4ade80;
+  --emp-purple: #7b68ee;
+  --emp-pink: #ff6b9d;
+  --emp-amber: #ffab00;
+  --emp-red: #ff6b6b;
+  --emp-gold: #f5a623;
+  --emp-violet: #8a5cf7;
+  --emp-aqua: #00d5ee;
+}
+
+/* ── Cream paper canvas painted over the dark portal ─────────────── */
+.emp-scope .emp-page {
+  position: relative;
+  margin: -8px -4px 24px;
+  padding: 18px 14px 30px;
+  border: 2.5px solid var(--emp-ink);
+  border-radius: 22px;
+  color: var(--emp-text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(74,158,255,.10), transparent 30%),
+    radial-gradient(circle at 88% 4%, rgba(255,107,157,.10), transparent 28%),
+    radial-gradient(circle at 50% 90%, rgba(255,171,0,.08), transparent 35%),
+    repeating-radial-gradient(circle at 0 0, transparent 0 9px, rgba(27,20,48,.028) 9px 10px),
+    var(--emp-paper);
+  box-shadow: 0 8px 0 var(--emp-ink);
+  overflow: hidden;
+}
+@media (min-width: 700px) {
+  .emp-scope .emp-page { padding: 22px 22px 34px; margin: -4px 0 28px; }
+}
+
+.emp-scope .emp-page .loading-placeholder {
+  color: var(--emp-muted);
+  background: var(--emp-paper-2);
+  border: 2px dashed rgba(27,20,48,.25);
+  border-radius: 14px;
+  padding: 18px;
+  text-align: center;
+  font-weight: 700;
+}
+
+/* ── Toon primitives ─────────────────────────────────────────────── */
+.emp-scope .emp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border: 2.5px solid var(--emp-ink);
+  border-radius: 999px;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: .88rem;
+  cursor: pointer;
+  background: var(--emp-card);
+  color: var(--emp-text);
+  box-shadow: 0 4px 0 var(--emp-ink);
+  transition: transform .12s, box-shadow .12s, filter .12s;
+  white-space: nowrap;
+}
+.emp-scope .emp-btn:hover:not(:disabled)  { transform: translateY(-2px); box-shadow: 0 6px 0 var(--emp-ink); }
+.emp-scope .emp-btn:active:not(:disabled) { transform: translateY(3px);  box-shadow: 0 1px 0 var(--emp-ink); }
+.emp-scope .emp-btn:disabled { opacity: .55; cursor: not-allowed; filter: saturate(.4); }
+.emp-scope .emp-btn-gold  { background: linear-gradient(180deg, #ffd84d 0 45%, var(--emp-amber) 45%); color: #3d2c00; }
+.emp-scope .emp-btn-green { background: linear-gradient(180deg, #86efac 0 45%, var(--emp-green) 45%); color: #0b3d27; }
+.emp-scope .emp-btn-blue  { background: linear-gradient(180deg, #7cc0ff 0 45%, var(--emp-blue) 45%);  color: #fff; text-shadow: 0 1.5px 0 rgba(0,0,0,.25); }
+.emp-scope .emp-btn-pink  { background: linear-gradient(180deg, #ffa3c2 0 45%, var(--emp-pink) 45%);  color: #fff; text-shadow: 0 1.5px 0 rgba(0,0,0,.25); }
+.emp-scope .emp-btn-ghost { background: var(--emp-paper-2); }
+.emp-scope .emp-btn .biz-btn-spinner {
+  width: 14px; height: 14px;
+  border: 2.5px solid rgba(27,20,48,.35);
+  border-top-color: var(--emp-ink);
+  border-radius: 50%;
+  animation: emp-spin .7s linear infinite;
+}
+@keyframes emp-spin { to { transform: rotate(360deg); } }
+
+.emp-scope .emp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 2px solid var(--emp-ink);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: .72rem;
+  font-weight: 800;
+  background: var(--emp-card);
+  color: var(--emp-text);
+  box-shadow: 0 2px 0 var(--emp-ink);
+  white-space: nowrap;
+}
+
+/* ── Header strip ────────────────────────────────────────────────── */
+.emp-scope .emp-header {
+  position: relative;
+  margin-bottom: 18px;
+}
+.emp-scope .emp-hero {
+  position: relative;
+  border: 2.5px solid var(--emp-ink);
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, #b4e4fb 0 46%, #eaf8ff 46% 58%, var(--emp-paper-2) 58%);
+  box-shadow: 0 6px 0 var(--emp-ink), inset 0 4px 0 rgba(255,255,255,.45);
+  padding: 16px 16px 30px;
+  overflow: hidden;
+}
+.emp-scope .emp-hero-title {
+  margin: 0 0 2px;
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: .5px;
+  color: var(--emp-ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.emp-scope .emp-hero-title .emp-hero-kicker {
+  font-size: .68rem;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background: var(--emp-ink);
+  color: #ffd84d;
+  border-radius: 999px;
+  padding: 3px 10px;
+  transform: rotate(-2deg);
+}
+.emp-scope .emp-hero-sub { margin: 0 0 12px; color: var(--emp-muted); font-size: .85rem; font-weight: 600; }
+
+.emp-scope .emp-stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+.emp-scope .emp-stat {
+  border: 2.5px solid var(--emp-ink);
+  border-radius: 14px;
+  background: var(--emp-card);
+  box-shadow: 0 4px 0 var(--emp-ink), inset 0 3px 0 rgba(255,255,255,.4);
+  padding: 9px 12px;
+  min-width: 0;
+}
+.emp-scope .emp-stat-label {
+  display: block;
+  font-size: .66rem;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--emp-muted);
+}
+.emp-scope .emp-stat-value {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 1.22rem;
+  font-weight: 900;
+  color: var(--emp-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.emp-scope .emp-stat-value small { font-size: .72rem; font-weight: 800; color: var(--emp-muted); }
+/* Staff summary ("3/8 managers · 1/8 foremen") runs long — shrink to fit */
+.emp-scope .emp-stat-value [data-emp-staff-count] {
+  font-size: .95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.emp-scope .emp-stat-cash { background: linear-gradient(180deg, #fff3c9 0 45%, #ffe08a 45%); }
+.emp-scope .emp-stat-cash .emp-stat-value { color: #6b4c00; }
+.emp-scope .emp-coin-icon { display: inline-block; font-style: normal; animation: emp-coin-bob 2.6s ease-in-out infinite; }
+
+.emp-scope .emp-presence-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 2px solid var(--emp-ink);
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: .68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  box-shadow: 0 2px 0 var(--emp-ink);
+  background: var(--emp-paper-2);
+}
+.emp-scope .emp-presence-online { background: linear-gradient(180deg, #86efac 0 45%, var(--emp-mint) 45%); color: #0b3d27; }
+.emp-scope .emp-presence-offline { background: linear-gradient(180deg, #e6e0f4 0 45%, #cfc7e6 45%); color: #3d3357; }
+.emp-scope .emp-presence-mixed { background: linear-gradient(180deg, #ffd84d 0 45%, var(--emp-amber) 45%); color: #3d2c00; }
+
+.emp-scope .emp-buff-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  align-items: center;
+}
+.emp-scope .emp-buff-chip {
+  border-color: var(--emp-ink);
+  background: linear-gradient(180deg, rgba(255,255,255,.75) 0 45%, var(--buff-c, var(--emp-paper-2)) 45%);
+  transform: rotate(-1deg);
+}
+.emp-scope .emp-buff-chip:nth-child(even) { transform: rotate(1.2deg); }
+.emp-scope .emp-offline-note { font-size: .72rem; font-weight: 700; color: var(--emp-muted); }
+
+/* Walker strolling across the header sidewalk */
+.emp-scope .emp-sidewalk {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 14px;
+  background: #d9d2bf;
+  border-top: 2.5px solid var(--emp-ink);
+}
+.emp-scope .emp-walker {
+  position: absolute;
+  bottom: 8px;
+  left: -40px;
+  font-size: 20px;
+  animation: emp-walk 26s linear infinite, emp-waddle 0.7s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+@keyframes emp-walk {
+  0%   { left: -6%; }
+  100% { left: 104%; }
+}
+@keyframes emp-waddle {
+  0%, 100% { transform: rotate(-5deg) translateY(0); }
+  50%      { transform: rotate(5deg) translateY(-2px); }
+}
+@keyframes emp-coin-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+/* ── Business card grid ──────────────────────────────────────────── */
+.emp-scope .emp-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  /* 1fr rows equalize to the tallest card, so every card stays the same
+     height WITHOUT clipping content (labels grow the row for everyone). */
+  grid-auto-rows: 1fr;
+  gap: 16px;
+}
+@media (min-width: 900px) {
+  .emp-scope .emp-grid { grid-template-columns: 1fr 1fr; align-items: stretch; }
+}
+
+.emp-scope .emp-card {
+  border: 2.5px solid var(--emp-ink);
+  border-radius: 18px;
+  background: var(--emp-card);
+  box-shadow: 0 6px 0 var(--emp-ink), inset 0 4px 0 rgba(255,255,255,.4);
+  overflow: hidden;
+  transition: box-shadow .14s;
+  display: flex;
+  flex-direction: column;
+}
+.emp-scope .emp-card.emp-open {
+  box-shadow: 0 6px 0 var(--emp-ink), 0 0 0 3px rgba(255,216,77,.5), inset 0 4px 0 rgba(255,255,255,.4);
+}
+.emp-scope .emp-card.emp-locked { background: var(--emp-paper-2); }
+.emp-scope .emp-card.emp-locked .emp-badge { filter: grayscale(.75) opacity(.8); }
+
+/* Uniform card face: five rows (head / income / xp / staff / action)
+   with MINIMUM heights that can grow — labels never clip. The grid's
+   1fr auto-rows then equalize every card to the tallest one, so all
+   cards still share one consistent size at a given viewport width. */
+.emp-scope .emp-face {
+  display: grid;
+  grid-template-rows: minmax(64px, auto) minmax(30px, auto) minmax(44px, auto) minmax(38px, auto) minmax(48px, auto);
+  flex: 1;
+  row-gap: 6px;
+  padding: 12px 12px 14px;
+  cursor: pointer;
+}
+.emp-scope .emp-card.emp-static .emp-face { cursor: default; }
+.emp-scope .emp-r {
+  display: flex;
+  align-items: center;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Row 1: badge + name + chips */
+.emp-scope .emp-r-head { gap: 12px; }
+.emp-scope .emp-badge {
+  width: 58px; height: 58px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+  border: 2.5px solid var(--emp-ink);
+  border-radius: 16px;
+  background: linear-gradient(180deg, var(--c2, #cfe0f2) 0 45%, var(--c, var(--emp-blue)) 45%);
+  box-shadow: 0 3px 0 var(--emp-ink), inset 0 2px 0 rgba(255,255,255,.45);
+  animation: emp-badge-bob 3.4s ease-in-out infinite;
+}
+.emp-scope .emp-card:nth-child(odd) .emp-badge { animation-delay: -1.7s; }
+@keyframes emp-badge-bob {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50%      { transform: translateY(-4px) rotate(1.5deg); }
+}
+.emp-scope .emp-head-info { min-width: 0; flex: 1; }
+.emp-scope .emp-name {
+  display: inline-block;
+  font-size: .98rem;
+  font-weight: 900;
+  letter-spacing: .4px;
+  color: #fff;
+  background: var(--c, var(--emp-blue));
+  border: 2px solid var(--emp-ink);
+  border-radius: 10px;
+  box-shadow: 0 3px 0 var(--emp-ink);
+  padding: 2px 10px;
+  transform: rotate(-1deg);
+  text-shadow:
+    -1px -1px 0 var(--emp-ink), 1px -1px 0 var(--emp-ink),
+    -1px 1px 0 var(--emp-ink), 1px 1px 0 var(--emp-ink),
+    0 2px 0 var(--emp-ink);
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: break-word;
+  vertical-align: bottom;
+}
+.emp-scope .emp-badges-line {
+  display: flex;
+  flex-wrap: wrap;     /* rows grow from their minimums — never clip chips */
+  gap: 5px;
+  margin-top: 6px;
+  align-items: center;
+  min-width: 0;
+}
+.emp-scope .emp-lv {
+  background: linear-gradient(180deg, #fff 0 45%, var(--emp-paper-2) 45%);
+  font-size: .7rem;
+}
+.emp-scope .emp-prestige {
+  background: linear-gradient(180deg, #ffd84d 0 45%, var(--emp-gold) 45%);
+  color: #3d2c00;
+  font-size: .7rem;
+}
+.emp-scope .emp-mult-chip {
+  background: linear-gradient(180deg, #d9c9ff 0 45%, var(--emp-violet) 45%);
+  color: #fff;
+  text-shadow: 0 1px 0 rgba(0,0,0,.35);
+  font-size: .7rem;
+  transform: rotate(1deg);
+}
+
+/* Row 2: income */
+.emp-scope .emp-r-income {
+  align-items: baseline;
+  gap: 5px;
+  font-size: .84rem;
+  font-weight: 800;
+  color: var(--emp-ink);
+  white-space: nowrap;
+}
+.emp-scope .emp-r-income .emp-income-val { font-size: 1.02rem; font-weight: 900; color: #1f7a4d; }
+.emp-scope .emp-r-income .emp-income-unit { font-size: .72rem; color: var(--emp-muted); font-weight: 700; overflow-wrap: anywhere; }
+
+/* Row 3: XP bar (managed) or ghost note (others) */
+.emp-scope .emp-r-xp {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+}
+.emp-scope .emp-xp-bar {
+  position: relative;
+  height: 14px;
+  border: 2px solid var(--emp-ink);
+  border-radius: 999px;
+  background: var(--emp-paper-2);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.emp-scope .emp-xp-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--c2, #7cc0ff) 0 45%, var(--c, var(--emp-blue)) 45%);
+  min-width: 4px;
+  transition: width .5s ease;
+}
+.emp-scope .emp-xp-label {
+  margin-top: 3px;
+  font-size: .66rem;
+  font-weight: 800;
+  color: var(--emp-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Empty-slot placeholder (library staff, arcade income, etc.) */
+.emp-scope .emp-slot-ghost {
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--emp-muted);
+  opacity: .8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* Row 4: staff (two mini icons + status / hire) */
+.emp-scope .emp-r-staff { gap: 7px; flex-wrap: wrap; }
+.emp-scope .emp-mini {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 26px; height: 26px;
+  flex: 0 0 auto;
+  border: 2px solid var(--emp-ink);
+  border-radius: 50%;
+  background: var(--emp-card);
+  box-shadow: 0 2px 0 var(--emp-ink);
+  font-size: 13px;
+  opacity: .6;
+}
+.emp-scope .emp-mini.emp-mini-on { opacity: 1; background: linear-gradient(180deg, #dcfce9 0 45%, #baf7d0 45%); }
+.emp-scope .emp-mini.emp-mini-locked { opacity: .45; border-style: dashed; box-shadow: none; }
+.emp-scope .emp-mini-check {
+  position: absolute;
+  right: -5px; bottom: -4px;
+  width: 13px; height: 13px;
+  display: grid;
+  place-items: center;
+  font-style: normal;
+  font-size: 8px;
+  font-weight: 900;
+  color: #0b3d27;
+  background: var(--emp-mint);
+  border: 1.5px solid var(--emp-ink);
+  border-radius: 50%;
+}
+.emp-scope .emp-mini-hire {
+  font-size: .68rem;
+  padding: 4px 10px;
+  box-shadow: 0 2px 0 var(--emp-ink);
+}
+.emp-scope .emp-staff-note {
+  font-size: .7rem;
+  font-weight: 800;
+  color: var(--emp-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.emp-scope .emp-staff-note.emp-staff-ok { color: #1f7a4d; }
+
+/* Row 5: actions */
+.emp-scope .emp-r-action {
+  gap: 8px;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+.emp-scope .emp-collect-btn {
+  font-size: .82rem;
+  padding: 10px 16px;
+  min-width: 128px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.emp-scope .emp-cost-tag {
+  font-size: .78rem;
+  font-weight: 900;
+  color: var(--emp-ink);
+  background: var(--emp-paper-2);
+  border: 2px solid var(--emp-ink);
+  border-radius: 10px;
+  box-shadow: 0 2px 0 var(--emp-ink);
+  padding: 3px 9px;
+  transform: rotate(1.5deg);
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.emp-scope .emp-cost-clean { color: #0b6b4f; }
+.emp-scope .emp-manage-tag {
+  font-size: .72rem;
+  font-weight: 900;
+  color: var(--emp-muted);
+  letter-spacing: .5px;
+  flex: 0 0 auto;
+}
+.emp-scope .emp-locked-tag {
+  background: repeating-linear-gradient(45deg, #ffe08a 0 8px, #ffd84d 8px 16px);
+  color: #6b4c00;
+  transform: rotate(-1.5deg);
+}
+
+/* ── Management sheet (replaces the inline accordion) ────────────── */
+body.emp-sheet-lock { overflow: hidden; }
+
+.emp-sheet-root {
+  position: fixed;
+  inset: 0;
+  z-index: 10040;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+.emp-sheet-root[hidden] { display: none; }
+.emp-scope .emp-sheet-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(27,20,48,.45);
+  animation: emp-scrim-in .2s ease-out;
+}
+@keyframes emp-scrim-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* <900px: slide-up bottom sheet (AdCap style) */
+.emp-scope .emp-sheet {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  max-height: 84vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--emp-text);
+  border: 2.5px solid var(--emp-ink);
+  border-bottom: 0;
+  border-radius: 22px 22px 0 0;
+  background:
+    repeating-radial-gradient(circle at 0 0, transparent 0 9px, rgba(27,20,48,.02) 9px 10px),
+    var(--emp-paper);
+  box-shadow: 0 -12px 40px rgba(27,20,48,.35);
+  animation: emp-sheet-up .28s cubic-bezier(.2,.9,.3,1);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@keyframes emp-sheet-up {
+  from { transform: translateY(60%); opacity: .4; }
+  to   { transform: none; opacity: 1; }
+}
+.emp-scope .emp-sheet-grab {
+  width: 42px; height: 5px;
+  border-radius: 3px;
+  background: rgba(27,20,48,.25);
+  margin: 9px auto 2px;
+  flex: 0 0 auto;
+}
+
+/* ≥900px: centered toon modal */
+@media (min-width: 900px) {
+  .emp-scope .emp-sheet {
+    left: 50%; right: auto; top: 50%; bottom: auto;
+    transform: translate(-50%, -50%);
+    width: min(680px, 92vw);
+    max-height: 86vh;
+    border-radius: 22px;
+    border-bottom: 2.5px solid var(--emp-ink);
+    box-shadow: 0 10px 0 var(--emp-ink), 0 24px 60px rgba(27,20,48,.4);
+    animation: emp-sheet-pop .22s ease-out;
+    padding-bottom: 0;
+  }
+  @keyframes emp-sheet-pop {
+    from { transform: translate(-50%, -50%) scale(.94); opacity: 0; }
+    to   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  }
+  .emp-scope .emp-sheet-grab { display: none; }
+}
+
+.emp-scope .emp-sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px 12px;
+  border-bottom: 2.5px dashed rgba(27,20,48,.3);
+  flex: 0 0 auto;
+}
+.emp-scope .emp-sheet-head .emp-badge { animation: none; }
+.emp-scope .emp-sheet-head-info { min-width: 0; flex: 1; }
+.emp-scope .emp-sheet-head-info .emp-badges-line { flex-wrap: wrap; overflow: visible; }
+.emp-scope .emp-sheet-x {
+  flex: 0 0 auto;
+  font-size: .95rem;
+  padding: 6px 13px;
+  margin-left: auto;
+}
+.emp-scope .emp-sheet-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  padding: 14px 16px 20px;
+}
+.emp-scope .emp-sheet-toprow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.emp-scope .emp-body-loading {
+  text-align: center;
+  font-weight: 800;
+  color: var(--emp-muted);
+  padding: 16px 0;
+}
+
+/* ── Sheet stat strip (the retired /me deep pages' hero numbers) ── */
+.emp-scope .emp-statline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 8px;
+}
+.emp-scope .emp-statcell {
+  flex: 1 1 96px;
+  min-width: 0;
+  border: 2px solid var(--emp-ink);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fff 0 45%, var(--emp-paper-2) 45%);
+  box-shadow: 0 2px 0 var(--emp-ink);
+  padding: 7px 10px 6px;
+  text-align: center;
+}
+.emp-scope .emp-statcell b {
+  display: block;
+  font-size: .95rem;
+  font-weight: 900;
+  letter-spacing: -.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.emp-scope .emp-statcell span {
+  display: block;
+  font-size: .6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--emp-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.emp-scope .emp-meter {
+  height: 12px;
+  border: 2px solid var(--emp-ink);
+  border-radius: 999px;
+  background: rgba(255,255,255,.6);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.emp-scope .emp-meter i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(180deg, #ffe9a3 0 45%, var(--emp-amber) 45%);
+  transition: width .5s ease;
+}
+.emp-scope .emp-meter-cap i {
+  background: linear-gradient(180deg, #b7f3cf 0 45%, var(--emp-mint) 45%);
+}
+.emp-scope .emp-meter-cap.emp-capped i {
+  background: linear-gradient(180deg, #ffb3b3 0 45%, var(--emp-red) 45%);
+}
+.emp-scope .emp-cap-note {
+  font-size: .68rem;
+  font-weight: 800;
+  color: var(--emp-muted);
+  margin: 2px 2px 4px;
+}
+.emp-scope .emp-cap-note.emp-capped { color: var(--emp-red); }
+.emp-scope .emp-wallet-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .78rem;
+  font-weight: 800;
+  border: 2px solid var(--emp-ink);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff 0 45%, var(--emp-paper-2) 45%);
+  box-shadow: 0 2px 0 var(--emp-ink);
+  padding: 4px 12px;
+}
+
+.emp-scope .emp-sec-title {
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--emp-muted);
+  margin: 14px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.emp-scope .emp-sec-title::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, rgba(27,20,48,.25) 0 6px, transparent 6px 12px);
+  border-radius: 2px;
+}
+
+/* Upgrade rows */
+.emp-scope .emp-upg-list { display: grid; gap: 8px; }
+.emp-scope .emp-upg {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  border: 2px solid var(--emp-ink);
+  border-radius: 14px;
+  background: var(--emp-card);
+  box-shadow: 0 3px 0 var(--emp-ink);
+  padding: 8px 10px;
+}
+.emp-scope .emp-upg.emp-upg-maxed { background: linear-gradient(180deg, #fff8e0, #ffefc2); }
+.emp-scope .emp-upg-emoji {
+  width: 36px; height: 36px;
+  display: grid;
+  place-items: center;
+  font-size: 19px;
+  border: 2px solid var(--emp-ink);
+  border-radius: 10px;
+  background: var(--emp-paper-2);
+  box-shadow: 0 2px 0 var(--emp-ink);
+}
+.emp-scope .emp-upg-info { min-width: 0; }
+.emp-scope .emp-upg-name { font-size: .84rem; font-weight: 900; color: var(--emp-ink); }
+.emp-scope .emp-upg-name small { font-weight: 800; color: var(--emp-muted); margin-left: 5px; }
+.emp-scope .emp-upg-desc {
+  font-size: .7rem;
+  font-weight: 600;
+  color: var(--emp-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.emp-scope .emp-upg-effect { font-size: .68rem; font-weight: 800; color: #1f7a4d; margin-top: 1px; }
+.emp-scope .emp-upg-bar {
+  height: 8px;
+  margin-top: 4px;
+  border: 1.5px solid var(--emp-ink);
+  border-radius: 999px;
+  background: var(--emp-paper-2);
+  overflow: hidden;
+}
+.emp-scope .emp-upg-bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(180deg, var(--c2, #7cc0ff) 0 45%, var(--c, var(--emp-blue)) 45%);
+}
+.emp-scope .emp-upg-btns { display: flex; flex-direction: column; gap: 5px; align-items: stretch; }
+.emp-scope .emp-upg-btns .emp-btn { font-size: .7rem; padding: 5px 10px; }
+.emp-scope .emp-upg-max-tag {
+  font-size: .68rem;
+  font-weight: 900;
+  color: #6b4c00;
+  background: linear-gradient(180deg, #ffd84d 0 45%, var(--emp-amber) 45%);
+  border: 2px solid var(--emp-ink);
+  border-radius: 999px;
+  padding: 4px 10px;
+  box-shadow: 0 2px 0 var(--emp-ink);
+  text-align: center;
+}
+
+/* Prestige panel */
+.emp-scope .emp-prestige-panel {
+  border: 2.5px solid var(--emp-ink);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fff3d6 0 45%, #ffe6ad 45%);
+  box-shadow: 0 4px 0 var(--emp-ink), inset 0 3px 0 rgba(255,255,255,.5);
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+.emp-scope .emp-prestige-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.emp-scope .emp-prestige-tier {
+  font-size: .92rem;
+  font-weight: 900;
+  color: var(--emp-ink);
+}
+.emp-scope .emp-prestige-mult {
+  background: linear-gradient(180deg, #d9c9ff 0 45%, var(--emp-violet) 45%);
+  color: #fff;
+  text-shadow: 0 1px 0 rgba(0,0,0,.3);
+}
+.emp-scope .emp-prestige-note { font-size: .74rem; font-weight: 700; color: #6b5320; }
+.emp-scope .emp-prestige-gate-bar {
+  height: 12px;
+  border: 2px solid var(--emp-ink);
+  border-radius: 999px;
+  background: rgba(255,255,255,.6);
+  overflow: hidden;
+}
+.emp-scope .emp-prestige-gate-bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(180deg, #d9c9ff 0 45%, var(--emp-violet) 45%);
+}
+.emp-scope .emp-prestige-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* Staff section: full manager + foreman rows (sheet only) */
+.emp-scope .emp-staff-list { display: grid; gap: 8px; }
+.emp-scope .emp-staff-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  border: 2px solid var(--emp-ink);
+  border-radius: 14px;
+  background: var(--emp-card);
+  box-shadow: 0 3px 0 var(--emp-ink);
+  padding: 8px 10px;
+}
+.emp-scope .emp-staff-row.emp-staff-locked {
+  opacity: .75;
+  background: var(--emp-paper-2);
+  border-style: dashed;
+  box-shadow: none;
+}
+.emp-scope .emp-staff-info { flex: 1; min-width: 130px; }
+.emp-scope .emp-staff-name { font-size: .84rem; font-weight: 900; color: var(--emp-ink); }
+.emp-scope .emp-staff-desc { font-size: .7rem; font-weight: 600; color: var(--emp-muted); }
+.emp-scope .emp-manager-portrait {
+  display: inline-grid;
+  place-items: center;
+  width: 30px; height: 30px;
+  flex: 0 0 auto;
+  border: 2px solid var(--emp-ink);
+  border-radius: 50%;
+  background: var(--emp-card);
+  box-shadow: 0 2px 0 var(--emp-ink);
+  font-size: 15px;
+}
+.emp-scope .emp-manager-hired {
+  background: linear-gradient(180deg, #baf7d0 0 45%, var(--emp-mint) 45%);
+  color: #0b3d27;
+  white-space: normal;
+  text-align: left;
+}
+.emp-scope .emp-staff-req {
+  background: var(--emp-paper-2);
+  color: var(--emp-muted);
+  border-style: dashed;
+  box-shadow: none;
+}
+.emp-scope .emp-hire-btn { font-size: .74rem; padding: 6px 12px; }
+
+/* Footer: rename + style chips */
+.emp-scope .emp-foot {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+.emp-scope .emp-rename-row { display: flex; gap: 7px; }
+.emp-scope .emp-rename-input {
+  flex: 1;
+  min-width: 0;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: .84rem;
+  color: var(--emp-ink);
+  border: 2.5px solid var(--emp-ink);
+  border-radius: 12px;
+  background: var(--emp-card);
+  box-shadow: inset 0 3px 0 rgba(27,20,48,.08);
+  padding: 8px 12px;
+}
+.emp-scope .emp-rename-input:focus { outline: 3px solid rgba(255,216,77,.7); outline-offset: 1px; }
+.emp-scope .emp-style-details summary {
+  cursor: pointer;
+  font-size: .76rem;
+  font-weight: 900;
+  color: var(--emp-muted);
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.emp-scope .emp-style-details summary::-webkit-details-marker { display: none; }
+.emp-scope .emp-style-group { margin-top: 8px; }
+.emp-scope .emp-style-group-name {
+  font-size: .68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--emp-muted);
+  margin-bottom: 5px;
+}
+.emp-scope .emp-style-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.emp-scope .emp-style-chip { cursor: pointer; background: var(--emp-card); }
+.emp-scope .emp-style-chip.emp-selected {
+  background: linear-gradient(180deg, #baf7d0 0 45%, var(--emp-mint) 45%);
+  color: #0b3d27;
+}
+.emp-scope .emp-style-chip.emp-style-locked {
+  opacity: .55;
+  cursor: not-allowed;
+  border-style: dashed;
+  box-shadow: none;
+}
+
+/* Special notes (library sheet) */
+.emp-scope .emp-special-note {
+  font-size: .74rem;
+  font-weight: 700;
+  color: var(--emp-muted);
+  margin-top: 6px;
+}
+
+/* Guest sign-in card */
+.emp-scope .emp-guest-card {
+  border: 2.5px solid var(--emp-ink);
+  border-radius: 20px;
+  background: var(--emp-card);
+  box-shadow: 0 6px 0 var(--emp-ink), inset 0 4px 0 rgba(255,255,255,.4);
+  padding: 28px 18px;
+  text-align: center;
+  max-width: 520px;
+  margin: 20px auto;
+}
+.emp-scope .emp-guest-emoji { font-size: 44px; animation: emp-badge-bob 3s ease-in-out infinite; display: inline-block; }
+.emp-scope .emp-guest-title { font-size: 1.2rem; font-weight: 900; color: var(--emp-ink); margin: 10px 0 6px; }
+.emp-scope .emp-guest-sub { font-size: .84rem; font-weight: 600; color: var(--emp-muted); margin-bottom: 14px; }
+
+/* ── Legacy career/economy sections re-skinned to toon paper ─────── */
+.emp-scope .prof-section {
+  background: var(--emp-card);
+  border: 2.5px solid var(--emp-ink);
+  border-radius: 16px;
+  box-shadow: 0 5px 0 var(--emp-ink), inset 0 3px 0 rgba(255,255,255,.4);
+  margin-top: 18px;
+  padding: 12px 14px;
+}
+.emp-scope .prof-section h3 { color: var(--emp-ink); font-weight: 900; }
+.emp-scope .prof-section .prof-section-sub,
+.emp-scope .prof-section .prof-section-chevron { color: var(--emp-muted); }
+.emp-scope .prof-section-toggle { cursor: pointer; }
+.emp-scope .career-stat-card {
+  background: var(--emp-paper-2);
+  border: 2px solid var(--emp-ink);
+  border-radius: 12px;
+  box-shadow: 0 3px 0 var(--emp-ink);
+}
+.emp-scope .career-stat-card .career-stat-label { color: var(--emp-muted); font-weight: 800; }
+.emp-scope .career-stat-card .career-stat-value { color: var(--emp-ink); font-weight: 900; }
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 560px) {
+  .emp-scope .emp-face { grid-template-rows: 56px 28px 42px 36px 46px; }
+  .emp-scope .emp-badge { width: 48px; height: 48px; font-size: 25px; }
+  .emp-scope .emp-name { font-size: .9rem; }
+  .emp-scope .emp-collect-btn { min-width: 0; }
+  .emp-scope .emp-upg { grid-template-columns: auto 1fr; }
+  .emp-scope .emp-upg-btns {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+  .emp-scope .emp-hero { padding: 13px 12px 26px; }
+  .emp-scope .emp-hero-title { font-size: 1.22rem; }
+  .emp-scope .emp-sheet-head { padding: 10px 12px; }
+  .emp-scope .emp-sheet-body { padding: 12px 12px 18px; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Body-level roots (toasts, coin bursts) — .emp- prefixed only.
+   The JS adds .emp-scope to these roots too.
+   ════════════════════════════════════════════════════════════════════ */
+.emp-toast-wrap {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 10050;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  max-width: min(92vw, 440px);
+}
+.emp-toast {
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-weight: 800;
+  font-size: .86rem;
+  color: #1b1430;
+  background: linear-gradient(180deg, #fff 0 45%, #f7ecd6 45%);
+  border: 2.5px solid #1b1430;
+  border-radius: 999px;
+  box-shadow: 0 5px 0 #1b1430;
+  padding: 10px 18px;
+  text-align: center;
+  animation: emp-toast-in .25s ease-out;
+  max-width: 100%;
+}
+.emp-toast-success { background: linear-gradient(180deg, #baf7d0 0 45%, #4ade80 45%); color: #0b3d27; }
+.emp-toast-error   { background: linear-gradient(180deg, #ffc4c4 0 45%, #ff6b6b 45%); color: #4d0f0f; }
+.emp-toast-out { animation: emp-toast-out .3s ease-in forwards; }
+@keyframes emp-toast-in {
+  from { opacity: 0; transform: translateY(14px) scale(.92); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes emp-toast-out {
+  to { opacity: 0; transform: translateY(10px) scale(.94); }
+}
+
+.emp-burst-coin {
+  position: fixed;
+  z-index: 10060;
+  font-size: 18px;
+  pointer-events: none;
+  animation: emp-burst .8s cubic-bezier(.2,.7,.3,1) forwards;
+}
+@keyframes emp-burst {
+  0%   { opacity: 1; transform: translate(0, 0) scale(.6) rotate(0deg); }
+  60%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, -70px)) scale(1.15) rotate(var(--dr, 40deg)); }
+}
+
+/* ── Reduced motion: kill continuous animation ───────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .emp-scope .emp-badge,
+  .emp-scope .emp-coin-icon,
+  .emp-scope .emp-guest-emoji { animation: none !important; }
+  .emp-scope .emp-walker { display: none !important; }
+  .emp-scope .emp-btn,
+  .emp-scope .emp-card,
+  .emp-scope .emp-xp-fill { transition: none !important; }
+  .emp-scope .emp-sheet,
+  .emp-scope .emp-sheet-scrim { animation: none !important; }
+  .emp-burst-coin { display: none !important; }
+  .emp-toast { animation: none !important; }
+}

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Streamer Actions Overlay</title>
+  <style>
+    /* Transparent background — designed for OBS Browser Source */
+    html, body {
+      margin: 0; padding: 0; height: 100%; width: 100%;
+      background: transparent;
+      overflow: hidden;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: #fff;
+    }
+    #stage {
+      position: fixed; inset: 0;
+      pointer-events: none;
+    }
+    .overlay-image {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0.6);
+      max-width: 70vw;
+      max-height: 70vh;
+      opacity: 0;
+      transition: opacity 240ms ease, transform 320ms cubic-bezier(.2,1.2,.4,1);
+      filter: drop-shadow(0 8px 24px rgba(0,0,0,0.6));
+    }
+    .overlay-image.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    /* Status pill — only visible when ?debug=1 is set */
+    #status {
+      position: fixed; left: 12px; bottom: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.55);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      display: none;
+    }
+    body.debug #status { display: inline-block; }
+    body.debug #stage { background: repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 12px, transparent 12px 24px); }
+    .ok { color: #43d17c; }
+    .bad { color: #ff667a; }
+  </style>
+</head>
+<body>
+  <div id="stage"></div>
+  <div id="status">connecting…</div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      const streamerId = params.get('streamerId');
+      const debug = params.get('debug') === '1';
+      if (debug) document.body.classList.add('debug');
+
+      const status = document.getElementById('status');
+      const stage = document.getElementById('stage');
+
+      function setStatus(text, cls) {
+        if (!status) return;
+        status.textContent = text;
+        status.className = cls || '';
+      }
+
+      if (!streamerId) {
+        setStatus('missing ?streamerId=', 'bad');
+        document.body.classList.add('debug');
+        return;
+      }
+
+      const socket = io({ transports: ['websocket', 'polling'] });
+      socket.on('connect', () => {
+        socket.emit('join-actions-overlay', { streamerId });
+        setStatus('connected · ' + streamerId, 'ok');
+      });
+      socket.on('disconnect', () => setStatus('disconnected', 'bad'));
+
+      // ── Action queue ─────────────────────────────────────────────
+      // Sounds and overlays render in parallel — sounds don't block, but
+      // overlay-image clears any prior image before showing the next one
+      // so two rapid fires don't stack on top of each other.
+      let currentImage = null;
+      let currentImageTimer = null;
+
+      function showImage(action) {
+        if (currentImage) {
+          currentImage.remove();
+          currentImage = null;
+        }
+        if (currentImageTimer) {
+          clearTimeout(currentImageTimer);
+          currentImageTimer = null;
+        }
+
+        const img = document.createElement('img');
+        img.className = 'overlay-image';
+        img.src = action.url;
+        img.onerror = () => setStatus('image load failed: ' + action.url, 'bad');
+        stage.appendChild(img);
+        currentImage = img;
+
+        // Trigger CSS transition on next frame
+        requestAnimationFrame(() => img.classList.add('show'));
+
+        const dur = Math.max(500, Math.min(60_000, action.durationMs || 4000));
+        currentImageTimer = setTimeout(() => {
+          img.classList.remove('show');
+          setTimeout(() => {
+            if (img.parentNode) img.parentNode.removeChild(img);
+            if (currentImage === img) currentImage = null;
+          }, 320);
+        }, dur);
+      }
+
+      function playSound(action) {
+        try {
+          const audio = new Audio(action.url);
+          audio.volume = typeof action.volume === 'number' ? action.volume : 1;
+          audio.play().catch((err) => {
+            // Browser autoplay policy may block until user interaction.
+            // OBS Browser Source has autoplay enabled by default, so this
+            // typically only matters during local preview in a tab.
+            setStatus('audio blocked: ' + (err?.message || err), 'bad');
+          });
+        } catch (e) {
+          setStatus('audio error: ' + e.message, 'bad');
+        }
+      }
+
+      socket.on('action-fire', (payload) => {
+        if (!payload || !Array.isArray(payload.actions)) return;
+        if (debug) console.log('[actions-overlay] fire', payload);
+        for (const action of payload.actions) {
+          if (action.type === 'sound') playSound(action);
+          else if (action.type === 'overlay-image') showImage(action);
+        }
+      });
+    })();
+  </script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

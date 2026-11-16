@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WordTycoon Ad Overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Inter:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1920px; height: 1080px;
+  background: transparent;
+  overflow: hidden;
+  font-family: 'Segoe UI', Inter, system-ui, sans-serif;
+}
+
+/* ─── Shared card base ─────────────────────────────── */
+.ad-card {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 960px; height: 720px;
+  transform: translate(-50%, -50%) scale(0.88);
+  opacity: 0;
+  pointer-events: none;
+  border-radius: 28px;
+  overflow: hidden;
+  transition: opacity 0.55s cubic-bezier(0.22,1,0.36,1),
+              transform 0.55s cubic-bezier(0.34,1.56,0.64,1);
+}
+.ad-card.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+.ad-card.exit {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.94) translateY(-28px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+.ad-bg { position: absolute; inset: 0; }
+.ad-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ad-inner {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 2; padding: 44px 40px;
+}
+.ad-inner::before {
+  content: ''; position: absolute; inset: 0; border-radius: 28px;
+  pointer-events: none; z-index: -1;
+}
+.ad-corner { position: absolute; width: 48px; height: 48px; border-style: solid; z-index: 3; }
+.ad-corner.tl { top: 18px; left: 18px; border-width: 2px 0 0 2px; border-radius: 8px 0 0 0; }
+.ad-corner.tr { top: 18px; right: 18px; border-width: 2px 2px 0 0; border-radius: 0 8px 0 0; }
+.ad-corner.bl { bottom: 18px; left: 18px; border-width: 0 0 2px 2px; border-radius: 0 0 0 8px; }
+.ad-corner.br { bottom: 18px; right: 18px; border-width: 0 2px 2px 0; border-radius: 0 0 8px 0; }
+
+/* Shared element styles */
+.ad-logo { margin-bottom: 12px; opacity: 0; transform: translateY(18px) scale(0.94);
+  transition: opacity 0.5s 0.15s ease, transform 0.5s 0.15s cubic-bezier(0.34,1.56,0.64,1); }
+.ad-card.visible .ad-logo { opacity: 1; transform: translateY(0) scale(1); }
+.ad-tagline { font-size: 22px; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 8px;
+  opacity: 0; transform: translateY(12px); transition: opacity 0.5s 0.25s ease, transform 0.5s 0.25s ease; }
+.ad-card.visible .ad-tagline { opacity: 1; transform: translateY(0); }
+.ad-sub { font-size: 16px; font-weight: 600; letter-spacing: 1px; margin-bottom: 24px;
+  opacity: 0; transform: translateY(10px); transition: opacity 0.5s 0.3s ease, transform 0.5s 0.3s ease; }
+.ad-card.visible .ad-sub { opacity: 1; transform: translateY(0); }
+.ad-divider { width: 280px; height: 2px; border-radius: 2px; margin-bottom: 24px;
+  opacity: 0; transition: opacity 0.5s 0.35s ease; }
+.ad-card.visible .ad-divider { opacity: 1; }
+.ad-pills { display: flex; gap: 14px; margin-bottom: 28px; opacity: 0; transform: translateY(10px);
+  transition: opacity 0.5s 0.4s ease, transform 0.5s 0.4s ease; }
+.ad-card.visible .ad-pills { opacity: 1; transform: translateY(0); }
+.ad-pill { display: flex; align-items: center; gap: 7px; padding: 9px 18px;
+  border-radius: 100px; font-size: 15px; font-weight: 700; backdrop-filter: blur(4px); }
+.ad-pill .pi { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; }
+.ad-pill .pi svg { width: 100%; height: 100%; display: block; }
+.ad-url-wrap { opacity: 0; transform: scale(0.94);
+  transition: opacity 0.5s 0.5s ease, transform 0.5s 0.5s cubic-bezier(0.34,1.4,0.64,1); }
+.ad-card.visible .ad-url-wrap { opacity: 1; transform: scale(1); }
+.ad-url { font-size: 48px; font-weight: 700; letter-spacing: -1px; }
+.ad-free { margin-top: 14px; font-size: 15px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+  opacity: 0; transition: opacity 0.5s 0.6s ease; }
+.ad-card.visible .ad-free { opacity: 1; }
+
+/* ─── SLIDE 0 — Word Tycoon ──────────────────── */
+#s0 { box-shadow: 0 0 0 2px rgba(255,215,0,0.45), 0 0 60px rgba(255,180,0,0.25), 0 32px 80px rgba(0,0,0,0.7); }
+#s0 .ad-bg { background: radial-gradient(ellipse 80% 60% at 50% 110%, rgba(130,60,255,0.18) 0%, transparent 70%),
+  radial-gradient(ellipse 60% 40% at 20% -10%, rgba(255,180,0,0.12) 0%, transparent 60%),
+  linear-gradient(155deg, #0c0718 0%, #120c2a 40%, #0a0515 70%, #150c1f 100%); }
+#s0 .ad-inner::before { background: linear-gradient(135deg, rgba(255,215,0,0.15) 0%, transparent 40%, rgba(130,60,255,0.1) 100%); }
+#s0 .ad-corner { border-color: rgba(255,215,0,0.35); }
+#s0 .ad-logo { display: flex; align-items: center; gap: 18px; }
+#s0 .ad-logo img { width: 72px; height: 72px; border-radius: 50%; filter: drop-shadow(0 0 16px rgba(255,215,0,0.6)); }
+#s0 .ad-logo-text { font-size: 56px; font-weight: 900; letter-spacing: -1px;
+  background: linear-gradient(135deg, #ffd700, #ffb300, #ffe066, #ffd700);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+#s0 .ad-logo-tld { font-size: 30px; font-weight: 700; color: rgba(255,215,0,0.7); }
+#s0 .ad-tagline { color: rgba(255,255,255,0.75); }
+#s0 .ad-divider { background: linear-gradient(90deg, transparent, rgba(255,215,0,0.5), rgba(180,100,255,0.5), transparent); }
+.wt-pill-gold { border: 1.5px solid rgba(255,215,0,0.35); background: rgba(255,180,0,0.1); color: #ffd700; }
+.wt-pill-purple { border: 1.5px solid rgba(180,100,255,0.35); background: rgba(140,60,255,0.1); color: #c084fc; }
+.wt-pill { border: 1.5px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color: #fff; }
+#s0 .ad-url { color: #ffd700; text-shadow: 0 0 20px rgba(255,215,0,0.6), 0 0 50px rgba(255,180,0,0.35);
+  animation: wtPulse 2.2s ease-in-out infinite alternate; }
+@keyframes wtPulse {
+  from { text-shadow: 0 0 20px rgba(255,215,0,0.6), 0 0 50px rgba(255,180,0,0.35); }
+  to   { text-shadow: 0 0 30px rgba(255,215,0,0.9), 0 0 70px rgba(255,180,0,0.55); }
+}
+#s0 .ad-free { color: rgba(255,255,255,0.5); }
+
+/* ─── Game ad shared (Fredoka) ────────────────── */
+.game-ad .ad-logo { font-family: 'Fredoka', sans-serif; font-weight: 700; letter-spacing: 2px;
+  filter: drop-shadow(0 0 20px var(--glow)); }
+.game-ad .ad-tagline, .game-ad .ad-sub, .game-ad .ad-free { font-family: 'Fredoka', sans-serif; }
+.game-ad .ad-url { font-family: 'Fredoka', sans-serif;
+  background-size: 300% 300%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  animation: gameUrlShift 5s ease-in-out infinite alternate; }
+@keyframes gameUrlShift {
+  0%   { filter: drop-shadow(0 0 20px var(--glow)); }
+  50%  { filter: drop-shadow(0 0 30px var(--glow2)); }
+  100% { filter: drop-shadow(0 0 20px var(--glow)); }
+}
+.game-ad .ad-pill { font-family: 'Fredoka', sans-serif; }
+
+/* Per-letter colors — erecTangled / recTangled */
+.ltr-e1{color:#F5920A} .ltr-r{color:#3EC8E8} .ltr-c{color:#EFC000} .ltr-T{color:#1E52C8}
+.ltr-a{color:#E83020} .ltr-n{color:#42B238} .ltr-g{color:#88AAFF} .ltr-l{color:#C835B8}
+.ltr-e2{color:#F5920A} .ltr-d{color:#1EB8A8}
+
+/* ─── SLIDE 1 — erecTangled ──────────────────── */
+#s1 { --glow: rgba(34,211,238,0.5); --glow2: rgba(167,139,250,0.6);
+  box-shadow: 0 0 0 2px rgba(34,211,238,0.4), 0 0 60px rgba(34,211,238,0.2), 0 32px 80px rgba(0,0,0,0.7); }
+#s1 .ad-bg { background: radial-gradient(ellipse 70% 50% at 50% 110%, rgba(34,211,238,0.14) 0%, transparent 60%),
+  radial-gradient(ellipse 50% 35% at 80% 10%, rgba(167,139,250,0.1) 0%, transparent 50%),
+  linear-gradient(155deg, #0b0f19 0%, #0d1421 40%, #080c14 70%, #0b1020 100%); }
+#s1 .ad-inner::before { background: linear-gradient(135deg, rgba(34,211,238,0.1) 0%, transparent 40%, rgba(167,139,250,0.08) 100%); }
+#s1 .ad-logo { font-size: 62px; }
+#s1 .ad-tagline { color: rgba(200,216,238,0.82); }
+#s1 .ad-sub { color: rgba(34,211,238,0.6); }
+#s1 .ad-divider { background: linear-gradient(90deg, transparent, rgba(34,211,238,0.5), rgba(167,139,250,0.5), transparent); }
+#s1 .ad-url { background-image: linear-gradient(135deg, #22d3ee, #38bdf8, #a78bfa, #22d3ee); }
+#s1 .ad-free { color: rgba(34,211,238,0.45); }
+#s1 .ad-corner.tl { border-color: rgba(34,211,238,0.35); }
+#s1 .ad-corner.tr { border-color: rgba(167,139,250,0.35); }
+#s1 .ad-corner.bl { border-color: rgba(74,222,128,0.35); }
+#s1 .ad-corner.br { border-color: rgba(56,189,248,0.35); }
+.et-pill-cyan   { border: 1.5px solid rgba(34,211,238,0.35); background: rgba(34,211,238,0.08); color: #22d3ee; }
+.et-pill-purple { border: 1.5px solid rgba(167,139,250,0.35); background: rgba(167,139,250,0.08); color: #a78bfa; }
+.et-pill-green  { border: 1.5px solid rgba(74,222,128,0.35); background: rgba(74,222,128,0.08); color: #4ade80; }
+
+/* ─── SLIDE 2 — Searchle ─────────────────────── */
+#s2 { --glow: rgba(255,45,149,0.5); --glow2: rgba(168,85,247,0.6);
+  box-shadow: 0 0 0 2px rgba(255,45,149,0.35), 0 0 60px rgba(168,85,247,0.2), 0 32px 80px rgba(0,0,0,0.7); }
+#s2 .ad-bg { background: radial-gradient(ellipse 70% 50% at 50% 110%, rgba(255,45,149,0.14) 0%, transparent 60%),
+  radial-gradient(ellipse 50% 35% at 80% 10%, rgba(168,85,247,0.1) 0%, transparent 50%),
+  linear-gradient(155deg, #080212 0%, #0c0620 40%, #050110 70%, #080218 100%); }
+#s2 .ad-inner::before { background: linear-gradient(135deg, rgba(255,45,149,0.08) 0%, transparent 40%, rgba(34,211,238,0.06) 100%); }
+#s2 .ad-logo { font-family: 'Inter', sans-serif; font-size: 60px; font-weight: 900; letter-spacing: -1px;
+  background: linear-gradient(135deg, #ff2d95, #a855f7, #22d3ee);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  filter: drop-shadow(0 0 20px rgba(255,45,149,0.5)); }
+#s2 .ad-tagline { color: rgba(241,245,249,0.82); font-family: 'Inter', sans-serif; }
+#s2 .ad-sub { color: rgba(255,45,149,0.55); font-family: 'Inter', sans-serif; }
+#s2 .ad-divider { background: linear-gradient(90deg, transparent, rgba(255,45,149,0.5), rgba(168,85,247,0.5), rgba(34,211,238,0.5), transparent); }
+#s2 .ad-url { font-family: 'Inter', sans-serif; font-weight: 900;
+  background-image: linear-gradient(135deg, #ff2d95, #a855f7, #22d3ee, #ff2d95); }
+#s2 .ad-free { color: rgba(168,85,247,0.45); font-family: 'Inter', sans-serif; }
+#s2 .ad-corner.tl { border-color: rgba(255,45,149,0.35); }
+#s2 .ad-corner.tr { border-color: rgba(168,85,247,0.35); }
+#s2 .ad-corner.bl { border-color: rgba(34,211,238,0.35); }
+#s2 .ad-corner.br { border-color: rgba(99,102,241,0.35); }
+.sl-pill-pink   { border: 1.5px solid rgba(255,45,149,0.35); background: rgba(255,45,149,0.08); color: #ff2d95; }
+.sl-pill-purple { border: 1.5px solid rgba(168,85,247,0.35); background: rgba(168,85,247,0.08); color: #a855f7; }
+.sl-pill-cyan   { border: 1.5px solid rgba(34,211,238,0.35); background: rgba(34,211,238,0.08); color: #22d3ee; }
+
+/* ─── SLIDE 3 — recTangled ───────────────────── */
+#s3 { --glow: rgba(34,211,238,0.5); --glow2: rgba(167,139,250,0.6);
+  box-shadow: 0 0 0 2px rgba(34,211,238,0.4), 0 0 60px rgba(34,211,238,0.2), 0 32px 80px rgba(0,0,0,0.7); }
+#s3 .ad-bg { background: radial-gradient(ellipse 70% 50% at 50% 110%, rgba(34,211,238,0.14) 0%, transparent 60%),
+  radial-gradient(ellipse 50% 35% at 80% 10%, rgba(167,139,250,0.1) 0%, transparent 50%),
+  linear-gradient(155deg, #0b0f19 0%, #0d1421 40%, #080c14 70%, #0b1020 100%); }
+#s3 .ad-inner::before { background: linear-gradient(135deg, rgba(34,211,238,0.1) 0%, transparent 40%, rgba(167,139,250,0.08) 100%); }
+#s3 .ad-logo { font-size: 62px; }
+#s3 .ad-tagline { color: rgba(200,216,238,0.82); }
+#s3 .ad-sub { color: rgba(34,211,238,0.6); }
+#s3 .ad-divider { background: linear-gradient(90deg, transparent, rgba(34,211,238,0.5), rgba(167,139,250,0.5), transparent); }
+#s3 .ad-url { background-image: linear-gradient(135deg, #22d3ee, #38bdf8, #a78bfa, #22d3ee); }
+#s3 .ad-free { color: rgba(34,211,238,0.45); }
+#s3 .ad-corner.tl { border-color: rgba(34,211,238,0.35); }
+#s3 .ad-corner.tr { border-color: rgba(167,139,250,0.35); }
+#s3 .ad-corner.bl { border-color: rgba(74,222,128,0.35); }
+#s3 .ad-corner.br { border-color: rgba(56,189,248,0.35); }
+
+/* Search bar mockup for Searchle */
+.search-mockup {
+  display: flex; align-items: center; gap: 10px; padding: 12px 22px;
+  background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.12);
+  border-radius: 14px; margin-bottom: 18px; width: 400px; backdrop-filter: blur(4px);
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.5s 0.22s ease, transform 0.5s 0.22s ease;
+}
+.ad-card.visible .search-mockup { opacity: 1; transform: translateY(0); }
+.search-mockup .search-icon { color: rgba(255,45,149,0.6); width: 20px; height: 20px; flex-shrink: 0; }
+.search-mockup .search-text { font-family: 'Inter', sans-serif; font-size: 16px; color: rgba(241,245,249,0.4);
+  font-weight: 500; }
+.search-mockup .search-btn { margin-left: auto; padding: 6px 16px; border-radius: 8px;
+  background: #4f46e5; color: #fff; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px; border: none; }
+
+/* Rank badges for Searchle */
+.rank-row { display: flex; gap: 10px; margin-bottom: 20px; opacity: 0; transform: translateY(10px);
+  transition: opacity 0.5s 0.32s ease, transform 0.5s 0.32s ease; }
+.ad-card.visible .rank-row { opacity: 1; transform: translateY(0); }
+.rank-badge { padding: 6px 14px; border-radius: 8px; font-family: 'Inter', sans-serif;
+  font-size: 13px; font-weight: 700; color: #fff; }
+.rank-hot  { background: linear-gradient(135deg, #ff2d95, #ff6b6b); }
+.rank-warm { background: linear-gradient(135deg, #a855f7, #6366f1); }
+.rank-cool { background: linear-gradient(135deg, #22d3ee, #3b82f6); }
+</style>
+</head>
+<body>
+
+<!-- ═══ SLIDE 0 — Word Tycoon ═══ -->
+<div id="s0" class="ad-card">
+  <div class="ad-bg"></div>
+  <canvas class="ad-canvas" id="c0"></canvas>
+  <div class="ad-corner tl"></div><div class="ad-corner tr"></div>
+  <div class="ad-corner bl"></div><div class="ad-corner br"></div>
+  <div class="ad-inner">
+    <div class="ad-logo">
+      <img src="/portal/img/logo.png" alt="">
+      <div><span class="ad-logo-text">Word Tycoon</span><span class="ad-logo-tld">.live</span></div>
+    </div>
+    <div class="ad-tagline">Live Stream Word Games &amp; Rewards</div>
+    <div class="ad-divider"></div>
+    <div class="ad-pills">
+      <div class="ad-pill wt-pill-gold"><span class="pi" style="color:#ffd700"><svg viewBox="0 0 24 24"><path d="M5 18h14M7 18v-5M12 18v-8M17 18v-11" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Win Coins</div>
+      <div class="ad-pill wt-pill"><span class="pi" style="color:rgba(255,255,255,0.82)"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="12" height="14" rx="2.8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 10h4M12 8v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>Chat to Play</div>
+      <div class="ad-pill wt-pill-purple"><span class="pi" style="color:#c084fc"><svg viewBox="0 0 24 24"><path d="M12 4.8l1.8 3.7 4.1.6-2.9 2.8.7 4-3.7-2-3.7 2 .7-4-2.9-2.8 4.1-.6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>Cosmetics</div>
+    </div>
+    <div class="ad-url-wrap"><div class="ad-url">wordtycoon.live</div></div>
+    <div class="ad-free">Free to play · No download</div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 1 — erecTangled ═══ -->
+<div id="s1" class="ad-card game-ad">
+  <div class="ad-bg"></div>
+  <canvas class="ad-canvas" id="c1"></canvas>
+  <div class="ad-corner tl"></div><div class="ad-corner tr"></div>
+  <div class="ad-corner bl"></div><div class="ad-corner br"></div>
+  <div class="ad-inner">
+    <div class="ad-logo"><span class="ltr-e1">e</span><span class="ltr-r">r</span><span class="ltr-e1">e</span><span class="ltr-c">c</span><span class="ltr-T">T</span><span class="ltr-a">a</span><span class="ltr-n">n</span><span class="ltr-g">g</span><span class="ltr-l">l</span><span class="ltr-e2">e</span><span class="ltr-d">d</span></div>
+    <div class="ad-tagline">Swipe. Connect. Discover words.</div>
+    <div class="ad-sub">A word puzzle on a grid</div>
+    <div class="ad-divider"></div>
+    <div class="ad-pills">
+      <div class="ad-pill et-pill-cyan"><span class="pi" style="color:#22d3ee"><svg viewBox="0 0 24 24"><path d="M4 5h16v2H4zM4 11h16v2H4zM4 17h16v2H4z" fill="currentColor"/></svg></span>Find Words</div>
+      <div class="ad-pill et-pill-purple"><span class="pi" style="color:#a78bfa"><svg viewBox="0 0 24 24"><path d="M12 4.8l1.8 3.7 4.1.6-2.9 2.8.7 4-3.7-2-3.7 2 .7-4-2.9-2.8 4.1-.6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>Earn Rewards</div>
+      <div class="ad-pill et-pill-green"><span class="pi" style="color:#4ade80"><svg viewBox="0 0 24 24"><path d="M13 3L6.5 13h4.2L9.8 21 17.5 10.5h-4.1z" fill="currentColor"/></svg></span>Play Free</div>
+    </div>
+    <div class="ad-url-wrap"><div class="ad-url">erecTangled.com</div></div>
+    <div class="ad-free">Free to play · No download</div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 2 — Searchle ═══ -->
+<div id="s2" class="ad-card game-ad">
+  <div class="ad-bg"></div>
+  <canvas class="ad-canvas" id="c2"></canvas>
+  <div class="ad-corner tl"></div><div class="ad-corner tr"></div>
+  <div class="ad-corner bl"></div><div class="ad-corner br"></div>
+  <div class="ad-inner">
+    <div class="ad-logo">Subtextle</div>
+    <div class="search-mockup">
+      <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16.5 16.5L21 21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span class="search-text">Type a word to guess...</span>
+      <span class="search-btn">Enter</span>
+    </div>
+    <div class="rank-row">
+      <span class="rank-badge rank-hot">#1 Hot</span>
+      <span class="rank-badge rank-warm">#42 Warm</span>
+      <span class="rank-badge rank-cool">#128 Cool</span>
+    </div>
+    <div class="ad-tagline">Guess words. Climb the ranks.</div>
+    <div class="ad-divider"></div>
+    <div class="ad-pills">
+      <div class="ad-pill sl-pill-pink"><span class="pi" style="color:#ff2d95"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16.5 16.5L21 21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>Word Search</div>
+      <div class="ad-pill sl-pill-purple"><span class="pi" style="color:#a855f7"><svg viewBox="0 0 24 24"><path d="M5 18h14M7 18v-5M12 18v-8M17 18v-11" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Rankings</div>
+      <div class="ad-pill sl-pill-cyan"><span class="pi" style="color:#22d3ee"><svg viewBox="0 0 24 24"><path d="M13 3L6.5 13h4.2L9.8 21 17.5 10.5h-4.1z" fill="currentColor"/></svg></span>Play Free</div>
+    </div>
+    <div class="ad-url-wrap"><div class="ad-url">subtextle.com</div></div>
+    <div class="ad-free">Free to play · No download</div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 3 — recTangled ═══ -->
+<div id="s3" class="ad-card game-ad">
+  <div class="ad-bg"></div>
+  <canvas class="ad-canvas" id="c3"></canvas>
+  <div class="ad-corner tl"></div><div class="ad-corner tr"></div>
+  <div class="ad-corner bl"></div><div class="ad-corner br"></div>
+  <div class="ad-inner">
+    <div class="ad-logo"><span class="ltr-r">r</span><span class="ltr-e1">e</span><span class="ltr-c">c</span><span class="ltr-T">T</span><span class="ltr-a">a</span><span class="ltr-n">n</span><span class="ltr-g">g</span><span class="ltr-l">l</span><span class="ltr-e2">e</span><span class="ltr-d">d</span></div>
+    <div class="ad-tagline">Swipe. Connect. Discover words.</div>
+    <div class="ad-sub">The original grid word game</div>
+    <div class="ad-divider"></div>
+    <div class="ad-pills">
+      <div class="ad-pill et-pill-cyan"><span class="pi" style="color:#22d3ee"><svg viewBox="0 0 24 24"><path d="M4 5h16v2H4zM4 11h16v2H4zM4 17h16v2H4z" fill="currentColor"/></svg></span>Find Words</div>
+      <div class="ad-pill et-pill-purple"><span class="pi" style="color:#a78bfa"><svg viewBox="0 0 24 24"><path d="M12 4.8l1.8 3.7 4.1.6-2.9 2.8.7 4-3.7-2-3.7 2 .7-4-2.9-2.8 4.1-.6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>Earn Rewards</div>
+      <div class="ad-pill et-pill-green"><span class="pi" style="color:#4ade80"><svg viewBox="0 0 24 24"><path d="M13 3L6.5 13h4.2L9.8 21 17.5 10.5h-4.1z" fill="currentColor"/></svg></span>Play Free</div>
+    </div>
+    <div class="ad-url-wrap"><div class="ad-url">rectangled.live</div></div>
+    <div class="ad-free">Free to play · No download</div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  var SHOW_INTERVAL = 10 * 60 * 1000;
+  var DURATIONS = [5000, 15000, 15000, 15000];
+  var SLIDE_COUNT = 4;
+  var ERECT_HUES = [187, 265, 145, 30, 200];
+  var SEARCH_HUES = [330, 270, 187, 240];
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function hsl(h, s, l) { return 'hsl(' + h + ',' + s + '%,' + l + '%)'; }
+
+  // ── Particle engine per canvas ───────────────────────
+  function createTileEngine(canvasId, letters, hues, count) {
+    var c = document.getElementById(canvasId);
+    if (!c) return { start: function(){}, stop: function(){} };
+    var x = c.getContext('2d');
+    c.width = 960; c.height = 720;
+    var tiles = [], sparks = [];
+    for (var i = 0; i < count; i++) {
+      var tl = letters[i % letters.length];
+      tiles.push({
+        ox: rand(40, 920), oy: rand(40, 680),
+        ax: rand(25, 90), ay: rand(25, 90),
+        wx: rand(0.04, 0.12), wy: rand(0.05, 0.14),
+        px: rand(0, Math.PI*2), py: rand(0, Math.PI*2),
+        rot: rand(0, Math.PI*2), rotW: rand(0.01, 0.04) * (Math.random()<0.5?1:-1),
+        size: rand(28, 50), ch: tl.ch, col: tl.col,
+        alpha: rand(0.06, 0.16), pulse: rand(0, Math.PI*2), pulseW: rand(0.04, 0.09),
+        glow: Math.random() < 0.3
+      });
+    }
+    for (var si = 0; si < 20; si++) {
+      sparks.push({
+        ox: rand(0, 960), oy: rand(0, 720),
+        ax: rand(20, 70), ay: rand(20, 70),
+        wx: rand(0.05, 0.15), wy: rand(0.06, 0.17),
+        px: rand(0, Math.PI*2), py: rand(0, Math.PI*2),
+        r: rand(1.5, 4.5), al: rand(0.1, 0.35),
+        hue: hues[si % hues.length],
+        pulse: rand(0, Math.PI*2), pulseW: rand(0.04, 0.12)
+      });
+    }
+    var raf = null;
+    function draw(ts) {
+      var t = ts / 1000;
+      x.clearRect(0, 0, 960, 720);
+      for (var i = 0; i < tiles.length; i++) {
+        var tile = tiles[i];
+        var tx = tile.ox + tile.ax * Math.sin(tile.wx * t + tile.px);
+        var ty = tile.oy + tile.ay * Math.sin(tile.wy * t + tile.py);
+        var trot = tile.rot + tile.rotW * t;
+        var tp = 0.7 + 0.3 * Math.sin(tile.pulseW * t + tile.pulse);
+        var sz = tile.size * tp, half = sz / 2, rad = sz * 0.18;
+        x.save(); x.translate(tx, ty); x.rotate(trot); x.globalAlpha = tile.alpha * tp;
+        x.beginPath();
+        x.moveTo(-half+rad,-half); x.lineTo(half-rad,-half);
+        x.quadraticCurveTo(half,-half,half,-half+rad); x.lineTo(half,half-rad);
+        x.quadraticCurveTo(half,half,half-rad,half); x.lineTo(-half+rad,half);
+        x.quadraticCurveTo(-half,half,-half,half-rad); x.lineTo(-half,-half+rad);
+        x.quadraticCurveTo(-half,-half,-half+rad,-half); x.closePath();
+        x.fillStyle='rgba(30,41,59,0.7)'; x.strokeStyle=tile.col; x.lineWidth=1.5;
+        if(tile.glow){x.shadowColor=tile.col;x.shadowBlur=10;} x.fill(); x.stroke(); x.shadowBlur=0;
+        x.font='bold '+Math.round(sz*0.55)+'px Fredoka,sans-serif';
+        x.textAlign='center'; x.textBaseline='middle'; x.fillStyle=tile.col; x.fillText(tile.ch,0,0);
+        x.restore();
+      }
+      x.save();
+      for (var sk = 0; sk < sparks.length; sk++) {
+        var sp = sparks[sk];
+        var sx = sp.ox + sp.ax * Math.sin(sp.wx * t + sp.px);
+        var sy = sp.oy + sp.ay * Math.sin(sp.wy * t + sp.py);
+        var p = 0.5 + 0.5 * Math.sin(sp.pulseW * t + sp.pulse);
+        x.globalAlpha = sp.al * p; x.fillStyle = hsl(sp.hue, 75, 80);
+        x.shadowColor = hsl(sp.hue, 90, 75); x.shadowBlur = 6;
+        x.beginPath(); x.arc(sx, sy, sp.r * p, 0, Math.PI*2); x.fill();
+      }
+      x.restore();
+      raf = requestAnimationFrame(draw);
+    }
+    return {
+      start: function() { if (!raf) raf = requestAnimationFrame(draw); },
+      stop: function() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+    };
+  }
+
+  // ── WT particle engine ─────────────────────────────
+  var c0 = document.getElementById('c0');
+  var ctx0 = c0.getContext('2d');
+  c0.width = 960; c0.height = 720;
+  var SYMBOLS = ['W','T','$','★','◆'];
+  var pts = [];
+  for (var i = 0; i < 50; i++) {
+    var isS = Math.random() < 0.4;
+    pts.push({ x:rand(0,960), y:rand(0,720), vx:rand(-0.3,0.3), vy:rand(-0.5,-1.2),
+      size:isS?rand(10,18):rand(2,4), alpha:rand(0.3,0.7),
+      sym:isS?SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)]:null,
+      hue:Math.random()<0.6?45:(Math.random()<0.5?270:180),
+      life:rand(0.2,1), decay:rand(0.003,0.007), spin:rand(-0.03,0.03), angle:0 });
+  }
+  function drawWT() {
+    ctx0.clearRect(0,0,960,720);
+    if (Math.random()<0.3) { var isS=Math.random()<0.4; pts.push({x:rand(0,960),y:730,vx:rand(-0.3,0.3),vy:rand(-0.5,-1.2),
+      size:isS?rand(10,18):rand(2,4),alpha:rand(0.3,0.7),sym:isS?SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)]:null,
+      hue:Math.random()<0.6?45:(Math.random()<0.5?270:180),life:1,decay:rand(0.003,0.007),spin:rand(-0.03,0.03),angle:0}); }
+    if (pts.length>80) pts.splice(0,pts.length-80);
+    for (var i=pts.length-1;i>=0;i--) {
+      var p=pts[i]; p.x+=p.vx; p.y+=p.vy; p.life-=p.decay; p.angle+=p.spin;
+      if(p.life<=0||p.y<-20){pts.splice(i,1);continue;}
+      ctx0.save(); ctx0.globalAlpha=p.alpha*p.life; ctx0.translate(p.x,p.y); ctx0.rotate(p.angle);
+      if(p.sym){ctx0.font='bold '+p.size+'px sans-serif';ctx0.textAlign='center';ctx0.textBaseline='middle';
+        ctx0.fillStyle='hsl('+p.hue+',85%,70%)';ctx0.shadowColor='hsl('+p.hue+',100%,60%)';ctx0.shadowBlur=6;ctx0.fillText(p.sym,0,0);
+      }else{ctx0.beginPath();ctx0.arc(0,0,p.size,0,Math.PI*2);ctx0.fillStyle='hsl('+p.hue+',85%,70%)';ctx0.shadowColor='hsl('+p.hue+',100%,70%)';ctx0.shadowBlur=p.size*2;ctx0.fill();}
+      ctx0.restore();
+    }
+    requestAnimationFrame(drawWT);
+  }
+  requestAnimationFrame(drawWT);
+
+  var RECT_LETTERS = [
+    {ch:'R',col:'#3EC8E8'},{ch:'E',col:'#F5920A'},{ch:'C',col:'#EFC000'},{ch:'T',col:'#1E52C8'},
+    {ch:'A',col:'#E83020'},{ch:'N',col:'#42B238'},{ch:'G',col:'#88AAFF'},{ch:'L',col:'#C835B8'},
+    {ch:'E',col:'#F5920A'},{ch:'D',col:'#1EB8A8'},{ch:'W',col:'#3EC8E8'},{ch:'O',col:'#a78bfa'}
+  ];
+  var SEARCH_LETTERS = [
+    {ch:'S',col:'#ff2d95'},{ch:'E',col:'#a855f7'},{ch:'A',col:'#22d3ee'},{ch:'R',col:'#ff6b6b'},
+    {ch:'C',col:'#6366f1'},{ch:'H',col:'#ff2d95'},{ch:'L',col:'#3b82f6'},{ch:'E',col:'#a855f7'},
+    {ch:'?',col:'#22d3ee'},{ch:'#',col:'#ff2d95'},{ch:'1',col:'#4ade80'}
+  ];
+
+  var eng1 = createTileEngine('c1', RECT_LETTERS, ERECT_HUES, 16);
+  var eng2 = createTileEngine('c2', SEARCH_LETTERS, SEARCH_HUES, 14);
+  var eng3 = createTileEngine('c3', RECT_LETTERS, ERECT_HUES, 16);
+
+  // ── Show / Hide ─────────────────────────────────
+  var cards = [document.getElementById('s0'), document.getElementById('s1'),
+               document.getElementById('s2'), document.getElementById('s3')];
+  var engines = [null, eng1, eng2, eng3];
+  var slideIdx = 0;
+
+  function hideAll(cb) {
+    cards.forEach(function(c) { c.classList.remove('visible'); c.classList.add('exit'); });
+    engines.forEach(function(e) { if (e) e.stop(); });
+    if (cb) setTimeout(cb, 500);
+  }
+
+  function showSlide(idx) {
+    var dur = DURATIONS[idx] || 5000;
+    hideAll(function() {
+      if (engines[idx]) engines[idx].start();
+      var card = cards[idx];
+      card.classList.remove('exit'); card.classList.add('visible');
+      setTimeout(function() {
+        card.classList.remove('visible'); card.classList.add('exit');
+        if (engines[idx]) engines[idx].stop();
+      }, dur);
+    });
+  }
+
+  function showAd(data) {
+    var s = (data && typeof data.slide === 'number') ? data.slide : null;
+    if (s !== null && s >= 0 && s < SLIDE_COUNT) {
+      showSlide(s);
+    } else {
+      showSlide(slideIdx);
+      slideIdx = (slideIdx + 1) % SLIDE_COUNT;
+    }
+  }
+
+  // Socket.IO
+  var sc = document.createElement('script');
+  sc.src = '/socket.io/socket.io.js';
+  sc.onload = function() {
+    var sock = io({ transports: ['websocket', 'polling'] });
+    sock.on('show-ad', function(d) { showAd(d || {}); });
+  };
+  document.head.appendChild(sc);
+
+  setTimeout(function() { showAd(); }, 30000);
+  setInterval(function() { showAd(); }, SHOW_INTERVAL);
+})();
+</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "voice-tts",
+  "version": "1.0.0",
+  "description": "Minimal Piper-based TTS service compatible with chat-relay's voice-tts API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {}
+}

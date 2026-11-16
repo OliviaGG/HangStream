@@ -1,0 +1,1083 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to Play — Word Tycoon</title>
+<meta name="description" content="Learn how to play every Word Tycoon game — Wordle, Cloud Quarry, Junk Drawer, Subtextle, recTangled and more — plus how rewards work.">
+<link rel="canonical" href="https://wordtycoon.live/how-to-play">
+<meta name="theme-color" content="#fdf6e9">
+<link rel="manifest" href="/portal/manifest.webmanifest?v=4">
+<link rel="icon" href="/portal/img/logo-favicon.png?v=2">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link rel="stylesheet" href="/portal/css/toon.css?v=6">
+  <link rel="stylesheet" href="/portal/css/hangstream-skin.css">
+<!-- gh-* example visuals (tiles, hexes, boundaries, rank lists) — the same
+     stylesheet the in-game help modals use, so every example here renders
+     exactly like it does in the games. Its dark defaults are intentional:
+     examples sit on a dark "screen" in both day and night, like the
+     wardrobe mirror on /profile, so game colors read true. -->
+<link rel="stylesheet" href="/game-help.css?v=2">
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   THE RULEBOOK — /how-to-play
+   Floor H of the tower: one guide card per game, on toon paper.
+   Tokens, primitives, topbar, elevator, footer come from toon.css;
+   the gh-* example internals come from game-help.css. Below is only
+   this page's own furniture.
+   ════════════════════════════════════════════════════════════════════ */
+:root { --text-dim: var(--muted); --line: rgba(27,20,48,.12); }
+body.night { --line: rgba(242,237,255,.14); }
+
+main { position: relative; z-index: 2; }
+
+/* ══ FLOOR PLATE ═════════════════════════════════════════════════════ */
+.rule-plate {
+  position: relative; margin: 18px 0 0;
+  background: var(--landing-bg);
+  background-image: repeating-linear-gradient(90deg, transparent 0 42px, rgba(27,20,48,.043) 42px 84px);
+  border-top: 2.5px solid var(--ink); border-bottom: 2.5px solid var(--ink);
+  box-shadow: inset 0 4px 0 rgba(255,255,255,.3), inset 0 -8px 14px rgba(27,20,48,.06);
+  height: 74px; overflow: hidden;
+  transition: background 1s ease;
+}
+.rule-plate .fp {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%) rotate(-2deg);
+  display: flex; align-items: center; gap: 10px;
+  border: 2.5px solid var(--ink); border-radius: 12px;
+  padding: 8px 20px; font-weight: 900; font-size: .88rem;
+  letter-spacing: 1px; text-transform: uppercase; color: #fff;
+  text-shadow: 0 1.5px 0 rgba(0,0,0,.25);
+  background: linear-gradient(180deg, #7cc0ff 0 45%, var(--blue) 45%);
+  box-shadow: 0 4px 0 var(--ink); white-space: nowrap;
+}
+.rule-plate .fp b {
+  display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid var(--ink); background: var(--card); color: var(--ink);
+  text-shadow: none; font-size: .82rem;
+}
+
+/* ══ DAY / NIGHT BUTTON (same face-you-switch-TO trick as /profile) ══ */
+.sky-btn { padding: 9px 14px; font-size: 1rem; line-height: 1; }
+.sky-btn .sky-day { display: none; }
+.sky-btn .sky-night { display: inline; }
+body.night .sky-btn .sky-day { display: inline; }
+body.night .sky-btn .sky-night { display: none; }
+
+/* ══ THE GAME PICKER (sticky theatre board) ══════════════════════════
+   Ink background in BOTH themes: every game's accent color is bright,
+   so the dark board is the one surface they all stay readable on. */
+.htp-nav {
+  position: sticky; top: 10px; z-index: 60;
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+  max-width: 720px; margin: 0 auto 28px; padding: 12px 14px;
+  border: 2.5px solid var(--ink); border-radius: 18px;
+  background: var(--ink);
+  box-shadow: 0 6px 0 rgba(27,20,48,.35), inset 0 3px 0 rgba(255,255,255,.08);
+}
+.htp-nav-btn {
+  padding: 5px 12px; border-radius: 999px;
+  border: 1.5px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.07);
+  color: var(--htp-c, #7dd3fc);
+  font-size: .78rem; font-weight: 800;
+  transition: background .15s, border-color .15s, transform .12s;
+}
+.htp-nav-btn:hover {
+  background: rgba(255,255,255,.15);
+  border-color: var(--htp-c, #7dd3fc);
+  transform: translateY(-1px);
+}
+
+/* ══ GAME CARDS ══════════════════════════════════════════════════════ */
+.htp-game {
+  max-width: 720px; margin: 0 auto 26px;
+  border: 2.5px solid var(--ink); border-radius: 18px;
+  background: var(--card);
+  box-shadow: 0 6px 0 var(--ink), inset 0 -3px 0 rgba(27,20,48,.05);
+  overflow: hidden;
+  scroll-margin-top: 96px;   /* clear the sticky picker on anchor jumps */
+  transition: background 1s ease;
+}
+/* each card's marquee: ink strip, game-colored title + accent rule —
+   readable under any accent color, in either theme */
+.htp-game-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 14px 18px;
+  background: var(--ink);
+  border-bottom: 4px solid var(--htp-c, #7dd3fc);
+}
+.htp-game-header h3 {
+  margin: 0; font-size: 1.15rem; font-weight: 900; letter-spacing: .3px;
+  color: var(--htp-c, #7dd3fc);
+}
+.htp-play-btn {
+  flex: none; padding: 6px 16px; border-radius: 999px;
+  border: 2px solid rgba(255,255,255,.25);
+  background: var(--htp-c, #7dd3fc); color: #fff;
+  font-size: .78rem; font-weight: 900; text-shadow: 0 1px 0 rgba(0,0,0,.3);
+  box-shadow: 0 3px 0 rgba(0,0,0,.35);
+  transition: transform .12s, box-shadow .12s;
+}
+.htp-play-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 0 rgba(0,0,0,.35); }
+
+.htp-steps { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 20px; }
+.htp-step h4 { margin: 0 0 6px; font-size: .95rem; font-weight: 900; color: var(--text); }
+.htp-step p { margin: 0 0 10px; font-size: .88rem; color: var(--muted); line-height: 1.55; font-weight: 600; }
+.htp-step p strong { color: var(--text); }
+.htp-step ul { color: var(--muted); font-weight: 600; }
+
+/* ══ TOON TUNING for the shared gh-* pieces ══════════════════════════ */
+/* examples: the dark stage gets the house ink outline */
+.gh-example { background: #241f3d; border: 2px solid var(--ink); border-radius: 12px; }
+/* tips step off the dark stage and onto toon paper */
+.gh-tip {
+  background: var(--paper-2); border: 2px solid var(--ink); border-radius: 12px;
+  color: var(--text); font-weight: 600;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.3);
+  transition: background 1s ease;
+}
+/* tip icon colors were picked for dark backgrounds — deepen them for day
+   without losing each symbol's hue */
+body:not(.night) .gh-tip .wt-symbol { filter: saturate(1.4) brightness(.58); }
+
+/* wt-symbol base (matches the portal SPA) */
+.wt-symbol {
+  width: 1.1em; height: 1.1em;
+  display: inline-flex; align-items: center; justify-content: center;
+  vertical-align: middle; line-height: 0; flex: 0 0 auto; color: inherit;
+}
+.wt-symbol svg { width: 100%; height: 100%; display: block; }
+.wt-symbol-sm { width: 16px; height: 16px; }
+.wt-symbol-daily { color: #ff9a61; overflow: visible; }
+.wt-symbol-weekly { color: #b88cff; }
+.wt-symbol-warning { color: #ffcb69; }
+.wt-symbol-words { color: #79d7ff; }
+
+/* ══ REWARDS CARD FURNITURE ══════════════════════════════════════════ */
+.htp-table-wrap { overflow-x: auto; }
+.htp-table { width: 100%; border-collapse: collapse; font-size: .85rem; margin: 8px 0; }
+.htp-table th {
+  text-align: left; padding: 8px; font-size: .68rem; font-weight: 900;
+  text-transform: uppercase; letter-spacing: .8px; color: var(--muted);
+  border-bottom: 2.5px solid var(--ink);
+}
+.htp-table td { padding: 8px; border-bottom: 2px solid var(--line); font-weight: 600; }
+.htp-table tr:last-child td { border-bottom: none; }
+.row-gold { background: rgba(255, 171, 0, .10); }
+.row-purple { background: rgba(123, 104, 238, .12); }
+
+/* accent inks that hold up on white paper AND night cards */
+.tk-green  { color: #1f9d5c; } body.night .tk-green  { color: #4ade80; }
+.tk-gold   { color: #a97a00; } body.night .tk-gold   { color: #ffd84d; }
+.tk-purple { color: #6a56e0; } body.night .tk-purple { color: #b3a6f6; }
+.tk-red    { color: #d94f4f; } body.night .tk-red    { color: #ff8a8a; }
+.tk-cyan   { color: #0e8fab; } body.night .tk-cyan   { color: #22d3ee; }
+.c-dim { color: var(--muted); }
+
+.htp-chiprow { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.htp-note { font-weight: 800; margin: 0 0 6px; font-size: .85rem; }
+
+/* word tier accents (erecTangled card) */
+.common-color { color: #1f9d5c; } body.night .common-color { color: #4ade80; }
+.rare-color   { color: #a97a00; } body.night .rare-color   { color: #ffd84d; }
+.hidden-color { color: #6a56e0; } body.night .hidden-color { color: #b3a6f6; }
+
+/* ══ RESPONSIVE ══════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .htp-steps { padding: 14px 14px 16px; }
+  .htp-game-header { padding: 12px 14px; }
+  .htp-game { border-radius: 14px; scroll-margin-top: 130px; }
+  .htp-nav { top: 6px; gap: 6px; padding: 10px; border-radius: 14px; }
+  .htp-nav-btn { font-size: .72rem; padding: 4px 9px; }
+}
+</style>
+</head>
+<body>
+<!-- Restore the visitor's time of day before anything paints. Inline and
+     first-thing-in-body on purpose: an external or deferred script would
+     let the page flash daylight before flipping to night. -->
+<script>try{var t=localStorage.getItem('wt-night');var p=(localStorage.getItem('wordtycoon_theme')||localStorage.getItem('portal-theme'));var n=t===null?p!=='light':t==='1';if(n)document.body.classList.add('night')}catch(e){}</script>
+<noscript><p style="padding:24px;text-align:center;font-weight:700">The rulebook reads fine without JavaScript — only the day/night switch needs it.</p></noscript>
+
+<!-- ═══ ELEVATOR ═══ -->
+<aside class="elevator" id="elevator" aria-label="Floor navigation">
+  <div class="elev-label">Floor</div>
+  <div class="elev-btns">
+    <a class="elev-btn eb-r" href="/#rooftop" title="Rooftop" aria-label="Ride to the Rooftop">R</a>
+    <a class="elev-btn eb-p" href="/#penthouse" title="Penthouse" aria-label="Ride to the Penthouse">P</a>
+    <a class="elev-btn eb-v" href="/#vault" title="The Vault" aria-label="Ride to the Vault">V</a>
+    <a class="elev-btn eb-2" href="/#empire" title="The Empire" aria-label="Ride to the Empire">2</a>
+    <a class="elev-btn eb-1" href="/#games" title="The Game Floor" aria-label="Ride to the Game Floor">1</a>
+    <a class="elev-btn eb-l lit" href="/" title="Lobby" aria-label="Ride to the Lobby">L</a>
+  </div>
+  <div class="elev-floorname">How to Play</div>
+</aside>
+
+<div class="shell">
+  <!-- ═══ TOPBAR ═══ -->
+  <header class="topbar">
+    <a class="brand" href="/">
+      <span class="brand-mark"><img src="/portal/img/wt-logo.svg?v=1" alt="" width="46" height="46"></span>
+      <span>Word<b>Tycoon</b></span>
+    </a>
+    <nav>
+      <a class="btn btn-ghost btn-nav-sec" href="/goat">🐐 GOAT</a>
+      <a class="btn btn-ghost btn-nav-sec" href="/library">📚 Library</a>
+      <!-- This floor has no sky, so the day/night toggle lives in the
+           topbar — otherwise night mode could never be undone here. -->
+      <button class="btn btn-ghost sky-btn" id="skyToggle" type="button" aria-pressed="false" title="Toggle day / night">
+        <span class="sky-day">☀️</span><span class="sky-night">🌙</span>
+      </button>
+      <a class="btn" href="/">🏢 The Tower</a>
+    </nav>
+  </header>
+</div>
+
+<div class="rule-plate"><span class="fp"><b>H</b>How to Play</span></div>
+
+<main>
+  <section class="floor" id="rulebook">
+    <div class="shell">
+      <div class="sec-head">
+        <span class="sec-kicker">Floor H</span>
+        <h1 class="sec-title">The <span class="cd">Rulebook</span></h1>
+        <p class="sec-sub">Learn every Word Tycoon game — and how the rewards pay out. Pick a game from the board, or read cover to cover.</p>
+      </div>
+
+        <!-- Rewards & Cosmetics Guide -->
+        <div class="htp-game" id="htp-rewards" style="--htp-c:#ffd700">
+          <div class="htp-game-header">
+            <h3>Rewards &amp; Cosmetics</h3>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>How Rewards Work</h4>
+              <p>Every game mode rewards you differently. Complete daily and weekly challenges to earn <strong>cosmetics</strong> that customize your profile!</p>
+            </div>
+            <div class="htp-step">
+              <h4>Reward Tiers</h4>
+              <div class="htp-table-wrap">
+                <table class="htp-table">
+                  <thead>
+                    <tr>
+                      <th>Mode</th>
+                      <th>XP</th>
+                      <th>Cosmetics</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Solo (Normal)</td>
+                      <td class="tk-green">XP with multipliers</td>
+                      <td class="c-dim">None</td>
+                    </tr>
+                    <tr>
+                      <td>Online (Normal)</td>
+                      <td class="tk-green">XP reward</td>
+                      <td class="c-dim">None</td>
+                    </tr>
+                    <tr class="row-gold">
+                      <td>Solo Daily</td>
+                      <td class="tk-green">3x XP bonus</td>
+                      <td class="tk-gold">1 Cosmetic</td>
+                    </tr>
+                    <tr class="row-purple">
+                      <td>Solo Weekly</td>
+                      <td class="tk-green">Normal XP</td>
+                      <td class="tk-purple">Loot Box (3 items)</td>
+                    </tr>
+                    <tr class="row-gold">
+                      <td>Online Daily Win</td>
+                      <td class="tk-green">3x XP bonus</td>
+                      <td class="tk-gold">Loot Box (3 items)</td>
+                    </tr>
+                    <tr class="row-purple">
+                      <td>Online Weekly Win</td>
+                      <td class="tk-green">Normal XP</td>
+                      <td class="tk-purple">Loot Box (3 items)</td>
+                    </tr>
+                    <tr class="row-gold">
+                      <td><strong>All 9 Dailies Done</strong></td>
+                      <td class="c-dim">-</td>
+                      <td class="tk-gold"><strong>BONUS Loot Box (3 items)</strong></td>
+                    </tr>
+                    <tr class="row-purple">
+                      <td><strong>All 5 Weeklies Done</strong></td>
+                      <td class="c-dim">-</td>
+                      <td class="tk-purple"><strong>BONUS Loot Box (3 items)</strong></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Daily Challenge Games (9)</h4>
+              <p class="htp-note tk-gold">Complete all 9 for a bonus loot box!</p>
+              <div class="htp-chiprow">
+                <span class="chip">Wordle</span>
+                <span class="chip">Word5000</span>
+                <span class="chip">Betwixt</span>
+                <span class="chip">PixeLetters</span>
+                <span class="chip">Figural</span>
+                <span class="chip">UnWordle</span>
+                <span class="chip">recTangled</span>
+                <span class="chip">erecTangled</span>
+                <span class="chip">Triangled</span>
+              </div>
+              <p style="font-size:0.8rem;color:var(--text-dim);margin-top:6px;">Color500 also has a daily challenge with the same rewards — it just isn't required for the bonus box.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Weekly Challenge Games (5)</h4>
+              <p class="htp-note tk-purple">Complete all 5 for a bonus loot box!</p>
+              <div class="htp-chiprow">
+                <span class="chip">Subtextle</span>
+                <span class="chip">recTangled</span>
+                <span class="chip">erecTangled</span>
+                <span class="chip">Spelling Bee</span>
+                <span class="chip">WikiContexto</span>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>XP Multipliers</h4>
+              <p>Your XP is boosted by equipped cosmetics and business upgrades:</p>
+              <ul style="margin:6px 0 0 16px;font-size:0.85rem;color:var(--text-dim);line-height:1.8;">
+                <li><strong class="tk-green">Word Glow</strong> — Boosts word game earnings</li>
+                <li><strong class="tk-gold">Title & Name Color</strong> — Prestige + XP bonus</li>
+                <li><strong class="tk-purple">Businesses</strong> — Progression multiplier (up to 3x)</li>
+                <li><strong class="tk-red">Daily 3x</strong> — First daily completion each day</li>
+                <li><strong class="tk-cyan">Lucky 2x</strong> — Random chance from Win Effect cosmetic</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <nav class="htp-nav" id="htp-nav">
+          <a href="#htp-rewards" class="htp-nav-btn" style="--htp-c:#ffd700">Rewards</a>
+          <a href="#htp-Subtextle" class="htp-nav-btn" style="--htp-c:#4a9eff">Subtextle</a>
+          <a href="#htp-rectangled" class="htp-nav-btn" style="--htp-c:#22d3ee">recTangled</a>
+          <a href="#htp-word500" class="htp-nav-btn" style="--htp-c:#9b59b6">Word5000</a>
+          <a href="#htp-wordle" class="htp-nav-btn" style="--htp-c:#6aaa64">Wordle</a>
+          <a href="#htp-betwixt" class="htp-nav-btn" style="--htp-c:#e06c9a">Betwixt</a>
+          <a href="#htp-pixeletters" class="htp-nav-btn" style="--htp-c:#00bcd4">PixeLetters</a>
+          <a href="#htp-spellingbee" class="htp-nav-btn" style="--htp-c:#ffab00">Spelling Bee</a>
+          <a href="#htp-figural" class="htp-nav-btn" style="--htp-c:#ff7043">Figural</a>
+          <a href="#htp-unwordle" class="htp-nav-btn" style="--htp-c:#ff6b6b">UnWordle</a>
+          <a href="#htp-erectangled" class="htp-nav-btn" style="--htp-c:#44cc88">erecTangled</a>
+          <a href="#htp-colour500" class="htp-nav-btn" style="--htp-c:#4ade80">Color500</a>
+          <a href="#htp-triangled" class="htp-nav-btn" style="--htp-c:#a8b2c0">Triangled</a>
+          <a href="#htp-synapse" class="htp-nav-btn" style="--htp-c:#8b5cf6">Synapse</a>
+          <a href="#htp-wikiSubtextle" class="htp-nav-btn" style="--htp-c:#8a5cf7">WikiContexto</a>
+          <a href="#htp-WikirecTangled" class="htp-nav-btn" style="--htp-c:#ee7a2c">WikirecTangled</a>
+          <a href="#htp-junkdrawer" class="htp-nav-btn" style="--htp-c:#f5a623">Junk Drawer</a>
+          <a href="#htp-cloudquarry" class="htp-nav-btn" style="--htp-c:#20b7d6">Cloud Quarry</a>
+          <a href="#htp-letterworks" class="htp-nav-btn" style="--htp-c:#ffab00">Letterworks</a>
+          <a href="#htp-wordfall" class="htp-nav-btn" style="--htp-c:#ad98f0">Wordfall</a>
+          <a href="#htp-library" class="htp-nav-btn" style="--htp-c:#8b5cf6">Library</a>
+        </nav>
+
+        <!-- Wordle -->
+        <div class="htp-game" id="htp-wordle" style="--htp-c:#6aaa64">
+          <div class="htp-game-header">
+            <h3>Wordle</h3>
+                <a href="/wordle/solo/?mode=daily&length=5" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Guess the Word</h4>
+              <p>Type any <strong>5-letter word</strong> and press <strong>Enter</strong> to guess. You have <strong>6 guesses</strong> to find the word!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Example Guess</div>
+                <div class="gh-tile-row">
+                  <div class="gh-tile highlight">H</div>
+                  <div class="gh-tile highlight">E</div>
+                  <div class="gh-tile highlight">L</div>
+                  <div class="gh-tile highlight">L</div>
+                  <div class="gh-tile highlight">O</div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> You can change the word length with the buttons in the top-right corner.</div>
+            </div>
+            <div class="htp-step">
+              <h4>Read the Colors</h4>
+              <p>After each guess, the tiles change color to show how close you are:</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e">W</div><span><strong style="color:#6aaa64">Green</strong> — Correct letter, correct spot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b">I</div><span><strong style="color:#b59f3b">Yellow</strong> — Correct letter, wrong spot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#3a3a3c">X</div><span><strong style="color:#888">Gray</strong> — Letter not in the word</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Use the Clues</h4>
+              <p>Use the color clues to narrow down the answer. The <strong>keyboard</strong> below also updates with colors for each letter.</p>
+              <div class="gh-example">
+                <div class="gh-example-label">If the word is CRISP</div>
+                <div class="gh-tile-row">
+                  <div class="gh-tile absent">G</div>
+                  <div class="gh-tile correct">R</div>
+                  <div class="gh-tile absent">A</div>
+                  <div class="gh-tile present">I</div>
+                  <div class="gh-tile absent">N</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> I is in the word but not here — R is perfect!</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-daily"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="6" width="14" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 4v4M16 4v4M5 10h14M9 14h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> Daily challenges use the same word for all players. Complete it to earn rewards!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Betwixt -->
+        <div class="htp-game" id="htp-betwixt" style="--htp-c:#e06c9a">
+          <div class="htp-game-header">
+            <h3>Betwixt</h3>
+                <a href="/betwixt/solo/" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Find the Secret Word</h4>
+              <p>A secret word is hidden <strong>alphabetically</strong> between two boundaries. Type a word and press <strong>Enter</strong> to guess.</p>
+              <div class="gh-example">
+                <div class="gh-example-label">The word is between…</div>
+                <div class="gh-boundary after"><span>⬇ AFTER</span> — <strong>APPLE</strong></div>
+                <div class="gh-boundary secret"><span><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span> SECRET</span> — <strong>???</strong></div>
+                <div class="gh-boundary before"><span>⬆ BEFORE</span> — <strong>LEMON</strong></div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> The secret word comes after APPLE and before LEMON in the dictionary. Guess any word in that range!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Narrow the Range</h4>
+              <p>Each guess <strong>tightens the boundaries</strong>. If your guess is too early, AFTER moves forward. Too late, BEFORE moves back.</p>
+              <div class="gh-example">
+                <div class="gh-example-label">After guessing GRAPE</div>
+                <div class="gh-boundary after"><span>⬇ AFTER</span> — <strong>GRAPE</strong></div>
+                <div class="gh-boundary secret"><span><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span> SECRET</span> — between here</div>
+                <div class="gh-boundary before"><span>⬆ BEFORE</span> — <strong>LEMON</strong></div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-words"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 7.5c0-1 1-1.8 2.1-1.8h4.2c1 0 1.9.3 2.7.9v11.7c-.8-.6-1.7-.9-2.7-.9H8.6c-1.1 0-2.1.8-2.1 1.8zM17.5 7.5c0-1-1-1.8-2.1-1.8h-4.2c-1 0-1.9.3-2.7.9v11.7c.8-.6 1.7-.9 2.7-.9h4.2c1.1 0 2.1.8 2.1 1.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> The <strong>alphabet bar</strong> highlights which starting letters are still possible, helping you eliminate options fast.</div>
+            </div>
+            <div class="htp-step">
+              <h4>Lock in Letters</h4>
+              <p>When both boundaries share the same letter at a position, that letter is <strong>confirmed</strong> and locked in — no more guessing for that spot!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Confirmed letters</div>
+                <div class="gh-tile-row">
+                  <div class="gh-tile correct">H</div>
+                  <div class="gh-tile highlight">?</div>
+                  <div class="gh-tile highlight">?</div>
+                  <div class="gh-tile correct">E</div>
+                  <div class="gh-tile highlight">?</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> H and E are confirmed — only 3 letters left to find!</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-daily"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="6" width="14" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 4v4M16 4v4M5 10h14M9 14h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> Daily challenges use the same word for all players. Complete it to earn rewards!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PixeLetters -->
+        <div class="htp-game" id="htp-pixeletters" style="--htp-c:#00bcd4">
+          <div class="htp-game-header">
+            <h3>PixeLetters</h3>
+                <a href="/pixeletters/solo/?mode=daily&length=5" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Decode the Pixels</h4>
+              <p>The secret word is hidden as <strong>pixel art</strong>. Each letter is a tiny grid. With each guess, <strong>more pixels are revealed</strong> — figure out what letters they form!</p>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> You have <strong>5 guesses</strong> to figure out the word. Each wrong guess reveals more pixels!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Read the Colors</h4>
+              <p>After each guess, the pixels light up to show how close you are:</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#4d96ff">✓</div><span><strong style="color:#4d96ff">Blue</strong> — Correct letter, correct position (fully revealed)</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#4caf50">●</div><span><strong style="color:#4caf50">Green</strong> — Revealed pixels that match the target letter</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#e53935">✗</div><span><strong style="color:#e53935">Red</strong> — Revealed pixels that don't match the target</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#2a2a3a">?</div><span><strong style="color:#888">Gray</strong> — Pixels not yet revealed</span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-words"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 7.5c0-1 1-1.8 2.1-1.8h4.2c1 0 1.9.3 2.7.9v11.7c-.8-.6-1.7-.9-2.7-.9H8.6c-1.1 0-2.1.8-2.1 1.8zM17.5 7.5c0-1-1-1.8-2.1-1.8h-4.2c-1 0-1.9.3-2.7.9v11.7c.8-.6 1.7-.9 2.7-.9h4.2c1.1 0 2.1.8 2.1 1.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> The <strong>keyboard</strong> also shows pixel previews for each letter you've guessed, helping you track what you know.</div>
+            </div>
+            <div class="htp-step">
+              <h4>Three Difficulty Modes</h4>
+              <p>Choose how pixels are revealed with each guess:</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#4d96ff;font-size:11px">STD</div><span><strong style="color:#4d96ff">Standard</strong> — Pixels reveal <strong>top to bottom</strong>. Easiest mode!</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#ff9800;font-size:11px">+</div><span><strong style="color:#ff9800">Plus</strong> — Each letter reveals in a <strong>random direction</strong> (↓ ↑ ← →)</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#e53935;font-size:11px">PRO</div><span><strong style="color:#e53935">Pro</strong> — Only <strong>one row/column</strong> shown at a time. Hardest!</span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-daily"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="6" width="14" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 4v4M16 4v4M5 10h14M9 14h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> Daily challenges use the same word for all players. Complete it to earn rewards!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Figural -->
+        <div class="htp-game" id="htp-figural" style="--htp-c:#ff7043">
+          <div class="htp-game-header">
+            <h3>Figural</h3>
+                <a href="/figural/solo/?mode=daily&length=5" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Guess the Word</h4>
+              <p>Type any word and press <strong>Enter</strong>. After each guess, every letter gets a <strong>colored symbol</strong> — but the symbols are a mystery!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Example feedback</div>
+                <div class="gh-symbol-row">
+                  <div class="gh-symbol cyan">◆</div>
+                  <div class="gh-symbol magenta">▲</div>
+                  <div class="gh-symbol cyan">◆</div>
+                  <div class="gh-symbol lime">●</div>
+                  <div class="gh-symbol magenta">▲</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> Each letter gets a symbol — but what do they mean?</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> You have <strong>8 guesses</strong> to find the word. Use each guess to learn about both the word AND the symbols!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Decode the Symbols</h4>
+              <p>Three symbols appear in three colors. Each means one of these — but you must <strong>figure out which is which</strong>:</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e">✓</div><span><strong style="color:#6aaa64">Correct</strong> — Right letter, right position</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b">~</div><span><strong style="color:#b59f3b">Wrong Spot</strong> — Letter is in the word, but elsewhere</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#3a3a3c">✗</div><span><strong style="color:#888">Not Present</strong> — Letter isn't in the word at all</span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-weekly"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5l2.2 4.4 4.8.7-3.5 3.3.8 4.7-4.3-2.3-4.3 2.3.8-4.7-3.5-3.3 4.8-.7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span></span> The legend at the top shows <strong>? = ?</strong> for each symbol. As you play, deduce which symbol means what!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Crack the Code</h4>
+              <p>Use <strong>logic</strong> to decode the symbols! If a letter you're sure isn't in the word gets a specific symbol, that symbol must mean "Not Present."</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Deduction example</div>
+                <div class="gh-symbol-row">
+                  <div class="gh-symbol cyan">◆</div>
+                  <div class="gh-symbol magenta">▲</div>
+                  <div class="gh-symbol lime">●</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> If ◆ always appears on wrong letters → ◆ = Not Present</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-daily"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="6" width="14" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 4v4M16 4v4M5 10h14M9 14h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> Daily challenges use the same word and symbols for all players. Complete it to earn rewards!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Word5000 -->
+        <div class="htp-game" id="htp-word500" style="--htp-c:#9b59b6">
+          <div class="htp-game-header">
+            <h3>Word5000</h3>
+            <a href="/game/word500/?mode=daily&length=5" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Guess Any Word</h4>
+              <p>Type a word and press Enter. Word5000 gives you <strong>abstract number clues</strong> instead of colored letters!</p>
+              <div class="gh-example">
+                <div class="gh-color-bar">
+                  <div class="gh-color-segment" style="background:#538d4e">1</div>
+                  <div class="gh-color-segment" style="background:#b59f3b">2</div>
+                  <div class="gh-color-segment" style="background:#3a3a3c">2</div>
+                </div>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Read the Numbers</h4>
+              <p>Three colored counts tell you how close you are:</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e">2</div><span><strong style="color:#6aaa64">Green</strong> &mdash; Letters in the correct position</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b">1</div><span><strong style="color:#b59f3b">Yellow</strong> &mdash; Letters in the word but wrong spot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#3a3a3c">2</div><span><strong style="color:#888">Gray</strong> &mdash; Letters not in the word at all</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Think Strategically</h4>
+              <p>You see counts, not positions &mdash; you won&rsquo;t know <em>which</em> letters are correct. Compare counts across guesses to deduce the word!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Spelling Bee -->
+        <div class="htp-game" id="htp-spellingbee" style="--htp-c:#ffab00">
+          <div class="htp-game-header">
+            <h3>Spelling Bee</h3>
+                <a href="/spellingbee/solo/" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Make Words from 7 Letters</h4>
+              <p>You're given <strong>7 letters</strong> in a honeycomb. Build words using those letters — the <strong>center letter</strong> must be in every word!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">The Honeycomb</div>
+                <div class="gh-hex-grid">
+                  <div class="gh-hex-row"><div class="gh-hex">T</div><div class="gh-hex">A</div></div>
+                  <div class="gh-hex-row"><div class="gh-hex">R</div><div class="gh-hex center">L</div><div class="gh-hex">E</div></div>
+                  <div class="gh-hex-row"><div class="gh-hex">I</div><div class="gh-hex">N</div></div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> The golden center letter <strong>L</strong> must appear in every word you make</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> Words must be at least <strong>4 letters</strong> long. You can reuse letters as many times as you want!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Score Points</h4>
+              <p>Longer words earn more points. Find all the words to complete the puzzle!</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e">4</div><span><strong style="color:#6aaa64">4-letter words</strong> — earn <strong>1 point</strong> each</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b">5+</div><span><strong style="color:#b59f3b">Longer words</strong> — earn <strong>1 point per letter</strong></span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#9b59b6">★</div><span><strong style="color:#c98aff">Rare words</strong> — bonus <strong>+3 points</strong></span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-words"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 7.5c0-1 1-1.8 2.1-1.8h4.2c1 0 1.9.3 2.7.9v11.7c-.8-.6-1.7-.9-2.7-.9H8.6c-1.1 0-2.1.8-2.1 1.8zM17.5 7.5c0-1-1-1.8-2.1-1.8h-4.2c-1 0-1.9.3-2.7.9v11.7c.8-.6 1.7-.9 2.7-.9h4.2c1.1 0 2.1.8 2.1 1.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> Click the hex tiles or type on your keyboard. Hit <strong>Enter</strong> to submit!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Find Pangrams!</h4>
+              <p>A <strong>pangram</strong> uses all 7 letters at least once — it's the ultimate find and earns a <strong>+7 bonus</strong>!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Pangram example</div>
+                <div class="gh-tile-row">
+                  <div class="gh-tile correct">L</div>
+                  <div class="gh-tile correct">A</div>
+                  <div class="gh-tile correct">T</div>
+                  <div class="gh-tile correct">E</div>
+                  <div class="gh-tile correct">R</div>
+                  <div class="gh-tile correct">N</div>
+                  <div class="gh-tile correct">I</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> LATERNI uses all 7 letters — that's a pangram! +7 bonus points</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-weekly"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8v3.5a4 4 0 0 1-8 0zM7 7H5.5A2.5 2.5 0 0 0 8 11M17 7h1.5A2.5 2.5 0 0 1 16 11M12 12v3.2M9 19h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> Use the <strong>shuffle</strong> button to rearrange the outer letters — it can help you spot new words!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- recTangled -->
+        <div class="htp-game" id="htp-rectangled" style="--htp-c:#22d3ee">
+          <div class="htp-game-header">
+            <h3><span style="color:#3EC8E8">r</span><span style="color:#F5920A">e</span><span style="color:#EFC000">c</span><span style="color:#1E52C8">T</span><span style="color:#E83020">a</span><span style="color:#42B238">n</span><span style="color:#88AAFF">g</span><span style="color:#C835B8">l</span><span style="color:#F5920A">e</span><span style="color:#1EB8A8">d</span></h3>
+                <a href="/game/rectangled/mobile-sp.html" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Find Words in the Grid</h4>
+              <p>A grid of letters hides many words. <strong>Trace a path</strong> through adjacent letters — horizontally, vertically, or diagonally — to spell words!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Tracing a word</div>
+                <div class="gh-word-grid" style="grid-template-columns:repeat(4,36px)">
+                  <div class="gh-grid-cell traced">R</div><div class="gh-grid-cell">A</div><div class="gh-grid-cell">N</div><div class="gh-grid-cell">K</div>
+                  <div class="gh-grid-cell">L</div><div class="gh-grid-cell traced">O</div><div class="gh-grid-cell">T</div><div class="gh-grid-cell">S</div>
+                  <div class="gh-grid-cell">E</div><div class="gh-grid-cell traced">S</div><div class="gh-grid-cell traced">E</div><div class="gh-grid-cell">P</div>
+                  <div class="gh-grid-cell">W</div><div class="gh-grid-cell">I</div><div class="gh-grid-cell">N</div><div class="gh-grid-cell">D</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> ROSE traced diagonally through adjacent cells</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> <strong>Drag</strong> across the grid or <strong>type</strong> words and press Enter. Each cell can only be used once per word!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Common vs Rare Words</h4>
+              <p>Words are split into two categories. Find all <strong>common words</strong> to complete the puzzle!</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e">✓</div><span><strong style="color:#6aaa64">Common words</strong> — must find all of these to win</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b">★</div><span><strong style="color:#b59f3b">Rare words</strong> — optional bonus words for extra credit</span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-words"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 7.5c0-1 1-1.8 2.1-1.8h4.2c1 0 1.9.3 2.7.9v11.7c-.8-.6-1.7-.9-2.7-.9H8.6c-1.1 0-2.1.8-2.1 1.8zM17.5 7.5c0-1-1-1.8-2.1-1.8h-4.2c-1 0-1.9.3-2.7.9v11.7c.8-.6 1.7-.9 2.7-.9h4.2c1.1 0 2.1.8 2.1 1.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> Words must be at least <strong>3 letters</strong> long. The progress bar tracks your common word count!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Use the Hints</h4>
+              <p>The grid helps you as you play! Corner hint numbers unlock as you progress: at <strong>25%</strong>, the <strong class="tk-red">red bottom-right number</strong> shows how many unfound common words still <strong>pass through</strong> that cell. At <strong>50%</strong>, the <strong class="tk-green">green bottom-left number</strong> shows how many unfound common words <strong>start</strong> there. Cells go dark when no more common words use them.</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Grid hints</div>
+                <div class="gh-word-grid" style="grid-template-columns:repeat(3,36px)">
+                  <div class="gh-grid-cell" style="position:relative">C<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">3</span><span style="position:absolute;bottom:1px;left:3px;font-size:9px;color:#4ade80">1</span></div>
+                  <div class="gh-grid-cell" style="position:relative">A<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">5</span><span style="position:absolute;bottom:1px;left:3px;font-size:9px;color:#4ade80">2</span></div>
+                  <div class="gh-grid-cell" style="position:relative">T<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">2</span><span style="position:absolute;bottom:1px;left:3px;font-size:9px;color:#4ade80">1</span></div>
+                  <div class="gh-grid-cell" style="position:relative">O<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">1</span></div>
+                  <div class="gh-grid-cell" style="opacity:0.3">X</div>
+                  <div class="gh-grid-cell" style="position:relative">E<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">4</span><span style="position:absolute;bottom:1px;left:3px;font-size:9px;color:#4ade80">1</span></div>
+                  <div class="gh-grid-cell" style="position:relative">R<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">2</span></div>
+                  <div class="gh-grid-cell" style="opacity:0.3">Z</div>
+                  <div class="gh-grid-cell" style="position:relative">S<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">1</span><span style="position:absolute;bottom:1px;left:3px;font-size:9px;color:#4ade80">1</span></div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> Red = words passing through. Green = words starting here. Greyed cells = no words left.</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-weekly"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8v3.5a4 4 0 0 1-8 0zM7 7H5.5A2.5 2.5 0 0 0 8 11M17 7h1.5A2.5 2.5 0 0 1 16 11M12 12v3.2M9 19h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> Choose from themed puzzles in the selector. Complete the weekly challenge before it rotates!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subtextle -->
+        <div class="htp-game" id="htp-Subtextle" style="--htp-c:#a855f7">
+          <div class="htp-game-header">
+            <h3>Subtextle</h3>
+                <a href="/game/subtextle/" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Guess by Meaning</h4>
+              <p>A secret word is hidden. Type any word and the game tells you how <strong>semantically similar</strong> your guess is — not spelling, but <strong>meaning</strong>!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">If the secret word is OCEAN</div>
+                <div class="gh-rank-list">
+                  <div class="gh-rank-item hot"><span class="gh-rank-num">#12</span> WAVE</div>
+                  <div class="gh-rank-item"><span class="gh-rank-num">#847</span> BOAT</div>
+                  <div class="gh-rank-item"><span class="gh-rank-num">#5,201</span> TREE</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> WAVE is closely related (#12), TREE is far away (#5,201)</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> You have <strong>unlimited guesses</strong>. The goal is to reach <strong>rank #1</strong> — the exact word!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Read the Ranks</h4>
+              <p>Every guess gets a <strong>rank number</strong> showing how close it is in meaning. Lower is better!</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:linear-gradient(135deg,#4ade80,#22c55e)">#1</div><span><strong style="color:#4ade80">Rank 1</strong> — You found the word.</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:linear-gradient(135deg,#ff2d95,#ff6b6b)">Low</div><span><strong style="color:#ff2d95">Hot</strong> (1-1,000) — Very close in meaning</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:linear-gradient(135deg,#a855f7,#6366f1)">Med</div><span><strong style="color:#a855f7">Warm</strong> (1K-10K) — Getting warmer</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:linear-gradient(135deg,#22d3ee,#3b82f6)">High</div><span><strong style="color:#22d3ee">Cool</strong> (10K+) — Not very related</span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-words"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 7.5c0-1 1-1.8 2.1-1.8h4.2c1 0 1.9.3 2.7.9v11.7c-.8-.6-1.7-.9-2.7-.9H8.6c-1.1 0-2.1.8-2.1 1.8zM17.5 7.5c0-1-1-1.8-2.1-1.8h-4.2c-1 0-1.9.3-2.7.9v11.7c.8-.6 1.7-.9 2.7-.9h4.2c1.1 0 2.1.8 2.1 1.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> Guesses showing <strong>"???"</strong> mean the word isn't recognized. Try a different spelling!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Think in Concepts</h4>
+              <p>This isn't about letters — it's about <strong>ideas</strong>. If your guess is "warm," think of words in the same <strong>topic or category</strong> to get closer.</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Strategy example</div>
+                <div class="gh-rank-list">
+                  <div class="gh-rank-item"><span class="gh-rank-num">#3,400</span> FOOD</div>
+                  <div class="gh-rank-item hot"><span class="gh-rank-num">#180</span> FRUIT</div>
+                  <div class="gh-rank-item winner"><span class="gh-rank-num" style="color:#4ade80">#1</span> <strong>APPLE</strong> ✓</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> Narrow down: FOOD → FRUIT → APPLE.</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-weekly"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8v3.5a4 4 0 0 1-8 0zM7 7H5.5A2.5 2.5 0 0 0 8 11M17 7h1.5A2.5 2.5 0 0 1 16 11M12 12v3.2M9 19h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> Each guess bubble fills with <strong>water</strong> based on closeness — greener and fuller means you're getting hot!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- UnWordle -->
+        <div class="htp-game" id="htp-unwordle" style="--htp-c:#ff6b6b">
+          <div class="htp-game-header">
+            <h3>UnWordle</h3>
+                <a href="/unwordle/solo/" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Reverse Wordle</h4>
+              <p>You're given the <strong>answer word</strong> (bottom row in green) and the <strong>color pattern</strong> for each row above it. Fill in words that produce those exact colors!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Example Puzzle</div>
+                <div class="gh-tile-row">
+                  <div class="gh-tile absent">?</div>
+                  <div class="gh-tile absent">?</div>
+                  <div class="gh-tile present">?</div>
+                  <div class="gh-tile absent">?</div>
+                  <div class="gh-tile absent">?</div>
+                </div>
+                <div class="gh-tile-row" style="margin-top:4px">
+                  <div class="gh-tile correct">C</div>
+                  <div class="gh-tile correct">R</div>
+                  <div class="gh-tile correct">A</div>
+                  <div class="gh-tile correct">N</div>
+                  <div class="gh-tile correct">E</div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> The answer is always shown at the bottom in green!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Match the Colors</h4>
+              <p>Each word you enter must produce the <strong>exact color pattern</strong> shown when checked against the answer.</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e">W</div><span><strong style="color:#6aaa64">Green</strong> &mdash; Correct letter, correct spot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b">I</div><span><strong style="color:#b59f3b">Yellow</strong> &mdash; Correct letter, wrong spot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#3a3a3c">X</div><span><strong style="color:#888">Gray</strong> &mdash; Letter not in the word</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Hard Mode Rules</h4>
+              <p>Rows are solved <strong>top to bottom</strong>. Revealed hints carry forward &mdash; green letters must stay in position, yellow letters must appear in later rows. Switch between <strong>Normal</strong> (3 rows) and <strong>Hard</strong> (5 rows).</p>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-weekly"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 8v4l2.6 1.7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> Race the clock &mdash; your solve time is tracked! A new daily puzzle appears each day.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- erecTangled -->
+        <div class="htp-game" id="htp-erectangled" style="--htp-c:#44cc88">
+          <div class="htp-game-header">
+            <h3>erecTangled</h3>
+                <a href="/game/erectangled/sp.html" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>The Grid Grows</h4>
+              <p>Start with a small <strong>center ring</strong> of letters. Find all the <strong>common words</strong> hidden in the grid to <strong>expand outward</strong>, revealing new rings of letters.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Swipe or Type</h4>
+              <p><strong>Swipe</strong> across adjacent letters to trace a word, or simply <strong>type</strong> the word in chat. Words must be at least <strong>3 letters</strong> long.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Word Tiers</h4>
+              <p><strong class="common-color">Common</strong> words advance the ring. <strong class="rare-color">Rare</strong> words earn bonus coins. <strong class="hidden-color">Hidden</strong> words trigger a <strong>5,000 coin jackpot</strong>! As the current ring fills, corner hint numbers unlock: at <strong>25%</strong> the <strong class="tk-red">red bottom-right number</strong> shows how many common words still pass through a cell, and at <strong>50%</strong> the <strong class="tk-green">green bottom-left number</strong> shows how many common words start there.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Final Ring</h4>
+              <p>When the last ring is revealed, <strong>dead-end letters are replaced</strong> with new ones, unlocking even more words. Clear them all to complete the puzzle!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Color500 -->
+        <div class="htp-game" id="htp-colour500" style="--htp-c:#4ade80">
+          <div class="htp-game-header">
+            <h3>Color500</h3>
+                <a href="/game/colour500/solo" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Crack the Color Code</h4>
+              <p>Classic <strong>Mastermind</strong>, played with colors. A secret <strong>color code</strong> is hidden &mdash; build a guess from the palette and submit it. You have <strong>10 guesses</strong> to crack the code!</p>
+            </div>
+            <div class="htp-step">
+              <h4>Read the Pegs</h4>
+              <p>After each guess, feedback pegs show how close you are &mdash; but not <em>which</em> slots are right:</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e"></div><span><strong style="color:#4ade80">Green</strong> &mdash; Right color, right slot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b"></div><span><strong style="color:#b59f3b">Yellow</strong> &mdash; Right color, wrong slot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#3a3a3c"></div><span><strong style="color:#888">Gray</strong> &mdash; Color not in the code</span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> Use logic like Wordle &mdash; reuse confirmed colors and shuffle the misplaced ones.</div>
+            </div>
+            <div class="htp-step">
+              <h4>A New Code Every Day</h4>
+              <p>A fresh <strong>daily code</strong> drops every day, and it earns daily rewards just like the word games. You can also play it live in multiplayer from TikTok chat!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Triangled -->
+        <div class="htp-game" id="htp-triangled" style="--htp-c:#a8b2c0">
+          <div class="htp-game-header">
+            <h3>Triangled</h3>
+                <a href="/game/triangled/" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Trace the Theme Words</h4>
+              <p>A <strong>triangular grid</strong> of letters hides a set of words that all share a secret <strong>theme</strong>. <strong>Drag across adjacent letters</strong> to trace a word, then release to submit.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Find the Spangram</h4>
+              <p>One special word &mdash; the <strong>spangram</strong> &mdash; describes the theme itself and stretches across the puzzle. Finding it is the key to unlocking what the other words have in common!</p>
+            </div>
+            <div class="htp-step">
+              <h4>Clear the Triangle</h4>
+              <p>Every letter in the grid is used <strong>exactly once</strong>. Find all the theme words to complete the puzzle &mdash; a new triangle drops <strong>every day</strong>, and it counts toward your daily challenge rewards.</p>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-daily"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="6" width="14" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 4v4M16 4v4M5 10h14M9 14h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> Stuck? If a traced word isn't a theme word, it may still be valid &mdash; keep experimenting to reveal the theme.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Synapse -->
+        <div class="htp-game" id="htp-synapse" style="--htp-c:#8b5cf6">
+          <div class="htp-game-header">
+            <h3>Synapse</h3>
+                <a href="/synapse" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Bridge Two Distant Words</h4>
+              <p>Each day gives you <strong>two distant words</strong> at opposite corners of the sky. Add words to build a <strong>bridge of meaning</strong> between them &mdash; type words one at a time, or space-separated to batch.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Links Form Automatically</h4>
+              <p>Every word you add lights up <strong>links</strong> to the words it resembles &mdash; similarity is judged by <strong>word-embedding models</strong>, the same brains behind Subtextle. A word only keeps its <strong>strongest few links</strong>, so <strong>chains beat hubs</strong>!</p>
+            </div>
+            <div class="htp-step">
+              <h4>Connect the Corners</h4>
+              <p>Win by connecting the two corner stars through an <strong>unbroken chain</strong>. You have <strong>200 words</strong> before the sky fills up &mdash; the fewer you use, the better.</p>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> In <strong>Multiplayer</strong>, every player is a colored planet building their own constellation &mdash; first to connect the corners wins!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WikiContexto -->
+        <div class="htp-game" id="htp-wikiSubtextle" style="--htp-c:#8a5cf7">
+          <div class="htp-game-header">
+            <h3>WikiContexto</h3>
+                <a href="/game/wikiSubtextle/" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Find the Hidden Article</h4>
+              <p>A secret <strong>Wikipedia article</strong> is hidden. Type any word to guess &mdash; each guess is <strong>ranked by how close its meaning is</strong> to the article, Contexto-style.</p>
+              <div class="gh-example">
+                <div class="gh-example-label">If the article is "Volcano"</div>
+                <div class="gh-rank-list">
+                  <div class="gh-rank-item hot"><span class="gh-rank-num">#3</span> lava</div>
+                  <div class="gh-rank-item"><span class="gh-rank-num">#41</span> mountain</div>
+                  <div class="gh-rank-item"><span class="gh-rank-num">#2870</span> sandwich</div>
+                </div>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Follow the Heat</h4>
+              <p>Lower rank = closer to the answer. Use your best guesses as stepping stones &mdash; when a word ranks hot, explore words related to it until you zero in on the article.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Solo or Live Multiplayer</h4>
+              <p>Play the <strong>solo</strong> puzzle at your own pace, or join <strong>live multiplayer</strong> where everyone races to reveal the same article. The <strong>weekly challenge</strong> counts toward your weekly bonus loot box!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- WikirecTangled -->
+        <div class="htp-game" id="htp-WikirecTangled" style="--htp-c:#ee7a2c">
+          <div class="htp-game-header">
+            <h3>WikirecTangled</h3>
+                <a href="/game/WikirecTangled/solo" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Word Search Meets Wikipedia</h4>
+              <p>Find words hidden in a <strong>letter grid</strong> &mdash; every word you can trace <strong>appears in a secret Wikipedia article</strong>. Swipe across adjacent letters to trace, or type your word.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Reveal the Article</h4>
+              <p>Each found word <strong>uncovers part of the article</strong>. Rarer finds reveal more &mdash; work through <strong>common</strong>, <strong>rare</strong>, and <strong>ultra</strong> tier words to expose the title.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Name It to Win</h4>
+              <p>Once you think you know what the article is, <strong>guess its title</strong> to finish the puzzle. A new grid and a new secret article drop <strong>every day</strong>!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Junk Drawer -->
+        <div class="htp-game" id="htp-junkdrawer" style="--htp-c:#f5a623">
+          <div class="htp-game-header">
+            <h3>Junk Drawer</h3>
+                <a href="https://junkdrawer.live" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Drop &amp; Merge</h4>
+              <p>Drop everyday household items into the drawer. When <strong>two identical items touch, they merge</strong> into the next bigger item &mdash; paperclips, rings, keys, wallets, phones and beyond.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Climb the Chain</h4>
+              <p>Keep merging to climb the item chain all the way up to the <strong>Big Screen TV</strong>. Bigger merges mean bigger points!</p>
+            </div>
+            <div class="htp-step">
+              <h4>Don't Overflow</h4>
+              <p>The drawer only holds so much &mdash; if the clutter piles over the top, the game ends. Plan your drops and leave room for big merges.</p>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> One of the hub’s two non-word games &mdash; a perfect brain break between puzzles.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cloud Quarry -->
+        <div class="htp-game" id="htp-cloudquarry" style="--htp-c:#20b7d6">
+          <div class="htp-game-header">
+            <h3>Cloud Quarry</h3>
+                <a href="/cloudquarry" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Aim &amp; Ricochet</h4>
+              <p>Hold the mouse or your finger on the quarry to aim and continuously launch balls. Each ball <strong>ricochets through several blocks</strong> before its charge runs out. Every brick has 3&ndash;24 numbered durability shells, with deeper bricks carrying more. One collision or explosion can peel at most one shell.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Recycle the Shards</h4>
+              <p>Broken blocks release <strong>skyglass shards</strong>. Golden vault bricks have reinforced shells but release richer caches, while fast destruction chains increase shard value. Your recycler converts the shards into credits for damage, multishot, explosive balls, and other workshop upgrades.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Open Quarry or Daily Sprint</h4>
+              <p><strong>Open Quarry</strong> is an untimed, persistent 420-block formation with 32 layers; every clear reveals a different layout. Its five-strata tracker shows how far you have drilled toward the star core. <strong>Daily Sprint</strong> gives everyone the same fresh six-minute, 320-block layout for that day and ranks signed-in players by verified clear time. Workshop upgrades and remaining credits reset with every fresh quarry.</p>
+              <div class="gh-tip">Your first verified Daily Sprint clear awards Word Tycoon XP. Hold a steady angle through dense rows to build a valuable destruction chain.</div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Library -->
+        <div class="htp-game" id="htp-letterworks" style="--htp-c:#ffab00">
+          <div class="htp-game-header"><h3>Letterworks</h3><a href="/letterworks/" class="htp-play-btn">Play &rarr;</a></div>
+          <div class="htp-steps">
+            <div class="htp-step"><h4>Forge the Blueprint</h4><p>Build 3–6 letter words from six reusable tiles. The ledger groups every accepted word by length. Each word scores once. Meet the quota and find a six-letter blueprint to bank your shift.</p></div>
+            <div class="htp-step"><h4>Stack Your Contracts</h4><p>Choose a contract after each of the first four shifts. Upgrades stack for the rest of your run. The fifth-shift boss requires its locked letter in every word.</p></div>
+            <div class="htp-step"><h4>Daily, Solo, or Stream</h4><p>The daily changes at midnight in Edmonton; signed-in five-shift clears enter its verified score board. Account runs save across devices, and accepted words grow your Word Tycoon library. Your first daily clear awards 50 base XP with the usual daily bonuses; the first fresh-run win awards 25 base XP each day. Practice is untimed and local.</p><div class="gh-tip">Streamers can select Letterworks in /streamer or /pro. Chat forges words together, then votes 1, 2 or 3 for the next contract. A full team clear awards participating accounts up to one 25-base-XP streamer reward per day.</div></div>
+          </div>
+        </div>
+
+        <div class="htp-game" id="htp-wordfall" style="--htp-c:#ad98f0">
+          <div class="htp-game-header"><h3>Wordfall</h3><a href="/wordfall/" class="htp-play-btn">Play &rarr;</a></div>
+          <div class="htp-steps">
+            <div class="htp-step"><h4>Trace and Tumble</h4><p>Connect 3–7 neighboring letters in any direction. Each tile can be used once in a word. Accepted tiles disappear, the column falls, and new letters refill the top.</p></div>
+            <div class="htp-step"><h4>Solo and Daily</h4><p>Clear 70 tiles within 18 moves. Solo runs save to your Word Tycoon account; the daily uses the same starting board for everyone and resets at Edmonton midnight. Words enter your Library and eligible clears award Word Tycoon XP.</p></div>
+            <div class="htp-step"><h4>One Shared Multiplayer Board</h4><p>All players see the same falling board. The first valid trace changes it for everyone, and the highest Word Tycoon word score after three minutes wins. Streamers can select Wordfall in /streamer or /pro; viewers can trace on the widget or submit a visible board word through chat.</p></div>
+          </div>
+        </div>
+
+        <div class="htp-game" id="htp-library" style="--htp-c:#8b5cf6">
+          <div class="htp-game-header">
+            <h3>Your Library</h3>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Collect Words</h4>
+              <p>Every time you <strong>win a game</strong> or <strong>find a valid word</strong>, it gets added to your Library. Words are collected from <strong>all games</strong> &mdash; Wordle, Betwixt, Spelling Bee, and more!</p>
+            </div>
+            <div class="htp-step">
+              <h4>Level Up Your Library</h4>
+              <p>Your Library starts at <strong>Level 1</strong> and levels up as you discover more unique words. Higher levels mean <strong>more XP per second</strong>!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Level Milestones</div>
+                <div class="gh-rank-list">
+                  <div class="gh-rank-item"><span class="gh-rank-num">Lv.2</span> 100 words</div>
+                  <div class="gh-rank-item"><span class="gh-rank-num">Lv.3</span> 200 words</div>
+                  <div class="gh-rank-item"><span class="gh-rank-num">Lv.5</span> 600 words</div>
+                  <div class="gh-rank-item hot"><span class="gh-rank-num">Lv.100</span> 800,000 words</div>
+                </div>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Each Word Counts Once</h4>
+              <p>Finding the same word twice won't add it again &mdash; only <strong>unique</strong> words grow your library. Try different games to discover new words!</p>
+            </div>
+          </div>
+        </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="foot-walk">🚶‍♀️ 🚶 🐈‍⬛</div>
+  <a href="/">The Tower</a> · <a href="/goat">GOAT</a> · <a href="/profile">Your Suite</a> · <a href="/library">Library</a>
+  <div style="margin-top:8px">
+    <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="https://discord.gg/C8Nm2jEZFC" target="_blank" rel="noopener">Discord</a> · <span>&copy; 2026 Word Tycoon</span>
+  </div>
+</footer>
+
+<script src="/portal/js/toon.js?v=5"></script>
+<!-- The Switchboard: Lobby chat (site-only) + Live Feed (stream relay). -->
+<script src="/chat-widget.js?v=21" defer></script>
+<script>WTToon.wireToggle(document.getElementById('skyToggle'));</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

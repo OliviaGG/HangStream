@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GOAT Board · Word Tycoon</title>
+  <meta name="description" content="Explore the greatest Word Tycoon players across ELO, XP, wins, streaks and individual games.">
+  <link rel="canonical" href="https://wordtycoon.live/goat">
+  <meta name="theme-color" content="#fff8e8">
+  <link rel="manifest" href="/portal/manifest.webmanifest?v=4">
+  <link rel="icon" href="/portal/img/logo-favicon.png?v=2">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+  <meta property="og:title" content="GOAT Board · Word Tycoon">
+  <meta property="og:description" content="The all-time Word Tycoon leaderboard.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://wordtycoon.live/goat">
+  <meta property="og:site_name" content="Word Tycoon">
+  <link rel="stylesheet" href="/portal/css/toon.css?v=3">
+  <link rel="stylesheet" href="/portal/css/hangstream-skin.css">
+  <link rel="stylesheet" href="/goat/goat.css?v=15">
+</head>
+<body>
+  <script>try{if(localStorage.getItem('wt-night')==='1')document.body.classList.add('night')}catch(e){}</script>
+
+  <header class="goat-site-header">
+    <div class="goat-site-shell header-inner">
+      <a class="goat-brand" href="/" aria-label="Word Tycoon home">
+        <span class="goat-brand-mark" aria-hidden="true">G</span>
+        <span>Word<span>Tycoon</span></span>
+      </a>
+      <nav class="goat-nav" aria-label="Word Tycoon">
+        <a href="/profile">🛎️ <span>Your Suite</span></a>
+        <a href="/how-to-play">📖 <span>How to Play</span></a>
+        <a href="/">🏢 <span>The Tower</span></a>
+        <button type="button" id="skyToggle" class="theme-button" aria-label="Toggle day or night" aria-pressed="false">
+          <span class="theme-night" aria-hidden="true">🌙</span><span class="theme-day" aria-hidden="true">☀️</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="goat-site-shell goat-page">
+    <section class="goat-hero" aria-labelledby="goat-title">
+      <div>
+        <p class="goat-kicker">Hall of fame</p>
+        <h1 id="goat-title"><span aria-hidden="true">🐐</span> The GOAT Board</h1>
+        <p class="goat-intro">Find the players leading the Word Tycoon universe. Rankings update as games finish.</p>
+      </div>
+      <div class="hero-status" aria-label="Leaderboard status">
+        <span id="ranked-count">Loading players</span>
+        <span><b class="live-dot" aria-hidden="true"></b><span id="live-metric">Overall ELO</span></span>
+      </div>
+    </section>
+
+    <section class="leaderboard-controls" aria-label="Leaderboard filters">
+      <div class="control-field search-field" role="search">
+        <span class="control-icon" aria-hidden="true">⌕</span>
+        <label class="sr-only" for="player-search">Find a player</label>
+        <input id="player-search" type="search" placeholder="Find a player" autocomplete="off" maxlength="80">
+        <button type="button" id="clear-search" class="clear-search" aria-label="Clear search" hidden>×</button>
+      </div>
+
+      <label class="control-field" for="ranking-select">
+        <span class="control-label">Rank by</span>
+        <select id="ranking-select">
+          <option value="elo">Overall ELO</option>
+          <option value="coins">XP</option>
+          <option value="total_game_wins">Total wins</option>
+          <option value="streak">Current streak</option>
+          <option value="longest_streak">Best streak</option>
+          <option value="total_taps">Taps</option>
+          <option value="library_words">Library words</option>
+          <option value="game_elo">Game ELO</option>
+          <option value="game_wins">Game wins</option>
+        </select>
+      </label>
+
+      <label class="control-field" id="game-field" for="game-select" hidden>
+        <span class="control-label">Game</span>
+        <select id="game-select"></select>
+      </label>
+
+      <div class="control-actions">
+        <button type="button" id="sort-direction" class="square-button" aria-label="Sort low to high">↓</button>
+        <button type="button" id="refresh-board" class="square-button refresh-button" aria-label="Refresh leaderboard">↻</button>
+      </div>
+
+      <div class="region-filter" aria-label="Region">
+        <button type="button" data-region="GLOBAL" aria-pressed="true">Worldwide</button>
+        <button type="button" data-region="NA" aria-pressed="false">North America</button>
+        <button type="button" data-region="EU" aria-pressed="false">Europe</button>
+        <button type="button" data-region="APAC" aria-pressed="false">Asia-Pacific</button>
+      </div>
+    </section>
+
+    <section id="podium" class="podium" aria-label="Top three players" hidden>
+      <div class="section-heading">
+        <div><p class="section-kicker">Leaders</p><h2>Top three</h2></div>
+        <p>Choose a player to see their record.</p>
+      </div>
+      <div id="podium-cards" class="podium-cards"></div>
+      <div id="podium-detail" class="podium-detail" aria-live="polite" hidden></div>
+    </section>
+
+    <section id="leaderboard-board" class="leaderboard-board" aria-labelledby="board-title" aria-busy="true">
+      <div class="board-title-row">
+        <div><p class="section-kicker">Rankings</p><h2 id="board-title">Leaderboard</h2></div>
+        <p id="result-summary">Loading players…</p>
+      </div>
+      <div id="board-head" class="board-head" hidden>
+        <span>Rank</span><span>Player</span><span id="metric-heading">Overall ELO</span><span id="secondary-heading">XP</span><span>Wins</span><span>Streak</span><span></span>
+      </div>
+      <div id="player-list" class="player-list">
+        <div class="loading-message"><span class="spinner" aria-hidden="true"></span>Loading the leaderboard…</div>
+      </div>
+      <nav id="pagination" class="pagination" aria-label="Leaderboard pages" hidden>
+        <div id="page-controls" class="page-controls"></div>
+      </nav>
+    </section>
+    <p id="leaderboard-status" class="sr-only" aria-live="polite">Loading leaderboard</p>
+  </main>
+
+  <footer class="goat-footer">
+    <div class="goat-site-shell">
+      <nav aria-label="Footer">
+        <a href="/">The Tower</a><span>·</span><a href="/profile">Your Suite</a><span>·</span>
+        <a href="/store">Store</a><span>·</span><a href="/library">Library</a><span>·</span>
+        <a href="/privacy">Privacy</a><span>·</span><a href="/terms">Terms</a><span>·</span>
+        <a href="https://discord.gg/C8Nm2jEZFC" target="_blank" rel="noopener">Discord</a>
+      </nav>
+      <p>© 2026 Word Tycoon</p>
+    </div>
+  </footer>
+
+  <script src="/goat/goat-data.js?v=41" defer></script>
+  <script src="/goat/goat.js?v=45" defer></script>
+  <script>
+    (function deferHubChat() {
+      let started = false;
+      function loadChat() {
+        if (started) return;
+        started = true;
+        const socket = document.createElement('script');
+        socket.src = '/socket.io/socket.io.js';
+        socket.onload = function () {
+          const widget = document.createElement('script');
+          widget.src = '/chat-widget.js?v=21';
+          widget.defer = true;
+          document.body.appendChild(widget);
+        };
+        document.body.appendChild(socket);
+      }
+      document.addEventListener('goat:ready', function () {
+        if ('requestIdleCallback' in window) requestIdleCallback(loadChat, { timeout: 2500 });
+        else setTimeout(loadChat, 1200);
+      }, { once: true });
+    })();
+  </script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

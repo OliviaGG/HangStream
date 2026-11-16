@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Desktop Feed</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      background: #000;
+      overflow: hidden;
+    }
+    #video {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      background: #000;
+      display: block;
+    }
+    #status {
+      position: absolute;
+      top: 8px; left: 8px;
+      color: #0f0;
+      font-family: monospace;
+      font-size: 12px;
+      background: rgba(0,0,0,0.7);
+      padding: 4px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+      max-width: 90%;
+      word-break: break-word;
+    }
+  </style>
+  <script src="/js/hls.min.js"></script>
+</head>
+<body>
+  <video id="video" autoplay playsinline></video>
+  <div id="status">loading…</div>
+  <script>
+    (function () {
+      const video = document.getElementById('video');
+      const status = document.getElementById('status');
+      const params = new URLSearchParams(location.search);
+      // Widget's muted toggle — default to muted because the desktop feed is
+      // usually visual-only and the streamer is already miked up.
+      video.muted = params.get('muted') !== '0';
+      const src = 'https://wordtycoon.live/streamer/desktop-hls/index.m3u8';
+      let loadAttempt = 0;
+      let hls = null;
+
+      function setStatus(msg) {
+        if (status) status.textContent = msg;
+        console.log('[desktop-feed]', msg);
+      }
+
+      video.addEventListener('loadedmetadata', () => setStatus('meta: ' + video.videoWidth + 'x' + video.videoHeight));
+      video.addEventListener('playing', () => setStatus('playing'));
+      video.addEventListener('waiting', () => setStatus('buffering'));
+      video.addEventListener('error', (e) => setStatus('video error: ' + (video.error ? video.error.code : e)));
+      video.addEventListener('stalled', () => setStatus('stalled'));
+
+      function jumpGap() {
+        try {
+          if (video.readyState >= 1 && video.buffered.length) {
+            const cur = video.currentTime;
+            const end = video.buffered.end(video.buffered.length - 1);
+            if (end > cur + 0.5) {
+              setStatus('jump gap ' + cur.toFixed(2) + ' -> ' + end.toFixed(2));
+              video.currentTime = end - 0.1;
+            }
+          }
+        } catch (_) {}
+      }
+
+      function loadWithHls() {
+        if (!window.Hls || !Hls.isSupported()) {
+          setStatus('hls.js not supported');
+          return;
+        }
+        if (hls) { try { hls.destroy(); } catch (_) {} }
+        loadAttempt++;
+        setStatus('hls.js load #' + loadAttempt);
+        hls = new Hls({
+          debug: false,
+          liveSyncDurationCount: 4,
+          liveMaxLatencyDurationCount: 12,
+          maxLiveSyncPlaybackRate: 1.0,
+          backBufferLength: 30,
+          maxBufferHole: 5.0,
+          maxFragLookUpTolerance: 1.0,
+          fragLoadingTimeOut: 20000,
+          manifestLoadingTimeOut: 20000,
+          levelLoadingTimeOut: 20000,
+          xhrSetup: function(xhr) {
+            xhr.withCredentials = true;
+          }
+        });
+        hls.loadSource(src);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          setStatus('manifest parsed');
+          video.play().catch(function(e) {
+            setStatus('play blocked: ' + e.message);
+          });
+        });
+        hls.on(Hls.Events.ERROR, function (event, data) {
+          setStatus('err: ' + data.type + ' ' + data.details);
+          if (data.details === 'fragGap') {
+            jumpGap();
+            return;
+          }
+          if (data.fatal) {
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                setStatus('retry network');
+                hls.startLoad();
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                setStatus('recover media');
+                hls.recoverMediaError();
+                break;
+              default:
+                setStatus('destroy & retry');
+                hls.destroy();
+                hls = null;
+                setTimeout(loadWithHls, 2000);
+                break;
+            }
+          }
+        });
+      }
+
+      loadWithHls();
+    })();
+  </script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

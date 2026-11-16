@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Site Usage — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f14;
+    --surface: #1a1a24;
+    --border: #2a2a3a;
+    --text: #e0e0e0;
+    --text-dim: #888;
+    --blue: #4a9eff;
+    --red: #e94560;
+    --green: #4fc34f;
+    --radius: 10px;
+    --radius-sm: 6px;
+    /* chart series — validated against the #1a1a24 surface */
+    --series-views: #3987e5;
+    --series-uniques: #d95926;
+    --grid: #262633;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 80px; }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(15,15,20,0.95); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .topbar h1 { font-size: 18px; font-weight: 700; }
+  .topbar .grow { flex: 1; }
+  .topbar .status { font-size: 13px; color: var(--text-dim); }
+  .topbar .status.saved { color: var(--green); }
+  .topbar .status.error { color: var(--red); }
+
+  .btn {
+    background: transparent; color: var(--text-dim); border: 1px solid var(--border);
+    padding: 8px 16px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;
+    font-size: 14px; font-family: inherit; transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .btn:hover { color: var(--text); border-color: var(--text-dim); }
+
+  main { max-width: 980px; margin: 0 auto; padding: 24px; }
+  .hint { font-size: 13px; color: var(--text-dim); margin-bottom: 20px; line-height: 1.5; }
+
+  /* Filter row — scopes everything below it */
+  .filters { display: flex; gap: 8px; margin-bottom: 20px; }
+  .range-btn {
+    background: transparent; color: var(--text-dim); border: 1px solid var(--border);
+    padding: 6px 14px; border-radius: 99px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit; transition: all 0.15s;
+  }
+  .range-btn:hover { color: var(--text); border-color: var(--text-dim); }
+  .range-btn.active { color: var(--text); border-color: var(--blue); background: rgba(74,158,255,0.12); }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .tile .label { font-size: 12px; color: var(--text-dim); font-weight: 500; margin-bottom: 6px; }
+  .tile .value { font-size: 26px; font-weight: 600; line-height: 1.1; }
+  .tile .sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+  .group {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-bottom: 16px; overflow: hidden;
+  }
+  .group-header {
+    padding: 12px 16px; background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px; font-weight: 600; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.04em;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .group-header .grow { flex: 1; }
+
+  .legend { display: flex; gap: 14px; text-transform: none; letter-spacing: 0; }
+  .legend .key { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--text); }
+  .legend .swatch { width: 14px; height: 2px; border-radius: 1px; display: inline-block; }
+
+  .chart-wrap { position: relative; padding: 16px 16px 8px; }
+  .chart-wrap svg { display: block; width: 100%; }
+  .tooltip {
+    position: absolute; pointer-events: none; display: none; z-index: 5;
+    background: #0f0f14; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 8px 10px; font-size: 12px; white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  }
+  .tooltip .tt-day { color: var(--text-dim); margin-bottom: 4px; }
+  .tooltip .tt-row { display: flex; align-items: center; gap: 6px; }
+  .tooltip .tt-key { width: 10px; height: 2px; border-radius: 1px; }
+  .tooltip .tt-val { font-weight: 700; }
+  .tooltip .tt-name { color: var(--text-dim); }
+
+  details.data-table { border-top: 1px solid var(--border); }
+  details.data-table summary {
+    padding: 10px 16px; font-size: 12px; color: var(--text-dim); cursor: pointer;
+    user-select: none;
+  }
+  details.data-table summary:hover { color: var(--text); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 16px; border-top: 1px solid rgba(255,255,255,0.04); }
+  th { color: var(--text-dim); font-weight: 600; font-size: 12px; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .cols { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; align-items: start; }
+  @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+
+  .bar-list { padding: 8px 0; }
+  .bar-row {
+    display: grid; grid-template-columns: minmax(120px, 1fr) 2fr 64px;
+    align-items: center; gap: 10px; padding: 5px 16px; transition: background 0.1s;
+  }
+  .bar-row:hover { background: rgba(255,255,255,0.03); }
+  .bar-row .page { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-row .track { height: 18px; display: flex; align-items: center; }
+  .bar-row .bar {
+    height: 18px; background: var(--series-views); min-width: 2px;
+    border-radius: 0 4px 4px 0; /* rounded data-end, square at the baseline */
+  }
+  .bar-row .views { font-size: 13px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+
+  .ref-row { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-top: 1px solid rgba(255,255,255,0.03); font-size: 13px; }
+  .ref-row:first-child { border-top: none; }
+  .ref-row .host { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+  .ref-row .views { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .event-row { display: grid; grid-template-columns: minmax(170px, 1fr) minmax(160px, 1fr) 70px; gap: 12px; align-items: center; padding: 8px 16px; border-top: 1px solid rgba(255,255,255,0.03); font-size: 13px; }
+  .event-row:first-child { border-top: none; }
+  .event-row .event { font-weight: 600; }
+  .event-row .attribution { color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .event-row .count { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .empty { padding: 24px 16px; color: var(--text-dim); font-size: 14px; text-align: center; }
+  .footer-note { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+  .footer-note a { color: var(--blue); }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>📈 Site Usage</h1>
+    <div class="grow"></div>
+    <span class="status" id="status">loading…</span>
+    <button class="btn" onclick="load()">Refresh</button>
+  </div>
+
+  <main>
+    <p class="hint">
+      Page views on <strong>wordtycoon.live</strong>, counted server-side (no cookies, no client
+      scripts). Daily 3 conversion events use a small first-party script. A <em>unique visitor</em> is a distinct browser per day — the visitor fingerprint
+      rotates daily, so nothing identifying is stored. Bots, admin pages, and OBS overlays are excluded.
+    </p>
+
+    <div class="filters" id="filters">
+      <button class="range-btn" data-days="7">Last 7 days</button>
+      <button class="range-btn active" data-days="30">Last 30 days</button>
+      <button class="range-btn" data-days="90">Last 90 days</button>
+    </div>
+
+    <div class="tiles">
+      <div class="tile"><div class="label">Today</div><div class="value" id="t-today">–</div><div class="sub" id="t-today-sub"></div></div>
+      <div class="tile"><div class="label">Last 7 days</div><div class="value" id="t-7">–</div><div class="sub" id="t-7-sub"></div></div>
+      <div class="tile"><div class="label">Last 30 days</div><div class="value" id="t-30">–</div><div class="sub" id="t-30-sub"></div></div>
+      <div class="tile"><div class="label">All time</div><div class="value" id="t-all">–</div><div class="sub">page views</div></div>
+    </div>
+
+    <div class="group">
+      <div class="group-header">
+        Daily traffic
+        <div class="grow"></div>
+        <div class="legend">
+          <span class="key"><span class="swatch" style="background:var(--series-views)"></span>Views</span>
+          <span class="key"><span class="swatch" style="background:var(--series-uniques)"></span>Unique visitors</span>
+        </div>
+      </div>
+      <div class="chart-wrap" id="chart-wrap">
+        <svg id="chart" height="260"></svg>
+        <div class="tooltip" id="tooltip"></div>
+      </div>
+      <details class="data-table">
+        <summary>View as table</summary>
+        <table id="series-table"><thead><tr><th>Day</th><th class="num">Views</th><th class="num">Uniques</th></tr></thead><tbody></tbody></table>
+      </details>
+    </div>
+
+    <div class="cols">
+      <div class="group">
+        <div class="group-header">Top pages</div>
+        <div class="bar-list" id="pages"><div class="empty">Loading…</div></div>
+      </div>
+      <div class="group">
+        <div class="group-header">Referrers</div>
+        <div id="referrers"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-header">Daily 3 funnel and campaign events</div>
+      <div id="events"><div class="empty">Loading…</div></div>
+    </div>
+
+    <p class="footer-note">
+      Counting started when this feature shipped — earlier traffic isn't included. Standalone game
+      domains (subtextle.com, junkdrawer.live, …) and nginx-proxied game servers don't pass through
+      this counter. Back to the <a href="/admin/dashboard">admin dashboard</a>.
+    </p>
+  </main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const CSS = getComputedStyle(document.documentElement);
+  const C_VIEWS = CSS.getPropertyValue('--series-views').trim();
+  const C_UNIQUES = CSS.getPropertyValue('--series-uniques').trim();
+  const C_GRID = CSS.getPropertyValue('--grid').trim();
+  const C_SURFACE = CSS.getPropertyValue('--surface').trim();
+
+  let days = 30;
+  let data = null;
+
+  function setStatus(text, cls) {
+    const el = $('status');
+    el.textContent = text;
+    el.className = 'status' + (cls ? ' ' + cls : '');
+  }
+
+  function fmt(n) { return Number(n || 0).toLocaleString(); }
+  function fmtCompact(n) {
+    n = Number(n || 0);
+    if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M';
+    if (n >= 1e4) return Math.round(n / 1e3) + 'K';
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+    return String(n);
+  }
+  function fmtDay(d) {
+    const dt = new Date(d + 'T00:00:00Z');
+    return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  }
+
+  async function load() {
+    setStatus('loading…');
+    try {
+      const res = await fetch('/api/admin/usage?days=' + days, { credentials: 'include' });
+      if (res.status === 401) throw new Error('unauthorized');
+      data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'load failed');
+      render();
+      setStatus('updated ' + new Date().toLocaleTimeString(), 'saved');
+    } catch (e) {
+      if (e.message === 'unauthorized') {
+        setStatus('not logged in', 'error');
+        $('pages').innerHTML = '<div class="empty">Log in at <a href="/admin/login" style="color:var(--blue)">/admin/login</a> first.</div>';
+      } else {
+        setStatus('load failed: ' + e.message, 'error');
+      }
+    }
+  }
+
+  function render() {
+    const t = data.totals || {};
+    $('t-today').textContent = fmt(t.today?.views);
+    $('t-today-sub').textContent = fmt(t.today?.uniques) + ' unique visitors';
+    $('t-7').textContent = fmt(t.last7?.views);
+    $('t-7-sub').textContent = fmt(t.last7?.uniques) + ' unique visitors';
+    $('t-30').textContent = fmt(t.last30?.views);
+    $('t-30-sub').textContent = fmt(t.last30?.uniques) + ' unique visitors';
+    $('t-all').textContent = fmt(t.allTimeViews);
+
+    renderChart(data.series || []);
+    renderSeriesTable(data.series || []);
+    renderPages(data.topPages || []);
+    renderReferrers(data.topReferrers || []);
+    renderEvents(data.topEvents || []);
+  }
+
+  // ── Line chart (SVG, crosshair + tooltip) ────────────────────────────
+  const M = { top: 14, right: 16, bottom: 26, left: 44 };
+  let chartGeom = null;
+
+  function niceMax(v) {
+    if (v <= 10) return 10;
+    const pow = Math.pow(10, Math.floor(Math.log10(v)));
+    for (const m of [1, 2, 2.5, 5, 10]) { if (m * pow >= v) return m * pow; }
+    return 10 * pow;
+  }
+
+  function svgEl(name, attrs) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', name);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+
+  function renderChart(series) {
+    const svg = $('chart');
+    svg.textContent = '';
+    const W = $('chart-wrap').clientWidth - 32; // minus padding
+    const H = 260;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', W);
+    if (!series.length) { chartGeom = null; return; }
+
+    const iw = W - M.left - M.right, ih = H - M.top - M.bottom;
+    const maxV = niceMax(Math.max(1, ...series.map(s => s.views)));
+    const x = (i) => M.left + (series.length === 1 ? iw / 2 : (i / (series.length - 1)) * iw);
+    const y = (v) => M.top + ih - (v / maxV) * ih;
+
+    // gridlines + y ticks (clean numbers, hairline, recessive)
+    const TICKS = 4;
+    for (let i = 0; i <= TICKS; i++) {
+      const v = (maxV / TICKS) * i, gy = y(v);
+      svg.appendChild(svgEl('line', { x1: M.left, x2: W - M.right, y1: gy, y2: gy, stroke: C_GRID, 'stroke-width': 1 }));
+      const label = svgEl('text', { x: M.left - 8, y: gy + 4, 'text-anchor': 'end', fill: '#888', 'font-size': 11 });
+      label.textContent = fmtCompact(v);
+      svg.appendChild(label);
+    }
+
+    // x labels — first, last, and a few between
+    const step = Math.max(1, Math.ceil(series.length / 6));
+    series.forEach((s, i) => {
+      if (i % step !== 0 && i !== series.length - 1) return;
+      const label = svgEl('text', { x: x(i), y: H - 8, 'text-anchor': 'middle', fill: '#888', 'font-size': 11 });
+      label.textContent = fmtDay(s.day);
+      svg.appendChild(label);
+    });
+
+    const line = (key) => series.map((s, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(s[key]).toFixed(1)}`).join('');
+
+    // area wash under views (primary series only, ~10% opacity)
+    const area = line('views') + `L${x(series.length - 1).toFixed(1)},${y(0)}L${x(0).toFixed(1)},${y(0)}Z`;
+    svg.appendChild(svgEl('path', { d: area, fill: C_VIEWS, 'fill-opacity': 0.1 }));
+
+    svg.appendChild(svgEl('path', { d: line('uniques'), fill: 'none', stroke: C_UNIQUES, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+    svg.appendChild(svgEl('path', { d: line('views'), fill: 'none', stroke: C_VIEWS, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+
+    // end markers with a surface ring so they read over the lines
+    const last = series.length - 1;
+    for (const [key, color] of [['uniques', C_UNIQUES], ['views', C_VIEWS]]) {
+      svg.appendChild(svgEl('circle', { cx: x(last), cy: y(series[last][key]), r: 4, fill: color, stroke: C_SURFACE, 'stroke-width': 2 }));
+    }
+
+    // crosshair (hidden until hover)
+    const cross = svgEl('line', { x1: 0, x2: 0, y1: M.top, y2: M.top + ih, stroke: '#555', 'stroke-width': 1, visibility: 'hidden' });
+    cross.id = 'crosshair';
+    svg.appendChild(cross);
+    const dotV = svgEl('circle', { r: 4, fill: C_VIEWS, stroke: C_SURFACE, 'stroke-width': 2, visibility: 'hidden' });
+    dotV.id = 'dot-views';
+    const dotU = svgEl('circle', { r: 4, fill: C_UNIQUES, stroke: C_SURFACE, 'stroke-width': 2, visibility: 'hidden' });
+    dotU.id = 'dot-uniques';
+    svg.appendChild(dotU); svg.appendChild(dotV);
+
+    chartGeom = { series, x, y, W };
+  }
+
+  function hideHover() {
+    $('tooltip').style.display = 'none';
+    for (const id of ['crosshair', 'dot-views', 'dot-uniques']) {
+      const el = document.getElementById(id);
+      if (el) el.setAttribute('visibility', 'hidden');
+    }
+  }
+
+  $('chart-wrap').addEventListener('pointermove', (ev) => {
+    if (!chartGeom) return;
+    const { series, x, y } = chartGeom;
+    const rect = $('chart').getBoundingClientRect();
+    const px = ev.clientX - rect.left;
+    // snap to nearest day
+    let best = 0, bestD = Infinity;
+    for (let i = 0; i < series.length; i++) {
+      const d = Math.abs(x(i) - px);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    const s = series[best], cx = x(best);
+    const cross = document.getElementById('crosshair');
+    cross.setAttribute('x1', cx); cross.setAttribute('x2', cx);
+    cross.setAttribute('visibility', 'visible');
+    const dotV = document.getElementById('dot-views');
+    dotV.setAttribute('cx', cx); dotV.setAttribute('cy', y(s.views)); dotV.setAttribute('visibility', 'visible');
+    const dotU = document.getElementById('dot-uniques');
+    dotU.setAttribute('cx', cx); dotU.setAttribute('cy', y(s.uniques)); dotU.setAttribute('visibility', 'visible');
+
+    // tooltip — one readout, every series (values lead, names follow)
+    const tt = $('tooltip');
+    tt.textContent = '';
+    const dayEl = document.createElement('div');
+    dayEl.className = 'tt-day';
+    dayEl.textContent = fmtDay(s.day);
+    tt.appendChild(dayEl);
+    for (const [name, val, color] of [['views', s.views, C_VIEWS], ['unique visitors', s.uniques, C_UNIQUES]]) {
+      const row = document.createElement('div');
+      row.className = 'tt-row';
+      const key = document.createElement('span');
+      key.className = 'tt-key'; key.style.background = color;
+      const v = document.createElement('span');
+      v.className = 'tt-val'; v.textContent = fmt(val);
+      const n = document.createElement('span');
+      n.className = 'tt-name'; n.textContent = name;
+      row.appendChild(key); row.appendChild(v); row.appendChild(n);
+      tt.appendChild(row);
+    }
+    tt.style.display = 'block';
+    const wrapRect = $('chart-wrap').getBoundingClientRect();
+    const ttx = (ev.clientX - wrapRect.left) + 14;
+    tt.style.left = Math.min(ttx, wrapRect.width - tt.offsetWidth - 8) + 'px';
+    tt.style.top = (ev.clientY - wrapRect.top - tt.offsetHeight - 10) + 'px';
+  });
+  $('chart-wrap').addEventListener('pointerleave', hideHover);
+
+  function renderSeriesTable(series) {
+    const tbody = $('series-table').querySelector('tbody');
+    tbody.textContent = '';
+    for (let i = series.length - 1; i >= 0; i--) {
+      const s = series[i];
+      const tr = document.createElement('tr');
+      for (const [val, num] of [[s.day, false], [fmt(s.views), true], [fmt(s.uniques), true]]) {
+        const td = document.createElement('td');
+        if (num) td.className = 'num';
+        td.textContent = val;
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+  }
+
+  function renderPages(pages) {
+    const el = $('pages');
+    el.textContent = '';
+    if (!pages.length) {
+      el.innerHTML = '<div class="empty">No page views recorded yet.</div>';
+      return;
+    }
+    const max = Math.max(...pages.map(p => p.views));
+    for (const p of pages) {
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      const label = document.createElement('div');
+      label.className = 'page';
+      label.textContent = p.page; // untrusted (URL-derived) — textContent only
+      label.title = p.page;
+      const track = document.createElement('div');
+      track.className = 'track';
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.style.width = Math.max(1, (p.views / max) * 100) + '%';
+      track.appendChild(bar);
+      const views = document.createElement('div');
+      views.className = 'views';
+      views.textContent = fmt(p.views);
+      row.appendChild(label); row.appendChild(track); row.appendChild(views);
+      el.appendChild(row);
+    }
+  }
+
+  function renderReferrers(refs) {
+    const el = $('referrers');
+    el.textContent = '';
+    if (!refs.length) {
+      el.innerHTML = '<div class="empty">No external referrers yet.</div>';
+      return;
+    }
+    for (const r of refs) {
+      const row = document.createElement('div');
+      row.className = 'ref-row';
+      const host = document.createElement('div');
+      host.className = 'host';
+      host.textContent = r.host; // untrusted — textContent only
+      const views = document.createElement('div');
+      views.className = 'views';
+      views.textContent = fmt(r.views);
+      row.appendChild(host); row.appendChild(views);
+      el.appendChild(row);
+    }
+  }
+
+  function renderEvents(events) {
+    const el = $('events');
+    el.textContent = '';
+    if (!events.length) {
+      el.innerHTML = '<div class="empty">No Daily 3 conversion events yet.</div>';
+      return;
+    }
+    for (const item of events) {
+      const row = document.createElement('div');
+      row.className = 'event-row';
+      const event = document.createElement('div');
+      event.className = 'event';
+      event.textContent = item.event + (item.label ? ' · ' + item.label : '');
+      const attribution = document.createElement('div');
+      attribution.className = 'attribution';
+      const parts = [item.source, item.medium, item.campaign].filter(Boolean);
+      attribution.textContent = parts.length ? parts.join(' / ') : 'direct / unattributed';
+      attribution.title = attribution.textContent;
+      const count = document.createElement('div');
+      count.className = 'count';
+      count.textContent = fmt(item.events);
+      row.appendChild(event); row.appendChild(attribution); row.appendChild(count);
+      el.appendChild(row);
+    }
+  }
+
+  $('filters').addEventListener('click', (ev) => {
+    const btn = ev.target.closest('.range-btn');
+    if (!btn) return;
+    days = parseInt(btn.dataset.days, 10);
+    document.querySelectorAll('.range-btn').forEach(b => b.classList.toggle('active', b === btn));
+    load();
+  });
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { if (data) renderChart(data.series || []); }, 150);
+  });
+
+  load();
+</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

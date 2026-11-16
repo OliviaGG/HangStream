@@ -1,0 +1,42 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sunBorder" x1="26" y1="28" x2="230" y2="228" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF4D6"/>
+      <stop offset="0.28" stop-color="#FFD56B"/>
+      <stop offset="0.62" stop-color="#FFB54A"/>
+      <stop offset="1" stop-color="#A26AFF"/>
+    </linearGradient>
+    <radialGradient id="sunCore" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(128 126) rotate(90) scale(108)">
+      <stop stop-color="#FFF8E4" stop-opacity="0.98"/>
+      <stop offset="0.36" stop-color="#FFD86F" stop-opacity="0.84"/>
+      <stop offset="0.72" stop-color="#FFAE4A" stop-opacity="0.46"/>
+      <stop offset="1" stop-color="#2B1638" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="18" y="18" width="220" height="220" rx="68" fill="rgba(28,14,40,0.96)" stroke="url(#sunBorder)" stroke-width="8"/>
+  <rect x="32" y="32" width="192" height="192" rx="56" stroke="rgba(255,243,214,0.18)" stroke-width="2"/>
+
+  <circle cx="128" cy="128" r="54" fill="url(#sunCore)" stroke="url(#sunBorder)" stroke-width="5"/>
+  <circle cx="128" cy="128" r="26" fill="rgba(255,248,228,0.92)" stroke="rgba(255,255,255,0.42)" stroke-width="2.5"/>
+
+  <path d="M128 48V70" stroke="url(#sunBorder)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M128 186V208" stroke="url(#sunBorder)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M48 128H70" stroke="url(#sunBorder)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M186 128H208" stroke="url(#sunBorder)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M72 72L88 88" stroke="url(#sunBorder)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M184 72L168 88" stroke="url(#sunBorder)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M72 184L88 168" stroke="url(#sunBorder)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M184 184L168 168" stroke="url(#sunBorder)" stroke-width="6" stroke-linecap="round"/>
+
+  <path d="M128 84L136 110L162 110L141 126L149 152L128 136L107 152L115 126L94 110L120 110L128 84Z" fill="rgba(255,244,214,0.92)" stroke="rgba(255,255,255,0.42)" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <circle cx="128" cy="30" r="5" fill="#FFF4D6"/>
+  <circle cx="210" cy="46" r="5" fill="#FFD56B"/>
+  <circle cx="226" cy="128" r="5" fill="#FFB54A"/>
+  <circle cx="210" cy="210" r="5" fill="#A26AFF"/>
+  <circle cx="128" cy="226" r="5" fill="#FFF4D6"/>
+  <circle cx="46" cy="210" r="5" fill="#FFD56B"/>
+  <circle cx="30" cy="128" r="5" fill="#FFB54A"/>
+  <circle cx="46" cy="46" r="5" fill="#A26AFF"/>
+</svg>

@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Game Icon Generator</title>
+<style>
+  body { background: #1a1a2e; color: #fff; font-family: system-ui; padding: 20px; }
+  h1 { text-align: center; }
+  .grid { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; }
+  .icon-card { text-align: center; }
+  .icon-card canvas { border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+  .icon-card p { margin: 8px 0; font-size: 14px; opacity: 0.8; }
+  button { background: #4CAF50; color: white; border: none; padding: 12px 32px; font-size: 16px; border-radius: 8px; cursor: pointer; margin: 20px auto; display: block; }
+  button:hover { background: #45a049; }
+  .dl-btn { background: #2196F3; padding: 6px 16px; font-size: 12px; margin-top: 4px; }
+</style>
+</head>
+<body>
+<h1>Word Tycoon Game Icons</h1>
+<button onclick="downloadAll()">Download All Icons</button>
+<div class="grid" id="grid"></div>
+
+<script>
+const SIZE = 512;
+const R = 80; // corner radius
+
+const games = [
+  'searchle', 'wordle', 'word500', 'betweenly', 'pixeletters',
+  'spellingbee', 'squaredle', 'figural', 'unwordle', 'word1000'
+];
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function hexagon(ctx, cx, cy, r) {
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI / 3) * i - Math.PI / 6;
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+}
+
+function drawBase(ctx, bgColor1, bgColor2) {
+  // Clip to rounded rect
+  roundRect(ctx, 0, 0, SIZE, SIZE, R);
+  ctx.clip();
+  // Gradient background
+  const grad = ctx.createRadialGradient(SIZE/2, SIZE/3, 50, SIZE/2, SIZE/2, SIZE * 0.8);
+  grad.addColorStop(0, bgColor1);
+  grad.addColorStop(1, bgColor2);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+}
+
+function drawInnerGlow(ctx, color, width) {
+  ctx.save();
+  roundRect(ctx, width/2, width/2, SIZE - width, SIZE - width, R - 4);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ─── SEARCHLE ───
+function drawSearchle(ctx) {
+  drawBase(ctx, '#1a2744', '#0a1628');
+  drawInnerGlow(ctx, 'rgba(200,168,46,0.15)', 3);
+
+  // Word bars (golden)
+  const barY = [80, 150, 220, 290, 360];
+  const barWidths = [340, 310, 280, 250, 220];
+  barY.forEach((y, i) => {
+    const bw = barWidths[i];
+    const bx = (SIZE - bw) / 2;
+    // Bar shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    roundRect(ctx, bx + 3, y + 3, bw, 48, 10);
+    ctx.fill();
+    // Bar gradient
+    const g = ctx.createLinearGradient(bx, y, bx + bw, y + 48);
+    g.addColorStop(0, '#d4b840');
+    g.addColorStop(0.5, '#c8a82e');
+    g.addColorStop(1, '#9a7e1a');
+    ctx.fillStyle = g;
+    roundRect(ctx, bx, y, bw, 48, 10);
+    ctx.fill();
+    // Score circle
+    ctx.fillStyle = 'rgba(10,22,40,0.7)';
+    ctx.beginPath();
+    ctx.arc(bx + bw - 30, y + 24, 18, 0, Math.PI * 2);
+    ctx.fill();
+    // Score text
+    ctx.fillStyle = '#8ab4d8';
+    ctx.font = 'bold 14px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText(String(Math.floor(Math.random()*900+100)), bx + bw - 30, y + 29);
+  });
+
+  // Magnifying glass
+  ctx.strokeStyle = '#5a9fd4';
+  ctx.lineWidth = 14;
+  ctx.shadowColor = '#5a9fd4';
+  ctx.shadowBlur = 20;
+  ctx.beginPath();
+  ctx.arc(SIZE/2 - 10, SIZE/2 + 20, 65, 0, Math.PI * 2);
+  ctx.stroke();
+  // Handle
+  ctx.beginPath();
+  ctx.moveTo(SIZE/2 + 36, SIZE/2 + 66);
+  ctx.lineTo(SIZE/2 + 80, SIZE/2 + 110);
+  ctx.lineWidth = 16;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Search bar at bottom
+  ctx.fillStyle = 'rgba(20,40,65,0.8)';
+  roundRect(ctx, 100, 430, 312, 45, 22);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(90,159,212,0.4)';
+  ctx.lineWidth = 2;
+  roundRect(ctx, 100, 430, 312, 45, 22);
+  ctx.stroke();
+  // Small magnifying glass in search bar
+  ctx.strokeStyle = 'rgba(90,159,212,0.6)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(380, 452, 10, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(387, 459);
+  ctx.lineTo(394, 466);
+  ctx.stroke();
+}
+
+// ─── WORDLE ───
+function drawWordle(ctx) {
+  drawBase(ctx, '#1a1a1e', '#121213');
+  drawInnerGlow(ctx, 'rgba(83,141,78,0.2)', 3);
+
+  const colors = [
+    ['#538d4e','#b59f3b','#3a3a3c','#3a3a3c','#538d4e'],
+    ['#3a3a3c','#538d4e','#538d4e','#b59f3b','#3a3a3c'],
+    ['#b59f3b','#3a3a3c','#538d4e','#538d4e','#538d4e'],
+    ['#538d4e','#538d4e','#538d4e','#538d4e','#538d4e'],
+    ['#262626','#262626','#262626','#262626','#262626'],
+    ['#262626','#262626','#262626','#262626','#262626'],
+  ];
+  const letters = [
+    ['S','T','A','R','E'],
+    ['C','L','U','M','P'],
+    ['B','R','I','N','G'],
+    ['W','O','R','L','D'],
+    ['','','','',''],
+    ['','','','',''],
+  ];
+
+  const tileSize = 62;
+  const gap = 8;
+  const gridW = 5 * tileSize + 4 * gap;
+  const gridH = 6 * tileSize + 5 * gap;
+  const ox = (SIZE - gridW) / 2;
+  const oy = (SIZE - gridH) / 2 - 20;
+
+  for (let row = 0; row < 6; row++) {
+    for (let col = 0; col < 5; col++) {
+      const x = ox + col * (tileSize + gap);
+      const y = oy + row * (tileSize + gap);
+      const color = colors[row][col];
+
+      // Tile
+      ctx.fillStyle = color;
+      roundRect(ctx, x, y, tileSize, tileSize, 6);
+      ctx.fill();
+
+      // Border for empty tiles
+      if (color === '#262626') {
+        ctx.strokeStyle = '#3a3a3c';
+        ctx.lineWidth = 2;
+        roundRect(ctx, x, y, tileSize, tileSize, 6);
+        ctx.stroke();
+      }
+
+      // Letter
+      if (letters[row][col]) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 34px system-ui';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(letters[row][col], x + tileSize/2, y + tileSize/2 + 2);
+      }
+    }
+  }
+
+  // Mini keyboard hint at bottom
+  const keys = 'QWERTYUIOP';
+  const kx = (SIZE - keys.length * 30) / 2;
+  for (let i = 0; i < keys.length; i++) {
+    ctx.fillStyle = '#818384';
+    roundRect(ctx, kx + i * 30, 460, 26, 32, 4);
+    ctx.fill();
+    ctx.fillStyle = '#d7dadc';
+    ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(keys[i], kx + i * 30 + 13, 476);
+  }
+}
+
+// ─── WORD 500 ───
+function drawWord500(ctx) {
+  drawBase(ctx, '#1c1640', '#0e0a28');
+
+  // Neon purple outer glow
+  ctx.save();
+  ctx.shadowColor = '#a855f7';
+  ctx.shadowBlur = 30;
+  ctx.strokeStyle = '#a855f7';
+  ctx.lineWidth = 4;
+  roundRect(ctx, 20, 20, SIZE - 40, SIZE - 40, R - 10);
+  ctx.stroke();
+  ctx.restore();
+
+  // Inner glow border
+  ctx.strokeStyle = 'rgba(168,85,247,0.3)';
+  ctx.lineWidth = 2;
+  roundRect(ctx, 35, 35, SIZE - 70, SIZE - 70, R - 15);
+  ctx.stroke();
+
+  // Score display area
+  ctx.fillStyle = 'rgba(168,85,247,0.08)';
+  roundRect(ctx, 60, 60, SIZE - 120, 120, 20);
+  ctx.fill();
+
+  // "500" number with glow
+  ctx.save();
+  ctx.shadowColor = '#22c55e';
+  ctx.shadowBlur = 25;
+  ctx.fillStyle = '#22c55e';
+  ctx.font = 'bold 80px system-ui';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('500', SIZE/2, 120);
+  ctx.restore();
+
+  // XP bar
+  const xpGrad = ctx.createLinearGradient(80, 175, 432, 175);
+  xpGrad.addColorStop(0, '#22c55e');
+  xpGrad.addColorStop(1, '#16a34a');
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  roundRect(ctx, 80, 168, 352, 14, 7);
+  ctx.fill();
+  ctx.fillStyle = xpGrad;
+  roundRect(ctx, 80, 168, 250, 14, 7);
+  ctx.fill();
+
+  // Word guess tiles (5 tiles)
+  const tw = 60, tgap = 12;
+  const tx = (SIZE - 5 * tw - 4 * tgap) / 2;
+  for (let i = 0; i < 5; i++) {
+    const x = tx + i * (tw + tgap);
+    ctx.fillStyle = 'rgba(168,85,247,0.15)';
+    ctx.strokeStyle = 'rgba(168,85,247,0.5)';
+    ctx.lineWidth = 2;
+    roundRect(ctx, x, 210, tw, tw, 8);
+    ctx.fill();
+    roundRect(ctx, x, 210, tw, tw, 8);
+    ctx.stroke();
+    // Dash in tile
+    ctx.fillStyle = 'rgba(168,85,247,0.3)';
+    ctx.fillRect(x + 18, 238, 24, 4);
+  }
+
+  // Word list area with distances
+  const words = [
+    { dist: 12, color: '#ef4444' },
+    { dist: 45, color: '#f97316' },
+    { dist: 128, color: '#eab308' },
+    { dist: 267, color: '#84cc16' },
+    { dist: 489, color: '#22c55e' },
+  ];
+  words.forEach((w, i) => {
+    const y = 300 + i * 34;
+    // Bar background
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    roundRect(ctx, 80, y, 352, 28, 6);
+    ctx.fill();
+    // Distance indicator
+    const barW = (w.dist / 500) * 280;
+    ctx.fillStyle = w.color + '40';
+    roundRect(ctx, 80, y, barW, 28, 6);
+    ctx.fill();
+    // Distance number
+    ctx.fillStyle = w.color;
+    ctx.font = 'bold 16px system-ui';
+    ctx.textAlign = 'right';
+    ctx.fillText(String(w.dist), 420, y + 19);
+  });
+}
+
+// ─── BETWEENLY ───
+function drawBetweenly(ctx) {
+  drawBase(ctx, '#2a2535', '#1a1625');
+  drawInnerGlow(ctx, 'rgba(147,130,220,0.15)', 3);
+
+  // "AFTER" bracket (purple)
+  ctx.save();
+  ctx.strokeStyle = '#9382dc';
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  // Left bracket
+  ctx.beginPath();
+  ctx.moveTo(80, 80);
+  ctx.lineTo(60, 80);
+  ctx.lineTo(60, 175);
+  ctx.lineTo(80, 175);
+  ctx.stroke();
+  ctx.restore();
+
+  // "AFTER" label
+  ctx.fillStyle = '#9382dc';
+  ctx.font = 'bold 28px system-ui';
+  ctx.textAlign = 'left';
+  ctx.fillText('AFTER', 90, 115);
+
+  // Arrow down
+  ctx.fillStyle = '#9382dc';
+  ctx.font = '24px system-ui';
+  ctx.fillText('↓', 210, 115);
+
+  // Top word tiles (purple border)
+  const tw = 52, tgap = 8;
+  for (let i = 0; i < 6; i++) {
+    const x = 100 + i * (tw + tgap);
+    ctx.fillStyle = 'rgba(147,130,220,0.1)';
+    ctx.strokeStyle = '#9382dc';
+    ctx.lineWidth = 2.5;
+    roundRect(ctx, x, 130, tw, tw, 6);
+    ctx.fill();
+    roundRect(ctx, x, 130, tw, tw, 6);
+    ctx.stroke();
+  }
+
+  // Middle guess area
+  for (let i = 0; i < 5; i++) {
+    const x = 130 + i * (tw + tgap);
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    roundRect(ctx, x, 220, tw, tw, 6);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, x, 220, tw, tw, 6);
+    ctx.stroke();
+  }
+
+  // "BEFORE" bracket (teal)
+  ctx.save();
+  ctx.strokeStyle = '#2dd4bf';
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(80, 310);
+  ctx.lineTo(60, 310);
+  ctx.lineTo(60, 405);
+  ctx.lineTo(80, 405);
+  ctx.stroke();
+  ctx.restore();
+
+  // "BEFORE" label
+  ctx.fillStyle = '#2dd4bf';
+  ctx.font = 'bold 28px system-ui';
+  ctx.textAlign = 'left';
+  ctx.fillText('BEFORE', 90, 345);
+  ctx.font = '24px system-ui';
+  ctx.fillText('↑', 236, 345);
+
+  // Bottom word tiles (teal border)
+  for (let i = 0; i < 6; i++) {
+    const x = 100 + i * (tw + tgap);
+    ctx.fillStyle = 'rgba(45,212,191,0.1)';
+    ctx.strokeStyle = '#2dd4bf';
+    ctx.lineWidth = 2.5;
+    roundRect(ctx, x, 360, tw, tw, 6);
+    ctx.fill();
+    roundRect(ctx, x, 360, tw, tw, 6);
+    ctx.stroke();
+  }
+
+  // Alphabetical keyboard row
+  const keyLetters = 'ABCDEFGHIJKLM';
+  const kw = 30, kg = 4;
+  const kx = (SIZE - keyLetters.length * (kw + kg)) / 2;
+  for (let i = 0; i < keyLetters.length; i++) {
+    const x = kx + i * (kw + kg);
+    ctx.fillStyle = 'rgba(147,130,220,0.2)';
+    ctx.strokeStyle = 'rgba(147,130,220,0.4)';
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, x, 440, kw, 36, 5);
+    ctx.fill();
+    roundRect(ctx, x, 440, kw, 36, 5);
+    ctx.stroke();
+    ctx.fillStyle = '#c4b8f0';
+    ctx.font = 'bold 14px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText(keyLetters[i], x + kw/2, 463);
+  }
+
+  // (score removed for cleaner icon)
+}
+
+// ─── PIXELETTERS ───
+function drawPixeletters(ctx) {
+  drawBase(ctx, '#141432', '#0a0a1e');
+  drawInnerGlow(ctx, 'rgba(0,200,255,0.12)', 3);
+
+  const gridSize = 14;
+  const cellSize = (SIZE - 80) / gridSize;
+  const ox = 40, oy = 40;
+
+  // Draw grid lines
+  ctx.strokeStyle = 'rgba(100,100,160,0.2)';
+  ctx.lineWidth = 1;
+  for (let r = 0; r <= gridSize; r++) {
+    ctx.beginPath();
+    ctx.moveTo(ox, oy + r * cellSize);
+    ctx.lineTo(ox + gridSize * cellSize, oy + r * cellSize);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(ox + r * cellSize, oy);
+    ctx.lineTo(ox + r * cellSize, oy + gridSize * cellSize);
+    ctx.stroke();
+  }
+
+  // Letter "P" made of pixels (pink/magenta)
+  const letterPixels = [
+    [4,3],[5,3],[6,3],[7,3],[8,3],
+    [4,4],[8,4],[9,4],
+    [4,5],[8,5],[9,5],
+    [4,6],[5,6],[6,6],[7,6],[8,6],
+    [4,7],
+    [4,8],
+    [4,9],
+    [4,10],
+  ];
+  letterPixels.forEach(([c,r]) => {
+    const grad = ctx.createLinearGradient(ox + c*cellSize, oy + r*cellSize, ox + (c+1)*cellSize, oy + (r+1)*cellSize);
+    grad.addColorStop(0, '#ff69b4');
+    grad.addColorStop(1, '#ff1493');
+    ctx.fillStyle = grad;
+    ctx.fillRect(ox + c*cellSize + 1, oy + r*cellSize + 1, cellSize - 2, cellSize - 2);
+  });
+
+  // Scattered colorful pixels
+  const scatterColors = ['#00d4ff','#ffdd00','#ff69b4','#a855f7','#00ff88','#ff6b35'];
+  const scatterPixels = [
+    [1,1],[11,1],[6,1],[2,5],[12,3],[10,7],[1,9],[13,6],
+    [3,12],[9,12],[12,11],[0,6],[13,2],[7,11],[2,2],[11,10],
+    [0,3],[13,9],[8,0],[3,0],[10,13],[5,13],[1,12],[12,0]
+  ];
+  scatterPixels.forEach(([c,r], i) => {
+    ctx.fillStyle = scatterColors[i % scatterColors.length];
+    ctx.globalAlpha = 0.6 + Math.random() * 0.4;
+    ctx.fillRect(ox + c*cellSize + 1, oy + r*cellSize + 1, cellSize - 2, cellSize - 2);
+  });
+  ctx.globalAlpha = 1;
+}
+
+// ─── SPELLING BEE ───
+function drawSpellingBee(ctx) {
+  // Warm amber gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, SIZE);
+  grad.addColorStop(0, '#f59e0b');
+  grad.addColorStop(1, '#d97706');
+  ctx.save();
+  roundRect(ctx, 0, 0, SIZE, SIZE, R);
+  ctx.clip();
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  // Honeycomb pattern
+  const hexR = 52;
+  const letters = ['S', 'P', 'B', 'L', 'E', 'A', 'N'];
+  const centerX = SIZE / 2, centerY = SIZE / 2 + 10;
+
+  // Center hex (highlighted yellow)
+  const positions = [
+    { x: 0, y: 0, letter: letters[0], center: true },
+    { x: 0, y: -(hexR * 1.8), letter: letters[1], center: false },
+    { x: hexR * 1.55, y: -(hexR * 0.9), letter: letters[2], center: false },
+    { x: hexR * 1.55, y: hexR * 0.9, letter: letters[3], center: false },
+    { x: 0, y: hexR * 1.8, letter: letters[4], center: false },
+    { x: -hexR * 1.55, y: hexR * 0.9, letter: letters[5], center: false },
+    { x: -hexR * 1.55, y: -(hexR * 0.9), letter: letters[6], center: false },
+  ];
+
+  positions.forEach(p => {
+    const hx = centerX + p.x;
+    const hy = centerY + p.y;
+
+    // Hex shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    hexagon(ctx, hx + 3, hy + 3, hexR - 2);
+    ctx.fill();
+
+    // Hex fill
+    if (p.center) {
+      const hg = ctx.createRadialGradient(hx, hy, 0, hx, hy, hexR);
+      hg.addColorStop(0, '#fcd34d');
+      hg.addColorStop(1, '#f59e0b');
+      ctx.fillStyle = hg;
+    } else {
+      const hg = ctx.createRadialGradient(hx, hy, 0, hx, hy, hexR);
+      hg.addColorStop(0, '#ea9207');
+      hg.addColorStop(1, '#c27803');
+      ctx.fillStyle = hg;
+    }
+    hexagon(ctx, hx, hy, hexR - 2);
+    ctx.fill();
+
+    // Letter
+    ctx.fillStyle = p.center ? '#78350f' : '#451a03';
+    ctx.font = 'bold 36px system-ui';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(p.letter, hx, hy + 2);
+  });
+
+  // Bee icon (top right)
+  ctx.fillStyle = '#fbbf24';
+  ctx.beginPath();
+  ctx.ellipse(410, 75, 18, 14, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#1c1917';
+  ctx.fillRect(400, 69, 6, 12);
+  ctx.fillRect(412, 69, 6, 12);
+  // Wings
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.beginPath();
+  ctx.ellipse(402, 62, 10, 7, -0.3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(418, 62, 10, 7, 0.3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Stars
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = '20px system-ui';
+  ctx.fillText('✦', 80, 80);
+  ctx.fillText('✦', 430, 430);
+  ctx.font = '14px system-ui';
+  ctx.fillText('✦', 120, 450);
+
+  ctx.restore();
+}
+
+// ─── SQUAREDLE ───
+function drawSquaredle(ctx) {
+  drawBase(ctx, '#3a1018', '#200a0e');
+  drawInnerGlow(ctx, 'rgba(239,68,68,0.15)', 3);
+
+  const gridN = 4;
+  const tileSize = 80;
+  const gap = 12;
+  const gridW = gridN * tileSize + (gridN - 1) * gap;
+  const ox = (SIZE - gridW) / 2;
+  const oy = (SIZE - gridW) / 2;
+
+  const letters = [
+    ['W','O','R','D'],
+    ['A','L','E','S'],
+    ['G','R','I','N'],
+    ['T','H','A','Y'],
+  ];
+
+  // Tile opacity (some highlighted, some dim)
+  const highlight = [
+    [1, 0.5, 1, 1],
+    [0.5, 1, 1, 0.5],
+    [0.5, 1, 1, 0.5],
+    [0.5, 0.5, 0.5, 1],
+  ];
+
+  // Draw tiles
+  for (let r = 0; r < gridN; r++) {
+    for (let c = 0; c < gridN; c++) {
+      const x = ox + c * (tileSize + gap);
+      const y = oy + r * (tileSize + gap);
+      const alpha = highlight[r][c];
+
+      // Tile
+      const tg = ctx.createLinearGradient(x, y, x + tileSize, y + tileSize);
+      tg.addColorStop(0, `rgba(220,60,80,${alpha * 0.7})`);
+      tg.addColorStop(1, `rgba(160,30,50,${alpha * 0.7})`);
+      ctx.fillStyle = tg;
+      roundRect(ctx, x, y, tileSize, tileSize, 10);
+      ctx.fill();
+
+      // Letter
+      ctx.fillStyle = `rgba(255,255,255,${alpha * 0.9})`;
+      ctx.font = 'bold 38px system-ui';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(letters[r][c], x + tileSize/2, y + tileSize/2 + 2);
+    }
+  }
+
+  // Golden connecting path: W(0,0) -> O(0,1) -> R(0,2) -> D(0,3) -> S(1,3) -> diagonal
+  const path = [[0,0],[0,1],[0,2],[0,3],[1,2],[2,2],[2,1],[3,0]];
+  ctx.save();
+  ctx.strokeStyle = '#fbbf24';
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = '#fbbf24';
+  ctx.shadowBlur = 15;
+  ctx.beginPath();
+  path.forEach(([r,c], i) => {
+    const x = ox + c * (tileSize + gap) + tileSize/2;
+    const y = oy + r * (tileSize + gap) + tileSize/2;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+  ctx.restore();
+
+  // Start/end dots
+  const startP = path[0], endP = path[path.length - 1];
+  [startP, endP].forEach(([r,c]) => {
+    const x = ox + c * (tileSize + gap) + tileSize/2;
+    const y = oy + r * (tileSize + gap) + tileSize/2;
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath();
+    ctx.arc(x, y, 8, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+// ─── FIGURAL ───
+function drawFigural(ctx) {
+  drawBase(ctx, '#0a2a2e', '#051a1e');
+  drawInnerGlow(ctx, 'rgba(0,220,240,0.12)', 3);
+
+  // Large center diamond
+  ctx.save();
+  ctx.shadowColor = '#00dce8';
+  ctx.shadowBlur = 30;
+  const dg = ctx.createLinearGradient(SIZE/2, 130, SIZE/2, 380);
+  dg.addColorStop(0, '#00e5f0');
+  dg.addColorStop(1, '#0891b2');
+  ctx.fillStyle = dg;
+  ctx.beginPath();
+  ctx.moveTo(SIZE/2, 130);
+  ctx.lineTo(SIZE/2 + 120, SIZE/2);
+  ctx.lineTo(SIZE/2, 380);
+  ctx.lineTo(SIZE/2 - 120, SIZE/2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // Small shapes around the diamond
+  const shapes = [
+    { type: 'triangle', x: 100, y: 120, size: 30, color: '#06b6d4' },
+    { type: 'circle', x: 400, y: 140, size: 18, color: '#67e8f9' },
+    { type: 'pentagon', x: 110, y: 300, size: 16, color: '#0e7490' },
+    { type: 'square', x: 90, y: 410, size: 24, color: '#22d3ee' },
+    { type: 'hexagon', x: 410, y: 350, size: 14, color: '#a5f3fc' },
+    { type: 'circle', x: 130, y: 200, size: 6, color: '#67e8f9' },
+    { type: 'circle', x: 380, y: 240, size: 8, color: '#06b6d4' },
+    { type: 'pentagon', x: 400, y: 420, size: 18, color: '#0891b2' },
+  ];
+
+  shapes.forEach(s => {
+    ctx.fillStyle = s.color;
+    ctx.beginPath();
+    if (s.type === 'circle') {
+      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+    } else if (s.type === 'triangle') {
+      ctx.moveTo(s.x, s.y - s.size);
+      ctx.lineTo(s.x + s.size, s.y + s.size * 0.7);
+      ctx.lineTo(s.x - s.size, s.y + s.size * 0.7);
+      ctx.closePath();
+    } else if (s.type === 'square') {
+      ctx.rect(s.x - s.size/2, s.y - s.size/2, s.size, s.size);
+    } else if (s.type === 'pentagon') {
+      for (let i = 0; i < 5; i++) {
+        const angle = (Math.PI * 2 / 5) * i - Math.PI/2;
+        const px = s.x + s.size * Math.cos(angle);
+        const py = s.y + s.size * Math.sin(angle);
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+    } else if (s.type === 'hexagon') {
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i;
+        const px = s.x + s.size * Math.cos(angle);
+        const py = s.y + s.size * Math.sin(angle);
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+    }
+    ctx.fill();
+  });
+
+  // Dots
+  [
+    [320, 100], [200, 130], [350, 430], [170, 420], [430, 200],
+  ].forEach(([x,y]) => {
+    ctx.fillStyle = 'rgba(103,232,249,0.5)';
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+// ─── UNWORDLE ───
+function drawUnwordle(ctx) {
+  // Coral/salmon background
+  const grad = ctx.createLinearGradient(0, 0, 0, SIZE);
+  grad.addColorStop(0, '#f07070');
+  grad.addColorStop(1, '#d45858');
+  ctx.save();
+  roundRect(ctx, 0, 0, SIZE, SIZE, R);
+  ctx.clip();
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  // 3x3 grid of question mark tiles
+  const tileSize = 100;
+  const gap = 16;
+  const gridW = 3 * tileSize + 2 * gap;
+  const ox = (SIZE - gridW) / 2;
+  const oy = 70;
+
+  const tileColors = [
+    ['#3a3a3c', '#b59f3b', '#3a3a3c'],
+    ['#b59f3b', '#3a3a3c', '#b59f3b'],
+    ['#538d4e', '#538d4e', '#3a3a3c'],
+  ];
+
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      const x = ox + c * (tileSize + gap);
+      const y = oy + r * (tileSize + gap);
+
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      roundRect(ctx, x + 3, y + 3, tileSize, tileSize, 12);
+      ctx.fill();
+
+      // Tile
+      ctx.fillStyle = tileColors[r][c];
+      roundRect(ctx, x, y, tileSize, tileSize, 12);
+      ctx.fill();
+
+      // Question mark
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.font = 'bold 48px system-ui';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('?', x + tileSize/2, y + tileSize/2 + 3);
+    }
+  }
+
+  // Arrow pointing up (the "reverse" concept)
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.moveTo(SIZE/2, 428);
+  ctx.lineTo(SIZE/2 + 30, 468);
+  ctx.lineTo(SIZE/2 - 30, 468);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+// ─── WORD 1000 ───
+function drawWord1000(ctx) {
+  drawBase(ctx, '#1a2810', '#0e1a08');
+  drawInnerGlow(ctx, 'rgba(34,197,94,0.15)', 3);
+
+  // Score display
+  ctx.save();
+  ctx.shadowColor = '#22c55e';
+  ctx.shadowBlur = 25;
+  ctx.fillStyle = '#22c55e';
+  ctx.font = 'bold 72px system-ui';
+  ctx.textAlign = 'center';
+  ctx.fillText('1000', SIZE/2, 100);
+  ctx.restore();
+
+  // Progress bar
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  roundRect(ctx, 80, 125, 352, 14, 7);
+  ctx.fill();
+  const pbGrad = ctx.createLinearGradient(80, 125, 432, 125);
+  pbGrad.addColorStop(0, '#ef4444');
+  pbGrad.addColorStop(0.5, '#eab308');
+  pbGrad.addColorStop(1, '#22c55e');
+  ctx.fillStyle = pbGrad;
+  roundRect(ctx, 80, 125, 352, 14, 7);
+  ctx.fill();
+
+  // Word list with hot/cold coloring
+  const words = [
+    { w: 'FLAME', dist: 987, color: '#22c55e' },
+    { w: 'SPARK', dist: 812, color: '#84cc16' },
+    { w: 'BLAZE', dist: 654, color: '#eab308' },
+    { w: 'LIGHT', dist: 423, color: '#f97316' },
+    { w: 'MATCH', dist: 201, color: '#ef4444' },
+    { w: 'SMOKE', dist: 89, color: '#dc2626' },
+  ];
+
+  words.forEach((word, i) => {
+    const y = 170 + i * 50;
+    // Row bg
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    roundRect(ctx, 60, y, 392, 40, 8);
+    ctx.fill();
+    // Color bar on left
+    ctx.fillStyle = word.color;
+    roundRect(ctx, 60, y, 6, 40, 3);
+    ctx.fill();
+    // Word placeholders (letter boxes)
+    for (let j = 0; j < word.w.length; j++) {
+      const lx = 85 + j * 38;
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      roundRect(ctx, lx, y + 5, 32, 30, 4);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.font = 'bold 18px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText(word.w[j], lx + 16, y + 26);
+    }
+    // Distance
+    ctx.fillStyle = word.color;
+    ctx.font = 'bold 20px system-ui';
+    ctx.textAlign = 'right';
+    ctx.fillText(String(word.dist), 435, y + 27);
+  });
+
+  // Input area at bottom
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  roundRect(ctx, 80, 470, 280, 40, 8);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(34,197,94,0.3)';
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, 80, 470, 280, 40, 8);
+  ctx.stroke();
+  // Enter button
+  ctx.fillStyle = '#22c55e';
+  roundRect(ctx, 375, 470, 70, 40, 8);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 14px system-ui';
+  ctx.textAlign = 'center';
+  ctx.fillText('ENTER', 410, 495);
+}
+
+// ─── RENDER ALL ───
+function renderAll() {
+  const grid = document.getElementById('grid');
+  const drawFns = {
+    searchle: drawSearchle,
+    wordle: drawWordle,
+    word500: drawWord500,
+    betweenly: drawBetweenly,
+    pixeletters: drawPixeletters,
+    spellingbee: drawSpellingBee,
+    squaredle: drawSquaredle,
+    figural: drawFigural,
+    unwordle: drawUnwordle,
+    word1000: drawWord1000,
+  };
+
+  games.forEach(name => {
+    const card = document.createElement('div');
+    card.className = 'icon-card';
+
+    const canvas = document.createElement('canvas');
+    canvas.width = SIZE;
+    canvas.height = SIZE;
+    canvas.style.width = '200px';
+    canvas.style.height = '200px';
+    canvas.id = 'icon-' + name;
+
+    const ctx = canvas.getContext('2d');
+    ctx.save();
+    drawFns[name](ctx);
+    ctx.restore();
+
+    const label = document.createElement('p');
+    label.textContent = name;
+
+    const btn = document.createElement('button');
+    btn.className = 'dl-btn';
+    btn.textContent = 'Download';
+    btn.onclick = () => downloadIcon(name);
+
+    card.appendChild(canvas);
+    card.appendChild(label);
+    card.appendChild(btn);
+    grid.appendChild(card);
+  });
+}
+
+function downloadIcon(name) {
+  const canvas = document.getElementById('icon-' + name);
+  const link = document.createElement('a');
+  link.download = 'game-' + name + '.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function downloadAll() {
+  games.forEach((name, i) => {
+    setTimeout(() => downloadIcon(name), i * 300);
+  });
+}
+
+renderAll();
+</script>
+</body>
+</html>

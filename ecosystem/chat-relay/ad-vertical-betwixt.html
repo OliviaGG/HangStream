@@ -1,0 +1,236 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=100, initial-scale=1">
+<title>Betwixt - Vertical Ad</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@700;900&family=Fredoka:wght@600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100px;
+    height: 4040px;
+    overflow: hidden;
+    background: transparent;
+    font-family: 'Outfit', 'Segoe UI', Arial, sans-serif;
+  }
+
+  .scroll-track {
+    width: 100px;
+    height: 4040px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .scroll-inner {
+    display: flex;
+    flex-direction: column;
+    animation: scrollUp 200s linear infinite;
+    will-change: transform;
+  }
+
+  @keyframes scrollUp {
+    0%   { transform: translateY(0); }
+    100% { transform: translateY(-50%); }
+  }
+
+  .v-letter,
+  .v-word {
+    width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    text-transform: uppercase;
+    line-height: 1;
+    text-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.55),
+      0 0 20px rgba(255, 255, 255, 0.08);
+  }
+
+  .v-letter {
+    font-size: 58px;
+    font-weight: 900;
+    padding: 6px 0;
+  }
+
+  .v-letter.www {
+    opacity: 0.35;
+  }
+
+  .v-letter.dot {
+    font-size: 40px;
+    padding: 2px 0;
+    opacity: 0.35;
+  }
+
+  .v-letter.tld {
+    font-size: 42px;
+  }
+
+  .v-word {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    padding: 16px 0;
+  }
+
+  .v-word.big {
+    font-size: 26px;
+  }
+
+  .v-word.small {
+    font-size: 21px;
+  }
+
+  .v-word.tiny {
+    font-size: 18px;
+    letter-spacing: 1px;
+    padding: 12px 0;
+  }
+
+  .tone1 { color: #c4b5fd; text-shadow: 0 0 18px #c4b5fd, 0 2px 8px rgba(0, 0, 0, 0.55); }
+  .tone2 { color: #a5b4fc; text-shadow: 0 0 18px #a5b4fc, 0 2px 8px rgba(0, 0, 0, 0.55); }
+  .tone3 { color: #93c5fd; text-shadow: 0 0 18px #93c5fd, 0 2px 8px rgba(0, 0, 0, 0.55); }
+  .tone4 { color: #fde68a; text-shadow: 0 0 18px #fde68a, 0 2px 8px rgba(0, 0, 0, 0.55); }
+
+  .ad-logo-row {
+    width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px 0;
+  }
+
+  .ad-logo-row img {
+    width: 80px;
+    height: 80px;
+    border-radius: 22px;
+    object-fit: cover;
+    filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.28));
+  }
+
+  .spacer {
+    height: 80px;
+  }
+</style>
+</head>
+<body>
+<div class="scroll-track">
+  <div class="scroll-inner">
+
+    <div style="background:linear-gradient(180deg, #312e81, #4c1d95)">
+      <div class="ad-logo-row"><img src="/portal/img/game-betwixt.png" alt=""></div>
+      <div class="v-letter www">W</div>
+      <div class="v-letter www">W</div>
+      <div class="v-letter www">W</div>
+      <div class="v-letter dot">.</div>
+      <div class="v-letter">W</div>
+      <div class="v-letter">O</div>
+      <div class="v-letter">R</div>
+      <div class="v-letter">D</div>
+      <div class="v-letter">T</div>
+      <div class="v-letter">Y</div>
+      <div class="v-letter">C</div>
+      <div class="v-letter">O</div>
+      <div class="v-letter">O</div>
+      <div class="v-letter">N</div>
+      <div class="v-letter dot">.</div>
+      <div class="v-letter tld">L</div>
+      <div class="v-letter tld">I</div>
+      <div class="v-letter tld">V</div>
+      <div class="v-letter tld">E</div>
+    </div>
+
+    <div class="spacer" style="background:linear-gradient(180deg, #4c1d95, #1d4ed8)"></div>
+
+    <div style="background:linear-gradient(180deg, #1d4ed8, #0f172a)">
+      <div class="v-word big tone1">Find</div>
+      <div class="v-word big tone2">The</div>
+      <div class="v-word big tone3">Word</div>
+      <div class="v-word tiny tone4">In</div>
+      <div class="v-word big tone1">Between</div>
+    </div>
+
+    <div class="spacer" style="background:linear-gradient(180deg, #0f172a, #312e81)"></div>
+
+    <div style="background:linear-gradient(180deg, #312e81, #1d4ed8)">
+      <div class="v-word big tone1">Alphabet</div>
+      <div class="v-word big tone2">Logic</div>
+      <div class="v-word big tone3">Daily</div>
+      <div class="v-word tiny tone4">Or</div>
+      <div class="v-word big tone1">Live</div>
+    </div>
+
+    <div class="spacer" style="background:linear-gradient(180deg, #1d4ed8, #4c1d95)"></div>
+
+    <div style="background:linear-gradient(180deg, #4c1d95, #0f172a)">
+      <div class="v-word big tone1">Closer</div>
+      <div class="v-word big tone2">Farther</div>
+      <div class="v-word big tone3">Clues</div>
+      <div class="v-word tiny tone4">Play Now</div>
+      <div class="v-word small tone1">Betwixt</div>
+    </div>
+
+    <div class="spacer" style="background:linear-gradient(180deg, #0f172a, #312e81)"></div>
+    <div style="background:linear-gradient(180deg, #312e81, #4c1d95)">
+      <div class="ad-logo-row"><img src="/portal/img/game-betwixt.png" alt=""></div>
+      <div class="v-letter www">W</div>
+      <div class="v-letter www">W</div>
+      <div class="v-letter www">W</div>
+      <div class="v-letter dot">.</div>
+      <div class="v-letter">W</div>
+      <div class="v-letter">O</div>
+      <div class="v-letter">R</div>
+      <div class="v-letter">D</div>
+      <div class="v-letter">T</div>
+      <div class="v-letter">Y</div>
+      <div class="v-letter">C</div>
+      <div class="v-letter">O</div>
+      <div class="v-letter">O</div>
+      <div class="v-letter">N</div>
+      <div class="v-letter dot">.</div>
+      <div class="v-letter tld">L</div>
+      <div class="v-letter tld">I</div>
+      <div class="v-letter tld">V</div>
+      <div class="v-letter tld">E</div>
+    </div>
+
+    <div class="spacer" style="background:linear-gradient(180deg, #4c1d95, #1d4ed8)"></div>
+
+    <div style="background:linear-gradient(180deg, #1d4ed8, #0f172a)">
+      <div class="v-word big tone1">Find</div>
+      <div class="v-word big tone2">The</div>
+      <div class="v-word big tone3">Word</div>
+      <div class="v-word tiny tone4">In</div>
+      <div class="v-word big tone1">Between</div>
+    </div>
+
+    <div class="spacer" style="background:linear-gradient(180deg, #0f172a, #312e81)"></div>
+
+    <div style="background:linear-gradient(180deg, #312e81, #1d4ed8)">
+      <div class="v-word big tone1">Alphabet</div>
+      <div class="v-word big tone2">Logic</div>
+      <div class="v-word big tone3">Daily</div>
+      <div class="v-word tiny tone4">Or</div>
+      <div class="v-word big tone1">Live</div>
+    </div>
+
+    <div class="spacer" style="background:linear-gradient(180deg, #1d4ed8, #4c1d95)"></div>
+
+    <div style="background:linear-gradient(180deg, #4c1d95, #0f172a)">
+      <div class="v-word big tone1">Closer</div>
+      <div class="v-word big tone2">Farther</div>
+      <div class="v-word big tone3">Clues</div>
+      <div class="v-word tiny tone4">Play Now</div>
+      <div class="v-word small tone1">Betwixt</div>
+    </div>
+
+    <div class="spacer" style="background:linear-gradient(180deg, #0f172a, #312e81)"></div>
+
+  </div>
+</div>
+</body>
+</html>

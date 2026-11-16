@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Color 500">
+  <!-- Hub card icon for Color 500. Four palette colours as a 2x2 code, over
+       the same near-black the game shell uses. Filename keeps the internal
+       `colour500` id so it lines up with apps.json / PM2 / the reward key. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#23232e"/>
+      <stop offset="1" stop-color="#0d0d12"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.20"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="104" fill="url(#bg)"/>
+
+  <g>
+    <rect x="104" y="104" width="140" height="140" rx="26" fill="#e8404a"/>
+    <rect x="268" y="104" width="140" height="140" rx="26" fill="#3fbf5f"/>
+    <rect x="104" y="268" width="140" height="140" rx="26" fill="#3d7ff2"/>
+    <rect x="268" y="268" width="140" height="140" rx="26" fill="#f2c53d"/>
+  </g>
+
+  <!-- Soft top gloss, echoing the game's liquid-glass keys -->
+  <rect x="104" y="104" width="304" height="150" rx="26" fill="url(#gloss)"/>
+
+  <rect x="8" y="8" width="496" height="496" rx="100" fill="none"
+        stroke="#ffffff" stroke-opacity="0.10" stroke-width="4"/>
+</svg>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Balances Owing — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f14;
+    --surface: #1a1a24;
+    --border: #2a2a3a;
+    --text: #e0e0e0;
+    --text-dim: #888;
+    --blue: #4a9eff;
+    --blue-hover: #3a8eef;
+    --green: #4fc34f;
+    --green-hover: #3eb33e;
+    --amber: #f5b942;
+    --red: #e94560;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 80px; }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(15,15,20,0.95); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .topbar h1 { font-size: 18px; font-weight: 700; }
+  .topbar .grow { flex: 1; }
+  .topbar .status { font-size: 13px; color: var(--text-dim); }
+  .topbar .status.saved  { color: var(--green); }
+  .topbar .status.error  { color: var(--red); }
+
+  .btn {
+    background: var(--blue); color: white; border: none; padding: 8px 16px;
+    border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;
+    font-size: 14px; transition: background 0.15s;
+  }
+  .btn:hover { background: var(--blue-hover); }
+  .btn.danger { background: transparent; color: var(--red); border: 1px solid var(--red); }
+  .btn.danger:hover { background: rgba(233,69,96,0.12); }
+  .btn.subtle { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+  .btn.subtle:hover { color: var(--text); border-color: var(--text-dim); }
+  .btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+  main { max-width: 880px; margin: 0 auto; padding: 24px; }
+  .hint { font-size: 13px; color: var(--text-dim); margin-bottom: 20px; line-height: 1.5; }
+
+  .group {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-bottom: 16px; overflow: hidden;
+  }
+  .group-header {
+    padding: 12px 16px; background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px; font-weight: 600; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+
+  .add-form {
+    display: grid;
+    grid-template-columns: 1.3fr 1.3fr 110px 1fr auto;
+    gap: 10px; padding: 14px 16px; align-items: end;
+  }
+  .add-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-dim); }
+  .add-form input {
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 8px 10px; border-radius: var(--radius-sm); font-size: 14px; font-family: inherit;
+  }
+  .add-form input:focus { outline: none; border-color: var(--blue); }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 100px 1fr auto;
+    align-items: center; gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .row:last-child { border-bottom: none; }
+  .row:hover { background: rgba(255,255,255,0.015); }
+  .row .who .name { font-weight: 600; font-size: 14px; }
+  .row .who .handle { font-size: 12px; color: var(--text-dim); }
+  .row .amount { font-weight: 700; color: var(--amber); font-size: 15px; }
+  .row .meta { font-size: 12px; color: var(--text-dim); line-height: 1.4; }
+  .row.cleared { opacity: 0.45; }
+  .row.cleared .amount { color: var(--text-dim); text-decoration: line-through; }
+  .pill {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    padding: 2px 8px; border-radius: 99px; letter-spacing: 0.03em;
+  }
+  .pill.owing { background: rgba(233,69,96,0.15); color: var(--red); }
+  .pill.cleared { background: rgba(79,195,79,0.12); color: var(--green); }
+  .empty { padding: 24px 16px; color: var(--text-dim); font-size: 14px; text-align: center; }
+
+  @media (max-width: 720px) {
+    .add-form { grid-template-columns: 1fr 1fr; }
+    .row { grid-template-columns: 1fr auto auto; }
+    .row .meta { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>💸 Balances Owing</h1>
+    <div class="grow"></div>
+    <span class="status" id="status">loading…</span>
+    <button class="btn subtle" onclick="loadEntries()">Refresh</button>
+  </div>
+
+  <main>
+    <p class="hint">
+      Viewers listed here (by TikTok username or user ID) are blocked from making guesses in
+      <strong>every</strong> game — their chat still shows on stream, but no game receives it, and the
+      stream overlay pops a "pay&nbsp;up" banner each time they try. Clearing is manual: when they pay /
+      become a Donor, hit <strong>Clear</strong>.
+    </p>
+
+    <div class="group">
+      <div class="group-header">Add a viewer</div>
+      <form class="add-form" id="add-form" onsubmit="return addEntry(event)">
+        <label>TikTok username or user ID (with or without @)
+          <input type="text" id="f-id" placeholder="mariegonzalez923" required maxlength="80" autocomplete="off">
+        </label>
+        <label>Display name (shown on the banner)
+          <input type="text" id="f-name" placeholder="Marie Gonzalez" maxlength="80" autocomplete="off">
+        </label>
+        <label>Owes ($)
+          <input type="number" id="f-amount" placeholder="20" min="0" step="0.01" required>
+        </label>
+        <label>Note (optional, admin-only)
+          <input type="text" id="f-note" placeholder="why they owe" maxlength="200" autocomplete="off">
+        </label>
+        <button class="btn" type="submit" id="add-btn">Add</button>
+      </form>
+    </div>
+
+    <div class="group">
+      <div class="group-header">Flagged viewers</div>
+      <div id="list"><div class="empty">Loading…</div></div>
+    </div>
+  </main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  function setStatus(text, cls) {
+    const el = $('status');
+    el.textContent = text;
+    el.className = 'status' + (cls ? ' ' + cls : '');
+  }
+
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  function fmtAmount(n) {
+    const v = Number(n) || 0;
+    return '$' + (Number.isInteger(v) ? v : v.toFixed(2));
+  }
+
+  function fmtDate(s) {
+    if (!s) return '';
+    // sqlite datetime('now') is UTC without a zone marker — append Z so it
+    // renders in the admin's local time.
+    const d = new Date(String(s).replace(' ', 'T') + 'Z');
+    return isNaN(d) ? s : d.toLocaleString();
+  }
+
+  async function loadEntries() {
+    setStatus('loading…');
+    try {
+      const res = await fetch('/api/admin/balances-owing', { credentials: 'include' });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'load failed');
+      render(data.entries || []);
+      setStatus(data.entries.length + ' entr' + (data.entries.length === 1 ? 'y' : 'ies'), 'saved');
+    } catch (e) {
+      setStatus('load failed — are you logged in as admin?', 'error');
+      $('list').innerHTML = '<div class="empty">Could not load. Log in at <a href="/admin/login" style="color:var(--blue)">/admin/login</a> first.</div>';
+    }
+  }
+
+  function render(entries) {
+    if (!entries.length) {
+      $('list').innerHTML = '<div class="empty">Nobody owes anything. Beautiful.</div>';
+      return;
+    }
+    $('list').innerHTML = entries.map((e) => {
+      const active = !!e.active;
+      return `
+        <div class="row ${active ? '' : 'cleared'}">
+          <div class="who">
+            <div class="name">${esc(e.display_name || e.tiktok_user_id)}
+              <span class="pill ${active ? 'owing' : 'cleared'}">${active ? 'OWING' : 'CLEARED'}</span>
+            </div>
+            <div class="handle">@${esc(e.tiktok_user_id)}</div>
+          </div>
+          <div class="amount">${fmtAmount(e.amount_dollars)}</div>
+          <div class="meta">${e.blocked_count ? e.blocked_count + '× blocked' : 'not blocked yet'}</div>
+          <div class="meta">
+            added ${esc(fmtDate(e.created_at))}
+            ${active ? '' : '<br>cleared ' + esc(fmtDate(e.cleared_at))}
+            ${e.note ? '<br>' + esc(e.note) : ''}
+          </div>
+          <div>
+            ${active
+              ? `<button class="btn danger" onclick="clearEntry('${esc(e.tiktok_user_id)}')">Clear</button>`
+              : `<button class="btn subtle" onclick="reAdd('${esc(e.tiktok_user_id)}', '${esc(e.display_name || '')}', ${Number(e.amount_dollars) || 0})">Re-flag</button>`}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  async function addEntry(ev) {
+    ev.preventDefault();
+    const body = {
+      // Strip any leading @ — TikTok chat identities arrive without it, and
+      // the server normalizes the same way (belt & suspenders).
+      tiktok_user_id: $('f-id').value.trim().replace(/^@+/, ''),
+      display_name: $('f-name').value.trim(),
+      amount_dollars: Number($('f-amount').value),
+      note: $('f-note').value.trim(),
+    };
+    if (!body.tiktok_user_id) return false;
+    $('add-btn').disabled = true;
+    setStatus('saving…');
+    try {
+      const res = await fetch('/api/admin/balances-owing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'save failed');
+      $('add-form').reset();
+      await loadEntries();
+    } catch (e) {
+      setStatus('save failed: ' + e.message, 'error');
+    }
+    $('add-btn').disabled = false;
+    return false;
+  }
+
+  async function clearEntry(id) {
+    if (!confirm('Clear ' + id + '? They will be able to play again immediately.')) return;
+    setStatus('clearing…');
+    try {
+      const res = await fetch('/api/admin/balances-owing', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ tiktok_user_id: id }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'clear failed');
+      await loadEntries();
+    } catch (e) {
+      setStatus('clear failed: ' + e.message, 'error');
+    }
+  }
+
+  function reAdd(id, name, amount) {
+    $('f-id').value = id;
+    $('f-name').value = name;
+    $('f-amount').value = amount;
+    $('f-id').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  loadEntries();
+</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

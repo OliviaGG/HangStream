@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Streamers — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f14;
+    --surface: #1a1a24;
+    --border: #2a2a3a;
+    --text: #e0e0e0;
+    --text-dim: #888;
+    --blue: #4a9eff;
+    --blue-hover: #3a8eef;
+    --green: #4fc34f;
+    --amber: #f5b942;
+    --red: #e94560;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 80px; }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(15,15,20,0.95); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .topbar h1 { font-size: 18px; font-weight: 700; }
+  .back-link {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: var(--text-dim); text-decoration: none;
+    font-size: 13px; font-weight: 600;
+    padding: 6px 10px; border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    transition: color 0.15s, background 0.15s, border-color 0.15s;
+  }
+  .back-link:hover { color: var(--text); background: rgba(255,255,255,0.04); border-color: var(--border); }
+  .topbar .status { font-size: 13px; color: var(--text-dim); }
+  .topbar .grow { flex: 1; }
+  .btn {
+    background: var(--blue); color: white; border: none; padding: 8px 14px;
+    border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;
+    font-size: 13px; transition: background 0.15s;
+  }
+  .btn:hover { background: var(--blue-hover); }
+  .btn.subtle { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+  .btn.subtle:hover { color: var(--text); border-color: var(--text-dim); }
+  .btn.danger { background: var(--red); }
+  .btn.danger:hover { background: #d63852; }
+  .btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+  .summary {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px; margin-bottom: 20px;
+  }
+  .stat {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 16px;
+  }
+  .stat .num { font-size: 24px; font-weight: 700; }
+  .stat .lbl { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; }
+
+  .table-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead tr { background: rgba(255,255,255,0.02); }
+  th {
+    text-align: left; padding: 10px 14px; font-size: 11px;
+    color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border); font-weight: 600;
+  }
+  td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+  tbody tr.blocked { opacity: 0.55; }
+  tbody tr.blocked td { background: rgba(233, 69, 96, 0.04); }
+
+  .name { font-weight: 600; }
+  .name .sub { display: block; font-size: 11px; color: var(--text-dim); font-weight: 400; }
+  .tt-handle { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; }
+  .tt-handle .none { color: var(--text-dim); font-style: italic; }
+
+  /* TikTok cell — one line per linked handle, each with its own live dot,
+     plus an edit affordance. Up to MAX_TIKTOK_ACCOUNTS handles. */
+  .tt-list { display: flex; flex-direction: column; gap: 3px; }
+  .tt-line { display: flex; align-items: center; gap: 7px; }
+  .tt-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex: none;
+    background: var(--text-dim); opacity: 0.4;
+  }
+  .tt-dot.connected  { background: var(--green); opacity: 1; box-shadow: 0 0 5px rgba(79,195,79,0.6); }
+  .tt-dot.connecting { background: var(--amber); opacity: 1; }
+  .tt-edit-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--text-dim);
+    border-radius: var(--radius-sm); cursor: pointer; font: inherit; font-size: 11px;
+    padding: 2px 7px; margin-top: 4px; align-self: flex-start;
+  }
+  .tt-edit-btn:hover { color: var(--text); border-color: var(--blue); }
+
+  .tt-editor { display: flex; flex-direction: column; gap: 6px; min-width: 210px; }
+  .tt-editor input {
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 5px 9px; border-radius: var(--radius-sm);
+    font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; width: 100%;
+  }
+  .tt-editor input:focus { outline: none; border-color: var(--blue); }
+  .tt-editor .row { display: flex; gap: 6px; }
+  .tt-editor .hint { font-size: 11px; color: var(--text-dim); }
+  .tt-editor .err { font-size: 11px; color: var(--red); display: none; }
+  .tt-editor .err.show { display: block; }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    border: 1px solid transparent;
+  }
+  .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .pill.live   { background: rgba(79,195,79,0.12);   color: var(--green); border-color: rgba(79,195,79,0.25); }
+  .pill.connecting { background: rgba(245,185,66,0.12); color: var(--amber); border-color: rgba(245,185,66,0.25); }
+  .pill.offline { background: rgba(120,120,140,0.12); color: var(--text-dim); border-color: rgba(120,120,140,0.2); }
+  .pill.blocked { background: rgba(233,69,96,0.12);  color: var(--red); border-color: rgba(233,69,96,0.3); }
+  .pill.allowed { background: rgba(74,158,255,0.12); color: var(--blue); border-color: rgba(74,158,255,0.3); }
+
+  .meta-cell { font-size: 12px; color: var(--text-dim); }
+  .meta-cell .game { color: var(--text); font-weight: 500; }
+  .actions { display: flex; gap: 6px; justify-content: flex-end; }
+
+  .empty { padding: 48px 24px; text-align: center; color: var(--text-dim); }
+
+  /* Tab navigation */
+  .tabs { display: flex; gap: 4px; }
+  .tab {
+    background: transparent; border: 1px solid transparent; color: var(--text-dim);
+    padding: 7px 14px; border-radius: var(--radius-sm); font: inherit;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .tab:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .tab.active { color: var(--text); background: var(--surface); border-color: var(--border); }
+  .badge {
+    background: var(--amber); color: #1a1a1a; font-size: 11px;
+    font-weight: 700; padding: 1px 7px; border-radius: 10px; min-width: 18px;
+    text-align: center;
+  }
+
+  /* Applications view */
+  .app-toolbar {
+    display: flex; gap: 6px; padding: 12px 14px;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border);
+  }
+  .app-filter {
+    background: transparent; border: 1px solid var(--border); color: var(--text-dim);
+    padding: 5px 12px; border-radius: var(--radius-sm); font: inherit; font-size: 12px;
+    cursor: pointer; font-weight: 600;
+  }
+  .app-filter.active { background: var(--blue); color: white; border-color: var(--blue); }
+  .app-status {
+    display: inline-flex; align-items: center; padding: 3px 10px;
+    border-radius: 20px; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    border: 1px solid transparent;
+  }
+  .app-status.pending  { background: rgba(245,185,66,0.12); color: var(--amber); border-color: rgba(245,185,66,0.3); }
+  .app-status.approved { background: rgba(79,195,79,0.12);  color: var(--green); border-color: rgba(79,195,79,0.25); }
+  .app-status.denied   { background: rgba(233,69,96,0.12);  color: var(--red);   border-color: rgba(233,69,96,0.3); }
+  .reason {
+    color: var(--text-dim); font-style: italic; font-size: 13px;
+    max-width: 320px; line-height: 1.4;
+  }
+  .reason.empty { color: #555; }
+  .timeline { font-size: 11px; color: var(--text-dim); margin-top: 4px; line-height: 1.4; }
+  .deny-note { color: var(--red); font-size: 11px; margin-top: 4px; font-style: italic; }
+
+  .hidden { display: none !important; }
+
+  /* Whitelist modal */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100; padding: 24px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); max-width: 480px; width: 100%;
+    padding: 24px;
+  }
+  .modal h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .modal p.help { font-size: 13px; color: var(--text-dim); margin-bottom: 16px; }
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block; font-size: 11px; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    margin-bottom: 4px; font-weight: 600;
+  }
+  .field input {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 12px; border-radius: var(--radius-sm);
+    font: inherit; font-size: 14px;
+  }
+  .field input:focus { outline: none; border-color: var(--blue); }
+  .field .hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+  .modal .err {
+    background: rgba(233,69,96,0.1); border: 1px solid rgba(233,69,96,0.3);
+    color: var(--red); padding: 10px 12px; border-radius: var(--radius-sm);
+    font-size: 13px; margin-bottom: 14px; display: none;
+  }
+  .modal .err.show { display: block; }
+
+  @media (max-width: 900px) {
+    table thead { display: none; }
+    table tr { display: block; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    table td { display: block; padding: 4px 14px; border: none; }
+    table td.actions { padding-top: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/admin/dashboard" class="back-link" title="Back to dashboard">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Dashboard
+  </a>
+  <h1>Streamers</h1>
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-tab="streamers">Streamers</button>
+    <button class="tab" data-tab="applications">Applications <span class="badge" id="pendingBadge" style="display:none">0</span></button>
+  </div>
+  <span class="status" id="status">Loading…</span>
+  <span class="grow"></span>
+  <button class="btn" id="whitelistBtn">+ Whitelist streamer</button>
+  <button class="btn subtle" id="refreshBtn">Refresh</button>
+  <button class="btn subtle" id="autoBtn">Auto: 15s</button>
+</div>
+
+<div class="modal-backdrop" id="whitelistModal">
+  <div class="modal">
+    <h2>Whitelist new streamer</h2>
+    <p class="help">Grants this Discord account access to the streamer dashboard at wordgame.live/streamer. TikTok handle is optional — they can set it themselves later.</p>
+    <div class="err" id="whitelistErr"></div>
+    <div class="field">
+      <label for="wlDiscordId">Discord User ID *</label>
+      <input id="wlDiscordId" type="text" inputmode="numeric" placeholder="e.g. 760201940734574653" autocomplete="off">
+      <div class="hint">17–20 digit numeric ID. Right-click user → Copy ID in Discord (developer mode required).</div>
+    </div>
+    <div class="field">
+      <label for="wlDisplay">Display Name</label>
+      <input id="wlDisplay" type="text" placeholder="e.g. Grace" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="wlUsername">Username (optional)</label>
+      <input id="wlUsername" type="text" placeholder="defaults to display name lowercased" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="wlTiktok">TikTok handle (optional)</label>
+      <input id="wlTiktok" type="text" placeholder="e.g. gracexcarroll7" autocomplete="off">
+      <div class="hint">Leading @ is stripped automatically.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn subtle" id="wlCancel">Cancel</button>
+      <button class="btn" id="wlSubmit">Whitelist</button>
+    </div>
+  </div>
+</div>
+
+<main>
+  <!-- Streamers tab -->
+  <section id="view-streamers">
+    <div class="summary" id="summary"></div>
+    <div class="table-wrap" id="tableWrap">
+      <div class="empty">Loading streamers…</div>
+    </div>
+  </section>
+
+  <!-- Applications tab -->
+  <section id="view-applications" class="hidden">
+    <div class="table-wrap">
+      <div class="app-toolbar">
+        <button class="app-filter active" data-app-filter="pending">Pending</button>
+        <button class="app-filter" data-app-filter="approved">Approved</button>
+        <button class="app-filter" data-app-filter="denied">Denied</button>
+        <button class="app-filter" data-app-filter="all">All</button>
+      </div>
+      <div id="appsContent"><div class="empty">Loading applications…</div></div>
+    </div>
+  </section>
+</main>
+
+<script>
+// editingTt = discordId whose TikTok cell is in edit mode (null = none).
+// ttDraft holds the typed values so a background re-render can't lose them.
+const state = { streamers: [], totalActive: 0, applications: [], appsFilter: 'pending', activeTab: 'streamers', editingTt: null, ttDraft: [] };
+const statusEl = document.getElementById('status');
+const tableWrap = document.getElementById('tableWrap');
+const summaryEl = document.getElementById('summary');
+let autoTimer = null;
+let autoOn = true;
+// Max TikTok handles per streamer. Overwritten from the API on every load() —
+// the relay owns the real cap (streamers.MAX_TIKTOK_ACCOUNTS).
+let MAX_TT = 2;
+
+function statusSet(text, cls) {
+  statusEl.textContent = text;
+  statusEl.className = 'status' + (cls ? ' ' + cls : '');
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+function fmtDuration(iso) {
+  if (!iso) return '—';
+  const ms = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return '—';
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return s + 's';
+  const m = Math.floor(s / 60);
+  if (m < 60) return m + 'm';
+  const h = Math.floor(m / 60);
+  return h + 'h ' + (m % 60) + 'm';
+}
+function fmtRelative(iso) {
+  if (!iso) return '';
+  const ms = Date.now() - new Date(iso).getTime();
+  if (ms < 0 || !Number.isFinite(ms)) return '';
+  const d = Math.floor(ms / 86400000);
+  if (d > 0) return d + 'd ago';
+  const h = Math.floor(ms / 3600000);
+  if (h > 0) return h + 'h ago';
+  const m = Math.floor(ms / 60000);
+  if (m > 0) return m + 'm ago';
+  return 'just now';
+}
+
+function load() {
+  statusSet('Loading…');
+  Promise.all([
+    fetch('/api/streamers/admin/list-with-status', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status))),
+    fetch('/api/streamers/admin/applications', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : { applications: [] })
+      .catch(() => ({ applications: [] })),
+  ])
+    .then(([streamersData, appsData]) => {
+      state.streamers = streamersData.streamers || [];
+      state.totalActive = streamersData.totalActive || 0;
+      // The relay owns the real cap — don't let the UI's copy drift.
+      if (streamersData.maxTiktokAccounts > 0) MAX_TT = streamersData.maxTiktokAccounts;
+      state.applications = appsData.applications || [];
+      const pending = state.applications.filter(a => a.status === 'pending').length;
+      const badge = document.getElementById('pendingBadge');
+      if (pending > 0) { badge.textContent = pending; badge.style.display = ''; }
+      else { badge.style.display = 'none'; }
+      render();
+      renderApplications();
+      statusSet('Loaded ' + state.streamers.length + ' • Live: ' + state.totalActive + (pending ? ' • ' + pending + ' pending' : ''));
+    })
+    .catch(err => {
+      statusSet('Error: ' + err.message, 'error');
+      tableWrap.innerHTML = '<div class="empty">Failed to load. Are you logged in as admin? <a href="/admin/login" style="color:var(--blue)">Sign in</a></div>';
+    });
+}
+
+function render() {
+  // Capture in-progress edits before innerHTML wipes the inputs.
+  if (state.editingTt && tableWrap.querySelector('.tt-slot')) {
+    state.ttDraft = readTtDraft();
+  }
+  const total   = state.streamers.length;
+  const live    = state.streamers.filter(s => s.live?.state === 'connected').length;
+  const blocked = state.streamers.filter(s => s.connectBlocked === true).length;
+  const noTT    = state.streamers.filter(s => !s.tiktokUsername).length;
+  summaryEl.innerHTML =
+    '<div class="stat"><div class="num">' + total + '</div><div class="lbl">Total whitelisted</div></div>' +
+    '<div class="stat"><div class="num" style="color:var(--green)">' + live + '</div><div class="lbl">Live now</div></div>' +
+    '<div class="stat"><div class="num" style="color:var(--red)">' + blocked + '</div><div class="lbl">Force-disconnected</div></div>' +
+    '<div class="stat"><div class="num" style="color:var(--text-dim)">' + noTT + '</div><div class="lbl">No TikTok set</div></div>';
+
+  // Sort: live first, then allowed-but-offline, then blocked, then no-TikTok.
+  const score = (s) => {
+    if (s.live?.state === 'connected') return 0;
+    if (s.live?.state === 'connecting') return 1;
+    if (s.connectBlocked === true) return 3;
+    if (!s.tiktokUsername) return 4;
+    return 2;
+  };
+  const rows = [...state.streamers].sort((a, b) => {
+    const d = score(a) - score(b);
+    if (d) return d;
+    return (a.displayName || a.username || '').localeCompare(b.displayName || b.username || '');
+  });
+
+  let html = '<table><thead><tr>' +
+    '<th>Streamer</th>' +
+    '<th>TikTok</th>' +
+    '<th>Live status</th>' +
+    '<th>Permission</th>' +
+    '<th>Session</th>' +
+    '<th></th>' +
+    '</tr></thead><tbody>';
+
+  for (const s of rows) html += renderRow(s);
+  html += '</tbody></table>';
+  tableWrap.innerHTML = html;
+
+  tableWrap.querySelectorAll('[data-act]').forEach(btn => {
+    btn.addEventListener('click', () => onAction(btn.dataset.act, btn.dataset.id));
+  });
+
+  // Enter saves, Escape cancels — same keyboard contract as the whitelist modal.
+  if (state.editingTt) {
+    const id = state.editingTt;
+    tableWrap.querySelectorAll('.tt-slot').forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveTtEdit(id); }
+        else if (e.key === 'Escape') { e.preventDefault(); endTtEdit(); }
+      });
+    });
+  }
+}
+
+// ── TikTok handles cell ──────────────────────────────────────────────
+// A streamer can link up to MAX_TT handles (the relay enforces the real cap;
+// this is only the UI's idea of it). Read-only view lists each handle with
+// its own live dot; the editor swaps the cell for one input per slot.
+
+function ttHandlesOf(s) {
+  if (Array.isArray(s.tiktokUsernames) && s.tiktokUsernames.length) return s.tiktokUsernames;
+  return s.tiktokUsername ? [s.tiktokUsername] : [];
+}
+
+function renderTtList(s) {
+  const handles = ttHandlesOf(s);
+  const editBtn = '<button class="tt-edit-btn" data-act="tt-edit" data-id="' + escapeHtml(s.discordId) + '">'
+    + (handles.length ? 'Edit @s' : 'Link @') + '</button>';
+  if (!handles.length) {
+    return '<div class="tt-list"><span class="tt-handle"><span class="none">not set</span></span>' + editBtn + '</div>';
+  }
+  const lines = handles.map((h) => {
+    const st = (s.liveByHandle && s.liveByHandle[h]) || 'disconnected';
+    return '<div class="tt-line">'
+      + '<span class="tt-dot ' + escapeHtml(st) + '" title="' + escapeHtml(st) + '"></span>'
+      + '<span class="tt-handle">@' + escapeHtml(h) + '</span>'
+      + '</div>';
+  }).join('');
+  return '<div class="tt-list">' + lines + editBtn + '</div>';
+}
+
+function renderTtEditor(s) {
+  // Draft survives a re-render (a background load() can land mid-edit).
+  const draft = state.ttDraft.length ? state.ttDraft : ttHandlesOf(s);
+  let inputs = '';
+  for (let i = 0; i < MAX_TT; i++) {
+    inputs += '<input class="tt-slot" data-slot="' + i + '" spellcheck="false" autocomplete="off"'
+      + ' placeholder="' + (i === 0 ? 'handle' : 'second account (optional)') + '"'
+      + ' value="' + escapeHtml(draft[i] || '') + '">';
+  }
+  return '<div class="tt-editor">'
+    + inputs
+    + '<div class="err" id="ttErr"></div>'
+    + '<div class="row">'
+    +   '<button class="btn" data-act="tt-save" data-id="' + escapeHtml(s.discordId) + '">Save</button>'
+    +   '<button class="btn subtle" data-act="tt-cancel" data-id="' + escapeHtml(s.discordId) + '">Cancel</button>'
+    + '</div>'
+    + '<div class="hint">Without the @. Blank to unlink. Max ' + MAX_TT + '.</div>'
+    + '</div>';
+}
+
+// Read what's currently typed, so a re-render or a save uses live values.
+function readTtDraft() {
+  return Array.from(tableWrap.querySelectorAll('.tt-slot'))
+    .map(el => el.value.replace(/^@+/, '').trim());
+}
+
+function beginTtEdit(id) {
+  const s = state.streamers.find(x => x.discordId === id);
+  if (!s) return;
+  state.editingTt = id;
+  state.ttDraft = ttHandlesOf(s).slice();
+  stopAuto();          // the 15s refresh rebuilds the table and would wipe the editor
+  render();
+  const first = tableWrap.querySelector('.tt-slot');
+  if (first) { first.focus(); first.select(); }
+}
+
+function endTtEdit() {
+  state.editingTt = null;
+  state.ttDraft = [];
+  render();
+  if (autoOn) startAuto();   // respect the Auto: off toggle
+}
+
+function showTtErr(msg) {
+  const el = document.getElementById('ttErr');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function saveTtEdit(id) {
+  const s = state.streamers.find(x => x.discordId === id);
+  if (!s) return;
+  const names = readTtDraft().filter(Boolean);
+  state.ttDraft = readTtDraft();
+
+  // Client-side pre-checks for instant feedback; the relay re-validates and is
+  // the authority (it also owns the real cap and the cross-streamer clash).
+  for (const n of names) {
+    if (!/^[a-zA-Z0-9._-]{2,32}$/.test(n)) {
+      return showTtErr('"' + n + '" is not a valid handle (2-32 chars: letters, numbers, . _ -)');
+    }
+  }
+  const lower = names.map(n => n.toLowerCase());
+  if (new Set(lower).size !== lower.length) return showTtErr('Same handle entered twice.');
+  for (const other of state.streamers) {
+    if (other.discordId === id) continue;
+    const clash = ttHandlesOf(other).find(h => lower.includes(String(h).toLowerCase()));
+    if (clash) {
+      return showTtErr('@' + clash + ' is already linked to ' + (other.displayName || other.username || other.discordId) + '.');
+    }
+  }
+
+  const label = s.displayName || s.username || id;
+  statusSet('Saving TikTok handles for ' + label + '…', 'saving');
+  fetch('/api/streamers/admin/set-tiktok', {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ discordId: id, tiktokUsernames: names }),
+  })
+    .then(r => r.json().then(d => ({ ok: r.ok, d })))
+    .then(({ ok, d }) => {
+      if (!ok || !d?.ok) throw new Error(d?.error || d?.detail || 'failed');
+      const dropped = (d.dropped || []).length
+        ? ' • disconnected ' + d.dropped.map(n => '@' + n).join(', ')
+        : '';
+      statusSet(names.length
+        ? 'Linked ' + names.map(n => '@' + n).join(', ') + ' to ' + label + dropped
+        : 'Unlinked all TikTok handles for ' + label + dropped, 'saved');
+      endTtEdit();
+      load();
+    })
+    .catch(err => {
+      showTtErr(err.message);
+      statusSet('Save failed', 'error');
+    });
+}
+
+function renderRow(s) {
+  const isLive = s.live?.state === 'connected';
+  const isConnecting = s.live?.state === 'connecting';
+  const blocked = s.connectBlocked === true;
+  const tr = blocked ? ' class="blocked"' : '';
+
+  const livePill = isLive
+    ? '<span class="pill live"><span class="dot"></span>Live • ' + (s.live.viewerCount || 0) + ' viewers</span>'
+    : isConnecting
+    ? '<span class="pill connecting"><span class="dot"></span>Connecting</span>'
+    : '<span class="pill offline"><span class="dot"></span>Offline</span>';
+
+  const liveSub = isLive && s.live.connectedAt
+    ? '<div class="meta-cell">Connected ' + fmtDuration(s.live.connectedAt)
+        + (s.live.targetGame ? ' • Game: <span class="game">' + escapeHtml(s.live.targetGame) + '</span>' : '')
+        + '</div>'
+    : '';
+
+  const permPill = blocked
+    ? '<span class="pill blocked">Force-disconnected</span>'
+    : '<span class="pill allowed">Allowed</span>';
+
+  const sessionCell = s.currentSession?.gameId
+    ? '<div class="meta-cell"><span class="game">' + escapeHtml(s.currentSession.gameId) + '</span><br>Started ' + fmtRelative(s.currentSession.startedAt) + '</div>'
+    : '<div class="meta-cell">—</div>';
+
+  const ttCell = state.editingTt === s.discordId ? renderTtEditor(s) : renderTtList(s);
+
+  const actions = blocked
+    ? '<button class="btn" data-act="allow" data-id="' + escapeHtml(s.discordId) + '">Re-allow</button>'
+    : (isLive || isConnecting
+        ? '<button class="btn danger" data-act="disconnect" data-id="' + escapeHtml(s.discordId) + '">Force disconnect</button>'
+        : '<button class="btn subtle" data-act="disconnect" data-id="' + escapeHtml(s.discordId) + '">Block</button>');
+
+  return '<tr' + tr + '>' +
+    '<td><div class="name">' + escapeHtml(s.displayName || s.username || s.discordId) + '<span class="sub">' + escapeHtml(s.discordId) + '</span></div></td>' +
+    '<td>' + ttCell + '</td>' +
+    '<td>' + livePill + liveSub + '</td>' +
+    '<td>' + permPill + '</td>' +
+    '<td>' + sessionCell + '</td>' +
+    '<td class="actions">' + actions + '</td>' +
+    '</tr>';
+}
+
+function onAction(act, id) {
+  const s = state.streamers.find(x => x.discordId === id);
+  if (!s) return;
+  if (act === 'tt-edit') {
+    beginTtEdit(id);
+  } else if (act === 'tt-save') {
+    saveTtEdit(id);
+  } else if (act === 'tt-cancel') {
+    endTtEdit();
+  } else if (act === 'disconnect') {
+    const label = s.displayName || s.username || id;
+    const reason = prompt('Force-disconnect ' + label + '?\n\nThis blocks new Connect attempts, clears auto-reconnect intent, and drops the TikTok connection.\n\nOptional reason (e.g. "playing a different game"):', '');
+    if (reason === null) return; // user cancelled
+    statusSet('Disconnecting ' + label + '…', 'saving');
+    fetch('/api/streamers/admin/force-disconnect', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ discordId: id, reason: reason.trim() || null }),
+    })
+      .then(r => r.json().then(d => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        if (!ok || !d?.ok) throw new Error(d?.error || 'failed');
+        statusSet('Disconnected ' + label, 'saved');
+        load();
+      })
+      .catch(err => statusSet('Failed: ' + err.message, 'error'));
+  } else if (act === 'allow') {
+    const label = s.displayName || s.username || id;
+    statusSet('Re-allowing ' + label + '…', 'saving');
+    fetch('/api/streamers/admin/allow-connect', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ discordId: id }),
+    })
+      .then(r => r.json().then(d => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        if (!ok || !d?.ok) throw new Error(d?.error || 'failed');
+        statusSet('Re-allowed ' + label, 'saved');
+        load();
+      })
+      .catch(err => statusSet('Failed: ' + err.message, 'error'));
+  }
+}
+
+document.getElementById('refreshBtn').addEventListener('click', load);
+document.getElementById('autoBtn').addEventListener('click', () => {
+  autoOn = !autoOn;
+  document.getElementById('autoBtn').textContent = autoOn ? 'Auto: 15s' : 'Auto: off';
+  if (autoOn) startAuto(); else stopAuto();
+});
+function startAuto() {
+  stopAuto();
+  autoTimer = setInterval(load, 15000);
+}
+function stopAuto() { if (autoTimer) { clearInterval(autoTimer); autoTimer = null; } }
+
+// ── Tab switching ────────────────────────────────────────────────
+function switchTab(tab) {
+  state.activeTab = tab;
+  document.querySelectorAll('#tabs .tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  document.getElementById('view-streamers').classList.toggle('hidden', tab !== 'streamers');
+  document.getElementById('view-applications').classList.toggle('hidden', tab !== 'applications');
+  // Reflect tab in the URL hash so admins can deep-link.
+  try { history.replaceState(null, '', '#' + tab); } catch (_) {}
+}
+document.querySelectorAll('#tabs .tab').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+if (location.hash === '#applications') switchTab('applications');
+
+// ── Applications view ────────────────────────────────────────────
+document.querySelectorAll('[data-app-filter]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.appsFilter = btn.dataset.appFilter;
+    document.querySelectorAll('[data-app-filter]').forEach(b => {
+      b.classList.toggle('active', b.dataset.appFilter === state.appsFilter);
+    });
+    renderApplications();
+  });
+});
+
+function renderApplications() {
+  const container = document.getElementById('appsContent');
+  const f = state.appsFilter;
+  const list = (f === 'all' ? state.applications : state.applications.filter(a => a.status === f))
+    .slice()
+    .sort((a, b) => (b.requestedAt || '').localeCompare(a.requestedAt || ''));
+  if (!list.length) {
+    container.innerHTML = '<div class="empty">No ' + escapeHtml(f) + ' applications.</div>';
+    return;
+  }
+  let html = '<table><thead><tr>' +
+    '<th>Applicant</th><th>TikTok</th><th>Reason</th><th>Status</th><th></th>' +
+    '</tr></thead><tbody>';
+  for (const a of list) {
+    const reason = a.reason
+      ? '<div class="reason">' + escapeHtml(a.reason) + '</div>'
+      : '<div class="reason empty">(no reason given)</div>';
+    const timeline = '<div class="timeline">Requested ' + fmtRelative(a.requestedAt)
+      + (a.decidedAt ? '<br>Decided ' + fmtRelative(a.decidedAt) : '') + '</div>';
+    const denyNote = a.denyReason ? '<div class="deny-note">"' + escapeHtml(a.denyReason) + '"</div>' : '';
+    const actions = a.status === 'pending'
+      ? '<div class="actions">' +
+          '<button class="btn" data-app-act="approve" data-id="' + escapeHtml(a.discordId) + '" data-name="' + escapeHtml(a.discordDisplayName || '') + '">Approve</button>' +
+          '<button class="btn danger" data-app-act="deny" data-id="' + escapeHtml(a.discordId) + '" data-name="' + escapeHtml(a.discordDisplayName || '') + '">Deny</button>' +
+        '</div>'
+      : '';
+    html += '<tr>' +
+      '<td><div class="name">' + escapeHtml(a.discordDisplayName || '') + '<span class="sub">' + escapeHtml(a.discordUsername || '') + ' · ' + escapeHtml(a.discordId) + '</span></div></td>' +
+      '<td><span class="tt-handle">@' + escapeHtml(a.tiktokUsername || '') + '</span></td>' +
+      '<td>' + reason + '</td>' +
+      '<td><span class="app-status ' + escapeHtml(a.status) + '">' + escapeHtml(a.status) + '</span>' + timeline + denyNote + '</td>' +
+      '<td class="actions">' + actions + '</td>' +
+      '</tr>';
+  }
+  html += '</tbody></table>';
+  container.innerHTML = html;
+  container.querySelectorAll('[data-app-act]').forEach(btn => {
+    btn.addEventListener('click', () => onAppAction(btn.dataset.appAct, btn.dataset.id, btn.dataset.name));
+  });
+}
+
+function onAppAction(act, discordId, name) {
+  if (act === 'approve') {
+    if (!confirm('Approve ' + (name || discordId) + ' as a streamer?\n\nThis will add them to the whitelist.')) return;
+    statusSet('Approving…', 'saving');
+    fetch('/api/streamers/admin/applications/approve', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ discordId }),
+    })
+      .then(r => r.json().then(d => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        if (!ok || !d?.ok) throw new Error(d?.error || 'failed');
+        statusSet('Approved ' + (name || discordId), 'saved');
+        load();
+      })
+      .catch(err => statusSet('Approve failed: ' + err.message, 'error'));
+  } else if (act === 'deny') {
+    const reason = prompt('Deny ' + (name || discordId) + '? Optionally enter a reason they\'ll see:');
+    if (reason === null) return;
+    statusSet('Denying…', 'saving');
+    fetch('/api/streamers/admin/applications/deny', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ discordId, reason }),
+    })
+      .then(r => r.json().then(d => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        if (!ok || !d?.ok) throw new Error(d?.error || 'failed');
+        statusSet('Denied ' + (name || discordId), 'saved');
+        load();
+      })
+      .catch(err => statusSet('Deny failed: ' + err.message, 'error'));
+  }
+}
+
+// ── Whitelist modal ──────────────────────────────────────────────
+const wlModal   = document.getElementById('whitelistModal');
+const wlDiscord = document.getElementById('wlDiscordId');
+const wlDisplay = document.getElementById('wlDisplay');
+const wlUser    = document.getElementById('wlUsername');
+const wlTiktok  = document.getElementById('wlTiktok');
+const wlErr     = document.getElementById('whitelistErr');
+const wlSubmit  = document.getElementById('wlSubmit');
+
+function openWhitelist() {
+  wlErr.classList.remove('show');
+  wlErr.textContent = '';
+  wlDiscord.value = '';
+  wlDisplay.value = '';
+  wlUser.value = '';
+  wlTiktok.value = '';
+  wlModal.classList.add('open');
+  setTimeout(() => wlDiscord.focus(), 50);
+}
+function closeWhitelist() { wlModal.classList.remove('open'); }
+function showWlErr(msg) {
+  wlErr.textContent = msg;
+  wlErr.classList.add('show');
+}
+
+document.getElementById('whitelistBtn').addEventListener('click', openWhitelist);
+document.getElementById('wlCancel').addEventListener('click', closeWhitelist);
+wlModal.addEventListener('click', (e) => { if (e.target === wlModal) closeWhitelist(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && wlModal.classList.contains('open')) closeWhitelist();
+  if (e.key === 'Enter' && wlModal.classList.contains('open') && !wlSubmit.disabled) wlSubmit.click();
+});
+
+wlSubmit.addEventListener('click', () => {
+  wlErr.classList.remove('show');
+  const discordId = wlDiscord.value.trim();
+  const displayName = wlDisplay.value.trim() || null;
+  const username = wlUser.value.trim() || null;
+  const tiktokUsername = wlTiktok.value.trim().replace(/^@+/, '') || null;
+  if (!/^\d{8,}$/.test(discordId)) {
+    return showWlErr('Discord ID must be a numeric ID (17–20 digits).');
+  }
+  if (state.streamers.find(s => s.discordId === discordId)) {
+    return showWlErr('This Discord ID is already whitelisted.');
+  }
+  wlSubmit.disabled = true;
+  statusSet('Whitelisting…', 'saving');
+  fetch('/api/streamers/admin/whitelist', {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ discordId, displayName, username, tiktokUsername }),
+  })
+    .then(r => r.json().then(d => ({ ok: r.ok, d })))
+    .then(({ ok, d }) => {
+      if (!ok || !d?.ok) throw new Error(d?.error || ('HTTP failure'));
+      const label = d.streamer?.displayName || d.streamer?.username || discordId;
+      statusSet('Whitelisted ' + label + (tiktokUsername ? ' (@' + tiktokUsername + ')' : ''), 'saved');
+      closeWhitelist();
+      load();
+    })
+    .catch(err => {
+      showWlErr('Failed: ' + err.message);
+      statusSet('Whitelist failed', 'error');
+    })
+    .finally(() => { wlSubmit.disabled = false; });
+});
+
+load();
+startAuto();
+</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

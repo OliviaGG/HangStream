@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Daily 3 — Word Tycoon</title>
+<meta name="description" content="Play three free daily word puzzles, combine your score, and challenge a friend to beat it.">
+<link rel="canonical" href="https://wordtycoon.live/daily">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#f6c744">
+<meta property="og:site_name" content="Word Tycoon">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://wordtycoon.live/daily">
+<meta property="og:title" content="Word Tycoon Daily 3">
+<meta property="og:description" content="Three daily word games. One combined score. Can you beat mine?">
+<meta property="og:image" content="https://wordtycoon.live/portal/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Word Tycoon Daily 3">
+<meta name="twitter:description" content="Three daily word games. One combined score. Can you beat mine?">
+<meta name="twitter:image" content="https://wordtycoon.live/portal/img/og-image.png">
+<link rel="icon" href="/portal/img/logo-favicon.png?v=2">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link rel="stylesheet" href="/portal/css/toon.css?v=6">
+  <link rel="stylesheet" href="/portal/css/hangstream-skin.css">
+<link rel="stylesheet" href="/portal/css/daily.css?v=2">
+</head>
+<body>
+<a class="skip-link" href="#daily-main">Skip to the challenge</a>
+
+<header class="daily-topbar">
+  <a class="daily-brand" href="/" aria-label="Word Tycoon home">
+    <img src="/portal/img/wt-logo.svg?v=1" alt="" width="42" height="42">
+    <span>word<b>tycoon</b>.live</span>
+  </a>
+  <span class="daily-date" id="daily-date">Today</span>
+</header>
+
+<main id="daily-main">
+  <section class="daily-screen intro-screen" id="intro-screen" aria-labelledby="daily-title">
+    <div class="intro-sky" aria-hidden="true">
+      <span class="intro-cloud cloud-one"></span>
+      <span class="intro-cloud cloud-two"></span>
+      <span class="intro-tower tower-one"></span>
+      <span class="intro-tower tower-two"></span>
+    </div>
+    <div class="intro-card">
+      <div class="new-ribbon">TODAY'S CHALLENGE</div>
+      <h1 id="daily-title"><span>Daily</span> <strong>3</strong></h1>
+      <p class="intro-lede">Three games. One combined score.<br>About 5–10 minutes. No account required.</p>
+
+      <div class="target-card" id="target-card" hidden>
+        <span class="target-eyebrow">Score to beat</span>
+        <strong id="target-score">0</strong>
+        <span id="target-copy">A player challenged you</span>
+      </div>
+
+      <ol class="game-lineup" id="game-lineup" aria-label="Today's games">
+        <li style="--game:#6aaa64"><span class="lineup-num">·</span><span class="lineup-icon">?</span><span><b>Choosing today's lineup…</b><small>Three games rotate every day</small></span></li>
+      </ol>
+
+      <button class="daily-button daily-button-primary" id="start-button" type="button" disabled>
+        Preparing today's games…
+      </button>
+      <p class="intro-note">The lineup rotates from ten games. Everyone gets the same puzzles, and results never reveal the answers.</p>
+    </div>
+  </section>
+
+  <section class="daily-screen play-screen" id="play-screen" hidden aria-label="Daily 3 game">
+    <div class="challenge-hud">
+      <button class="hud-home" id="hud-home" type="button" aria-label="Back to challenge overview">←</button>
+      <div class="hud-copy">
+        <span class="hud-floor" id="hud-floor">Floor 1 of 3</span>
+        <strong id="hud-game">Wordle</strong>
+      </div>
+      <ol class="hud-progress" id="hud-progress" aria-label="Challenge progress"></ol>
+      <div class="hud-score"><span>Score</span><strong id="hud-score">0</strong></div>
+    </div>
+    <div class="game-stage">
+      <div class="game-loading" id="game-loading" role="status"><span></span>Opening the next floor…</div>
+      <iframe id="game-frame" title="Daily game" allow="clipboard-write" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    </div>
+
+    <div class="floor-result" id="floor-result" hidden role="dialog" aria-modal="true" aria-labelledby="floor-result-title">
+      <div class="floor-result-card">
+        <span class="floor-stamp" id="floor-stamp">FLOOR CLEARED</span>
+        <div class="floor-result-icon" id="floor-result-icon">✓</div>
+        <h2 id="floor-result-title">Wordle complete</h2>
+        <p id="floor-result-detail">Solved in 4 guesses</p>
+        <strong class="floor-points" id="floor-points">+550</strong>
+        <button class="daily-button daily-button-primary" id="next-button" type="button">Next floor →</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="daily-screen results-screen" id="results-screen" hidden aria-labelledby="results-title">
+    <div class="results-card">
+      <div class="results-badge">DAILY 3 COMPLETE</div>
+      <h2 id="results-title">Tower cleared!</h2>
+      <p class="results-date" id="results-date"></p>
+      <div class="total-score"><strong id="total-score">0</strong><span>/ 3,000</span></div>
+      <p class="target-verdict" id="target-verdict" hidden></p>
+      <div class="result-rows" id="result-rows"></div>
+      <div class="share-actions">
+        <button class="daily-button daily-button-primary" id="share-button" type="button">Challenge a friend</button>
+        <button class="daily-button daily-button-secondary" id="copy-button" type="button">Copy result</button>
+      </div>
+      <p class="copy-status" id="copy-status" role="status" aria-live="polite"></p>
+      <div class="save-card" id="save-card">
+        <span>Keep your Word Tycoon streak and XP</span>
+        <a id="save-link" href="/auth/google?returnTo=%2Fdaily">Continue with Google</a>
+      </div>
+      <a class="browse-link" href="/games">Browse all 20 games →</a>
+    </div>
+  </section>
+</main>
+
+<noscript>
+  <div class="noscript-card">
+    <h2>Word Tycoon Daily 3</h2>
+    <p>JavaScript chooses today's three-game lineup and keeps your score. You can still play the rotating dailies directly:</p>
+    <p><a href="/wordle/solo/?mode=daily">Wordle</a> · <a href="/figural/solo/?mode=daily">Figural</a> · <a href="/game/subtextle/sp.html?mode=daily">Subtextle</a> · <a href="/betwixt/solo/?mode=daily">Betwixt</a> · <a href="/unwordle/solo/?mode=daily">UnWordle</a> · <a href="/game/wikisearchle/">WikiContexto</a> · <a href="/game/word500/?mode=solo">Word5000</a> · <a href="/pixeletters/solo/?mode=daily">PixeLetters</a> · <a href="/game/wikirectangled/solo">WiKirecTangled</a> · <a href="/game/wikirectangled/wikiword-4x4">WikiWord 4×4</a></p>
+  </div>
+</noscript>
+
+<script src="/portal/js/daily.js?owner=20261003-second&v=7" defer></script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

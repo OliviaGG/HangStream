@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HangStream Game</title>
+<meta name="robots" content="noindex">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #0e0e12; }
+  body { display: flex; flex-direction: column; font-family: Inter, system-ui, sans-serif; }
+  .bar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 14px; background: #14141c;
+    border-bottom: 1px solid #2a2a35; flex: none;
+  }
+  .bar .brand { display: flex; align-items: center; gap: 8px; color: #f0ede8; text-decoration: none; font-weight: 700; font-size: 14px; }
+  .bar .logo {
+    width: 26px; height: 26px; border-radius: 7px;
+    background: linear-gradient(135deg, #ff4d6d, #7c5cff);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 11px; font-weight: 800;
+  }
+  .bar .spacer { flex: 1; }
+  .bar a { color: #92a0af; text-decoration: none; font-size: 13px; font-weight: 600; }
+  .bar a:hover { color: #f0ede8; }
+  iframe { flex: 1; width: 100%; border: 0; background: #0e0e12; }
+</style>
+</head>
+<body>
+  <div class="bar">
+    <a class="brand" href="/"><span class="logo">HS</span>HangStream Play</a>
+    <span class="spacer"></span>
+    <a id="open-ext" href="#" target="_blank" rel="noopener">Open on hangstream.me ↗</a>
+    <a href="/">← All games</a>
+  </div>
+  <iframe id="game" title="HangStream game"></iframe>
+  <script>
+    // Only HangStream game paths may be embedded — anything else falls back home.
+    var ALLOWED = {
+      '/hangman': 'Hangman',
+      '/wordle': 'Wordle',
+      '/searchle': 'Searchle',
+      '/spelling-bee': 'Spelling Bee',
+      '/speed-scramble': 'Speed Scramble'
+    };
+    var params = new URLSearchParams(location.search);
+    var game = params.get('game') || '';
+    var frame = document.getElementById('game');
+    var ext = document.getElementById('open-ext');
+    if (ALLOWED[game]) {
+      var src = 'https://hangstream.me' + game + (game === '/hangman' ? '/solo' : '');
+      frame.src = src;
+      ext.href = src;
+      document.title = ALLOWED[game] + ' — HangStream Play';
+    } else {
+      location.replace('/');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sitemap for wordgame.live ONLY. Served at https://wordgame.live/sitemap.xml
+  via an nginx `location = /sitemap.xml` block on that vhost.
+
+  wordgame.live is an allowlist vhost: every route is an explicit `location`
+  block, so anything without one falls through to the nginx default root and
+  404s. That is why /sitemap.xml was 404ing while Cloudflare's managed
+  robots.txt masked the matching robots 404.
+
+  This lists one URL on purpose. The other routes on this host are not
+  indexable content:
+    /junkdrawer   -> <link rel="canonical"> points at https://junkdrawer.live/
+    /streamer     -> auth-gated dashboard
+    /source       -> 302 to GitHub
+    /win-overlay, /ad-vertical/*, /streambridge/*  -> OBS surfaces, not pages
+    /download/*   -> binaries
+  Do not add those here; listing a URL that canonicalises elsewhere is an SEO
+  negative, not a win.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://wordgame.live/</loc>
+    <lastmod>2026-07-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

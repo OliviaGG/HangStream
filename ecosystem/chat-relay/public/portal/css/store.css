@@ -1,0 +1,1332 @@
+/* ════════════════════════════════════════════════════════════════════
+   THE VAULT — /store  (extracted from portal.css 2026-08-08)
+   Store components, wardrobe stages and the Fan Club heroes, copied
+   VERBATIM from the portal SPA so the 4-tier hero cards render pixel-
+   identical. Everything is used inside the .vault-room wrapper, which
+   scopes the SPA's dark-theme variables so they can't leak into the
+   toon shell (toon.css also defines --text).
+   ════════════════════════════════════════════════════════════════════ */
+.vault-room {
+  /* Light-mode vault: let cosmetics preview against a clean light stage. */
+  --bg: #eef6ff;
+  --surface: rgba(255, 255, 255, 0.94);
+  --surface2: rgba(235, 244, 255, 0.92);
+  --border: rgba(148, 163, 184, 0.26);
+  --glass-border: rgba(148, 163, 184, 0.24);
+  --glass-glow: rgba(59, 130, 246, 0.08);
+  --text: #0f172a;
+  --text-dim: #52627a;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-pink: #ec4899;
+  --accent-orange: #f97316;
+  --accent-mint: #10b981;
+  --accent-lavender: #8b5cf6;
+  --accent-coral: #ef4444;
+  --accent-gold: #eab308;
+  --discord: #5865F2;
+  --discord-hover: #4752C4;
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #dc2626;
+  --radius: 10px;
+  --radius-lg: 16px;
+  color: var(--text);
+}
+body.night .vault-room {
+  --bg: #06080e;
+  --surface: rgba(14, 18, 28, 0.78);
+  --surface2: rgba(20, 26, 38, 0.72);
+  --border: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-glow: rgba(165, 225, 255, 0.06);
+  --text: #edf0f7;
+  --text-dim: #94a0b8;
+  --accent: #a5e1ff;
+  --accent-hover: #7dd3fc;
+  --accent-pink: #f0abfc;
+  --accent-orange: #fdba74;
+  --accent-mint: #86efac;
+  --accent-lavender: #c4b5fd;
+  --accent-coral: #fda4af;
+  --accent-gold: #fde68a;
+  --success: #86efac;
+  --warning: #fde68a;
+  --danger: #fda4af;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin: 28px 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 13px;
+}
+
+.loading-placeholder {
+  text-align: center;
+  color: var(--text-dim);
+  padding: 40px;
+  font-size: 14px;
+}
+.biz-btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: biz-spin 0.6s linear infinite;
+}
+@keyframes biz-spin {
+  to { transform: rotate(360deg); }
+}
+.preview-badge-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #1a1a2e, #1f1f35, #1a1a2e);
+  background-size: 200% 200%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.preview-profile {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  overflow: visible;
+  position: relative;
+  z-index: 1;
+}
+
+.preview-avatar-wrap {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+  overflow: visible;
+}
+
+.preview-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  border: 3px solid var(--border);
+}
+
+.preview-avatar.avatar-is-logo {
+  object-fit: contain;
+  transform: scale(1.35);
+  border-radius: 50%;
+  background: transparent;
+}
+
+.preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: visible;
+}
+
+.preview-title-container {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-height: 16px;
+}
+
+.preview-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.preview-word {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.store-hero {
+  position: relative;
+  border-radius: 28px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  padding: 40px 32px;
+  isolation: isolate;
+}
+
+.store-hero-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 25% 40%, rgba(170, 140, 255, 0.20), transparent 50%),
+    radial-gradient(circle at 80% 55%, rgba(73, 215, 255, 0.16), transparent 50%),
+    radial-gradient(circle at 50% 0%, rgba(255, 191, 67, 0.10), transparent 45%),
+    linear-gradient(135deg, rgba(17, 14, 30, 0.96), rgba(13, 21, 33, 0.94) 55%, rgba(22, 18, 38, 0.96));
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 28px;
+  z-index: -1;
+}
+
+.store-hero-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 60px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 60px);
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
+}
+
+.store-hero-content {
+  text-align: center;
+}
+
+.store-hero-title {
+  font-size: clamp(28px, 3.5vw, 38px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  background: linear-gradient(135deg, #aa8cff 0%, #49d7ff 50%, #ffbf43 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+
+.store-hero-sub {
+  color: var(--text-dim);
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 18px;
+}
+
+.store-coins-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 10px 22px;
+}
+
+.store-coins-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.store-coins-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--warning);
+  letter-spacing: -0.03em;
+}
+
+/* ─── Store Preview Panel ─── */
+
+.store-preview-panel {
+  background: rgba(18, 24, 38, 0.76);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 24px;
+  padding: 24px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  overflow: visible;
+  position: relative;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.16);
+}
+
+.store-preview-avatar-wrap {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+  overflow: visible;
+}
+
+.store-preview-reset-btn {
+  padding: 8px 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  color: var(--text-dim);
+  position: relative;
+  z-index: 1;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.store-preview-reset-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ─── Store + Pass Reward Guide Cards ─── */
+.reward-guide-card {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 22px 24px;
+  border-radius: 24px;
+  background: rgba(18, 24, 38, 0.76);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+.reward-guide-card-store {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(255, 191, 67, 0.10), transparent 34%),
+    radial-gradient(circle at 12% 82%, rgba(121, 215, 255, 0.08), transparent 34%),
+    rgba(18, 24, 38, 0.76);
+}
+.reward-guide-card-pass {
+  background:
+    radial-gradient(circle at 84% 20%, rgba(212, 170, 86, 0.10), transparent 34%),
+    radial-gradient(circle at 18% 82%, rgba(155, 124, 255, 0.08), transparent 34%),
+    rgba(18, 24, 38, 0.76);
+}
+.reward-guide-head {
+  display: grid;
+  gap: 6px;
+}
+.reward-guide-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.48);
+}
+.reward-guide-title {
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: var(--text);
+}
+.reward-guide-copy {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+.reward-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.reward-guide-metric {
+  display: grid;
+  gap: 4px;
+  padding: 12px 13px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.reward-guide-metric.mint {
+  background: linear-gradient(180deg, rgba(103, 240, 194, 0.12), rgba(103, 240, 194, 0.04));
+}
+.reward-guide-metric.blue {
+  background: linear-gradient(180deg, rgba(121, 215, 255, 0.12), rgba(121, 215, 255, 0.04));
+}
+.reward-guide-metric.gold {
+  background: linear-gradient(180deg, rgba(255, 211, 110, 0.12), rgba(255, 211, 110, 0.04));
+}
+.reward-guide-metric.violet {
+  background: linear-gradient(180deg, rgba(184, 140, 255, 0.12), rgba(184, 140, 255, 0.04));
+}
+.reward-guide-metric-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.52);
+}
+.reward-guide-metric-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+}
+.reward-guide-metric-sub {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+.reward-guide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.reward-guide-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+.reward-guide-action:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+.reward-guide-action.primary {
+  background: linear-gradient(180deg, rgba(121, 215, 255, 0.22), rgba(121, 215, 255, 0.12));
+  border-color: rgba(121, 215, 255, 0.24);
+}
+
+/* ─── Store Filters ─── */
+
+.store-filters {
+  background: rgba(18, 24, 38, 0.76);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 22px;
+  padding: 18px 22px;
+  margin-bottom: 20px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.store-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.store-filter-row + .store-filter-row {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.store-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.store-filter-group label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-dim);
+}
+
+.store-filter-group select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 8px 12px;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  min-width: 150px;
+}
+
+.store-filter-group select:focus {
+  border-color: var(--accent);
+}
+
+.store-sort-row {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.store-result-count {
+  font-size: 13px;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+/* ─── Store Grid ─── */
+
+.store-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+/* ─── Store Card ─── */
+
+.store-card {
+  background: rgba(18, 24, 38, 0.76);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.store-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3), 0 0 0 1px var(--rarity-color, var(--border));
+  border-color: var(--rarity-color, var(--border));
+}
+
+.store-card.previewing {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent), 0 8px 24px rgba(125,211,252,0.2);
+  transform: translateY(-3px);
+}
+
+.store-card.owned {
+  opacity: 0.65;
+}
+
+.store-card.owned:hover {
+  opacity: 1;
+}
+
+.store-card-rarity-strip {
+  height: 3px;
+  width: 100%;
+}
+
+.store-owned-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(125, 211, 252, 0.2);
+  color: var(--accent);
+  font-size: 9px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 2;
+  border: 1px solid rgba(125, 211, 252, 0.25);
+  backdrop-filter: blur(8px);
+}
+
+.store-aux-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0,255,204,0.12);
+  color: #00ffcc;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 2;
+  border: 1px solid rgba(0,255,204,0.2);
+  backdrop-filter: blur(8px);
+}
+
+/* ─── Store Card Preview Area ─── */
+
+.store-card-preview {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse at center, rgba(255,255,255,0.05) 0%, transparent 70%),
+    rgba(12, 16, 28, 0.5);
+  overflow: visible;
+  position: relative;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.store-preview-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.store-text-preview {
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 2px;
+}
+
+.store-title-preview {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.store-we-preview {
+  gap: 4px;
+  flex-direction: column;
+  height: 90px;
+  position: relative;
+  overflow: hidden;
+}
+
+.store-we-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin: 0 2px;
+}
+
+.store-we-dots-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+}
+
+.store-we-preview-btn {
+  position: relative;
+  z-index: 2;
+  margin-top: 6px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+  cursor: pointer;
+  transition: background 120ms, transform 120ms, border-color 120ms;
+}
+
+.store-we-preview-btn:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.35);
+}
+
+.store-we-preview-btn:active { transform: translateY(1px); }
+
+.store-we-preview.playing .store-we-dots-row,
+.store-we-preview.playing .store-we-preview-btn {
+  opacity: 0.25;
+}
+
+.store-we-preview canvas {
+  pointer-events: none;
+}
+
+/* ─── Store Card Body ─── */
+
+.store-card-body {
+  padding: 14px 16px 16px;
+}
+
+.store-card-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+.store-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.store-card-category {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.store-set-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(125,211,252,0.12);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border: 1px solid rgba(125,211,252,0.15);
+}
+
+.store-card-pass-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.store-card-pass-tier,
+.store-card-pass-level {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.45px;
+  border-radius: 999px;
+  padding: 4px 8px;
+}
+
+.store-card-pass-tier {
+  background: rgba(168, 85, 247, 0.14);
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.24);
+}
+
+.store-card-pass-level {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.24);
+}
+
+.store-card-rarity {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.store-card-buff {
+  font-size: 11px;
+  color: var(--success);
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.store-card-price {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.store-card-price-value {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--warning);
+  letter-spacing: -0.02em;
+}
+
+.store-card-gift {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  font-style: italic;
+}
+
+.store-card-pass-only {
+  font-size: 12px;
+  font-weight: 700;
+  color: #d8b4fe;
+}
+
+/* Store Buy Buttons */
+.store-buy-btn {
+  padding: 7px 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--success), #3a9a3a);
+  color: white;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+.store-buy-btn:hover:not(:disabled) {
+  transform: scale(1.06);
+  box-shadow: 0 4px 14px rgba(79, 195, 79, 0.35);
+}
+.store-buy-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.store-buy-disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.store-buy-gift {
+  background: linear-gradient(135deg, var(--accent), #8b6ce0);
+}
+
+.store-buy-pass-only {
+  background: linear-gradient(135deg, rgba(91, 33, 182, 0.55), rgba(147, 51, 234, 0.55));
+  color: #f3e8ff;
+  cursor: default;
+  opacity: 0.9;
+}
+.store-buy-gift:hover:not(:disabled) {
+  box-shadow: 0 4px 14px rgba(125, 211, 252, 0.35);
+}
+
+/* Gift coin display in hero */
+.store-coins-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.store-gift-coins-display {
+  background: rgba(125, 211, 252, 0.1);
+  border-color: rgba(125, 211, 252, 0.25);
+}
+.store-gift-coins-display .store-coins-value {
+  color: var(--accent);
+}
+
+/* Set cost row with buy button */
+.store-set-cost-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+.store-set-complete-label {
+  color: var(--success);
+  font-weight: 700;
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+/* ─── Store Sets Grid ─── */
+
+.store-sets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.store-set-card {
+  background: rgba(18, 24, 38, 0.76);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  padding: 20px;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s, border-color 0.2s;
+}
+
+.store-set-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.store-set-card.complete {
+  border-color: var(--set-color, var(--success));
+  box-shadow: 0 0 0 1px var(--set-color, var(--success)), inset 0 0 30px rgba(79,195,79,0.03);
+}
+
+/* ── TikTok Fan Club bundle card ──────────────────────────── */
+.store-set-card--fanclub {
+  position: relative;
+  background:
+    radial-gradient(120% 80% at 50% -20%, rgba(254,44,85,0.22), transparent 60%),
+    linear-gradient(135deg, rgba(254,44,85,0.10), rgba(37,244,238,0.05));
+  border-color: rgba(254,44,85,0.45);
+  overflow: hidden;
+}
+.store-set-card--fanclub.fanclub-unlocked {
+  border-color: rgba(254,44,85,0.85);
+  box-shadow: 0 0 0 1px rgba(254,44,85,0.55), 0 8px 28px rgba(254,44,85,0.18);
+}
+/* Shared hero frame. The Super Fan / Donor Class / Super Donor cards below
+   layer a video on top of this and override the palette; the plain Fan Club
+   card fills it with the CSS aurora defined further down. 130px is the height
+   all four share, so the tier cards line up when they sit side by side. */
+.fanclub-hero {
+  position: relative;
+  height: 130px;
+  margin: -20px -20px 12px;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(90% 130% at 50% 112%, rgba(254,44,85,0.38), transparent 66%),
+    linear-gradient(180deg, #2a0a1e 0%, #180719 52%, #100512 100%);
+  display: flex; align-items: center; justify-content: center;
+  border-bottom: 1px solid rgba(254,44,85,0.35);
+}
+.fanclub-hero-img {
+  width: 88px; height: 88px;
+  filter: drop-shadow(0 0 12px rgba(254,44,85,0.55)) drop-shadow(0 0 22px rgba(254,44,85,0.3));
+  animation: fanclub-heart-pulse 2.6s ease-in-out infinite;
+  user-select: none; -webkit-user-drag: none;
+}
+
+/* ── Fan Club animated hero ───────────────────────────────────────────────
+   Pure CSS so there is no 1 MB video to ship and, more to the point, no loop
+   seam: every layer here returns to its exact start state at 100%.
+     · aurora / sheen  rotate a full 360deg
+     · motes           shift by exactly one background tile on both axes
+     · heart           symmetric keyframes (0% === 100%)
+     · rings           begin and end at opacity 0
+   Only the plain Fan Club card renders these elements, so the three video
+   tiers above are untouched by anything in this block.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Drifting colour field. Oversized and centred so the rotating box never
+   swings a corner into the 130px window. */
+.fanclub-hero-aurora {
+  position: absolute; left: 50%; top: 50%;
+  width: 300%; height: 460%;
+  transform-origin: 50% 50%;
+  background-repeat: no-repeat;
+  background-image:
+    radial-gradient(closest-side circle, rgba(254,44,85,0.85), transparent 100%),
+    radial-gradient(closest-side circle, rgba(37,244,238,0.52), transparent 100%),
+    radial-gradient(closest-side circle, rgba(255,120,175,0.55), transparent 100%);
+  background-size: 62% 44%, 50% 36%, 38% 28%;
+  background-position: 8% 32%, 82% 58%, 46% 6%;
+  filter: blur(16px);
+  animation: fanclub-hero-spin 30s linear infinite;
+  will-change: transform;
+}
+/* Second field counter-rotating on a different period, so the composite takes
+   30s x 21s to repeat while each half still loops seamlessly on its own. */
+.fanclub-hero-aurora::after {
+  content: ''; position: absolute; inset: 0;
+  background-repeat: no-repeat;
+  background-image:
+    radial-gradient(closest-side circle, rgba(37,244,238,0.48), transparent 100%),
+    radial-gradient(closest-side circle, rgba(254,44,85,0.52), transparent 100%);
+  background-size: 42% 32%, 54% 38%;
+  background-position: 86% 20%, 14% 78%;
+  animation: fanclub-hero-spin-rev 21s linear infinite;
+}
+
+/* Slow specular sweep. */
+.fanclub-hero-sheen {
+  position: absolute; left: 50%; top: 50%;
+  width: 240%; height: 420%;
+  transform-origin: 50% 50%;
+  background: conic-gradient(from 0deg,
+    transparent 0deg, rgba(255,255,255,0.11) 24deg, transparent 58deg,
+    transparent 172deg, rgba(37,244,238,0.13) 200deg, transparent 238deg,
+    transparent 360deg);
+  mix-blend-mode: screen;
+  animation: fanclub-hero-spin 16s linear infinite;
+  pointer-events: none;
+}
+
+/* Bokeh motes. Four tiles whose sizes share no common factor, so each grid
+   shows only two or three repeats across the card and no lattice is readable
+   in the composite. */
+.fanclub-hero-motes {
+  position: absolute; inset: -12%;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,0.55) 0 1.2px, rgba(255,255,255,0.13) 3px, transparent 5.5px),
+    radial-gradient(circle, rgba(37,244,238,0.55) 0 1.5px, rgba(37,244,238,0.14) 3.6px, transparent 6.5px),
+    radial-gradient(circle, rgba(255,150,185,0.55) 0 1.3px, rgba(255,150,185,0.13) 3.2px, transparent 6px),
+    radial-gradient(circle, rgba(255,255,255,0.38) 0 1px,   rgba(255,255,255,0.10) 2.6px, transparent 5px);
+  background-size: 113px 113px, 149px 149px, 181px 181px, 223px 223px;
+  /* fade the field at the edges so it reads as depth rather than a texture
+     that stops dead at the card border */
+  -webkit-mask-image: radial-gradient(78% 80% at 50% 50%, #000 40%, transparent 100%);
+          mask-image: radial-gradient(78% 80% at 50% 50%, #000 40%, transparent 100%);
+  animation: fanclub-hero-motes 19s linear infinite;
+}
+
+/* The heart, with two halo rings running half a cycle apart. */
+.fanclub-hero-heart {
+  position: relative; z-index: 3;
+  width: 108px; height: 108px;
+  display: flex; align-items: center; justify-content: center;
+}
+/* Key light — a still pool of warm light under the heart, so the subject stays
+   legible wherever the drifting aurora happens to be. */
+.fanclub-hero-heart::before {
+  content: ''; position: absolute; inset: -62%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side circle,
+    rgba(255,235,240,0.30), rgba(254,44,85,0.22) 46%, transparent 78%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+.fanclub-hero-ring {
+  position: absolute; left: 50%; top: 50%;
+  width: 84px; height: 84px; margin: -42px 0 0 -42px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,140,170,0.9);
+  box-shadow: 0 0 16px rgba(254,44,85,0.55), inset 0 0 18px rgba(37,244,238,0.28);
+  opacity: 0; pointer-events: none;
+  animation: fanclub-hero-ring 3.6s ease-out infinite;
+}
+.fanclub-hero-ring:nth-of-type(2) { animation-delay: 1.8s; }
+.fanclub-hero-heart .fanclub-hero-img {
+  position: relative; z-index: 2;
+  width: 98px; height: 98px;
+  filter: drop-shadow(0 3px 8px rgba(0,0,0,0.55))
+          drop-shadow(0 0 13px rgba(254,44,85,0.65))
+          drop-shadow(0 0 30px rgba(37,244,238,0.22));
+  animation: fanclub-hero-breathe 3.6s ease-in-out infinite;
+}
+
+/* Scrim + vignette. Keeps the header below readable and stops the aurora from
+   glowing into the card's rounded corners. */
+.fanclub-hero-glow {
+  position: absolute; inset: 0; pointer-events: none; z-index: 4;
+  background:
+    linear-gradient(180deg, rgba(12,3,11,0.42) 0%, transparent 22%,
+                            transparent 66%, rgba(12,3,11,0.55) 100%),
+    radial-gradient(130% 130% at 50% 50%, transparent 58%, rgba(10,2,9,0.42) 100%);
+}
+/* 1px lit lip along the top edge, so the hero doesn't read as a flat cut-out */
+.fanclub-hero-glow::after {
+  content: ''; position: absolute; inset: 0 0 auto 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,190,205,0.5) 30%,
+                              rgba(150,245,240,0.4) 68%, transparent);
+}
+
+@keyframes fanclub-hero-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+@keyframes fanclub-hero-spin-rev {
+  from { transform: rotate(360deg); }
+  to   { transform: rotate(0deg); }
+}
+/* Each layer travels exactly one tile on BOTH axes, so the field lands back on
+   itself at 100% while drifting diagonally. */
+@keyframes fanclub-hero-motes {
+  from { background-position:     0px     0px,   30px    52px,    74px    21px,    12px    96px; }
+  to   { background-position: -113px  -113px, -119px   -97px,  -107px  -160px,  -211px  -127px; }
+}
+@keyframes fanclub-hero-ring {
+  0%   { transform: scale(0.7); opacity: 0; }
+  16%  { opacity: 0.8; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+@keyframes fanclub-hero-breathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-3px) scale(1.055); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fanclub-hero-aurora, .fanclub-hero-aurora::after, .fanclub-hero-sheen,
+  .fanclub-hero-motes, .fanclub-hero-ring, .fanclub-hero-img { animation: none; }
+  .fanclub-hero-ring { opacity: 0.35; }
+}
+
+/* ── Super Fan showcase ── */
+.store-set-card--superfan {
+  border-color: rgba(255, 215, 0, 0.4);
+  box-shadow: 0 0 24px -8px rgba(255, 215, 0, 0.45);
+}
+.superfan-hero {
+  height: 130px;
+  overflow: hidden;
+  background: #14051f;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+}
+.superfan-hero-video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.superfan-hero-scrim {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(0deg, rgba(20,5,31,0.6), rgba(20,5,31,0.12));
+}
+.superfan-hero-img {
+  position: relative; z-index: 2;
+  width: 92px; height: 92px;
+  filter: drop-shadow(0 0 14px rgba(255,215,0,0.6)) drop-shadow(0 0 26px rgba(168,85,247,0.35));
+  animation: fanclub-heart-pulse 2.6s ease-in-out infinite;
+}
+.superfan-cta-join {
+  background: linear-gradient(90deg, #ffd700, #f5b301);
+  color: #14051f !important;
+  font-weight: 800;
+}
+
+/* ── Donor Class showcase (chrome + sapphire variant) ── */
+.store-set-card--donorclass {
+  border-color: rgba(96, 165, 250, 0.4);
+  box-shadow: 0 0 24px -8px rgba(37, 99, 235, 0.5);
+}
+.donorclass-hero { background: #060d24; border-bottom-color: rgba(96, 165, 250, 0.35); }
+.donorclass-hero-scrim { background: linear-gradient(0deg, rgba(4, 10, 31, 0.6), rgba(4, 10, 31, 0.12)); }
+.donorclass-hero-img {
+  filter: drop-shadow(0 0 14px rgba(96, 165, 250, 0.6)) drop-shadow(0 0 26px rgba(229, 231, 235, 0.35));
+}
+.donorclass-cta-join {
+  background: linear-gradient(90deg, #e5e7eb, #60a5fa);
+  color: #060d24 !important;
+  font-weight: 800;
+}
+
+/* ── Super Donor showcase (gold + emerald + violet — the top of the ladder) ──
+   Inherits .superfan-hero's geometry, then overrides the palette. The card
+   itself carries a double glow so it out-reads Super Fan's single gold one
+   when both are on screen. */
+.store-set-card--superdonor {
+  border-color: rgba(110, 227, 74, 0.45);
+  box-shadow: 0 0 26px -8px rgba(255, 215, 0, 0.5), 0 0 40px -14px rgba(110, 227, 74, 0.55);
+}
+.superdonor-hero { background: #07160a; border-bottom-color: rgba(110, 227, 74, 0.4); }
+.superdonor-hero-scrim {
+  background:
+    linear-gradient(0deg, rgba(9, 22, 10, 0.62), rgba(20, 5, 31, 0.12)),
+    radial-gradient(70% 60% at 50% 100%, rgba(110, 227, 74, 0.22), transparent 70%);
+}
+.superdonor-hero-img {
+  width: 100px; height: 100px;
+  filter: drop-shadow(0 0 14px rgba(255, 215, 0, 0.65))
+          drop-shadow(0 0 24px rgba(110, 227, 74, 0.5))
+          drop-shadow(0 0 38px rgba(168, 85, 247, 0.3));
+}
+.superdonor-cta-join {
+  background: linear-gradient(90deg, #ffd700, #b6f79a, #6ee34a);
+  color: #07160a !important;
+  font-weight: 800;
+}
+
+/* Store cards now share the Wardrobe's live stages */
+.store-card .wd-stage.store-stage {
+  height: 84px;
+  border-radius: 0;
+  background:
+    radial-gradient(ellipse at center, rgba(255,255,255,0.05) 0%, transparent 70%),
+    rgba(10, 10, 19, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.store-card .wd-stage.store-stage .wd-spec { font-size: 1.6rem; }
+@keyframes fanclub-heart-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.06); }
+}
+.fanclub-pill {
+  font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.fanclub-pill--locked   { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.65); border: 1px solid rgba(255,255,255,0.12); }
+.fanclub-pill--queued   { background: rgba(255,200,0,0.12); color: #ffd56b; border: 1px solid rgba(255,200,0,0.25); }
+.fanclub-pill--unlocked { background: rgba(254,44,85,0.18); color: #ff7295; border: 1px solid rgba(254,44,85,0.45); }
+.fanclub-cta-row { margin-top: 12px; }
+.fanclub-cta-join, .fanclub-cta-view {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 100%; padding: 10px 14px; border-radius: 10px;
+  font-weight: 700; font-size: 14px; text-decoration: none; cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.18s, background 0.18s;
+  text-align: center; line-height: 1.25;
+  white-space: normal; word-break: break-word;
+  box-sizing: border-box;
+}
+.fanclub-cta-join {
+  background: linear-gradient(135deg, #FE2C55, #ff5e7b);
+  color: #fff; border: none;
+  box-shadow: 0 6px 18px rgba(254,44,85,0.35), inset 0 1px 0 rgba(255,255,255,0.18);
+}
+.fanclub-cta-join:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(254,44,85,0.45), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.fanclub-cta-view {
+  background: rgba(254,44,85,0.18);
+  color: #ff8aa3; border: 1px solid rgba(254,44,85,0.45);
+}
+.fanclub-cta-view:hover { background: rgba(254,44,85,0.28); }
+.fanclub-footnote {
+  margin-top: 10px; font-size: 11.5px; line-height: 1.45;
+  color: rgba(255,255,255,0.55);
+}
+
+/* Per-item fan-club badge (shown on store cards for fanClubOnly items) */
+.store-fanclub-badge {
+  position: absolute; top: 8px; right: 8px;
+  background: linear-gradient(135deg, #FE2C55, #ff5e7b);
+  color: #fff;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.04em;
+  padding: 3px 7px; border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(254,44,85,0.45);
+  z-index: 2;
+  pointer-events: none;
+}
+.fanclub-only-item {
+  border-color: rgba(254,44,85,0.35) !important;
+}
+
+.store-set-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.store-set-name {
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.store-set-rarity {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: 6px;
+}
+
+.store-set-progress {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.store-set-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.store-set-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.store-set-dots {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.store-set-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.store-set-dot.owned {
+  border-color: transparent;
+  transform: scale(1.1);
+}
+
+.store-set-bonus {
+  font-size: 12px;
+  color: var(--success);
+  font-weight: 600;
+}
+
+.store-set-cost {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+/* ─── Store Responsive ─── */
+
+@media (max-width: 640px) {
+  .store-hero {
+    padding: 28px 20px;
+  }
+  .store-hero-title {
+    font-size: 24px;
+  }
+  .store-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .store-filter-group select {
+    min-width: 0;
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+  .store-filter-group label {
+    font-size: 9px;
+  }
+  .store-preview-panel {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .store-preview-reset-btn {
+    align-self: stretch;
+    text-align: center;
+  }
+  .store-sets-grid {
+    grid-template-columns: 1fr;
+  }
+  .store-card-name {
+    font-size: 12px;
+  }
+  .store-card-preview {
+    height: 44px;
+  }
+}
+
+@media (max-width: 380px) {
+  .store-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.wd-stage {
+  height: 96px; border-radius: 12px; background: #0a0a13;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; position: relative;
+}
+.wd-stage .wd-spec { font-size: 2rem; font-weight: 800; letter-spacing: 0.04em; }
+.wd-stage .wd-spec-title { font-size: 1.25rem; font-weight: 800; }
+.wd-ring {
+  width: 64px; height: 64px; border-radius: 50%;
+  position: relative;
+}
+.wd-ring-face {
+  display: block; width: 100%; height: 100%; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #3a3a55, #16162a);
+}
+.wd-stage-badge { align-items: flex-end; }
+.wd-badge-fill { position: absolute; inset: 0; }
+.wd-we-dots { display: flex; gap: 6px; }
+.wd-we-dots span { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
+.wd-we-play {
+  position: absolute; right: 8px; bottom: 8px;
+  font-size: 0.68rem; padding: 4px 10px; border-radius: 14px;
+  border: 1px solid #3a3a5c; background: rgba(14, 14, 26, 0.8);
+  color: #cfd3ff; cursor: pointer;
+}

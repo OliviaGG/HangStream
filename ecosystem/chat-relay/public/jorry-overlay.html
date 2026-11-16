@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tip Overlay — jorry.live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root {
+  --glass-bg: rgba(18, 12, 28, 0.97);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-border-soft: rgba(255, 255, 255, 0.10);
+  --text: rgba(255, 255, 255, 0.98);
+  --text-muted: rgba(255, 255, 255, 0.65);
+  --text-faint: rgba(255, 255, 255, 0.45);
+  --accent-purple: #B16BFF;
+  --accent-purple-soft: rgba(177, 107, 255, 0.5);
+  --accent-green: #5BFF9E;
+  --accent-green-soft: rgba(91, 255, 158, 0.5);
+}
+
+#stage {
+  position: absolute;
+  width: 1080px;
+  height: 1920px;
+  transform-origin: 0 0;
+  left: 0;
+  top: 0;
+}
+
+/* ── Floating particles ── */
+#fx-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.heart {
+  position: absolute;
+  bottom: -40px;
+  font-size: 28px;
+  opacity: 0;
+  animation: heart-rise linear forwards;
+  filter: drop-shadow(0 0 8px rgba(177, 107, 255, 0.6));
+}
+@keyframes heart-rise {
+  0%   { transform: translateY(0) translateX(0) scale(0.8); opacity: 0; }
+  10%  { opacity: 0.85; }
+  50%  { transform: translateY(-50vh) translateX(var(--drift, 20px)) scale(1); }
+  90%  { opacity: 0.5; }
+  100% { transform: translateY(-110vh) translateX(calc(var(--drift, 20px) * -0.5)) scale(0.6); opacity: 0; }
+}
+
+/* ── Card ── */
+.card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 880px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 36px;
+  padding: 80px 72px 88px;
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  box-shadow:
+    0 0 0 1px var(--glass-border-soft) inset,
+    0 30px 80px rgba(0, 0, 0, 0.55),
+    0 0 60px rgba(177, 107, 255, 0.18);
+  z-index: 2;
+  animation: card-in 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes card-in {
+  0%   { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Top accent bar */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 14%; right: 14%;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--accent-purple-soft) 25%,
+    var(--accent-purple) 45%,
+    var(--accent-green) 55%,
+    var(--accent-green-soft) 75%,
+    transparent 100%);
+  filter: drop-shadow(0 0 6px var(--accent-purple));
+}
+
+.eyebrow {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--accent-purple);
+  text-align: center;
+  text-shadow: 0 0 12px rgba(177, 107, 255, 0.6);
+  margin-bottom: 18px;
+}
+
+.title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 72px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.05;
+  margin-bottom: 56px;
+}
+
+/* ── URL block ── */
+.url-block {
+  margin: 24px auto 0;
+  padding: 56px 32px;
+  background: rgba(177, 107, 255, 0.05);
+  border: 1px solid rgba(177, 107, 255, 0.28);
+  border-radius: 28px;
+  text-align: center;
+  position: relative;
+  box-shadow:
+    0 0 30px rgba(177, 107, 255, 0.18),
+    inset 0 0 40px rgba(91, 255, 158, 0.05);
+  animation: url-pulse 3.2s ease-in-out infinite;
+}
+@keyframes url-pulse {
+  0%, 100% {
+    box-shadow: 0 0 30px rgba(177, 107, 255, 0.18), inset 0 0 40px rgba(91, 255, 158, 0.05);
+    border-color: rgba(177, 107, 255, 0.28);
+  }
+  50% {
+    box-shadow: 0 0 60px rgba(91, 255, 158, 0.35), inset 0 0 50px rgba(177, 107, 255, 0.10);
+    border-color: rgba(91, 255, 158, 0.40);
+  }
+}
+
+.url-label {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 22px;
+}
+
+.url-line {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 64px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow:
+    0 0 24px rgba(177, 107, 255, 0.55),
+    0 0 48px rgba(91, 255, 158, 0.25);
+}
+.url-line .www    { color: var(--accent-green); font-weight: 500; }
+.url-line .handle { color: var(--accent-purple); font-weight: 900; }
+.url-line .tld    { color: var(--accent-green); font-weight: 500; }
+
+/* ── Bottom thank-you bar ── */
+.thanks {
+  position: absolute;
+  left: 50%;
+  bottom: 12%;
+  transform: translateX(-50%);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  text-align: center;
+  z-index: 2;
+}
+.thanks .heart-inline {
+  color: var(--accent-green);
+  filter: drop-shadow(0 0 8px rgba(91, 255, 158, 0.6));
+  margin: 0 8px;
+}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="fx-particles"></div>
+
+  <div class="card">
+    <div class="eyebrow">// Support the Stream</div>
+    <h1 class="title">TIP THE HOST</h1>
+
+    <div class="url-block">
+      <div class="url-label">// Send tips to</div>
+      <div class="url-line"><span class="www">www.</span><span class="handle">jorry</span><span class="tld">.live</span></div>
+    </div>
+  </div>
+
+  <div class="thanks">Thank you<span class="heart-inline">♥</span>For Watching</div>
+</div>
+
+<script>
+  // ── Auto-scale stage to viewport (so this works at any OBS canvas size) ──
+  const stage = document.getElementById('stage');
+  function fitStage() {
+    const sx = window.innerWidth / 1080;
+    const sy = window.innerHeight / 1920;
+    const s = Math.min(sx, sy);
+    stage.style.transform = `scale(${s})`;
+    stage.style.position = 'absolute';
+    stage.style.left = `${(window.innerWidth - 1080 * s) / 2}px`;
+    stage.style.top = `${(window.innerHeight - 1920 * s) / 2}px`;
+  }
+  window.addEventListener('resize', fitStage);
+  fitStage();
+
+  // ── Heart / sparkle particles ──
+  const fx = document.getElementById('fx-particles');
+  const HEARTS = ['♥', '♥', '♡', '✦'];
+  function spawnHeart() {
+    const h = document.createElement('div');
+    h.className = 'heart';
+    h.textContent = HEARTS[Math.floor(Math.random() * HEARTS.length)];
+    h.style.left = (Math.random() * 100) + '%';
+    h.style.fontSize = (22 + Math.random() * 22) + 'px';
+    h.style.color = Math.random() < 0.5 ? '#B16BFF' : '#5BFF9E';
+    h.style.setProperty('--drift', ((Math.random() - 0.5) * 200) + 'px');
+    h.style.animationDuration = (6 + Math.random() * 5) + 's';
+    fx.appendChild(h);
+    setTimeout(() => h.remove(), 12000);
+  }
+  setInterval(spawnHeart, 700);
+  for (let i = 0; i < 6; i++) setTimeout(spawnHeart, i * 400);
+</script>
+
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

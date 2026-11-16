@@ -1,0 +1,862 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tycoon Stream Bridge</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0f18;
+      --panel: #131c2d;
+      --panel-2: #18243a;
+      --text: #eef4ff;
+      --muted: #96a8c6;
+      --line: rgba(255,255,255,0.08);
+      --accent: #5ab6ff;
+      --accent-2: #9e7bff;
+      --good: #43d17c;
+      --bad: #ff667a;
+      --warn: #ffc040;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(ellipse at 20% 0%, rgba(90,182,255,0.14), transparent 50%),
+        radial-gradient(ellipse at 80% 0%, rgba(158,123,255,0.12), transparent 45%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    a { color: var(--accent); }
+    button, input {
+      font: inherit;
+    }
+
+    .shell {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 20px 40px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-mark {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(90,182,255,0.28), rgba(158,123,255,0.24));
+      box-shadow: 0 10px 28px rgba(90,182,255,0.22);
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+
+    .brand-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+    }
+
+    .brand-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--muted);
+      box-shadow: 0 0 12px currentColor;
+      color: var(--muted);
+    }
+
+    .status-dot.good {
+      background: var(--good);
+      color: var(--good);
+    }
+
+    .status-dot.bad {
+      background: var(--bad);
+      color: var(--bad);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .hero-card,
+    .panel {
+      background: linear-gradient(180deg, rgba(19,28,45,0.98), rgba(24,36,58,0.98));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .hero-card {
+      padding: 24px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(90,182,255,0.1);
+      border: 1px solid rgba(90,182,255,0.18);
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .hero-title {
+      font-size: clamp(1.5rem, 3vw, 2.1rem);
+      line-height: 1.12;
+      font-weight: 800;
+    }
+
+    .hero-sub {
+      margin-top: 10px;
+      max-width: 58ch;
+      color: var(--muted);
+      font-size: 0.96rem;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .meta-chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.07);
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 11px 16px;
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.92rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.12s, border-color 0.12s, filter 0.12s;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(90,182,255,0.5);
+      filter: brightness(1.05);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 10px 28px rgba(90,182,255,0.22);
+    }
+
+    .btn.ghost {
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+    }
+
+    .hero-aside {
+      padding: 20px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .aside-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+    }
+
+    .launch-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .launch-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 700;
+      transition: transform 0.12s, border-color 0.12s;
+    }
+
+    .launch-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(90,182,255,0.48);
+    }
+
+    .launch-meta {
+      display: block;
+      margin-top: 3px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .stat-card {
+      padding: 16px 18px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(19,28,45,0.98), rgba(24,36,58,0.98));
+      border: 1px solid var(--line);
+    }
+
+    .stat-label {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 1.45rem;
+      font-weight: 800;
+    }
+
+    .stat-note {
+      margin-top: 4px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .panel {
+      padding: 20px;
+    }
+
+    .panel-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .field {
+      margin-bottom: 14px;
+    }
+
+    .field:last-child {
+      margin-bottom: 0;
+    }
+
+    .field label,
+    .inline-label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .text-input {
+      width: 100%;
+      padding: 11px 13px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      outline: none;
+    }
+
+    .text-input:focus {
+      border-color: rgba(90,182,255,0.58);
+    }
+
+    .field-hint {
+      margin-top: 5px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .toggle-row,
+    .radio-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .toggle-card,
+    .radio-card {
+      flex: 1 1 180px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .toggle-copy,
+    .radio-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .toggle-name,
+    .radio-name {
+      font-weight: 700;
+    }
+
+    .toggle-sub,
+    .radio-sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .token-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .token-row .text-input {
+      flex: 1 1 220px;
+    }
+
+    .banner {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 0.84rem;
+      line-height: 1.5;
+      background: rgba(90,182,255,0.08);
+      border: 1px solid rgba(90,182,255,0.14);
+      color: #cfe5ff;
+    }
+
+    .banner.warn {
+      background: rgba(255,192,64,0.08);
+      border-color: rgba(255,192,64,0.18);
+      color: #ffe6a6;
+    }
+
+    .source-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .source-card {
+      padding: 20px;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(19,28,45,0.98), rgba(24,36,58,0.98));
+      border: 1px solid var(--line);
+    }
+
+    .source-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .source-title {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .source-name {
+      font-size: 1.02rem;
+      font-weight: 800;
+    }
+
+    .source-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .tiny-pill {
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+    }
+
+    .tiny-pill.good {
+      border-color: rgba(67,209,124,0.3);
+      background: rgba(67,209,124,0.08);
+      color: var(--good);
+    }
+
+    .tiny-pill.bad {
+      border-color: rgba(255,102,122,0.3);
+      background: rgba(255,102,122,0.08);
+      color: var(--bad);
+    }
+
+    .tiny-pill.primary {
+      border-color: rgba(90,182,255,0.3);
+      background: rgba(90,182,255,0.12);
+      color: var(--accent);
+    }
+
+    .detail-list {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      font-size: 0.86rem;
+    }
+
+    .detail-row dt {
+      color: var(--muted);
+      min-width: 0;
+    }
+
+    .detail-row dd {
+      text-align: right;
+      min-width: 0;
+      word-break: break-word;
+    }
+
+    .source-stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .source-stat {
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      text-align: center;
+    }
+
+    .source-stat strong {
+      display: block;
+      font-size: 1rem;
+    }
+
+    .source-stat span {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 3px;
+    }
+
+    .event-list {
+      display: grid;
+      gap: 8px;
+      max-height: 260px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .event-empty {
+      padding: 16px 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px dashed rgba(255,255,255,0.08);
+      color: var(--muted);
+      font-size: 0.84rem;
+      text-align: center;
+    }
+
+    .event-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: start;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .event-kind {
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.07);
+      color: var(--muted);
+    }
+
+    .event-kind.chat {
+      background: rgba(90,182,255,0.14);
+      color: var(--accent);
+    }
+
+    .event-kind.engagement {
+      background: rgba(158,123,255,0.15);
+      color: var(--accent-2);
+    }
+
+    .event-kind.other {
+      background: rgba(255,255,255,0.07);
+      color: var(--muted);
+    }
+
+    .event-preview {
+      font-size: 0.86rem;
+      word-break: break-word;
+    }
+
+    .event-time {
+      font-size: 0.76rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .footer {
+      margin-top: 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .footer a {
+      text-decoration: none;
+    }
+
+    @media (max-width: 980px) {
+      .hero,
+      .control-grid,
+      .source-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .stat-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .source-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 520px) {
+      .shell {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .stat-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .event-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark">TS</div>
+        <div class="brand-copy">
+          <div class="brand-title">Tycoon Stream Bridge</div>
+          <div class="brand-sub">Dual-source local dashboard</div>
+        </div>
+      </div>
+      <div class="status-pill" id="status-pill">
+        <span class="status-dot bad" id="status-dot"></span>
+        <span id="status-text">Starting</span>
+      </div>
+    </div>
+
+    <section class="hero">
+      <div class="hero-card">
+        <div class="hero-badge">Desktop bridge</div>
+        <h1 class="hero-title" id="hero-title">Waiting for the bridge to finish starting</h1>
+        <p class="hero-sub" id="hero-sub">
+          Keep this app running while you stream. You can relay chat from TikFinity, the Word Game Live cloud feed, or both while choosing one primary source for your /stream pages.
+        </p>
+        <div class="hero-meta">
+          <div class="meta-chip" id="meta-url">Local URL: http://127.0.0.1:21420</div>
+          <div class="meta-chip" id="meta-version">Version: -</div>
+          <div class="meta-chip" id="meta-uptime">Uptime: 0s</div>
+          <div class="meta-chip" id="meta-last-event">Last event: waiting</div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" type="button" id="copy-url-btn">Copy local URL</button>
+          <a class="btn" href="/raw-events" target="_blank" rel="noreferrer">Open raw TikFinity events</a>
+          <button class="btn ghost" type="button" id="refresh-btn">Refresh status</button>
+        </div>
+      </div>
+
+      <aside class="hero-aside hero-card">
+        <div class="aside-title">Launch stream mode</div>
+        <div class="launch-list">
+          <a class="launch-btn" href="https://rectangled.live/stream" target="_blank" rel="noreferrer">
+            <span>RecTangled<span class="launch-meta">Local chat overlay page</span></span>
+            <span>&rsaquo;</span>
+          </a>
+          <a class="launch-btn" href="https://erectangled.com/stream" target="_blank" rel="noreferrer">
+            <span>eRecTangled<span class="launch-meta">Uses the same local bridge feed</span></span>
+            <span>&rsaquo;</span>
+          </a>
+          <a class="launch-btn" href="https://subtextle.com/stream" target="_blank" rel="noreferrer">
+            <span>Searchle<span class="launch-meta">Best for OBS browser source</span></span>
+            <span>&rsaquo;</span>
+          </a>
+        </div>
+      </aside>
+    </section>
+
+    <section class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Primary Source</div>
+        <div class="stat-value" id="stat-primary">TikFinity</div>
+        <div class="stat-note" id="stat-primary-note">Used for downstream relay</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Chat Messages</div>
+        <div class="stat-value" id="stat-chat">0</div>
+        <div class="stat-note">Across all enabled sources</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Engagements</div>
+        <div class="stat-value" id="stat-engagement">0</div>
+        <div class="stat-note">Gifts, likes, follows, and more</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Raw Events</div>
+        <div class="stat-value" id="stat-raw">0</div>
+        <div class="stat-note" id="stat-errors">Unknown events: 0</div>
+      </div>
+    </section>
+
+    <section class="control-grid">
+      <div class="panel">
+        <div class="panel-title">Routing Controls</div>
+        <div class="field">
+          <div class="inline-label">Primary relay source</div>
+          <div class="radio-row">
+            <label class="radio-card">
+              <input type="radio" name="primary" value="tikfinity" id="primary-tikfinity">
+              <span class="radio-copy">
+                <span class="radio-name">TikFinity</span>
+                <span class="radio-sub">Use the local WebSocket feed</span>
+              </span>
+            </label>
+            <label class="radio-card">
+              <input type="radio" name="primary" value="cloud" id="primary-cloud">
+              <span class="radio-copy">
+                <span class="radio-name">Cloud</span>
+                <span class="radio-sub">Use your streamer dashboard feed</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="inline-label">Enabled inputs</div>
+          <div class="toggle-row">
+            <label class="toggle-card">
+              <input type="checkbox" id="toggle-tikfinity">
+              <span class="toggle-copy">
+                <span class="toggle-name">TikFinity enabled</span>
+                <span class="toggle-sub">Reconnects automatically to ws://127.0.0.1:21213</span>
+              </span>
+            </label>
+            <label class="toggle-card">
+              <input type="checkbox" id="toggle-cloud">
+              <span class="toggle-copy">
+                <span class="toggle-name">Cloud enabled</span>
+                <span class="toggle-sub">Uses your bridge token over Socket.IO</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="banner" id="route-banner">
+          Your /stream pages only receive events from the selected primary source, even if both inputs are enabled. This prevents duplicate chat.
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Cloud Configuration</div>
+        <div class="field">
+          <label for="cloud-url">Cloud URL</label>
+          <input class="text-input" id="cloud-url" type="url" spellcheck="false" autocomplete="off" placeholder="https://wordtycoon.live">
+          <div class="field-hint">Keep this on <code>https://wordtycoon.live</code> unless you are intentionally testing another endpoint.</div>
+        </div>
+        <div class="field">
+          <label for="cloud-token">Bridge token</label>
+          <div class="token-row">
+            <input class="text-input" id="cloud-token" type="password" spellcheck="false" autocomplete="off" placeholder="Paste token from /streamer or leave unchanged">
+            <button class="btn" type="button" id="toggle-token-btn">Show</button>
+            <button class="btn ghost" type="button" id="clear-token-btn">Clear token</button>
+          </div>
+          <div class="field-hint" id="token-hint">Use the one-click handoff from <a href="https://wordgame.live/streamer" target="_blank" rel="noreferrer">wordgame.live/streamer</a> or paste the token here as a fallback.</div>
+        </div>
+        <div class="actions" style="margin-top: 0;">
+          <button class="btn primary" type="button" id="save-cloud-btn">Save cloud settings</button>
+        </div>
+        <div class="banner warn" id="cloud-banner">
+          Cloud is off until a valid bridge token is configured. Once linked, you can flip Cloud on and even make it your primary relay source.
+        </div>
+      </div>
+    </section>
+
+    <section class="source-grid">
+      <article class="source-card" id="source-tikfinity">
+        <div class="source-head">
+          <div class="source-title">
+            <div class="source-name">TikFinity</div>
+            <div class="source-sub">Local WebSocket feed on your computer</div>
+          </div>
+          <div class="pill-row" id="source-tikfinity-pills"></div>
+        </div>
+        <dl class="detail-list" id="source-tikfinity-details"></dl>
+        <div class="source-stats" id="source-tikfinity-stats"></div>
+        <div class="event-list" id="source-tikfinity-events"></div>
+      </article>
+
+      <article class="source-card" id="source-cloud">
+        <div class="source-head">
+          <div class="source-title">
+            <div class="source-name">Cloud</div>
+            <div class="source-sub">Streamer dashboard mirror from Word Game Live</div>
+          </div>
+          <div class="pill-row" id="source-cloud-pills"></div>
+        </div>
+        <dl class="detail-list" id="source-cloud-details"></dl>
+        <div class="source-stats" id="source-cloud-stats"></div>
+        <div class="event-list" id="source-cloud-events"></div>
+      </article>
+    </section>
+
+    <div class="footer">
+      Tycoon Stream Bridge v0.2.1 &middot; <a href="https://wordgame.live/streamer" target="_blank" rel="noreferrer">Streamer dashboard</a> &middot; <a href="https://wordgame.live/source" target="_blank" rel="noreferrer">Source</a>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

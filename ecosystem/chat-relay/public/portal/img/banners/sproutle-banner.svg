@@ -1,0 +1,24 @@
+<svg width="1600" height="500" viewBox="0 0 1600 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="500">
+      <stop stop-color="#07140F"/>
+      <stop offset="0.54" stop-color="#143B2E"/>
+      <stop offset="1" stop-color="#0B1620"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="500" rx="34" fill="url(#bg)"/>
+  <rect x="24" y="24" width="1552" height="452" rx="28" stroke="#44BB88" stroke-opacity="0.24" stroke-width="2"/>
+  <g opacity="0.9">
+    <circle cx="1160" cy="150" r="120" fill="#0E231A"/>
+    <circle cx="1315" cy="220" r="160" fill="#10281E"/>
+    <circle cx="1220" cy="310" r="134" fill="#0C1D17"/>
+    <path d="M1130 320C1148 244 1203 190 1292 168C1266 264 1211 320 1130 320Z" fill="#44BB88"/>
+    <path d="M1255 332C1274 254 1338 218 1426 228C1392 300 1338 340 1255 332Z" fill="#3EC8E8"/>
+    <path d="M1080 228C1094 170 1142 134 1205 124C1184 184 1146 226 1080 228Z" fill="#F0B429"/>
+  </g>
+  <text x="92" y="122" fill="#7EF2BD" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="7">ERECTANGLED</text>
+  <text x="92" y="228" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="90" font-weight="800">Grow the board. Clear the tangle.</text>
+  <text x="92" y="292" fill="#D3FFF0" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="500">A greener, deeper word hunt with more motion and more payoff.</text>
+  <rect x="92" y="338" width="228" height="62" rx="31" fill="#44BB88"/>
+  <text x="144" y="380" fill="#092117" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="800">FLAGSHIP GRID</text>
+</svg>

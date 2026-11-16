@@ -1,0 +1,11 @@
+const { io } = require('socket.io-client');
+const s = io('https://wikiword.live', { path: '/searchle/socket.io', transports: ['websocket', 'polling'] });
+s.on('connect', () => console.log('[probe] connected, id=', s.id));
+s.on('connect_error', (e) => console.log('[probe] connect_error:', e.message));
+s.on('wikisearchle-state', (d) => console.log('[probe] wikisearchle-state:', d && d.targetWord ? `target=${d.targetWord} top=${(d.topGuesses||[]).length}` : JSON.stringify(d).slice(0,80)));
+s.on('wikiword-state', (d) => console.log('[probe] wikiword-state:', d ? `title=${d.articleTitle} paragraphs=${(d.paragraphs||[]).length}` : 'null'));
+s.on('wikisearchle-top', (d) => console.log('[probe] wikisearchle-top:', (d||[]).length));
+s.on('wikiword-idle', (d) => console.log('[probe] wikiword-idle:', d));
+s.on('wikisearchle-round-start', (d) => console.log('[probe] round-start:', d));
+s.on('wikisearchle-round-end', (d) => console.log('[probe] round-end:', d));
+setTimeout(() => { s.close(); process.exit(0); }, 4000);

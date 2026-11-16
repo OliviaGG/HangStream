@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" overflow="visible">
+  <defs>
+    <!-- Outer glow -->
+    <filter id="fire-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Main flame gradient: white-yellow core → amber → deep orange → dark red -->
+    <radialGradient id="fire-body" cx="50%" cy="75%" r="65%" fx="50%" fy="80%">
+      <stop offset="0%"   stop-color="#FFFDE7"/>
+      <stop offset="18%"  stop-color="#FFE082"/>
+      <stop offset="40%"  stop-color="#FFA000"/>
+      <stop offset="65%"  stop-color="#F4511E"/>
+      <stop offset="100%" stop-color="#B71C1C"/>
+    </radialGradient>
+
+    <!-- Inner highlight gradient -->
+    <radialGradient id="fire-inner" cx="50%" cy="70%" r="50%" fx="50%" fy="72%">
+      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="30%"  stop-color="#FFF9C4" stop-opacity="0.85"/>
+      <stop offset="70%"  stop-color="#FFE082" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#FFA000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Soft ambient glow ellipse -->
+    <radialGradient id="fire-base-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#FF6D00" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#FF6D00" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Ambient base glow -->
+  <ellipse cx="16" cy="26" rx="10" ry="5" fill="url(#fire-base-glow)"/>
+
+  <!-- Main flame body -->
+  <g filter="url(#fire-glow)">
+    <path
+      d="M16 3
+         C16 3, 20 8, 19 12
+         C19 12, 23 9, 22 5
+         C25 9, 27 14, 25 19
+         C23.5 23, 20 26, 16 27
+         C12 26, 8.5 23, 7 19
+         C5 14, 7 9, 10 5
+         C9 9, 13 12, 13 12
+         C12 8, 16 3 16 3Z"
+      fill="url(#fire-body)"
+    />
+  </g>
+
+  <!-- Inner highlight (bright core) -->
+  <path
+    d="M16 10
+       C16 10, 18.5 13.5, 18 16.5
+       C18 16.5, 20 14.5, 19.5 12
+       C21 14.5, 21.5 17.5, 20 20
+       C19 22, 17.5 23.5, 16 24
+       C14.5 23.5, 13 22, 12 20
+       C10.5 17.5, 11 14.5, 12.5 12
+       C12 14.5, 14 16.5, 14 16.5
+       C13.5 13.5, 16 10 16 10Z"
+    fill="url(#fire-inner)"
+  />
+
+  <!-- White-yellow hot core -->
+  <ellipse cx="16" cy="21" rx="3" ry="3.5" fill="#FFFDE7" opacity="0.7"/>
+</svg>

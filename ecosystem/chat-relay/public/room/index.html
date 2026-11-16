@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Room — Word Tycoon</title>
+  <meta name="description" content="Play Word Tycoon games together, chat, and vote on what comes next.">
+  <meta name="theme-color" content="#201c48">
+  <link rel="icon" href="/portal/img/logo-favicon.png?v=2">
+  <link rel="stylesheet" href="/room/room.css?v=6">
+</head>
+<body>
+  <div class="room-shell" id="room-shell">
+    <header class="room-header">
+      <div class="room-identity" id="room-identity">
+        <a class="brand" href="/" aria-label="Word Tycoon home">
+          <img src="/portal/img/logo.png" alt="" width="46" height="46">
+          <span>Word Tycoon</span>
+        </a>
+        <div class="room-title-wrap">
+          <div class="eyebrow" id="room-kind">AUDIENCE ROOM</div>
+          <h1 id="room-title">Opening room…</h1>
+          <div class="room-meta">
+            <span class="status-dot" id="status-dot"></span>
+            <span id="room-status">Connecting</span>
+            <span aria-hidden="true">·</span>
+            <span id="room-members">0 in room</span>
+          </div>
+        </div>
+      </div>
+      <div class="header-actions" id="room-toolbar">
+        <a class="button subtle" id="open-game" href="#" target="_blank" rel="noopener">Open game ↗</a>
+        <div class="owner-controls" id="owner-controls" hidden>
+          <label class="sr-only" for="game-picker">Change game</label>
+          <select id="game-picker" aria-label="Change game"></select>
+          <button class="button coral" id="close-room" type="button" hidden>Close room</button>
+        </div>
+        <a class="button subtle" id="login-link" href="/auth/discord">Sign in</a>
+        <button class="button subtle reset-size" id="reset-game-size" type="button" title="Restore the default game panel size" hidden>Reset game size</button>
+      </div>
+    </header>
+
+    <main class="room-layout" id="room-layout">
+      <section class="game-panel" id="game-panel" aria-labelledby="game-heading">
+        <h2 class="sr-only" id="game-heading">Loading game…</h2>
+        <div class="game-stage" id="game-stage">
+          <div class="game-loading" id="game-loading">
+            <div class="spinner" aria-hidden="true"></div>
+            <strong>Preparing the private game…</strong>
+            <span>This room has its own round, separate from the public online game.</span>
+          </div>
+          <iframe id="game-frame" title="Room game" allow="clipboard-write; fullscreen; autoplay" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        </div>
+        <div class="game-resize-handle resize-width" id="resize-game-width" role="separator" tabindex="0" aria-label="Resize game width" aria-orientation="vertical" aria-controls="game-panel" title="Drag to resize game width, or use the left and right arrow keys"></div>
+        <div class="game-resize-handle resize-height" id="resize-game-height" role="separator" tabindex="0" aria-label="Resize game height" aria-orientation="horizontal" aria-controls="game-stage" title="Drag to resize game height, or use the up and down arrow keys"></div>
+        <button class="game-resize-handle resize-corner" id="resize-game-corner" type="button" aria-label="Resize game width and height" aria-controls="game-panel" title="Drag to resize the game, or use the arrow keys"></button>
+      </section>
+
+      <aside class="side-panel" id="side-panel">
+        <section class="vote-card" id="vote-card" aria-labelledby="vote-heading" hidden>
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker purple">WHAT'S NEXT?</span>
+              <h2 id="vote-heading">Room vote</h2>
+            </div>
+            <div class="panel-actions">
+              <button class="button subtle reset-size" id="reset-vote-size" type="button" title="Restore the default vote panel size">Reset size</button>
+              <span class="countdown" id="vote-countdown" hidden>45s</span>
+            </div>
+          </div>
+          <p class="vote-note" id="vote-note">The room owner can open a vote for the next game.</p>
+          <div class="vote-ballot" id="vote-ballot"></div>
+          <div class="vote-owner-actions" id="vote-owner-actions" hidden>
+            <button class="button purple" id="start-vote" type="button">Start a 45-second vote</button>
+            <button class="button subtle" id="finish-vote" type="button" hidden>Play winner now</button>
+            <button class="button subtle" id="cancel-vote" type="button" hidden>Cancel</button>
+          </div>
+          <div class="game-resize-handle resize-width resize-left" id="resize-vote-width" role="separator" tabindex="0" aria-label="Resize vote width" aria-orientation="vertical" aria-controls="vote-card" title="Drag to resize vote width, or use the left and right arrow keys"></div>
+          <div class="game-resize-handle resize-height" id="resize-vote-height" role="separator" tabindex="0" aria-label="Resize vote height" aria-orientation="horizontal" aria-controls="vote-card" title="Drag to resize vote height, or use the up and down arrow keys"></div>
+          <button class="game-resize-handle resize-corner resize-left" id="resize-vote-corner" type="button" aria-label="Resize vote width and height" aria-controls="vote-card" title="Drag to resize the vote panel, or use the arrow keys"></button>
+        </section>
+
+        <section class="chat-card" id="chat-card" aria-labelledby="chat-heading">
+          <div class="panel-head compact">
+            <div>
+              <span class="panel-kicker mint">ROOM CHAT</span>
+              <h2 id="chat-heading">Talk to the room</h2>
+            </div>
+            <button class="button subtle reset-size" id="reset-chat-size" type="button" title="Restore the default chat panel size">Reset size</button>
+          </div>
+          <div class="chat-log" id="chat-log" role="log" aria-live="polite" aria-relevant="additions"></div>
+          <form class="chat-form" id="chat-form">
+            <label class="sr-only" for="chat-input">Message</label>
+            <input id="chat-input" type="text" maxlength="500" autocomplete="off" placeholder="Sign in to chat" disabled>
+            <button class="button mint" id="chat-send" type="submit" disabled>Send</button>
+          </form>
+          <p class="chat-help" id="chat-help">Watching is public. Sign in to chat and vote.</p>
+          <div class="game-resize-handle resize-width resize-left" id="resize-chat-width" role="separator" tabindex="0" aria-label="Resize chat width" aria-orientation="vertical" aria-controls="chat-card" title="Drag to resize chat width, or use the left and right arrow keys"></div>
+          <div class="game-resize-handle resize-height" id="resize-chat-height" role="separator" tabindex="0" aria-label="Resize chat height" aria-orientation="horizontal" aria-controls="chat-card" title="Drag to resize chat height, or use the up and down arrow keys"></div>
+          <button class="game-resize-handle resize-corner resize-left" id="resize-chat-corner" type="button" aria-label="Resize chat width and height" aria-controls="chat-card" title="Drag to resize the chat panel, or use the arrow keys"></button>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <section class="error-card" id="error-card" hidden>
+    <span class="error-icon">🚪</span>
+    <h1>This room is closed</h1>
+    <p id="error-message">The owner may open it again later.</p>
+    <a class="button coral" href="/">Back to Word Tycoon</a>
+  </section>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/room/room.js?v=10" defer></script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

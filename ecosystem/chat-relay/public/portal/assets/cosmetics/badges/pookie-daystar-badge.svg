@@ -1,0 +1,44 @@
+<svg width="1200" height="480" viewBox="0 0 1200 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="daystarBg" x1="0" y1="0" x2="1200" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#161125"/>
+      <stop offset="0.5" stop-color="#2B1A3D"/>
+      <stop offset="1" stop-color="#20132F"/>
+    </linearGradient>
+    <radialGradient id="daystarBloom" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(876 150) rotate(90) scale(228 390)">
+      <stop stop-color="#FFE08A" stop-opacity="0.34"/>
+      <stop offset="0.56" stop-color="#A76BFF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#A76BFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="daystarStroke" x1="768" y1="88" x2="986" y2="238" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF4C8"/>
+      <stop offset="0.34" stop-color="#FFD96B"/>
+      <stop offset="0.74" stop-color="#B67DFF"/>
+      <stop offset="1" stop-color="#8556FF"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="480" rx="36" fill="url(#daystarBg)"/>
+  <rect width="1200" height="480" rx="36" fill="url(#daystarBloom)"/>
+
+  <path d="M120 332C280 250 390 216 574 216C758 216 872 250 1034 332" stroke="#FFE08A" stroke-opacity="0.2" stroke-width="16" stroke-linecap="round"/>
+  <path d="M164 374C320 292 430 258 592 258C758 258 860 292 1012 374" stroke="#A76BFF" stroke-opacity="0.18" stroke-width="10" stroke-linecap="round"/>
+
+  <circle cx="876" cy="148" r="108" stroke="rgba(255,224,138,0.2)" stroke-width="8"/>
+  <circle cx="876" cy="148" r="82" stroke="rgba(167,107,255,0.18)" stroke-width="6"/>
+  <circle cx="876" cy="148" r="54" stroke="rgba(255,255,255,0.14)" stroke-width="4"/>
+
+  <path d="M876 72L894 116L942 118L904 148L916 196L876 170L836 196L848 148L810 118L858 116L876 72Z" fill="rgba(255,217,107,0.14)" stroke="url(#daystarStroke)" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M876 94L886 124L918 124L892 142L902 172L876 154L850 172L860 142L834 124L866 124L876 94Z" fill="rgba(255,255,255,0.08)" stroke="rgba(255,246,212,0.44)" stroke-width="4" stroke-linejoin="round"/>
+
+  <path d="M818 88L842 104" stroke="rgba(255,255,255,0.46)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M934 104L958 88" stroke="rgba(255,255,255,0.46)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M818 208L846 188" stroke="rgba(167,107,255,0.5)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M934 188L962 208" stroke="rgba(167,107,255,0.5)" stroke-width="4" stroke-linecap="round"/>
+
+  <circle cx="876" cy="72" r="8" fill="#FFF7DD"/>
+  <circle cx="942" cy="118" r="7" fill="#FFE08A"/>
+  <circle cx="916" cy="196" r="7" fill="#A76BFF"/>
+  <circle cx="836" cy="196" r="7" fill="#FFE08A"/>
+  <circle cx="810" cy="118" r="7" fill="#A76BFF"/>
+</svg>

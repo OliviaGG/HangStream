@@ -1,0 +1,2038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Word Tycoon — Live Multiplayer Word Games</title>
+  <meta name="description" content="Play free multiplayer word games live — Subtextle, Wordle, RecTangled, Color500 and more. Join from TikTok chat, Discord, or play solo on the web.">
+  <link rel="canonical" href="https://wordtycoon.live/">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta property="og:site_name" content="Word Tycoon">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://wordtycoon.live/">
+  <meta property="og:title" content="Word Tycoon — Live Multiplayer Word Games">
+  <meta property="og:description" content="Play free multiplayer word games live — Subtextle, Wordle, RecTangled, Color500 and more. Join from TikTok chat, Discord, or play solo on the web.">
+  <meta property="og:image" content="https://wordtycoon.live/portal/img/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Word Tycoon — live multiplayer word games">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Word Tycoon — Live Multiplayer Word Games">
+  <meta name="twitter:description" content="Play free multiplayer word games live — join from TikTok chat, Discord, or the web.">
+  <meta name="twitter:image" content="https://wordtycoon.live/portal/img/og-image.png">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebSite","name":"Word Tycoon","alternateName":"Word Tycoon Hub","url":"https://wordtycoon.live/","description":"Free live multiplayer word games playable from TikTok chat, Discord, or the web.","publisher":{"@type":"Organization","name":"Word Tycoon","url":"https://wordtycoon.live/","logo":{"@type":"ImageObject","url":"https://wordtycoon.live/portal/img/logo.png"}}}
+  </script>
+  <meta name="theme-color" content="#0d1320">
+  <link rel="manifest" href="/portal/manifest.webmanifest?v=4">
+  <link rel="icon" href="/portal/img/logo-favicon.png?v=2">
+  <script>
+    // PWA service worker — required for the install pill to work.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {});
+      });
+    }
+  </script>
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+  <link rel="stylesheet" href="/portal/css/portal.css?v=103">
+  <link rel="stylesheet" href="/portal/css/feed.css?v=1">
+  <link rel="stylesheet" href="/css/cosmetics-fx.css?v=3">
+  <link rel="stylesheet" href="/portal/css/empire.css?v=5">
+  <link rel="stylesheet" href="/game-help.css?v=2">
+</head>
+<body>
+  <script>
+    // Restore theme early to prevent flash (unified body.night system)
+    (function() {
+      var portalTheme = localStorage.getItem('wordtycoon_theme') || localStorage.getItem('portal-theme');
+      var night = localStorage.getItem('wt-night');
+      var isNight = false;
+      if (portalTheme) {
+        isNight = portalTheme !== 'light';
+      } else if (night !== null) {
+        isNight = night === '1';
+      } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        isNight = true;
+      }
+      if (isNight) document.body.classList.add('night');
+    })();
+  </script>
+
+  <style>
+    /* ── Guest (logged-out) hub ── */
+    body.guest-mode .user-info,
+    body.guest-mode #logout-btn { display: none !important; }
+    body.guest-mode #guest-signin-btn { display: inline-flex !important; }
+    .guest-signin-btn { font-weight: 600; }
+
+    .guest-gate { display: flex; justify-content: center; padding: 44px 16px; }
+    .guest-gate-card {
+      max-width: 420px; width: 100%; text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      padding: 34px 28px; border-radius: 18px;
+      background: var(--surface); border: 1px solid var(--glass-border);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+    }
+    .guest-gate-logo { width: 64px; height: 64px; object-fit: contain; }
+    .guest-gate-title { font-size: 20px; font-weight: 700; margin: 0; letter-spacing: -0.01em; color: var(--text); }
+    .guest-gate-sub { font-size: 14px; line-height: 1.5; margin: 0; color: var(--text-dim); }
+    .guest-gate-btn {
+      margin-top: 6px; padding: 11px 30px; border: 1px solid var(--glass-border);
+      border-radius: 12px; background: var(--accent); color: var(--bg);
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      transition: background .15s ease, transform .12s ease, filter .15s ease;
+    }
+    .guest-gate-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  </style>
+</head>
+<body>
+<!-- Fire icon shared gradient/filter defs — referenced by fire SVG instances throughout the page -->
+<svg id="fire-svg-defs" style="position:absolute;width:0;height:0;overflow:hidden" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <filter id="fire-glow-sm" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="1.2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="fire-body" cx="50%" cy="75%" r="65%" fx="50%" fy="80%">
+      <stop offset="0%"   stop-color="#FFFDE7"/>
+      <stop offset="18%"  stop-color="#FFE082"/>
+      <stop offset="40%"  stop-color="#FFA000"/>
+      <stop offset="65%"  stop-color="#F4511E"/>
+      <stop offset="100%" stop-color="#B71C1C"/>
+    </radialGradient>
+    <radialGradient id="fire-inner" cx="50%" cy="70%" r="50%" fx="50%" fy="72%">
+      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="30%"  stop-color="#FFF9C4" stop-opacity="0.85"/>
+      <stop offset="70%"  stop-color="#FFE082" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#FFA000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="fire-base-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#FF6D00" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#FF6D00" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>
+  <!-- Login Screen -->
+  <div id="login-screen" class="screen">
+    <style>
+      /* Unified-login overrides: strip the card chrome so only the LoginPrompt's
+         own glass is visible, and overlap the prompt with the logo behind it. */
+      #login-screen .login-card {
+        background: transparent !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        width: auto;
+        overflow: visible;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      #login-screen .login-logo-img {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        margin: 0 !important;
+        z-index: 1;
+        pointer-events: none;
+      }
+      #portal-login-mount { position: relative; z-index: 2; }
+      #login-error { position: relative; z-index: 2; margin-top: 12px; }
+    </style>
+    <div class="login-card">
+      <img src="/portal/img/logo.png" alt="Word Tycoon" class="login-logo-img">
+      <div id="portal-login-mount"></div>
+      <div id="login-error" class="login-error"></div>
+      <script src="/login-prompt.js?v=3"></script>
+      <script>
+        (function () {
+          var mount = document.getElementById('portal-login-mount');
+          if (!mount || !window.LoginPrompt) return;
+          mount.appendChild(window.LoginPrompt.create({
+            returnTo: window.location.pathname + window.location.search,
+            onDismiss: function () {
+              // Reveal the logged-out hub instead of leaving the bare logo.
+              if (window.enterGuestMode) window.enterGuestMode();
+            }
+          }));
+        })();
+      </script>
+    </div>
+  </div>
+
+  <!-- Main Portal -->
+  <div id="portal-screen" class="screen" style="display:none">
+    <!-- Header -->
+    <header class="portal-header">
+      <div class="header-left">
+        <a href="/hub" class="header-brand">
+          <img src="/portal/img/logo.png" alt="Word Tycoon" class="header-logo-img">
+          <div class="header-brand-copy">
+            <span class="header-brand-label">Word Tycoon Hub</span>
+            <span class="header-brand-title">Word Tycoon</span>
+          </div>
+        </a>
+      </div>
+      <div class="header-right">
+        <div class="user-info">
+          <div class="user-avatar-wrap">
+            <img id="user-avatar" src="" alt="" class="user-avatar">
+          </div>
+          <div class="user-name-group">
+            <span id="user-name" class="user-name"></span>
+            <span id="user-title" class="user-title"></span>
+          </div>
+        </div>
+        <button id="guest-signin-btn" class="nav-action-btn guest-signin-btn" type="button" data-guest-signin title="Sign in" style="display:none">Sign in</button>
+        <button id="theme-toggle" class="theme-toggle nav-action-btn" title="Toggle light/dark mode">Light</button>
+        <button id="logout-btn" class="logout-btn nav-action-btn" title="Logout">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="wordgames">Word Games</button>
+      <button class="tab" data-tab="feed"><span class="feed-live-dot"></span>Feed</button>
+      <button class="tab" data-tab="businesses">🏙️ Empire</button>
+      <button class="tab" data-tab="profile">Profile</button>
+      <button class="tab" data-tab="library">Library</button>
+      <button class="tab" data-tab="store">Store</button>
+      <button class="tab" data-tab="pass">Membership</button>
+      <a href="https://voice.wordtycoon.live" class="tab tab-link" target="_blank" rel="noopener" title="Voice Chat">Voice</a>
+      <button class="tab" data-tab="howtoplay">How to Play</button>
+      <a href="/goat" class="tab tab-link tab-goat-link" target="_blank" title="Hall of Fame"><span class="wt-symbol wt-symbol-sm wt-symbol-gold"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8v3.5a4 4 0 0 1-8 0zM7 7H5.5A2.5 2.5 0 0 0 8 11M17 7h1.5A2.5 2.5 0 0 1 16 11M12 12v3.2M9 19h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>GOAT</a>
+    </nav>
+
+    <!-- Not Linked Banner -->
+    <div id="not-linked-banner" class="banner banner-warning" style="display:none">
+      <strong>Account Not Linked</strong>
+      <p id="not-linked-msg">Your Discord account isn't linked to any stream platform yet. Type <code>!link</code> in the stream chat to get started!</p>
+      <div id="not-linked-actions"></div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Tab Content -->
+    <main class="content">
+      <!-- Word Games Tab (default landing) -->
+      <section id="tab-wordgames" class="tab-content active">
+        <!-- Daily Login banner — top of home page -->
+        <div class="daily-login-banner" id="daily-login-banner" style="display:none">
+          <div class="daily-login-banner-left">
+            <span class="daily-login-banner-icon" aria-hidden="true">🔥</span>
+            <div class="daily-login-banner-copy">
+              <span class="daily-login-banner-title">Daily Login</span>
+              <span class="daily-login-banner-sub" id="daily-login-banner-sub">Start your streak</span>
+            </div>
+          </div>
+          <button class="daily-login-banner-btn" id="daily-login-banner-btn" type="button" disabled>Loading...</button>
+        </div>
+
+        <!-- Today Panel (merged from Overview) -->
+        <div class="today-panel" id="today-panel">
+
+          <!-- Guest sign-in hero — shown instead of Daily Claim / Daily / Weekly
+               when logged out (body.guest-mode). Provider hrefs get their
+               returnTo set in enterGuestMode(). -->
+          <div class="guest-hero" id="guest-hero">
+            <div class="guest-hero-copy">
+              <div class="guest-hero-kicker">Free account</div>
+              <h2 class="guest-hero-title">Sign in to track stats, collect cosmetics, and more</h2>
+              <p class="guest-hero-sub">Daily streak rewards, XP and levels, and a cosmetics collection &mdash; one account that carries across every Word Tycoon game.</p>
+            </div>
+            <div class="guest-hero-actions" role="group" aria-label="Sign in options">
+              <a class="guest-hero-btn" data-auth-provider="google" href="/auth/google?returnTo=%2Fme">Continue with Google</a>
+              <a class="guest-hero-btn" data-auth-provider="discord" href="/auth/discord?returnTo=%2Fme">Continue with Discord</a>
+              <a class="guest-hero-btn" data-auth-provider="github" href="/auth/github?returnTo=%2Fme">Continue with GitHub</a>
+            </div>
+          </div>
+
+          <div class="today-summary-grid">
+            <!-- Daily Claim — hero card, spans both grid rows -->
+            <div class="today-summary-card today-claim-card">
+              <div class="today-summary-head">
+                <span class="today-summary-label">🔥 Daily Claim</span>
+                <span class="today-summary-meta" id="today-claim-state">—</span>
+              </div>
+              <div class="claim-hero-body">
+                <div class="today-summary-primary" id="today-claim-primary"></div>
+                <div class="today-summary-secondary" id="today-claim-secondary"></div>
+              </div>
+              <div class="today-summary-actions">
+                <button class="today-claim-btn" id="today-claim-btn" type="button" disabled>Loading...</button>
+                <span class="today-reset-pill" id="today-claim-reset"></span>
+              </div>
+            </div>
+
+            <!-- Daily Track — compact chip -->
+            <div class="today-summary-card today-track-chip today-track-daily board-tab" id="today-daily-card" role="button" tabindex="0" aria-expanded="false" aria-controls="daily-tracker">
+              <div class="today-summary-head">
+                <span class="today-summary-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-daily"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="6" width="14" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 4v4M16 4v4M5 10h14M9 14h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span>
+                <span class="today-summary-label">Daily</span>
+                <span class="today-summary-meta" id="today-daily-progress">—</span>
+                <span class="board-chevron" aria-hidden="true">&#x25BE;</span>
+              </div>
+              <!-- Hidden text kept for JS compat -->
+              <div class="today-summary-main" style="display:none">
+                <div id="today-daily-primary"></div>
+                <div id="today-daily-secondary"></div>
+              </div>
+            </div>
+
+            <!-- Weekly Track — compact chip -->
+            <div class="today-summary-card today-track-chip today-track-weekly board-tab" id="today-weekly-card" role="button" tabindex="0" aria-expanded="false" aria-controls="weekly-tracker">
+              <div class="today-summary-head">
+                <span class="today-summary-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-weekly"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8v3.5a4 4 0 0 1-8 0zM7 7H5.5A2.5 2.5 0 0 0 8 11M17 7h1.5A2.5 2.5 0 0 1 16 11M12 12v3.2M9 19h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>
+                <span class="today-summary-label">Weekly</span>
+                <span class="today-summary-meta" id="today-weekly-progress">—</span>
+                <span class="board-chevron" aria-hidden="true">&#x25BE;</span>
+              </div>
+              <!-- Hidden text kept for JS compat -->
+              <div class="today-summary-main" style="display:none">
+                <div id="today-weekly-primary"></div>
+                <div id="today-weekly-secondary"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="today-recommendation" id="today-recommendation" hidden>
+            <span class="today-rec-icon" id="today-rec-icon"></span>
+            <span class="today-rec-text" id="today-rec-text"></span>
+            <a class="today-rec-link" id="today-rec-link" hidden></a>
+          </div>
+
+          <!-- Challenge Boards (toggled by summary cards) -->
+          <div class="today-boards" id="today-boards" hidden>
+            <div class="daily-tracker" id="daily-tracker" hidden>
+              <div class="daily-tracker-header">
+                <span class="daily-tracker-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-daily"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="6" width="14" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 4v4M16 4v4M5 10h14M9 14h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span>
+                <span class="daily-tracker-title">Daily Challenges</span>
+                <span class="daily-tracker-countdown" id="daily-countdown"></span>
+                <span class="daily-tracker-progress" id="daily-progress">0/6</span>
+              </div>
+              <div class="daily-tracker-subtitle" id="daily-tracker-subtitle"></div>
+              <div class="daily-tracker-row-wrap">
+                <div class="daily-tracker-row" id="daily-tracker-row" role="list" aria-label="Daily challenge games" tabindex="0"></div>
+              </div>
+              <details class="tracker-stats-details">
+                <summary class="tracker-stats-toggle">
+                  <span>Stats</span>
+                  <span class="tracker-stats-chevron" aria-hidden="true">&#x25BE;</span>
+                </summary>
+                <div class="tracker-stats-grid tracker-stats-grid-daily">
+                  <div class="tracker-stat-card">
+                    <span class="tracker-stat-label">Daily Clears</span>
+                    <div class="tracker-stat-value" id="puzzle-daily-total">-</div>
+                  </div>
+                  <div class="tracker-stat-card">
+                    <span class="tracker-stat-label">Today</span>
+                    <div class="tracker-stat-value" id="puzzle-daily-current">-</div>
+                  </div>
+                  <div class="tracker-stat-card tracker-stat-card-wide">
+                    <span class="tracker-stat-label">Favorite Daily</span>
+                    <div class="tracker-stat-value" id="puzzle-daily-favorite">-</div>
+                    <div class="tracker-stat-sub" id="puzzle-daily-favorite-sub">No daily completions yet</div>
+                  </div>
+                </div>
+              </details>
+            </div>
+
+            <!-- Weekly Challenge Progress -->
+            <div class="weekly-tracker" id="weekly-tracker" hidden>
+              <div class="daily-tracker-header">
+                <span class="daily-tracker-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-weekly"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8v3.5a4 4 0 0 1-8 0zM7 7H5.5A2.5 2.5 0 0 0 8 11M17 7h1.5A2.5 2.5 0 0 1 16 11M12 12v3.2M9 19h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>
+                <span class="daily-tracker-title">Weekly Challenges</span>
+                <span class="weekly-tracker-progress" id="weekly-progress">0/2</span>
+              </div>
+              <div class="weekly-tracker-subtitle" id="weekly-tracker-subtitle"></div>
+              <div class="daily-tracker-row-wrap">
+                <div class="daily-tracker-row" id="weekly-tracker-row" role="list" aria-label="Weekly challenge games" tabindex="0"></div>
+              </div>
+              <details class="tracker-stats-details">
+                <summary class="tracker-stats-toggle">
+                  <span>Stats</span>
+                  <span class="tracker-stats-chevron" aria-hidden="true">&#x25BE;</span>
+                </summary>
+                <div class="tracker-stats-grid tracker-stats-grid-weekly">
+                  <div class="tracker-stat-card">
+                    <span class="tracker-stat-label">Weekly Clears</span>
+                    <div class="tracker-stat-value" id="puzzle-weekly-total">-</div>
+                  </div>
+                  <div class="tracker-stat-card">
+                    <span class="tracker-stat-label">This Week</span>
+                    <div class="tracker-stat-value" id="puzzle-weekly-current">-</div>
+                  </div>
+                  <div class="tracker-stat-card tracker-stat-card-wide">
+                    <span class="tracker-stat-label">Favorite Weekly</span>
+                    <div class="tracker-stat-value" id="puzzle-weekly-favorite">-</div>
+                    <div class="tracker-stat-sub" id="puzzle-weekly-favorite-sub">No weekly completions yet</div>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+
+        <!-- Donor Class membership card — hidden until entitlement loads and
+             only shown to non-members (updateDonorClassCard in portal.js) -->
+        <div class="wordgames-donate wordgames-donor" id="wordgames-donor" hidden>
+          <div class="wordgames-donate-copy">
+            <div class="wordgames-donate-eyebrow">Membership</div>
+            <div class="wordgames-donate-title">Donor Class &mdash; $2/month</div>
+            <div class="wordgames-donate-text">Unlock every game and mode across Word Tycoon &mdash; unlimited solo play, online multiplayer, batch guessing in stream chat, and voice perks.</div>
+            <div class="wordgames-donor-superfan">&#11088; TikTok Super Fans get every Donor Class perk free &mdash; subscribe to the owner's channel, link your TikTok, and chat during a stream. Not on TikTok? <b>Pookie Pass</b> grants the same Super Fan status.</div>
+          </div>
+          <div class="wordgames-donate-actions">
+            <button type="button" class="wordgames-donate-btn wordgames-donor-btn" onclick="beginDonorCardCheckout()">Join Donor Class</button>
+            <a class="wordgames-donor-howto" href="https://www.tiktok.com/@museumcomesalive/video/7635349748341280021" target="_blank" rel="noopener">How to link Discord to TikTok &#8599;</a>
+          </div>
+        </div>
+
+        <div class="wordgames-donate" id="wordgames-donate">
+          <div class="wordgames-donate-copy">
+            <div class="wordgames-donate-eyebrow">Keep the Games Free</div>
+            <div class="wordgames-donate-title">Tip Jar</div>
+            <div class="wordgames-donate-text">Every dollar helps keep the servers on and new games shipping.</div>
+          </div>
+          <div class="wordgames-donate-actions">
+            <button type="button" class="wordgames-donate-btn" onclick="beginDonationCheckout()">Support ❤</button>
+          </div>
+        </div>
+
+        <!-- WG Today Focus hidden — merged into Today panel above -->
+        <div id="wg-today-focus" style="display:none"></div>
+        <div id="wg-flagship-row"></div>
+        <div id="wg-games-grid"></div>
+        <div class="wg-bubbles" id="wg-bubbles" style="display:none"></div>
+
+        <!-- live-games-grid kept as hidden anchor for compatibility -->
+        <div id="live-games" style="display:none"><div id="live-games-grid"></div></div>
+      </section>
+
+      <!-- Profile Tab -->
+      <section id="tab-profile" class="tab-content">
+        <div class="prof-layout">
+
+          <!-- ─── Main Column ─── -->
+          <div class="prof-main">
+
+            <!-- Hero Card -->
+            <div class="prof-hero">
+              <div class="prof-hero-bg"></div>
+              <button class="prof-hero-badge-edit-btn" id="prof-hero-badge-edit-btn" type="button" aria-label="Edit hero badge" title="Edit hero badge">
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M11.5 2.5a1.5 1.5 0 0 1 2.12 2.12l-8 8-2.83.71.71-2.83z" fill="currentColor"/></svg>
+              </button>
+              <div class="prof-hero-grid">
+                <div class="prof-avatar-shell">
+                  <img id="prof-avatar" class="prof-avatar" src="" alt="">
+                  <button class="prof-avatar-edit-btn" id="prof-avatar-edit-btn" type="button" aria-label="Change profile picture">
+                    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M11.5 2.5a1.5 1.5 0 0 1 2.12 2.12l-8 8-2.83.71.71-2.83z" fill="currentColor"/></svg>
+                  </button>
+                  <button class="prof-border-edit-btn" id="prof-border-edit-btn" type="button" aria-label="Edit border and glow" title="Edit border & glow">
+                    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 12.5A5.5 5.5 0 1 1 8 2.5a5.5 5.5 0 0 1 0 11z" fill="currentColor"/><path d="M8 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" fill="currentColor"/></svg>
+                  </button>
+                </div>
+                <div class="prof-hero-info">
+                  <div class="prof-title-row">
+                    <div id="prof-title" class="prof-title"></div>
+                    <button class="prof-cos-edit-btn" id="prof-title-edit-btn" type="button" aria-label="Change title" title="Change title">
+                      <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M11.5 2.5a1.5 1.5 0 0 1 2.12 2.12l-8 8-2.83.71.71-2.83z" fill="currentColor"/></svg>
+                    </button>
+                  </div>
+                  <div class="prof-name-row">
+                    <div id="prof-name" class="prof-name">Player</div>
+                    <button class="prof-cos-edit-btn" id="prof-name-cos-edit-btn" type="button" aria-label="Edit name style" title="Edit name style">
+                      <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M11.5 2.5a1.5 1.5 0 0 1 2.12 2.12l-8 8-2.83.71.71-2.83z" fill="currentColor"/></svg>
+                    </button>
+                  </div>
+                  <div class="prof-name-editor">
+                    <label class="prof-name-editor-label" for="prof-name-input">Username</label>
+                    <div class="prof-name-editor-row">
+                      <input id="prof-name-input" class="prof-name-input" type="text" maxlength="32" placeholder="Set your username">
+                      <button id="prof-name-save" class="prof-name-save" type="button">Save</button>
+                      <button id="prof-name-reset" class="prof-name-reset" type="button">Reset</button>
+                    </div>
+                  </div>
+                  <div class="prof-coinline">
+                    <span class="prof-coinchip"><span class="prof-chip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-xp"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="13" r="4.1" fill="currentColor"/><circle cx="14.8" cy="9" r="3.6" fill="#79d7ff"/><circle cx="16.5" cy="15.2" r="2.8" fill="#b88cff"/><circle cx="7.2" cy="8.3" r="2.4" fill="#ffd36e"/></svg></span></span> <span id="prof-coins">-</span></span>
+                    <span class="prof-coinchip"><span class="prof-chip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-words"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 7.5c0-1 1-1.8 2.1-1.8h4.2c1 0 1.9.3 2.7.9v11.7c-.8-.6-1.7-.9-2.7-.9H8.6c-1.1 0-2.1.8-2.1 1.8zM17.5 7.5c0-1-1-1.8-2.1-1.8h-4.2c-1 0-1.9.3-2.7.9v11.7c.8-.6 1.7-.9 2.7-.9h4.2c1.1 0 2.1.8 2.1 1.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> <span id="prof-words">-</span></span>
+                    <span class="prof-coinchip"><span class="prof-chip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-wins"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8v3.5a4 4 0 0 1-8 0zM7 7H5.5A2.5 2.5 0 0 0 8 11M17 7h1.5A2.5 2.5 0 0 1 16 11M12 12v3.2M9 19h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> <span id="prof-wins">-</span></span>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+            <!-- Player Stats -->
+            <div class="prof-section">
+              <div class="prof-section-header">
+                <h3>Player Stats</h3>
+                <span class="prof-section-sub">at a glance</span>
+              </div>
+              <div class="prof-stats-grid">
+                <div class="prof-stat solid-blue">
+                  <span class="prof-stat-label">XP</span>
+                  <div class="prof-stat-value" id="stat-coins">-</div>
+                </div>
+                <div class="prof-stat solid-indigo">
+                  <span class="prof-stat-label">Total Taps</span>
+                  <div class="prof-stat-value" id="stat-taps">-</div>
+                </div>
+                <div class="prof-stat solid-plum">
+                  <span class="prof-stat-label">Total Wins</span>
+                  <div class="prof-stat-value" id="stat-wins">-</div>
+                </div>
+                <div class="prof-stat solid-mint prof-stat-wide">
+                  <span class="prof-stat-label">Total ELO</span>
+                  <div class="prof-stat-value" id="stat-elo">-</div>
+                </div>
+              </div>
+            </div>
+
+            <details class="prof-section prof-section-collapsible">
+              <summary class="prof-section-header prof-section-toggle">
+                <h3>Career Stats</h3>
+                <span class="prof-section-sub">account wide</span>
+                <span class="prof-section-chevron" aria-hidden="true">&#x25BE;</span>
+              </summary>
+              <div class="prof-section-body">
+              <div class="career-stats-grid">
+                <div class="career-stat-card">
+                  <span class="career-stat-label">Total Wins</span>
+                  <div class="career-stat-value" id="career-total-wins">-</div>
+                </div>
+                <div class="career-stat-card">
+                  <span class="career-stat-label">Longest Streak</span>
+                  <div class="career-stat-value" id="career-longest-streak">-</div>
+                </div>
+                <div class="career-stat-card">
+                  <span class="career-stat-label">Daily Claims</span>
+                  <div class="career-stat-value" id="career-daily-claims">-</div>
+                </div>
+                <div class="career-stat-card">
+                  <span class="career-stat-label">Gift Coins</span>
+                  <div class="career-stat-value" id="career-gift-coins">-</div>
+                </div>
+                <div class="career-stat-card career-stat-card-wide">
+                  <span class="career-stat-label">Favorite Game</span>
+                  <div class="career-stat-value" id="career-favorite-game">-</div>
+                  <div class="career-stat-sub" id="career-favorite-game-sub">No wins yet</div>
+                </div>
+                <div class="career-stat-card">
+                  <span class="career-stat-label">Cosmetics Owned</span>
+                  <div class="career-stat-value" id="career-cosmetics-owned">-</div>
+                  <div class="career-stat-sub" id="career-cosmetics-sub">0 equipped</div>
+                </div>
+              </div>
+              </div>
+            </details>
+
+            <!-- Linked Platforms -->
+            <div class="prof-section">
+              <div class="prof-section-header">
+                <h3>Linked Platforms</h3>
+                <span class="prof-section-sub">identity layer</span>
+              </div>
+              <div id="platforms-summary" class="prof-platforms-summary"></div>
+              <div id="platforms-list" class="prof-platforms"></div>
+            </div>
+
+            <!-- Friends -->
+            <div class="prof-section">
+              <div class="prof-section-header">
+                <h3>Friends</h3>
+                <span class="prof-section-sub"><span id="friends-count-badge" class="friends-count-badge">0</span> friends</span>
+              </div>
+              <div class="prof-friends-controls">
+                <button id="friends-add-btn" class="friend-btn friend-btn-add">+ Add Friend</button>
+              </div>
+
+              <div id="friends-pending-section" class="pending-section" style="display:none">
+                <h4 class="pending-title">Pending Requests <span id="pending-count" class="pending-count-badge">0</span></h4>
+                <div id="friends-pending-list" class="friends-list"></div>
+              </div>
+
+              <div id="friends-list-section">
+                <div id="friends-list" class="friends-list">
+                  <div class="friends-empty">Loading friends...</div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /.prof-main -->
+
+          <!-- ─── Rail Column ─── -->
+          <div class="prof-rail">
+
+            <div class="prof-section prof-rail-card">
+              <div class="prof-section-header">
+                <h3>Next Up</h3>
+                <span class="prof-section-sub">recommended</span>
+              </div>
+              <div id="profile-next-steps" class="prof-focus-stack">
+                <div class="loading-placeholder">Loading profile plan...</div>
+              </div>
+            </div>
+
+            <!-- Tycoon Empire summary -->
+            <div class="prof-section prof-rail-card" id="prof-empire-card" style="display:none">
+              <div class="prof-section-header">
+                <h3>Tycoon Empire</h3>
+                <span class="prof-section-sub">your businesses</span>
+              </div>
+              <div class="prof-empire-summary">
+                <div class="prof-empire-stats">
+                  <div class="prof-empire-stat">
+                    <span class="prof-empire-stat-value" id="prof-empire-biz-count">0</span>
+                    <span class="prof-empire-stat-label">businesses</span>
+                  </div>
+                  <div class="prof-empire-stat">
+                    <span class="prof-empire-stat-value" id="prof-empire-income">0</span>
+                    <span class="prof-empire-stat-label">XP/sec</span>
+                  </div>
+                </div>
+                <button class="prof-empire-btn" onclick="openEmpireView()">Open Empire</button>
+              </div>
+            </div>
+
+            <!-- Cosmetics -->
+            <div class="prof-section prof-rail-card">
+              <div class="prof-section-header">
+                <h3>Cosmetics</h3>
+                <span class="prof-section-sub"><span id="owned-count">0</span> owned</span>
+              </div>
+              <div class="cosmetic-preview-panel">
+                <div id="preview-badge-bg" class="preview-badge-bg"></div>
+                <div class="preview-profile">
+                  <div class="preview-avatar-wrap">
+                    <img id="preview-avatar" class="preview-avatar" src="" alt="">
+                  </div>
+                  <div class="preview-info">
+                    <div id="preview-title-container" class="preview-title-container"></div>
+                    <div id="preview-name" class="preview-name">Player</div>
+                    <div id="preview-word" class="preview-word">WORDY</div>
+                  </div>
+                </div>
+                <div id="preview-platform-selector" class="preview-platform-selector"></div>
+              </div>
+              <div id="visibility-settings" class="visibility-settings"></div>
+              <div id="fanclub-badge-settings" class="visibility-settings" hidden></div>
+              <div class="cosmetics-filters">
+                <select id="cosmetic-category-filter">
+                  <option value="equipped">Equipped Only</option>
+                  <option value="all">All Categories</option>
+                  <option value="word_color">Word Colors</option>
+                  <option value="word_glow">Word Glows</option>
+                  <option value="profile_border">Borders</option>
+                  <option value="profile_glow">Glows</option>
+                  <option value="name_glow">Name Glows</option>
+                  <option value="name_color">Name Colors</option>
+                  <option value="title">Titles</option>
+                  <option value="win_effect">Win Effects</option>
+                  <option value="hero_badge">Hero Badge</option>
+                </select>
+                <select id="cosmetic-sort">
+                  <option value="default">Sort: Default</option>
+                  <option value="rarity-desc">Sort: Rarity &#x2193;</option>
+                  <option value="rarity-asc">Sort: Rarity &#x2191;</option>
+                  <option value="name">Sort: Name</option>
+                </select>
+              </div>
+              <div id="cosmetics-grid" class="cosmetics-grid">
+                <div class="loading-placeholder">Loading...</div>
+              </div>
+            </div><!-- /.prof-rail-card -->
+
+            <div class="prof-section">
+              <div class="prof-section-header">
+                <h3>Collector Stats</h3>
+                <span class="prof-section-sub">cosmetic stash</span>
+              </div>
+              <div class="career-stats-grid">
+                <div class="career-stat-card">
+                  <span class="career-stat-label">Owned</span>
+                  <div class="career-stat-value" id="collector-owned">-</div>
+                </div>
+                <div class="career-stat-card">
+                  <span class="career-stat-label">Generated</span>
+                  <div class="career-stat-value" id="collector-generated">-</div>
+                </div>
+                <div class="career-stat-card">
+                  <span class="career-stat-label">Legendary+</span>
+                  <div class="career-stat-value" id="collector-legendary">-</div>
+                </div>
+                <div class="career-stat-card">
+                  <span class="career-stat-label">Hero Badges</span>
+                  <div class="career-stat-value" id="collector-badges">-</div>
+                </div>
+                <div class="career-stat-card">
+                  <span class="career-stat-label">Win Effects</span>
+                  <div class="career-stat-value" id="collector-winfx">-</div>
+                </div>
+                <div class="career-stat-card">
+                  <span class="career-stat-label">Titles</span>
+                  <div class="career-stat-value" id="collector-titles">-</div>
+                  <div class="career-stat-sub" id="collector-equipped-sub">0 equipped</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="prof-section">
+              <div class="prof-section-header">
+                <h3>Collection Progress</h3>
+                <span class="prof-section-sub">catalog completion</span>
+              </div>
+              <div class="career-stats-grid">
+                <div class="career-stat-card">
+                  <span class="career-stat-label">Fixed Catalog</span>
+                  <div class="career-stat-value" id="collection-fixed-owned">-</div>
+                  <div class="career-stat-sub" id="collection-fixed-total">0 total</div>
+                </div>
+                <div class="career-stat-card">
+                  <span class="career-stat-label">Completion</span>
+                  <div class="career-stat-value" id="collection-completion-pct">-</div>
+                </div>
+                <div class="career-stat-card">
+                  <span class="career-stat-label">Store Items</span>
+                  <div class="career-stat-value" id="collection-store-owned">-</div>
+                  <div class="career-stat-sub" id="collection-store-total">0 total</div>
+                </div>
+                <div class="career-stat-card">
+                  <span class="career-stat-label">Categories Complete</span>
+                  <div class="career-stat-value" id="collection-categories-complete">-</div>
+                  <div class="career-stat-sub" id="collection-categories-total">0 categories</div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /.prof-rail -->
+
+        </div><!-- /.prof-layout -->
+
+        <!-- Modals (outside layout grid to allow fixed/absolute positioning) -->
+
+        <!-- Add Friend Modal -->
+        <div id="friend-search-modal" class="friend-search-modal" style="display:none">
+          <div class="friend-modal-content">
+            <div class="friend-modal-header">
+              <h3>Add Friend</h3>
+              <button id="friend-search-close" class="friend-modal-close">&times;</button>
+            </div>
+            <input type="text" id="friend-search-input" class="friend-search-input" placeholder="Search by username..." maxlength="50" autocomplete="off">
+            <div id="friend-search-results" class="friend-search-results">
+              <div class="friends-empty">Type a name to search</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Friend Profile Modal -->
+        <div id="friend-profile-modal" class="friend-profile-modal" style="display:none">
+          <div class="friend-profile-content">
+            <button id="friend-profile-close" class="friend-modal-close">&times;</button>
+            <div class="friend-profile-comparison">
+              <div id="friend-profile-you" class="friend-profile-side">
+                <h3>You</h3>
+                <div class="friend-profile-card"></div>
+              </div>
+              <div class="friend-profile-vs">VS</div>
+              <div id="friend-profile-them" class="friend-profile-side">
+                <h3>Friend</h3>
+                <div class="friend-profile-card"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- New Cosmetics Modal -->
+        <div id="new-cosmetics-modal" class="new-cosmetics-modal" style="display:none" aria-hidden="true">
+          <div class="new-cosmetics-content" role="dialog" aria-modal="true" aria-labelledby="new-cosmetics-title">
+            <button id="new-cosmetics-close" class="friend-modal-close new-cosmetics-close" aria-label="Close">&times;</button>
+            <div class="new-cosmetics-header">
+              <div class="new-cosmetics-eyebrow">Profile Unlocks</div>
+              <h3 id="new-cosmetics-title">New Cosmetics Unlocked</h3>
+              <p id="new-cosmetics-subtitle">You earned new cosmetics. Equip them now or review them later in your profile.</p>
+            </div>
+            <div id="new-cosmetics-grid" class="new-cosmetics-grid"></div>
+            <div class="new-cosmetics-actions">
+              <button id="new-cosmetics-ok" class="new-cosmetics-ok">OK</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Wardrobe (Cosmetic Picker) Modal -->
+        <div id="cosmetic-picker-modal" class="cosmetic-picker-modal" style="display:none" aria-hidden="true">
+          <div class="cosmetic-picker-content wd-content" role="dialog" aria-modal="true" aria-labelledby="wd-cat-title">
+            <div class="wd-you">
+              <div class="wd-you-bg" id="wd-you-bg"></div>
+              <button id="cosmetic-picker-close" class="wd-close" aria-label="Close">&times;</button>
+              <span class="wd-you-avwrap"><span class="wd-you-face"><img id="wd-you-av" class="wd-you-av" src="" alt="" referrerpolicy="no-referrer" style="display:none"></span></span>
+              <div class="wd-you-id">
+                <div class="wd-you-title" id="wd-you-title"></div>
+                <div class="wd-you-name" id="wd-you-name">You</div>
+              </div>
+              <div class="wd-you-wordwrap">
+                <div class="wd-you-wordlbl">Your words in game</div>
+                <div class="wd-you-word" id="wd-you-word">WORDY</div>
+              </div>
+            </div>
+            <div class="wd-body">
+              <nav class="wd-rail" id="wd-rail"></nav>
+              <div class="wd-gridwrap">
+                <div class="wd-gridhead"><h3 id="wd-cat-title"></h3><span id="wd-cat-sub"></span></div>
+                <div id="cosmetic-picker-grid" class="cosmetic-picker-grid wd-grid"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Businesses Tab — EMPIRE (Toon Tower skin, rendered by /portal/js/empire.js) -->
+      <section id="tab-businesses" class="tab-content">
+        <div class="emp-page">
+
+        <!-- Header strip: cash / income / presence / managers / buffs / walker -->
+        <div id="emp-header" class="emp-header">
+          <div class="loading-placeholder">Loading your empire...</div>
+        </div>
+
+        <!-- All 11 business cards (Empire.render fills this grid) -->
+        <div id="businesses-grid" class="emp-grid">
+          <div class="loading-placeholder">Loading...</div>
+        </div>
+
+        <!-- Hidden hooks kept so legacy renderers never null-crash if
+             empire.js fails to load and portal.js falls back -->
+        <div class="emp-legacy-hooks" hidden aria-hidden="true">
+          <div id="biz-buffs-list"></div>
+          <div id="biz-breakdown-rows"></div>
+        </div>
+
+        <details class="prof-section prof-section-collapsible">
+          <summary class="prof-section-header prof-section-toggle">
+            <h3>Business Lifetime</h3>
+            <span class="prof-section-sub">managed empires</span>
+            <span class="prof-section-chevron" aria-hidden="true">&#x25BE;</span>
+          </summary>
+          <div class="prof-section-body">
+            <div class="career-stats-grid">
+              <div class="career-stat-card">
+                <span class="career-stat-label">Businesses Owned</span>
+                <div class="career-stat-value" id="businesses-owned">-</div>
+              </div>
+              <div class="career-stat-card">
+                <span class="career-stat-label">Total Prestige</span>
+                <div class="career-stat-value" id="businesses-prestige">-</div>
+              </div>
+              <div class="career-stat-card">
+                <span class="career-stat-label">Pizzas Served</span>
+                <div class="career-stat-value" id="businesses-pizzas">-</div>
+              </div>
+              <div class="career-stat-card">
+                <span class="career-stat-label">Papers Delivered</span>
+                <div class="career-stat-value" id="businesses-papers">-</div>
+              </div>
+              <div class="career-stat-card">
+                <span class="career-stat-label">Cars Washed</span>
+                <div class="career-stat-value" id="businesses-cars">-</div>
+              </div>
+              <div class="career-stat-card">
+                <span class="career-stat-label">Trades Made</span>
+                <div class="career-stat-value" id="businesses-trades">-</div>
+              </div>
+              <div class="career-stat-card">
+                <span class="career-stat-label">Members Trained</span>
+                <div class="career-stat-value" id="businesses-members">-</div>
+              </div>
+              <div class="career-stat-card">
+                <span class="career-stat-label">Viewers Served</span>
+                <div class="career-stat-value" id="businesses-viewers">-</div>
+              </div>
+              <div class="career-stat-card">
+                <span class="career-stat-label">Users Served</span>
+                <div class="career-stat-value" id="businesses-users">-</div>
+              </div>
+              <div class="career-stat-card">
+                <span class="career-stat-label">Clients Served</span>
+                <div class="career-stat-value" id="businesses-clients">-</div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <details class="prof-section prof-section-collapsible">
+          <summary class="prof-section-header prof-section-toggle">
+            <h3>Economy Stats</h3>
+            <span class="prof-section-sub">earned and spent</span>
+            <span class="prof-section-chevron" aria-hidden="true">&#x25BE;</span>
+          </summary>
+          <div class="prof-section-body">
+            <div class="career-stats-grid">
+              <div class="career-stat-card">
+                <span class="career-stat-label">XP Earned</span>
+                <div class="career-stat-value" id="economy-coins-earned">-</div>
+              </div>
+              <div class="career-stat-card">
+                <span class="career-stat-label">XP Spent</span>
+                <div class="career-stat-value" id="economy-coins-spent">-</div>
+              </div>
+              <div class="career-stat-card">
+                <span class="career-stat-label">Gift Coins Earned</span>
+                <div class="career-stat-value" id="economy-gift-earned">-</div>
+              </div>
+              <div class="career-stat-card">
+                <span class="career-stat-label">Gift Coins Spent</span>
+                <div class="career-stat-value" id="economy-gift-spent">-</div>
+              </div>
+              <div class="career-stat-card">
+                <span class="career-stat-label">Cosmetic Purchases</span>
+                <div class="career-stat-value" id="economy-cosmetic-purchases">-</div>
+              </div>
+              <div class="career-stat-card">
+                <span class="career-stat-label">Set Purchases</span>
+                <div class="career-stat-value" id="economy-set-purchases">-</div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        </div><!-- /.emp-page -->
+      </section>
+
+      <!-- Stock Mogul (accessed from Empire) -->
+      <section id="tab-stockmogul" class="tab-content">
+        <button class="sm-back-btn" onclick="openEmpireView()">&larr; Back to Empire</button>
+        <div id="stockmogul-container" class="sm-container">
+          <div class="sm-loading">Loading Portfolio...</div>
+        </div>
+      </section>
+
+      <!-- Car Wash (accessed from Empire) -->
+      <section id="tab-carwash" class="tab-content">
+        <button class="cw-back-btn" onclick="openEmpireView()">&larr; Back to Empire</button>
+        <div id="carwash-container" class="cw-container">
+          <div class="cw-loading">Loading Car Wash...</div>
+        </div>
+      </section>
+
+      <!-- Pizza Shop (accessed from Empire) -->
+      <section id="tab-pizza" class="tab-content">
+        <button class="pizza-back-btn" onclick="openEmpireView()">&larr; Back to Empire</button>
+        <div id="pizza-container" class="pizza-container">
+          <div class="loading-placeholder">Loading Pizza Shop...</div>
+        </div>
+      </section>
+
+      <!-- Newspaper Route (accessed from Empire) -->
+      <section id="tab-newspaper" class="tab-content">
+        <button class="news-back-btn" onclick="openEmpireView()">&larr; Back to Empire</button>
+        <div id="newspaper-container" class="news-container">
+          <div class="loading-placeholder">Loading Newspaper Route...</div>
+        </div>
+      </section>
+
+      <!-- Gym (accessed from Empire) -->
+      <section id="tab-gym" class="tab-content">
+        <button class="managed-back-btn" onclick="openEmpireView()">&larr; Back to Empire</button>
+        <div id="gym-container" class="managed-container managed-container--gym">
+          <div class="loading-placeholder">Loading Gym...</div>
+        </div>
+      </section>
+
+      <!-- Cinema (accessed from Empire) -->
+      <section id="tab-cinema" class="tab-content">
+        <button class="managed-back-btn" onclick="openEmpireView()">&larr; Back to Empire</button>
+        <div id="cinema-container" class="managed-container managed-container--cinema">
+          <div class="loading-placeholder">Loading Movie Theater...</div>
+        </div>
+      </section>
+
+      <!-- Tech Startup (accessed from Empire) -->
+      <section id="tab-startup" class="tab-content">
+        <button class="managed-back-btn" onclick="openEmpireView()">&larr; Back to Empire</button>
+        <div id="startup-container" class="managed-container managed-container--startup">
+          <div class="loading-placeholder">Loading Tech Startup...</div>
+        </div>
+      </section>
+
+      <!-- Bank (accessed from Empire) -->
+      <section id="tab-bank" class="tab-content">
+        <button class="managed-back-btn" onclick="openEmpireView()">&larr; Back to Empire</button>
+        <div id="bank-container" class="managed-container managed-container--bank">
+          <div class="loading-placeholder">Loading Bank...</div>
+        </div>
+      </section>
+
+      <!-- Library (top-level tab) -->
+      <section id="tab-library" class="tab-content">
+        <div id="library-container" class="lib-container">
+          <div class="loading-placeholder">Loading Library...</div>
+        </div>
+        <div class="lib-empire-cta" id="lib-empire-cta" style="display:none">
+          <div class="lib-empire-cta-icon">🏢</div>
+          <div class="lib-empire-cta-copy">
+            <div class="lib-empire-cta-title">Tycoon Empire</div>
+            <div class="lib-empire-cta-text">Manage your businesses, collect earnings, and grow your empire.</div>
+            <div class="lib-empire-cta-stats" id="lib-empire-cta-stats"></div>
+          </div>
+          <button class="lib-empire-cta-btn" onclick="openEmpireView()">Open Empire</button>
+        </div>
+      </section>
+
+      <!-- Store Tab -->
+      <section id="tab-store" class="tab-content">
+        <!-- Store Header -->
+        <div class="store-hero">
+          <div class="store-hero-bg"></div>
+          <div class="store-hero-content">
+            <h2 class="store-hero-title">Cosmetics Store</h2>
+            <p class="store-hero-sub">Upgrade your look. Boost your game.</p>
+            <div class="store-coins-row">
+              <div class="store-coins-display">
+                  <span class="store-coins-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-xp"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="13" r="4.1" fill="currentColor"/><circle cx="14.8" cy="9" r="3.6" fill="#79d7ff"/><circle cx="16.5" cy="15.2" r="2.8" fill="#b88cff"/><circle cx="7.2" cy="8.3" r="2.4" fill="#ffd36e"/></svg></span></span>
+                <span id="store-coin-balance" class="store-coins-value">-</span>
+              </div>
+              <div class="store-coins-display store-gift-coins-display">
+                <span class="store-coins-icon">&#x1F381;</span>
+                <span id="store-gift-balance" class="store-coins-value">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <section id="store-guidance" class="reward-guide-card reward-guide-card-store">
+          <div class="loading-placeholder">Loading store guide...</div>
+        </section>
+
+        <!-- Store Preview Panel -->
+        <div class="store-preview-panel">
+          <div id="store-preview-badge-bg" class="preview-badge-bg"></div>
+          <div class="preview-profile">
+            <div class="preview-avatar-wrap store-preview-avatar-wrap">
+              <img id="store-preview-avatar" class="preview-avatar" src="" alt="">
+            </div>
+            <div class="preview-info">
+              <div id="store-preview-title" class="preview-title-container"></div>
+              <div id="store-preview-name" class="preview-name">Player</div>
+              <div id="store-preview-word" class="preview-word">WORDY</div>
+            </div>
+          </div>
+          <button id="store-preview-reset" class="store-preview-reset-btn">Reset Preview</button>
+        </div>
+
+        <!-- Store Filters -->
+        <div class="store-filters">
+          <div class="store-filter-row">
+            <div class="store-filter-group">
+              <label>Category</label>
+              <select id="store-cat-filter">
+                <option value="all">All Categories</option>
+                <option value="word_color">Word Colors</option>
+                <option value="word_glow">Word Glows</option>
+                <option value="profile_border">Borders</option>
+                <option value="profile_glow">Glows</option>
+                <option value="name_glow">Name Glows</option>
+                <option value="name_color">Name Colors</option>
+                <option value="title">Titles</option>
+                <option value="win_effect">Win Effects</option>
+                <option value="hero_badge">Hero Badge</option>
+                <option value="gift">&#x1F381; Gift Items</option>
+              </select>
+            </div>
+            <div class="store-filter-group">
+              <label>Rarity</label>
+              <select id="store-rarity-filter">
+                <option value="all">All Rarities</option>
+                <option value="common">Common</option>
+                <option value="uncommon">Uncommon</option>
+                <option value="rare">Rare</option>
+                <option value="epic">Epic</option>
+                <option value="legendary">Legendary</option>
+                <option value="ultra">Ultra</option>
+                <option value="aux">AUX</option>
+              </select>
+            </div>
+            <div class="store-filter-group">
+              <label>Set</label>
+              <select id="store-set-filter">
+                <option value="all">All Items</option>
+                <option value="none">No Set</option>
+                <option value="pixel">Pixel</option>
+                <option value="steampunk">Steampunk</option>
+                <option value="sakura">Sakura</option>
+                <option value="storm">Storm</option>
+                <option value="dragon">Dragon</option>
+                <option value="quantum">Quantum</option>
+                <option value="america">Stars & Stripes</option>
+                <option value="canada">Great North</option>
+              </select>
+            </div>
+            <div class="store-filter-group">
+              <label>Buff</label>
+              <select id="store-buff-filter">
+                <option value="all">All Buffs</option>
+                <option value="tap_boost">Tap Power</option>
+                <option value="word_game_boost">Word Game Money</option>
+                <option value="biz_boost">Biz Income</option>
+                <option value="offline_boost">Offline Income</option>
+                <option value="combo_boost">Combo Max</option>
+                <option value="coin_bonus">All XP</option>
+                <option value="prestige">All Income</option>
+                <option value="lucky_bonus">Lucky 2x</option>
+                <option value="library_boost">Library Income</option>
+              </select>
+            </div>
+          </div>
+          <div class="store-filter-row store-sort-row">
+            <div class="store-filter-group">
+              <label>Sort by</label>
+              <select id="store-sort">
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="rarity-asc">Rarity: Common First</option>
+                <option value="rarity-desc">Rarity: Ultra First</option>
+                <option value="buff-desc">Buff: Strongest First</option>
+                <option value="buff-asc">Buff: Weakest First</option>
+                <option value="name-asc">Name: A-Z</option>
+              </select>
+            </div>
+            <div class="store-result-count"><span id="store-count">0</span> items</div>
+          </div>
+        </div>
+
+        <!-- Store Grid -->
+        <div id="store-grid" class="store-grid">
+          <div class="loading-placeholder">Loading store...</div>
+        </div>
+
+        <!-- Store Sets Section -->
+        <div id="store-sets-section"></div>
+      </section>
+
+      <!-- Membership Tab (former Season Pass tab — pass removed 2026-07-20) -->
+      <section id="tab-pass" class="tab-content">
+        <div class="pass-shell">
+
+          <!-- Hero -->
+          <section class="pass-hero" id="pass-hero">
+            <div class="pass-hero-upper">
+              <div class="pass-hero-copy">
+                <div class="pass-hero-eyebrow">Membership</div>
+                <h2 class="pass-hero-title">Support Word Tycoon</h2>
+                <p class="pass-hero-sub" id="pass-membership-status">Support Word Tycoon and unlock every premium game mode.</p>
+              </div>
+              <div class="pass-hero-badges">
+                <span class="pass-plan-pill" id="pass-membership-pill">Free Tier</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Plans -->
+          <section class="pass-plans-section">
+            <div class="pass-plans-header">
+              <div class="pass-plans-title">Plans</div>
+              <div class="pass-plans-sub">Donor Class unlocks every premium game mode, stream voice perks, batch guessing, and exclusive profile logos. TikTok Super Fans of the owner channel get the game unlock free.</div>
+            </div>
+            <div class="pass-plan-grid" id="pass-plan-grid"></div>
+          </section>
+
+        </div>
+      </section>
+
+      <!-- (Cosmetics re-homed into Profile tab) -->
+
+      <!-- Feed Tab — global social feed (wins, dailies, purchases) + main chat -->
+      <section id="tab-feed" class="tab-content">
+        <div class="feed-layout">
+          <div class="feed-subtabs">
+            <button type="button" class="feed-subtab active" data-pane="activity">Activity</button>
+            <button type="button" class="feed-subtab" data-pane="chat">Chat</button>
+          </div>
+
+          <div class="feed-pane active" data-pane="activity">
+            <div id="feed-list" class="feed-list">
+              <div class="feed-loading">Loading the feed…</div>
+            </div>
+            <button type="button" id="feed-load-more" class="feed-load-more" style="display:none">Load more</button>
+          </div>
+
+          <div class="feed-pane" data-pane="chat">
+            <div class="feed-chat-box">
+              <div id="feed-chat-list" class="feed-chat-list"></div>
+              <div id="feed-chat-form" class="feed-chat-form">
+                <input type="text" id="feed-chat-input" class="feed-chat-input" maxlength="500" placeholder="Say something…">
+                <button type="button" id="feed-chat-send" class="feed-chat-send">Send</button>
+              </div>
+              <div id="feed-chat-signin" class="feed-chat-signin" style="display:none">
+                <div class="feed-signin-note"><button type="button">Sign in</button> to chat with other players.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- History Tab -->
+      <section id="tab-history" class="tab-content">
+        <div class="history-summary-grid">
+          <article class="history-summary-card">
+            <div class="history-summary-label">Earned Today</div>
+            <div class="history-summary-value" id="history-earned-today">—</div>
+            <div class="history-summary-sub">XP from tracked economy events</div>
+          </article>
+          <article class="history-summary-card">
+            <div class="history-summary-label">Spent Today</div>
+            <div class="history-summary-value" id="history-spent-today">—</div>
+            <div class="history-summary-sub">XP spent from tracked economy events</div>
+          </article>
+          <article class="history-summary-card">
+            <div class="history-summary-label">Last Business Collect</div>
+            <div class="history-summary-value history-summary-value-sm" id="history-last-business">—</div>
+            <div class="history-summary-sub" id="history-last-business-sub">No business collects yet</div>
+          </article>
+          <article class="history-summary-card">
+            <div class="history-summary-label">Last Monthly Grant</div>
+            <div class="history-summary-value history-summary-value-sm" id="history-last-grant">—</div>
+            <div class="history-summary-sub" id="history-last-grant-sub">No membership grants yet</div>
+          </article>
+        </div>
+
+        <div class="history-filters">
+          <select id="history-type-filter">
+            <option value="">All Activity</option>
+            <option value="business">Business</option>
+            <option value="rewards">Rewards</option>
+            <option value="store">Store</option>
+            <option value="membership">Membership</option>
+          </select>
+          <div class="history-pagination">
+            <button id="history-prev" class="page-btn" disabled>&laquo; Prev</button>
+            <span id="history-page-info">Page 1</span>
+            <button id="history-next" class="page-btn">Next &raquo;</button>
+          </div>
+        </div>
+        <div id="history-list" class="history-list">
+          <div class="loading-placeholder">Loading...</div>
+        </div>
+      </section>
+
+      <!-- (Word Games + Friends re-homed into main WG tab and Profile tab) -->
+
+      <!-- How to Play Tab -->
+      <section id="tab-howtoplay" class="tab-content">
+        <div class="htp-hero">
+          <h2 class="htp-hero-title">How to Play</h2>
+          <p class="htp-hero-sub">Learn the rules for all 16 Word Tycoon games</p>
+        </div>
+
+        <!-- Rewards & Cosmetics Guide -->
+        <div class="htp-game" id="htp-rewards" style="--htp-c:#ffd700; margin-bottom:24px;">
+          <div class="htp-game-header">
+            <h3 style="color:#ffd700">Rewards & Cosmetics</h3>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>How Rewards Work</h4>
+              <p>Every game mode rewards you differently. Complete daily and weekly challenges to earn <strong>cosmetics</strong> that customize your profile!</p>
+            </div>
+            <div class="htp-step">
+              <h4>Reward Tiers</h4>
+              <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin:8px 0;">
+                  <thead>
+                    <tr style="border-bottom:2px solid #333;">
+                      <th style="text-align:left;padding:8px;color:#ffd700;">Mode</th>
+                      <th style="text-align:left;padding:8px;color:#4ade80;">XP</th>
+                      <th style="text-align:left;padding:8px;color:#a78bfa;">Cosmetics</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style="border-bottom:1px solid #222;">
+                      <td style="padding:8px;">Solo (Normal)</td>
+                      <td style="padding:8px;color:#4ade80;">XP with multipliers</td>
+                      <td style="padding:8px;color:#888;">None</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #222;">
+                      <td style="padding:8px;">Online (Normal)</td>
+                      <td style="padding:8px;color:#4ade80;">XP reward</td>
+                      <td style="padding:8px;color:#888;">None</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #222;background:rgba(255,215,0,0.05);">
+                      <td style="padding:8px;">Solo Daily</td>
+                      <td style="padding:8px;color:#4ade80;">3x XP bonus</td>
+                      <td style="padding:8px;color:#ffd700;">1 Cosmetic</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #222;background:rgba(167,139,250,0.05);">
+                      <td style="padding:8px;">Solo Weekly</td>
+                      <td style="padding:8px;color:#4ade80;">Normal XP</td>
+                      <td style="padding:8px;color:#a78bfa;">Loot Box (3 items)</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #222;background:rgba(255,215,0,0.08);">
+                      <td style="padding:8px;">Online Daily Win</td>
+                      <td style="padding:8px;color:#4ade80;">3x XP bonus</td>
+                      <td style="padding:8px;color:#ffd700;">Loot Box (3 items)</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #222;background:rgba(167,139,250,0.08);">
+                      <td style="padding:8px;">Online Weekly Win</td>
+                      <td style="padding:8px;color:#4ade80;">Normal XP</td>
+                      <td style="padding:8px;color:#a78bfa;">Loot Box (3 items)</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #222;background:rgba(255,215,0,0.12);">
+                      <td style="padding:8px;font-weight:700;">All 9 Dailies Done</td>
+                      <td style="padding:8px;color:#888;">-</td>
+                      <td style="padding:8px;color:#ffd700;font-weight:700;">BONUS Loot Box (3 items)</td>
+                    </tr>
+                    <tr style="background:rgba(167,139,250,0.12);">
+                      <td style="padding:8px;font-weight:700;">All 5 Weeklies Done</td>
+                      <td style="padding:8px;color:#888;">-</td>
+                      <td style="padding:8px;color:#a78bfa;font-weight:700;">BONUS Loot Box (3 items)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Daily Challenge Games (9)</h4>
+              <p style="color:#ffd700;font-weight:600;margin-bottom:4px;">Complete all 9 for a bonus loot box!</p>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin:4px 0;">
+                <span style="background:#1a1a2e;border:1px solid #333;padding:4px 10px;border-radius:6px;font-size:0.8rem;">Wordle</span>
+                <span style="background:#1a1a2e;border:1px solid #333;padding:4px 10px;border-radius:6px;font-size:0.8rem;">Word5000</span>
+                <span style="background:#1a1a2e;border:1px solid #333;padding:4px 10px;border-radius:6px;font-size:0.8rem;">Betwixt</span>
+                <span style="background:#1a1a2e;border:1px solid #333;padding:4px 10px;border-radius:6px;font-size:0.8rem;">PixeLetters</span>
+                <span style="background:#1a1a2e;border:1px solid #333;padding:4px 10px;border-radius:6px;font-size:0.8rem;">Figural</span>
+                <span style="background:#1a1a2e;border:1px solid #333;padding:4px 10px;border-radius:6px;font-size:0.8rem;">UnWordle</span>
+                <span style="background:#1a1a2e;border:1px solid #333;padding:4px 10px;border-radius:6px;font-size:0.8rem;">recTangled</span>
+                <span style="background:#1a1a2e;border:1px solid #333;padding:4px 10px;border-radius:6px;font-size:0.8rem;">erecTangled</span>
+                <span style="background:#1a1a2e;border:1px solid #333;padding:4px 10px;border-radius:6px;font-size:0.8rem;">Triangled</span>
+              </div>
+              <p style="font-size:0.8rem;color:var(--text-dim);margin-top:6px;">Color500 also has a daily challenge with the same rewards — it just isn't required for the bonus box.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Weekly Challenge Games (5)</h4>
+              <p style="color:#a78bfa;font-weight:600;margin-bottom:4px;">Complete all 5 for a bonus loot box!</p>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin:4px 0;">
+                <span style="background:#1a1a2e;border:1px solid #333;padding:4px 10px;border-radius:6px;font-size:0.8rem;">Subtextle</span>
+                <span style="background:#1a1a2e;border:1px solid #333;padding:4px 10px;border-radius:6px;font-size:0.8rem;">recTangled</span>
+                <span style="background:#1a1a2e;border:1px solid #333;padding:4px 10px;border-radius:6px;font-size:0.8rem;">erecTangled</span>
+                <span style="background:#1a1a2e;border:1px solid #333;padding:4px 10px;border-radius:6px;font-size:0.8rem;">Spelling Bee</span>
+                <span style="background:#1a1a2e;border:1px solid #333;padding:4px 10px;border-radius:6px;font-size:0.8rem;">WikiContexto</span>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>XP Multipliers</h4>
+              <p>Your XP is boosted by equipped cosmetics and business upgrades:</p>
+              <ul style="margin:6px 0 0 16px;font-size:0.85rem;color:var(--text-dim);line-height:1.8;">
+                <li><strong style="color:#4ade80;">Word Glow</strong> — Boosts word game earnings</li>
+                <li><strong style="color:#ffd700;">Title & Name Color</strong> — Prestige + XP bonus</li>
+                <li><strong style="color:#a78bfa;">Businesses</strong> — Progression multiplier (up to 3x)</li>
+                <li><strong style="color:#ff6b6b;">Daily 3x</strong> — First daily completion each day</li>
+                <li><strong style="color:#22d3ee;">Lucky 2x</strong> — Random chance from Win Effect cosmetic</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <nav class="htp-nav" id="htp-nav">
+          <a href="#htp-rewards" class="htp-nav-btn" style="--htp-c:#ffd700">Rewards</a>
+          <a href="#htp-Subtextle" class="htp-nav-btn" style="--htp-c:#4a9eff">Subtextle</a>
+          <a href="#htp-rectangled" class="htp-nav-btn" style="--htp-c:#22d3ee">recTangled</a>
+          <a href="#htp-word500" class="htp-nav-btn" style="--htp-c:#9b59b6">Word5000</a>
+          <a href="#htp-wordle" class="htp-nav-btn" style="--htp-c:#6aaa64">Wordle</a>
+          <a href="#htp-betwixt" class="htp-nav-btn" style="--htp-c:#e06c9a">Betwixt</a>
+          <a href="#htp-pixeletters" class="htp-nav-btn" style="--htp-c:#00bcd4">PixeLetters</a>
+          <a href="#htp-spellingbee" class="htp-nav-btn" style="--htp-c:#ffab00">Spelling Bee</a>
+          <a href="#htp-figural" class="htp-nav-btn" style="--htp-c:#ff7043">Figural</a>
+          <a href="#htp-unwordle" class="htp-nav-btn" style="--htp-c:#ff6b6b">UnWordle</a>
+          <a href="#htp-erectangled" class="htp-nav-btn" style="--htp-c:#44cc88">erecTangled</a>
+          <a href="#htp-colour500" class="htp-nav-btn" style="--htp-c:#4ade80">Color500</a>
+          <a href="#htp-triangled" class="htp-nav-btn" style="--htp-c:#a8b2c0">Triangled</a>
+          <a href="#htp-synapse" class="htp-nav-btn" style="--htp-c:#8b5cf6">Synapse</a>
+          <a href="#htp-wikiSubtextle" class="htp-nav-btn" style="--htp-c:#8a5cf7">WikiContexto</a>
+          <a href="#htp-WikirecTangled" class="htp-nav-btn" style="--htp-c:#ee7a2c">WikirecTangled</a>
+          <a href="#htp-junkdrawer" class="htp-nav-btn" style="--htp-c:#f5a623">Junk Drawer</a>
+          <a href="#htp-library" class="htp-nav-btn" style="--htp-c:#8b5cf6">Library</a>
+        </nav>
+
+        <!-- Wordle -->
+        <div class="htp-game" id="htp-wordle" style="--htp-c:#6aaa64">
+          <div class="htp-game-header">
+            <h3>Wordle</h3>
+                <a href="/wordle/solo/?mode=daily&length=5" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Guess the Word</h4>
+              <p>Type any <strong>5-letter word</strong> and press <strong>Enter</strong> to guess. You have <strong>6 guesses</strong> to find the word!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Example Guess</div>
+                <div class="gh-tile-row">
+                  <div class="gh-tile highlight">H</div>
+                  <div class="gh-tile highlight">E</div>
+                  <div class="gh-tile highlight">L</div>
+                  <div class="gh-tile highlight">L</div>
+                  <div class="gh-tile highlight">O</div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> You can change the word length with the buttons in the top-right corner.</div>
+            </div>
+            <div class="htp-step">
+              <h4>Read the Colors</h4>
+              <p>After each guess, the tiles change color to show how close you are:</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e">W</div><span><strong style="color:#6aaa64">Green</strong> — Correct letter, correct spot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b">I</div><span><strong style="color:#b59f3b">Yellow</strong> — Correct letter, wrong spot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#3a3a3c">X</div><span><strong style="color:#888">Gray</strong> — Letter not in the word</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Use the Clues</h4>
+              <p>Use the color clues to narrow down the answer. The <strong>keyboard</strong> below also updates with colors for each letter.</p>
+              <div class="gh-example">
+                <div class="gh-example-label">If the word is CRISP</div>
+                <div class="gh-tile-row">
+                  <div class="gh-tile absent">G</div>
+                  <div class="gh-tile correct">R</div>
+                  <div class="gh-tile absent">A</div>
+                  <div class="gh-tile present">I</div>
+                  <div class="gh-tile absent">N</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> I is in the word but not here — R is perfect!</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-daily"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="6" width="14" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 4v4M16 4v4M5 10h14M9 14h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> Daily challenges use the same word for all players. Complete it to earn rewards!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Betwixt -->
+        <div class="htp-game" id="htp-betwixt" style="--htp-c:#e06c9a">
+          <div class="htp-game-header">
+            <h3>Betwixt</h3>
+                <a href="/betwixt/solo/" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Find the Secret Word</h4>
+              <p>A secret word is hidden <strong>alphabetically</strong> between two boundaries. Type a word and press <strong>Enter</strong> to guess.</p>
+              <div class="gh-example">
+                <div class="gh-example-label">The word is between…</div>
+                <div class="gh-boundary after"><span>⬇ AFTER</span> — <strong>APPLE</strong></div>
+                <div class="gh-boundary secret"><span><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span> SECRET</span> — <strong>???</strong></div>
+                <div class="gh-boundary before"><span>⬆ BEFORE</span> — <strong>LEMON</strong></div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> The secret word comes after APPLE and before LEMON in the dictionary. Guess any word in that range!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Narrow the Range</h4>
+              <p>Each guess <strong>tightens the boundaries</strong>. If your guess is too early, AFTER moves forward. Too late, BEFORE moves back.</p>
+              <div class="gh-example">
+                <div class="gh-example-label">After guessing GRAPE</div>
+                <div class="gh-boundary after"><span>⬇ AFTER</span> — <strong>GRAPE</strong></div>
+                <div class="gh-boundary secret"><span><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span> SECRET</span> — between here</div>
+                <div class="gh-boundary before"><span>⬆ BEFORE</span> — <strong>LEMON</strong></div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-words"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 7.5c0-1 1-1.8 2.1-1.8h4.2c1 0 1.9.3 2.7.9v11.7c-.8-.6-1.7-.9-2.7-.9H8.6c-1.1 0-2.1.8-2.1 1.8zM17.5 7.5c0-1-1-1.8-2.1-1.8h-4.2c-1 0-1.9.3-2.7.9v11.7c.8-.6 1.7-.9 2.7-.9h4.2c1.1 0 2.1.8 2.1 1.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> The <strong>alphabet bar</strong> highlights which starting letters are still possible, helping you eliminate options fast.</div>
+            </div>
+            <div class="htp-step">
+              <h4>Lock in Letters</h4>
+              <p>When both boundaries share the same letter at a position, that letter is <strong>confirmed</strong> and locked in — no more guessing for that spot!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Confirmed letters</div>
+                <div class="gh-tile-row">
+                  <div class="gh-tile correct">H</div>
+                  <div class="gh-tile highlight">?</div>
+                  <div class="gh-tile highlight">?</div>
+                  <div class="gh-tile correct">E</div>
+                  <div class="gh-tile highlight">?</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> H and E are confirmed — only 3 letters left to find!</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-daily"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="6" width="14" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 4v4M16 4v4M5 10h14M9 14h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> Daily challenges use the same word for all players. Complete it to earn rewards!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PixeLetters -->
+        <div class="htp-game" id="htp-pixeletters" style="--htp-c:#00bcd4">
+          <div class="htp-game-header">
+            <h3>PixeLetters</h3>
+                <a href="/pixeletters/solo/?mode=daily&length=5" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Decode the Pixels</h4>
+              <p>The secret word is hidden as <strong>pixel art</strong>. Each letter is a tiny grid. With each guess, <strong>more pixels are revealed</strong> — figure out what letters they form!</p>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> You have <strong>5 guesses</strong> to figure out the word. Each wrong guess reveals more pixels!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Read the Colors</h4>
+              <p>After each guess, the pixels light up to show how close you are:</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#4d96ff">✓</div><span><strong style="color:#4d96ff">Blue</strong> — Correct letter, correct position (fully revealed)</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#4caf50">●</div><span><strong style="color:#4caf50">Green</strong> — Revealed pixels that match the target letter</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#e53935">✗</div><span><strong style="color:#e53935">Red</strong> — Revealed pixels that don't match the target</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#2a2a3a">?</div><span><strong style="color:#888">Gray</strong> — Pixels not yet revealed</span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-words"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 7.5c0-1 1-1.8 2.1-1.8h4.2c1 0 1.9.3 2.7.9v11.7c-.8-.6-1.7-.9-2.7-.9H8.6c-1.1 0-2.1.8-2.1 1.8zM17.5 7.5c0-1-1-1.8-2.1-1.8h-4.2c-1 0-1.9.3-2.7.9v11.7c.8-.6 1.7-.9 2.7-.9h4.2c1.1 0 2.1.8 2.1 1.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> The <strong>keyboard</strong> also shows pixel previews for each letter you've guessed, helping you track what you know.</div>
+            </div>
+            <div class="htp-step">
+              <h4>Three Difficulty Modes</h4>
+              <p>Choose how pixels are revealed with each guess:</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#4d96ff;font-size:11px">STD</div><span><strong style="color:#4d96ff">Standard</strong> — Pixels reveal <strong>top to bottom</strong>. Easiest mode!</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#ff9800;font-size:11px">+</div><span><strong style="color:#ff9800">Plus</strong> — Each letter reveals in a <strong>random direction</strong> (↓ ↑ ← →)</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#e53935;font-size:11px">PRO</div><span><strong style="color:#e53935">Pro</strong> — Only <strong>one row/column</strong> shown at a time. Hardest!</span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-daily"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="6" width="14" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 4v4M16 4v4M5 10h14M9 14h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> Daily challenges use the same word for all players. Complete it to earn rewards!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Figural -->
+        <div class="htp-game" id="htp-figural" style="--htp-c:#ff7043">
+          <div class="htp-game-header">
+            <h3>Figural</h3>
+                <a href="/figural/solo/?mode=daily&length=5" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Guess the Word</h4>
+              <p>Type any word and press <strong>Enter</strong>. After each guess, every letter gets a <strong>colored symbol</strong> — but the symbols are a mystery!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Example feedback</div>
+                <div class="gh-symbol-row">
+                  <div class="gh-symbol cyan">◆</div>
+                  <div class="gh-symbol magenta">▲</div>
+                  <div class="gh-symbol cyan">◆</div>
+                  <div class="gh-symbol lime">●</div>
+                  <div class="gh-symbol magenta">▲</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> Each letter gets a symbol — but what do they mean?</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> You have <strong>8 guesses</strong> to find the word. Use each guess to learn about both the word AND the symbols!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Decode the Symbols</h4>
+              <p>Three symbols appear in three colors. Each means one of these — but you must <strong>figure out which is which</strong>:</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e">✓</div><span><strong style="color:#6aaa64">Correct</strong> — Right letter, right position</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b">~</div><span><strong style="color:#b59f3b">Wrong Spot</strong> — Letter is in the word, but elsewhere</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#3a3a3c">✗</div><span><strong style="color:#888">Not Present</strong> — Letter isn't in the word at all</span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-weekly"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5l2.2 4.4 4.8.7-3.5 3.3.8 4.7-4.3-2.3-4.3 2.3.8-4.7-3.5-3.3 4.8-.7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span></span> The legend at the top shows <strong>? = ?</strong> for each symbol. As you play, deduce which symbol means what!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Crack the Code</h4>
+              <p>Use <strong>logic</strong> to decode the symbols! If a letter you're sure isn't in the word gets a specific symbol, that symbol must mean "Not Present."</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Deduction example</div>
+                <div class="gh-symbol-row">
+                  <div class="gh-symbol cyan">◆</div>
+                  <div class="gh-symbol magenta">▲</div>
+                  <div class="gh-symbol lime">●</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> If ◆ always appears on wrong letters → ◆ = Not Present</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-daily"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="6" width="14" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 4v4M16 4v4M5 10h14M9 14h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> Daily challenges use the same word and symbols for all players. Complete it to earn rewards!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Word5000 -->
+        <div class="htp-game" id="htp-word500" style="--htp-c:#9b59b6">
+          <div class="htp-game-header">
+            <h3>Word5000</h3>
+            <a href="/game/word500/?mode=daily&length=5" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Guess Any Word</h4>
+              <p>Type a word and press Enter. Word5000 gives you <strong>abstract number clues</strong> instead of colored letters!</p>
+              <div class="gh-example">
+                <div class="gh-color-bar">
+                  <div class="gh-color-segment" style="background:#538d4e">1</div>
+                  <div class="gh-color-segment" style="background:#b59f3b">2</div>
+                  <div class="gh-color-segment" style="background:#3a3a3c">2</div>
+                </div>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Read the Numbers</h4>
+              <p>Three colored counts tell you how close you are:</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e">2</div><span><strong style="color:#6aaa64">Green</strong> &mdash; Letters in the correct position</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b">1</div><span><strong style="color:#b59f3b">Yellow</strong> &mdash; Letters in the word but wrong spot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#3a3a3c">2</div><span><strong style="color:#888">Gray</strong> &mdash; Letters not in the word at all</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Think Strategically</h4>
+              <p>You see counts, not positions &mdash; you won&rsquo;t know <em>which</em> letters are correct. Compare counts across guesses to deduce the word!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Spelling Bee -->
+        <div class="htp-game" id="htp-spellingbee" style="--htp-c:#ffab00">
+          <div class="htp-game-header">
+            <h3>Spelling Bee</h3>
+                <a href="/spellingbee/solo/" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Make Words from 7 Letters</h4>
+              <p>You're given <strong>7 letters</strong> in a honeycomb. Build words using those letters — the <strong>center letter</strong> must be in every word!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">The Honeycomb</div>
+                <div class="gh-hex-grid">
+                  <div class="gh-hex-row"><div class="gh-hex">T</div><div class="gh-hex">A</div></div>
+                  <div class="gh-hex-row"><div class="gh-hex">R</div><div class="gh-hex center">L</div><div class="gh-hex">E</div></div>
+                  <div class="gh-hex-row"><div class="gh-hex">I</div><div class="gh-hex">N</div></div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> The golden center letter <strong>L</strong> must appear in every word you make</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> Words must be at least <strong>4 letters</strong> long. You can reuse letters as many times as you want!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Score Points</h4>
+              <p>Longer words earn more points. Find all the words to complete the puzzle!</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e">4</div><span><strong style="color:#6aaa64">4-letter words</strong> — earn <strong>1 point</strong> each</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b">5+</div><span><strong style="color:#b59f3b">Longer words</strong> — earn <strong>1 point per letter</strong></span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#9b59b6">★</div><span><strong style="color:#c98aff">Rare words</strong> — bonus <strong>+3 points</strong></span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-words"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 7.5c0-1 1-1.8 2.1-1.8h4.2c1 0 1.9.3 2.7.9v11.7c-.8-.6-1.7-.9-2.7-.9H8.6c-1.1 0-2.1.8-2.1 1.8zM17.5 7.5c0-1-1-1.8-2.1-1.8h-4.2c-1 0-1.9.3-2.7.9v11.7c.8-.6 1.7-.9 2.7-.9h4.2c1.1 0 2.1.8 2.1 1.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> Click the hex tiles or type on your keyboard. Hit <strong>Enter</strong> to submit!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Find Pangrams!</h4>
+              <p>A <strong>pangram</strong> uses all 7 letters at least once — it's the ultimate find and earns a <strong>+7 bonus</strong>!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Pangram example</div>
+                <div class="gh-tile-row">
+                  <div class="gh-tile correct">L</div>
+                  <div class="gh-tile correct">A</div>
+                  <div class="gh-tile correct">T</div>
+                  <div class="gh-tile correct">E</div>
+                  <div class="gh-tile correct">R</div>
+                  <div class="gh-tile correct">N</div>
+                  <div class="gh-tile correct">I</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> LATERNI uses all 7 letters — that's a pangram! +7 bonus points</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-weekly"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8v3.5a4 4 0 0 1-8 0zM7 7H5.5A2.5 2.5 0 0 0 8 11M17 7h1.5A2.5 2.5 0 0 1 16 11M12 12v3.2M9 19h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> Use the <strong>shuffle</strong> button to rearrange the outer letters — it can help you spot new words!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- recTangled -->
+        <div class="htp-game" id="htp-rectangled" style="--htp-c:#22d3ee">
+          <div class="htp-game-header">
+            <h3><span style="color:#3EC8E8">r</span><span style="color:#F5920A">e</span><span style="color:#EFC000">c</span><span style="color:#1E52C8">T</span><span style="color:#E83020">a</span><span style="color:#42B238">n</span><span style="color:#88AAFF">g</span><span style="color:#C835B8">l</span><span style="color:#F5920A">e</span><span style="color:#1EB8A8">d</span></h3>
+                <a href="/game/rectangled/mobile-sp.html" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Find Words in the Grid</h4>
+              <p>A grid of letters hides many words. <strong>Trace a path</strong> through adjacent letters — horizontally, vertically, or diagonally — to spell words!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Tracing a word</div>
+                <div class="gh-word-grid" style="grid-template-columns:repeat(4,36px)">
+                  <div class="gh-grid-cell traced">R</div><div class="gh-grid-cell">A</div><div class="gh-grid-cell">N</div><div class="gh-grid-cell">K</div>
+                  <div class="gh-grid-cell">L</div><div class="gh-grid-cell traced">O</div><div class="gh-grid-cell">T</div><div class="gh-grid-cell">S</div>
+                  <div class="gh-grid-cell">E</div><div class="gh-grid-cell traced">S</div><div class="gh-grid-cell traced">E</div><div class="gh-grid-cell">P</div>
+                  <div class="gh-grid-cell">W</div><div class="gh-grid-cell">I</div><div class="gh-grid-cell">N</div><div class="gh-grid-cell">D</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> ROSE traced diagonally through adjacent cells</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> <strong>Drag</strong> across the grid or <strong>type</strong> words and press Enter. Each cell can only be used once per word!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Common vs Rare Words</h4>
+              <p>Words are split into two categories. Find all <strong>common words</strong> to complete the puzzle!</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e">✓</div><span><strong style="color:#6aaa64">Common words</strong> — must find all of these to win</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b">★</div><span><strong style="color:#b59f3b">Rare words</strong> — optional bonus words for extra credit</span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-words"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 7.5c0-1 1-1.8 2.1-1.8h4.2c1 0 1.9.3 2.7.9v11.7c-.8-.6-1.7-.9-2.7-.9H8.6c-1.1 0-2.1.8-2.1 1.8zM17.5 7.5c0-1-1-1.8-2.1-1.8h-4.2c-1 0-1.9.3-2.7.9v11.7c.8-.6 1.7-.9 2.7-.9h4.2c1.1 0 2.1.8 2.1 1.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> Words must be at least <strong>3 letters</strong> long. The progress bar tracks your common word count!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Use the Hints</h4>
+              <p>The grid helps you as you play! Corner hint numbers unlock as you progress: at <strong>25%</strong>, the <strong style="color:#e94560;">red bottom-right number</strong> shows how many unfound common words still <strong>pass through</strong> that cell. At <strong>50%</strong>, the <strong style="color:#4ade80;">green bottom-left number</strong> shows how many unfound common words <strong>start</strong> there. Cells go dark when no more common words use them.</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Grid hints</div>
+                <div class="gh-word-grid" style="grid-template-columns:repeat(3,36px)">
+                  <div class="gh-grid-cell" style="position:relative">C<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">3</span><span style="position:absolute;bottom:1px;left:3px;font-size:9px;color:#4ade80">1</span></div>
+                  <div class="gh-grid-cell" style="position:relative">A<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">5</span><span style="position:absolute;bottom:1px;left:3px;font-size:9px;color:#4ade80">2</span></div>
+                  <div class="gh-grid-cell" style="position:relative">T<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">2</span><span style="position:absolute;bottom:1px;left:3px;font-size:9px;color:#4ade80">1</span></div>
+                  <div class="gh-grid-cell" style="position:relative">O<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">1</span></div>
+                  <div class="gh-grid-cell" style="opacity:0.3">X</div>
+                  <div class="gh-grid-cell" style="position:relative">E<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">4</span><span style="position:absolute;bottom:1px;left:3px;font-size:9px;color:#4ade80">1</span></div>
+                  <div class="gh-grid-cell" style="position:relative">R<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">2</span></div>
+                  <div class="gh-grid-cell" style="opacity:0.3">Z</div>
+                  <div class="gh-grid-cell" style="position:relative">S<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">1</span><span style="position:absolute;bottom:1px;left:3px;font-size:9px;color:#4ade80">1</span></div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> Red = words passing through. Green = words starting here. Greyed cells = no words left.</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-weekly"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8v3.5a4 4 0 0 1-8 0zM7 7H5.5A2.5 2.5 0 0 0 8 11M17 7h1.5A2.5 2.5 0 0 1 16 11M12 12v3.2M9 19h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> Choose from themed puzzles in the selector. Complete the weekly challenge before it rotates!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subtextle -->
+        <div class="htp-game" id="htp-Subtextle" style="--htp-c:#a855f7">
+          <div class="htp-game-header">
+            <h3>Subtextle</h3>
+                <a href="/game/subtextle/" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Guess by Meaning</h4>
+              <p>A secret word is hidden. Type any word and the game tells you how <strong>semantically similar</strong> your guess is — not spelling, but <strong>meaning</strong>!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">If the secret word is OCEAN</div>
+                <div class="gh-rank-list">
+                  <div class="gh-rank-item hot"><span class="gh-rank-num">#12</span> WAVE</div>
+                  <div class="gh-rank-item"><span class="gh-rank-num">#847</span> BOAT</div>
+                  <div class="gh-rank-item"><span class="gh-rank-num">#5,201</span> TREE</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> WAVE is closely related (#12), TREE is far away (#5,201)</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> You have <strong>unlimited guesses</strong>. The goal is to reach <strong>rank #1</strong> — the exact word!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Read the Ranks</h4>
+              <p>Every guess gets a <strong>rank number</strong> showing how close it is in meaning. Lower is better!</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:linear-gradient(135deg,#4ade80,#22c55e)">#1</div><span><strong style="color:#4ade80">Rank 1</strong> — You found the word.</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:linear-gradient(135deg,#ff2d95,#ff6b6b)">Low</div><span><strong style="color:#ff2d95">Hot</strong> (1-1,000) — Very close in meaning</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:linear-gradient(135deg,#a855f7,#6366f1)">Med</div><span><strong style="color:#a855f7">Warm</strong> (1K-10K) — Getting warmer</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:linear-gradient(135deg,#22d3ee,#3b82f6)">High</div><span><strong style="color:#22d3ee">Cool</strong> (10K+) — Not very related</span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-words"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 7.5c0-1 1-1.8 2.1-1.8h4.2c1 0 1.9.3 2.7.9v11.7c-.8-.6-1.7-.9-2.7-.9H8.6c-1.1 0-2.1.8-2.1 1.8zM17.5 7.5c0-1-1-1.8-2.1-1.8h-4.2c-1 0-1.9.3-2.7.9v11.7c.8-.6 1.7-.9 2.7-.9h4.2c1.1 0 2.1.8 2.1 1.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> Guesses showing <strong>"???"</strong> mean the word isn't recognized. Try a different spelling!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Think in Concepts</h4>
+              <p>This isn't about letters — it's about <strong>ideas</strong>. If your guess is "warm," think of words in the same <strong>topic or category</strong> to get closer.</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Strategy example</div>
+                <div class="gh-rank-list">
+                  <div class="gh-rank-item"><span class="gh-rank-num">#3,400</span> FOOD</div>
+                  <div class="gh-rank-item hot"><span class="gh-rank-num">#180</span> FRUIT</div>
+                  <div class="gh-rank-item winner"><span class="gh-rank-num" style="color:#4ade80">#1</span> <strong>APPLE</strong> ✓</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> Narrow down: FOOD → FRUIT → APPLE.</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-weekly"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8v3.5a4 4 0 0 1-8 0zM7 7H5.5A2.5 2.5 0 0 0 8 11M17 7h1.5A2.5 2.5 0 0 1 16 11M12 12v3.2M9 19h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> Each guess bubble fills with <strong>water</strong> based on closeness — greener and fuller means you're getting hot!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- UnWordle -->
+        <div class="htp-game" id="htp-unwordle" style="--htp-c:#ff6b6b">
+          <div class="htp-game-header">
+            <h3>UnWordle</h3>
+                <a href="/unwordle/solo/" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Reverse Wordle</h4>
+              <p>You're given the <strong>answer word</strong> (bottom row in green) and the <strong>color pattern</strong> for each row above it. Fill in words that produce those exact colors!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Example Puzzle</div>
+                <div class="gh-tile-row">
+                  <div class="gh-tile absent">?</div>
+                  <div class="gh-tile absent">?</div>
+                  <div class="gh-tile present">?</div>
+                  <div class="gh-tile absent">?</div>
+                  <div class="gh-tile absent">?</div>
+                </div>
+                <div class="gh-tile-row" style="margin-top:4px">
+                  <div class="gh-tile correct">C</div>
+                  <div class="gh-tile correct">R</div>
+                  <div class="gh-tile correct">A</div>
+                  <div class="gh-tile correct">N</div>
+                  <div class="gh-tile correct">E</div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> The answer is always shown at the bottom in green!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Match the Colors</h4>
+              <p>Each word you enter must produce the <strong>exact color pattern</strong> shown when checked against the answer.</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e">W</div><span><strong style="color:#6aaa64">Green</strong> &mdash; Correct letter, correct spot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b">I</div><span><strong style="color:#b59f3b">Yellow</strong> &mdash; Correct letter, wrong spot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#3a3a3c">X</div><span><strong style="color:#888">Gray</strong> &mdash; Letter not in the word</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Hard Mode Rules</h4>
+              <p>Rows are solved <strong>top to bottom</strong>. Revealed hints carry forward &mdash; green letters must stay in position, yellow letters must appear in later rows. Switch between <strong>Normal</strong> (3 rows) and <strong>Hard</strong> (5 rows).</p>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-weekly"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 8v4l2.6 1.7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span> Race the clock &mdash; your solve time is tracked! A new daily puzzle appears each day.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- erecTangled -->
+        <div class="htp-game" id="htp-erectangled" style="--htp-c:#44cc88">
+          <div class="htp-game-header">
+            <h3>erecTangled</h3>
+                <a href="/game/erectangled/sp.html" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>The Grid Grows</h4>
+              <p>Start with a small <strong>center ring</strong> of letters. Find all the <strong>common words</strong> hidden in the grid to <strong>expand outward</strong>, revealing new rings of letters.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Swipe or Type</h4>
+              <p><strong>Swipe</strong> across adjacent letters to trace a word, or simply <strong>type</strong> the word in chat. Words must be at least <strong>3 letters</strong> long.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Word Tiers</h4>
+              <p><strong class="common-color">Common</strong> words advance the ring. <strong class="rare-color">Rare</strong> words earn bonus coins. <strong class="hidden-color">Hidden</strong> words trigger a <strong>5,000 coin jackpot</strong>! As the current ring fills, corner hint numbers unlock: at <strong>25%</strong> the <strong style="color:#e94560;">red bottom-right number</strong> shows how many common words still pass through a cell, and at <strong>50%</strong> the <strong style="color:#4ade80;">green bottom-left number</strong> shows how many common words start there.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Final Ring</h4>
+              <p>When the last ring is revealed, <strong>dead-end letters are replaced</strong> with new ones, unlocking even more words. Clear them all to complete the puzzle!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Color500 -->
+        <div class="htp-game" id="htp-colour500" style="--htp-c:#4ade80">
+          <div class="htp-game-header">
+            <h3>Color500</h3>
+                <a href="/game/colour500/solo" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Crack the Color Code</h4>
+              <p>Classic <strong>Mastermind</strong>, played with colors. A secret <strong>color code</strong> is hidden &mdash; build a guess from the palette and submit it. You have <strong>10 guesses</strong> to crack the code!</p>
+            </div>
+            <div class="htp-step">
+              <h4>Read the Pegs</h4>
+              <p>After each guess, feedback pegs show how close you are &mdash; but not <em>which</em> slots are right:</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e"></div><span><strong style="color:#4ade80">Green</strong> &mdash; Right color, right slot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b"></div><span><strong style="color:#b59f3b">Yellow</strong> &mdash; Right color, wrong slot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#3a3a3c"></div><span><strong style="color:#888">Gray</strong> &mdash; Color not in the code</span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> Use logic like Wordle &mdash; reuse confirmed colors and shuffle the misplaced ones.</div>
+            </div>
+            <div class="htp-step">
+              <h4>A New Code Every Day</h4>
+              <p>A fresh <strong>daily code</strong> drops every day, and it earns daily rewards just like the word games. You can also play it live in multiplayer from TikTok chat!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Triangled -->
+        <div class="htp-game" id="htp-triangled" style="--htp-c:#a8b2c0">
+          <div class="htp-game-header">
+            <h3>Triangled</h3>
+                <a href="/game/triangled/" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Trace the Theme Words</h4>
+              <p>A <strong>triangular grid</strong> of letters hides a set of words that all share a secret <strong>theme</strong>. <strong>Drag across adjacent letters</strong> to trace a word, then release to submit.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Find the Spangram</h4>
+              <p>One special word &mdash; the <strong>spangram</strong> &mdash; describes the theme itself and stretches across the puzzle. Finding it is the key to unlocking what the other words have in common!</p>
+            </div>
+            <div class="htp-step">
+              <h4>Clear the Triangle</h4>
+              <p>Every letter in the grid is used <strong>exactly once</strong>. Find all the theme words to complete the puzzle &mdash; a new triangle drops <strong>every day</strong>, and it counts toward your daily challenge rewards.</p>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-daily"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="6" width="14" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 4v4M16 4v4M5 10h14M9 14h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> Stuck? If a traced word isn't a theme word, it may still be valid &mdash; keep experimenting to reveal the theme.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Synapse -->
+        <div class="htp-game" id="htp-synapse" style="--htp-c:#8b5cf6">
+          <div class="htp-game-header">
+            <h3>Synapse</h3>
+                <a href="/synapse" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Bridge Two Distant Words</h4>
+              <p>Each day gives you <strong>two distant words</strong> at opposite corners of the sky. Add words to build a <strong>bridge of meaning</strong> between them &mdash; type words one at a time, or space-separated to batch.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Links Form Automatically</h4>
+              <p>Every word you add lights up <strong>links</strong> to the words it resembles &mdash; similarity is judged by <strong>word-embedding models</strong>, the same brains behind Subtextle. A word only keeps its <strong>strongest few links</strong>, so <strong>chains beat hubs</strong>!</p>
+            </div>
+            <div class="htp-step">
+              <h4>Connect the Corners</h4>
+              <p>Win by connecting the two corner stars through an <strong>unbroken chain</strong>. You have <strong>200 words</strong> before the sky fills up &mdash; the fewer you use, the better.</p>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> In <strong>Multiplayer</strong>, every player is a colored planet building their own constellation &mdash; first to connect the corners wins!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WikiContexto -->
+        <div class="htp-game" id="htp-wikiSubtextle" style="--htp-c:#8a5cf7">
+          <div class="htp-game-header">
+            <h3>WikiContexto</h3>
+                <a href="/game/wikiSubtextle/" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Find the Hidden Article</h4>
+              <p>A secret <strong>Wikipedia article</strong> is hidden. Type any word to guess &mdash; each guess is <strong>ranked by how close its meaning is</strong> to the article, Contexto-style.</p>
+              <div class="gh-example">
+                <div class="gh-example-label">If the article is "Volcano"</div>
+                <div class="gh-rank-list">
+                  <div class="gh-rank-item hot"><span class="gh-rank-num">#3</span> lava</div>
+                  <div class="gh-rank-item"><span class="gh-rank-num">#41</span> mountain</div>
+                  <div class="gh-rank-item"><span class="gh-rank-num">#2870</span> sandwich</div>
+                </div>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Follow the Heat</h4>
+              <p>Lower rank = closer to the answer. Use your best guesses as stepping stones &mdash; when a word ranks hot, explore words related to it until you zero in on the article.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Solo or Live Multiplayer</h4>
+              <p>Play the <strong>solo</strong> puzzle at your own pace, or join <strong>live multiplayer</strong> where everyone races to reveal the same article. The <strong>weekly challenge</strong> counts toward your weekly bonus loot box!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- WikirecTangled -->
+        <div class="htp-game" id="htp-WikirecTangled" style="--htp-c:#ee7a2c">
+          <div class="htp-game-header">
+            <h3>WikirecTangled</h3>
+                <a href="/game/WikirecTangled/solo" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Word Search Meets Wikipedia</h4>
+              <p>Find words hidden in a <strong>letter grid</strong> &mdash; every word you can trace <strong>appears in a secret Wikipedia article</strong>. Swipe across adjacent letters to trace, or type your word.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Reveal the Article</h4>
+              <p>Each found word <strong>uncovers part of the article</strong>. Rarer finds reveal more &mdash; work through <strong>common</strong>, <strong>rare</strong>, and <strong>ultra</strong> tier words to expose the title.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Name It to Win</h4>
+              <p>Once you think you know what the article is, <strong>guess its title</strong> to finish the puzzle. A new grid and a new secret article drop <strong>every day</strong>!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Junk Drawer -->
+        <div class="htp-game" id="htp-junkdrawer" style="--htp-c:#f5a623">
+          <div class="htp-game-header">
+            <h3>Junk Drawer</h3>
+                <a href="https://junkdrawer.live" class="htp-play-btn">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Drop &amp; Merge</h4>
+              <p>Drop everyday household items into the drawer. When <strong>two identical items touch, they merge</strong> into the next bigger item &mdash; paperclips, rings, keys, wallets, phones and beyond.</p>
+            </div>
+            <div class="htp-step">
+              <h4>Climb the Chain</h4>
+              <p>Keep merging to climb the item chain all the way up to the <strong>Big Screen TV</strong>. Bigger merges mean bigger points!</p>
+            </div>
+            <div class="htp-step">
+              <h4>Don't Overflow</h4>
+              <p>The drawer only holds so much &mdash; if the clutter piles over the top, the game ends. Plan your drops and leave room for big merges.</p>
+              <div class="gh-tip"><span class="gh-tip-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2l6.7 11.6H5.3L12 5.2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9.2v3.9M12 15.9h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span></span> The only non-word game in the hub &mdash; a perfect brain break between puzzles.</div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Library -->
+        <div class="htp-game" id="htp-library" style="--htp-c:#8b5cf6">
+          <div class="htp-game-header">
+            <h3>Your Library</h3>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Collect Words</h4>
+              <p>Every time you <strong>win a game</strong> or <strong>find a valid word</strong>, it gets added to your Library. Words are collected from <strong>all games</strong> &mdash; Wordle, Betwixt, Spelling Bee, and more!</p>
+            </div>
+            <div class="htp-step">
+              <h4>Level Up Your Library</h4>
+              <p>Your Library starts at <strong>Level 1</strong> and levels up as you discover more unique words. Higher levels mean <strong>more XP per second</strong>!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Level Milestones</div>
+                <div class="gh-rank-list">
+                  <div class="gh-rank-item"><span class="gh-rank-num">Lv.2</span> 100 words</div>
+                  <div class="gh-rank-item"><span class="gh-rank-num">Lv.3</span> 200 words</div>
+                  <div class="gh-rank-item"><span class="gh-rank-num">Lv.5</span> 600 words</div>
+                  <div class="gh-rank-item hot"><span class="gh-rank-num">Lv.100</span> 800,000 words</div>
+                </div>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Each Word Counts Once</h4>
+              <p>Finding the same word twice won't add it again &mdash; only <strong>unique</strong> words grow your library. Try different games to discover new words!</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/win-effects.js?v=3"></script>
+  <script src="/js/ambient-fx.js?v=3"></script>
+  <script src="/js/pfp-cosmetics.js?v=15"></script>
+  <script src="/portal/js/cosmetic-renderer.js?v=8"></script>
+  <!-- v147: restoreTab() deep-links /rules -> How to Play. The bump is
+       load-bearing — portal.js is served with max-age=14400, so without a new
+       query string browsers keep the old file for up to 4h and the deep link
+       silently does nothing. -->
+  <script src="/portal/js/portal.js?v=20261003-edmonton"></script>
+  <script src="/portal/js/feed.js?v=1"></script>
+  <script src="/portal/js/empire.js?v=6"></script>
+  <!-- cosmetic-reward.js removed 2026-08-03: full-screen unlock popup retired
+       on the portal — new cosmetics surface as NEW badges in the Wardrobe. -->
+
+  <script src="/portal/js/daily-claim.js?v=7"></script>
+  <script src="/portal/js/jackpot-toast.js?v=1"></script>
+  <script src="/chat-widget.js?v=21"></script>
+  <footer class="wt-legal-footer">
+    <a href="/privacy">Privacy</a> &middot; <a href="/terms">Terms</a> &middot; <a href="https://discord.gg/C8Nm2jEZFC" target="_blank" rel="noopener">Discord</a> &middot; <a href="https://www.jorry.live" target="_blank" rel="noopener">jorry.live</a> &middot; <span>&copy; 2026 Word Tycoon</span>
+  </footer>
+  <style>
+    .wt-legal-footer{padding:14px 16px 18px;text-align:center;font:12px/1.4 "Segoe UI",Tahoma,sans-serif;color:#7a8a9b;opacity:.75}
+    .wt-legal-footer a{color:inherit;text-decoration:none;margin:0 2px}
+    .wt-legal-footer a:hover{text-decoration:underline;opacity:1}
+  </style>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

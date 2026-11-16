@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@700&amp;display=swap');
+    </style>
+
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0%" stop-color="#0d1421"/>
+      <stop offset="100%" stop-color="#080c14"/>
+    </linearGradient>
+
+    <!-- Normal tile -->
+    <linearGradient id="tileNormal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#111c2c"/>
+    </linearGradient>
+
+    <!-- Cyan highlighted tile -->
+    <linearGradient id="tileCyan" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0c3f52"/>
+      <stop offset="100%" stop-color="#072a38"/>
+    </linearGradient>
+
+    <!-- Purple highlighted tile -->
+    <linearGradient id="tilePurple" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a1848"/>
+      <stop offset="100%" stop-color="#190f30"/>
+    </linearGradient>
+
+    <!-- Glow for cyan row -->
+    <filter id="cyanGlow" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="10" result="blur"/>
+      <feFlood flood-color="#22d3ee" flood-opacity="0.45" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Glow for purple tiles -->
+    <filter id="purpleGlow" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8" result="blur"/>
+      <feFlood flood-color="#a78bfa" flood-opacity="0.4" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" ry="80" fill="url(#bgGrad)"/>
+
+  <!-- Subtle inner border -->
+  <rect width="512" height="512" rx="80" ry="80" fill="none" stroke="#1e293b" stroke-width="2"/>
+
+  <!-- ═══════════════════════════════════════════
+       GRID: 4×4, cell=80px, gap=8px
+       Col x: 84, 172, 260, 348
+       Row y: 44, 132, 220, 308
+  ════════════════════════════════════════════ -->
+
+  <!-- ── ROW 0: R E C T — CYAN (found word) ── -->
+  <g filter="url(#cyanGlow)">
+    <!-- (0,0) R -->
+    <rect x="84" y="44" width="80" height="80" rx="14" fill="url(#tileCyan)" stroke="#22d3ee" stroke-width="2"/>
+    <text x="124" y="100" text-anchor="middle" dominant-baseline="auto"
+          font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#22d3ee">R</text>
+    <text x="157" y="117" text-anchor="end"
+          font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#22d3ee" opacity="0.65">3</text>
+
+    <!-- (1,0) E -->
+    <rect x="172" y="44" width="80" height="80" rx="14" fill="url(#tileCyan)" stroke="#22d3ee" stroke-width="2"/>
+    <text x="212" y="100" text-anchor="middle" dominant-baseline="auto"
+          font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#22d3ee">E</text>
+    <text x="245" y="117" text-anchor="end"
+          font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#22d3ee" opacity="0.65">1</text>
+
+    <!-- (2,0) C -->
+    <rect x="260" y="44" width="80" height="80" rx="14" fill="url(#tileCyan)" stroke="#22d3ee" stroke-width="2"/>
+    <text x="300" y="100" text-anchor="middle" dominant-baseline="auto"
+          font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#22d3ee">C</text>
+    <text x="333" y="117" text-anchor="end"
+          font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#22d3ee" opacity="0.65">3</text>
+
+    <!-- (3,0) T -->
+    <rect x="348" y="44" width="80" height="80" rx="14" fill="url(#tileCyan)" stroke="#22d3ee" stroke-width="2"/>
+    <text x="388" y="100" text-anchor="middle" dominant-baseline="auto"
+          font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#22d3ee">T</text>
+    <text x="421" y="117" text-anchor="end"
+          font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#22d3ee" opacity="0.65">2</text>
+  </g>
+
+  <!-- ── ROW 1: A N G L — G,L purple ── -->
+  <!-- (0,1) A — normal -->
+  <rect x="84" y="132" width="80" height="80" rx="14" fill="url(#tileNormal)" stroke="#2e4060" stroke-width="1.5"/>
+  <text x="124" y="188" text-anchor="middle" dominant-baseline="auto"
+        font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#c8d8ee">A</text>
+  <text x="157" y="205" text-anchor="end"
+        font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#4a6080" opacity="0.9">1</text>
+
+  <!-- (1,1) N — normal -->
+  <rect x="172" y="132" width="80" height="80" rx="14" fill="url(#tileNormal)" stroke="#2e4060" stroke-width="1.5"/>
+  <text x="212" y="188" text-anchor="middle" dominant-baseline="auto"
+        font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#c8d8ee">N</text>
+  <text x="245" y="205" text-anchor="end"
+        font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#4a6080" opacity="0.9">2</text>
+
+  <!-- (2,1) G — PURPLE -->
+  <g filter="url(#purpleGlow)">
+    <rect x="260" y="132" width="80" height="80" rx="14" fill="url(#tilePurple)" stroke="#a78bfa" stroke-width="2"/>
+    <text x="300" y="188" text-anchor="middle" dominant-baseline="auto"
+          font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#a78bfa">G</text>
+    <text x="333" y="205" text-anchor="end"
+          font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#a78bfa" opacity="0.65">3</text>
+  </g>
+
+  <!-- (3,1) L — PURPLE -->
+  <g filter="url(#purpleGlow)">
+    <rect x="348" y="132" width="80" height="80" rx="14" fill="url(#tilePurple)" stroke="#a78bfa" stroke-width="2"/>
+    <text x="388" y="188" text-anchor="middle" dominant-baseline="auto"
+          font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#a78bfa">L</text>
+    <text x="421" y="205" text-anchor="end"
+          font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#a78bfa" opacity="0.65">2</text>
+  </g>
+
+  <!-- ── ROW 2: E D W O — normal ── -->
+  <rect x="84" y="220" width="80" height="80" rx="14" fill="url(#tileNormal)" stroke="#2e4060" stroke-width="1.5"/>
+  <text x="124" y="276" text-anchor="middle" dominant-baseline="auto"
+        font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#c8d8ee">E</text>
+  <text x="157" y="293" text-anchor="end"
+        font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#4a6080" opacity="0.9">1</text>
+
+  <rect x="172" y="220" width="80" height="80" rx="14" fill="url(#tileNormal)" stroke="#2e4060" stroke-width="1.5"/>
+  <text x="212" y="276" text-anchor="middle" dominant-baseline="auto"
+        font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#c8d8ee">D</text>
+  <text x="245" y="293" text-anchor="end"
+        font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#4a6080" opacity="0.9">2</text>
+
+  <rect x="260" y="220" width="80" height="80" rx="14" fill="url(#tileNormal)" stroke="#2e4060" stroke-width="1.5"/>
+  <text x="300" y="276" text-anchor="middle" dominant-baseline="auto"
+        font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#c8d8ee">W</text>
+  <text x="333" y="293" text-anchor="end"
+        font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#4a6080" opacity="0.9">4</text>
+
+  <rect x="348" y="220" width="80" height="80" rx="14" fill="url(#tileNormal)" stroke="#2e4060" stroke-width="1.5"/>
+  <text x="388" y="276" text-anchor="middle" dominant-baseline="auto"
+        font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#c8d8ee">O</text>
+  <text x="421" y="293" text-anchor="end"
+        font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#4a6080" opacity="0.9">1</text>
+
+  <!-- ── ROW 3: R D S V — normal ── -->
+  <rect x="84" y="308" width="80" height="80" rx="14" fill="url(#tileNormal)" stroke="#2e4060" stroke-width="1.5"/>
+  <text x="124" y="364" text-anchor="middle" dominant-baseline="auto"
+        font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#c8d8ee">R</text>
+  <text x="157" y="381" text-anchor="end"
+        font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#4a6080" opacity="0.9">3</text>
+
+  <rect x="172" y="308" width="80" height="80" rx="14" fill="url(#tileNormal)" stroke="#2e4060" stroke-width="1.5"/>
+  <text x="212" y="364" text-anchor="middle" dominant-baseline="auto"
+        font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#c8d8ee">D</text>
+  <text x="245" y="381" text-anchor="end"
+        font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#4a6080" opacity="0.9">2</text>
+
+  <rect x="260" y="308" width="80" height="80" rx="14" fill="url(#tileNormal)" stroke="#2e4060" stroke-width="1.5"/>
+  <text x="300" y="364" text-anchor="middle" dominant-baseline="auto"
+        font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#c8d8ee">S</text>
+  <text x="333" y="381" text-anchor="end"
+        font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#4a6080" opacity="0.9">1</text>
+
+  <rect x="348" y="308" width="80" height="80" rx="14" fill="url(#tileNormal)" stroke="#2e4060" stroke-width="1.5"/>
+  <text x="388" y="364" text-anchor="middle" dominant-baseline="auto"
+        font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#c8d8ee">V</text>
+  <text x="421" y="381" text-anchor="end"
+        font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#4a6080" opacity="0.9">5</text>
+
+  <!-- ── "recTangled" logo — per-letter colors matching the game ── -->
+  <text x="256" y="457" text-anchor="middle"
+        font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif"
+        font-size="50" font-weight="700" letter-spacing="1">
+    <tspan fill="#3EC8E8">r</tspan><tspan fill="#F5920A">e</tspan><tspan fill="#EFC000">c</tspan><tspan fill="#1E52C8">T</tspan><tspan fill="#E83020">a</tspan><tspan fill="#42B238">n</tspan><tspan fill="#88AAFF">g</tspan><tspan fill="#C835B8">l</tspan><tspan fill="#F5920A">e</tspan><tspan fill="#1EB8A8">d</tspan>
+  </text>
+</svg>

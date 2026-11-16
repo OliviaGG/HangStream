@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080, height=1920">
+<title>Word Tycoon — Economy Ad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{background:#000;height:100%}
+body{width:1080px;height:1920px;overflow:hidden;background:#06020f;
+  transform-origin:top left;font-family:'Inter',system-ui,sans-serif;color:#f1f5f9;}
+#bgCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:0.3}
+
+/* ─── Scene base ─────────────────────────── */
+.sc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;transform:scale(0.97);z-index:1;padding:80px 60px;pointer-events:none;
+  transition:opacity 0.5s ease,transform 0.5s cubic-bezier(0.34,1.56,0.64,1);}
+.sc.on{opacity:1;transform:scale(1)}
+.sc.off{opacity:0;transform:scale(1.03);transition:opacity 0.4s ease,transform 0.4s ease}
+
+/* ─── Corners ────────────────────────────── */
+.cn{position:absolute;width:80px;height:80px;border-style:solid;z-index:5;opacity:0;transition:opacity 0.5s 0.25s ease}
+.sc.on .cn{opacity:1}
+.cn.tl{top:24px;left:24px;border-width:2px 0 0 2px;border-radius:14px 0 0 0}
+.cn.tr{top:24px;right:24px;border-width:2px 2px 0 0;border-radius:0 14px 0 0}
+.cn.bl{bottom:24px;left:24px;border-width:0 0 2px 2px;border-radius:0 0 0 14px}
+.cn.br{bottom:24px;right:24px;border-width:0 2px 2px 0;border-radius:0 0 14px 0}
+.gc{border-color:rgba(255,215,0,0.35)} /* gold corners */
+.pc{border-color:rgba(180,100,255,0.35)} /* purple corners */
+.cc{border-color:rgba(34,211,238,0.35)} /* cyan corners */
+.kc{border-color:rgba(255,45,149,0.35)} /* pink corners */
+
+/* ─── Typography ─────────────────────────── */
+.h1{font-size:96px;font-weight:900;letter-spacing:-2px;line-height:1.05;text-align:center;
+  margin-bottom:28px;padding:8px 16px;
+  opacity:0;transform:translateY(30px);transition:opacity 0.45s 0.15s ease,transform 0.45s 0.15s cubic-bezier(0.34,1.56,0.64,1);}
+.sc.on .h1{opacity:1;transform:translateY(0)}
+.h2{font-size:64px;font-weight:800;letter-spacing:-1px;text-align:center;margin-bottom:20px;padding:6px 12px;
+  opacity:0;transform:translateY(24px);transition:opacity 0.45s 0.12s ease,transform 0.45s 0.12s cubic-bezier(0.34,1.56,0.64,1);}
+.sc.on .h2{opacity:1;transform:translateY(0)}
+.sub{font-size:36px;font-weight:500;text-align:center;line-height:1.35;color:rgba(241,245,249,0.7);
+  margin-bottom:24px;opacity:0;transform:translateY(16px);transition:opacity 0.45s 0.28s ease,transform 0.45s 0.28s ease;}
+.sc.on .sub{opacity:1;transform:translateY(0)}
+.dv{width:400px;height:2px;border-radius:2px;margin:16px auto;opacity:0;transition:opacity 0.45s 0.35s ease}
+.sc.on .dv{opacity:1}
+.url{font-size:72px;font-weight:800;letter-spacing:-1px;text-align:center;padding:8px 16px;
+  opacity:0;transform:scale(0.93);transition:opacity 0.45s 0.4s ease,transform 0.45s 0.4s cubic-bezier(0.34,1.4,0.64,1);}
+.sc.on .url{opacity:1;transform:scale(1)}
+.free{font-size:26px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-top:16px;
+  opacity:0;transition:opacity 0.45s 0.5s ease}
+.sc.on .free{opacity:1}
+
+/* Gold gradient text */
+.gold{background:linear-gradient(135deg,#ffd700,#ffb300,#ffe066);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.purple{background:linear-gradient(135deg,#c084fc,#a855f7,#7c3aed);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.cyan{background:linear-gradient(135deg,#22d3ee,#38bdf8,#06b6d4);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.pink{background:linear-gradient(135deg,#ff2d95,#f472b6,#ec4899);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.green{background:linear-gradient(135deg,#4ade80,#22c55e,#16a34a);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.multi{background:linear-gradient(135deg,#ffd700,#22d3ee,#a855f7,#ff2d95);background-size:300% 300%;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:mshift 4s ease-in-out infinite}
+@keyframes mshift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+.dv-gold{background:linear-gradient(90deg,transparent,rgba(255,215,0,0.5),rgba(180,100,255,0.5),transparent)}
+.dv-purple{background:linear-gradient(90deg,transparent,rgba(180,100,255,0.5),rgba(255,45,149,0.5),transparent)}
+.dv-cyan{background:linear-gradient(90deg,transparent,rgba(34,211,238,0.5),rgba(74,222,128,0.5),transparent)}
+
+/* ─── WT Logo ────────────────────────────── */
+.wt-logo{width:340px;height:340px;border-radius:50%;filter:drop-shadow(0 0 40px rgba(255,215,0,0.6));
+  margin-bottom:24px;opacity:0;transform:translateY(24px) scale(0.85);
+  transition:opacity 0.45s 0.08s ease,transform 0.45s 0.08s cubic-bezier(0.34,1.56,0.64,1);}
+.sc.on .wt-logo{opacity:1;transform:translateY(0) scale(1)}
+
+/* ─── Card panels ────────────────────────── */
+.panel{width:880px;border-radius:24px;overflow:hidden;
+  opacity:0;transform:translateY(20px) scale(0.96);
+  transition:opacity 0.5s 0.12s ease,transform 0.5s 0.12s cubic-bezier(0.34,1.4,0.64,1);}
+.sc.on .panel{opacity:1;transform:translateY(0) scale(1)}
+.panel-gold{background:rgba(12,7,24,0.92);border:1.5px solid rgba(255,215,0,0.2)}
+.panel-purple{background:rgba(12,7,24,0.92);border:1.5px solid rgba(180,100,255,0.2)}
+.panel-cyan{background:rgba(12,7,24,0.92);border:1.5px solid rgba(34,211,238,0.2)}
+.panel-pink{background:rgba(12,7,24,0.92);border:1.5px solid rgba(255,45,149,0.2)}
+.panel-green{background:rgba(12,7,24,0.92);border:1.5px solid rgba(74,222,128,0.2)}
+.p-head{padding:24px 28px;border-bottom:1px solid rgba(255,255,255,0.06);
+  display:flex;align-items:center;justify-content:space-between}
+.p-head-title{font-size:28px;font-weight:800}
+.p-head-badge{font-size:16px;font-weight:700;padding:6px 16px;border-radius:8px}
+.p-body{padding:28px}
+
+/* ─── Business cards ─────────────────────── */
+.biz-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.biz{border-radius:16px;padding:20px;background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.06);
+  opacity:0;transform:translateY(12px);transition:opacity 0.4s ease,transform 0.4s ease}
+.biz.show{opacity:1;transform:translateY(0)}
+.biz-icon{font-size:36px;margin-bottom:8px}
+.biz-name{font-size:20px;font-weight:700;color:#f1f5f9;margin-bottom:4px}
+.biz-income{font-size:16px;font-weight:600;color:#4ade80}
+.biz-level{font-size:14px;color:rgba(241,245,249,0.4)}
+
+/* ─── Upgrade animation ──────────────────── */
+.upgrade-mock{display:flex;flex-direction:column;gap:16px;width:100%}
+.ug-row{display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:14px;
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);
+  opacity:0;transform:translateX(-30px);transition:all 0.4s ease}
+.ug-row.show{opacity:1;transform:translateX(0)}
+.ug-icon{font-size:32px;width:48px;text-align:center}
+.ug-info{flex:1}
+.ug-name{font-size:20px;font-weight:700}
+.ug-detail{font-size:14px;color:rgba(241,245,249,0.5)}
+.ug-val{text-align:right}
+.ug-coins{font-size:20px;font-weight:800;color:#ffd700}
+.ug-rate{font-size:14px;color:#4ade80}
+.ug-lvl{display:inline-block;padding:4px 12px;border-radius:6px;font-size:14px;font-weight:700;
+  background:rgba(255,215,0,0.12);color:#ffd700;border:1px solid rgba(255,215,0,0.2);
+  transition:all 0.3s ease}
+.ug-lvl.up{animation:lvlPop 0.4s ease;background:rgba(74,222,128,0.15);color:#4ade80;border-color:rgba(74,222,128,0.3)}
+@keyframes lvlPop{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
+
+/* ─── Jackpot ────────────────────────────── */
+.jackpot-display{display:flex;flex-direction:column;align-items:center;gap:16px}
+.jp-amount{font-size:88px;font-weight:900;color:#ffd700;
+  text-shadow:0 0 40px rgba(255,215,0,0.6),0 0 100px rgba(255,180,0,0.3);
+  animation:jpPulse 1.5s ease-in-out infinite alternate}
+@keyframes jpPulse{from{text-shadow:0 0 40px rgba(255,215,0,0.6)}
+  to{text-shadow:0 0 60px rgba(255,215,0,0.9),0 0 120px rgba(255,180,0,0.5)}}
+.jp-label{font-size:28px;font-weight:600;color:rgba(255,215,0,0.7)}
+.jp-types{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap;justify-content:center}
+.jp-type{padding:10px 22px;border-radius:12px;font-size:18px;font-weight:700;
+  border:1.5px solid rgba(255,215,0,0.25);background:rgba(255,215,0,0.06);color:#ffd700}
+
+/* ─── Online/Offline ─────────────────────── */
+.ol-split{display:flex;gap:20px;width:880px}
+.ol-card{flex:1;border-radius:20px;padding:36px 28px;text-align:center;
+  opacity:0;transform:translateY(16px);transition:opacity 0.45s ease,transform 0.45s ease}
+.ol-card.show{opacity:1;transform:translateY(0)}
+.ol-online{background:rgba(74,222,128,0.08);border:1.5px solid rgba(74,222,128,0.25)}
+.ol-offline{background:rgba(168,85,247,0.06);border:1.5px solid rgba(168,85,247,0.2)}
+.ol-icon{font-size:56px;margin-bottom:12px}
+.ol-title{font-size:28px;font-weight:800;margin-bottom:8px}
+.ol-rate{font-size:22px;font-weight:700;margin-bottom:6px}
+.ol-desc{font-size:16px;color:rgba(241,245,249,0.5);line-height:1.4}
+
+/* ─── Cosmetics ──────────────────────────── */
+.cos-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;width:880px}
+.cos-item{border-radius:16px;padding:24px 16px;text-align:center;
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);
+  opacity:0;transform:scale(0.9);transition:opacity 0.35s ease,transform 0.35s cubic-bezier(0.34,1.4,0.64,1)}
+.cos-item.show{opacity:1;transform:scale(1)}
+.cos-preview{font-size:40px;margin-bottom:8px;height:50px;display:flex;align-items:center;justify-content:center}
+.cos-name{font-size:16px;font-weight:700;color:#f1f5f9}
+.cos-type{font-size:13px;color:rgba(241,245,249,0.4);margin-top:4px}
+/* Sample cosmetic styles */
+.cos-nc{color:#ff2d95;text-shadow:0 0 12px rgba(255,45,149,0.5)}
+.cos-ng{color:#22d3ee;text-shadow:0 0 20px rgba(34,211,238,0.8),0 0 40px rgba(34,211,238,0.4)}
+.cos-wc{color:#ffd700;text-shadow:0 0 12px rgba(255,215,0,0.5)}
+.cos-title{font-size:16px;font-weight:700;padding:4px 14px;border-radius:6px;
+  background:linear-gradient(135deg,rgba(168,85,247,0.15),rgba(99,102,241,0.1));
+  border:1px solid rgba(168,85,247,0.3);color:#a855f7}
+.cos-badge{width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,#ffd700,#ff8c00);
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+  box-shadow:0 0 16px rgba(255,215,0,0.4)}
+.cos-border{width:50px;height:50px;border-radius:50%;
+  border:3px solid #ff2d95;box-shadow:0 0 16px rgba(255,45,149,0.4);
+  display:flex;align-items:center;justify-content:center;font-size:22px}
+
+/* ─── Daily / Season ─────────────────────── */
+.streak-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:16px 0}
+.streak-day{width:80px;height:80px;border-radius:14px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;font-weight:700;
+  opacity:0;transform:scale(0.85);transition:opacity 0.3s ease,transform 0.3s cubic-bezier(0.34,1.4,0.64,1)}
+.streak-day.show{opacity:1;transform:scale(1)}
+.streak-done{background:rgba(74,222,128,0.12);border:1.5px solid rgba(74,222,128,0.3);color:#4ade80}
+.streak-cur{background:rgba(255,215,0,0.12);border:1.5px solid rgba(255,215,0,0.4);color:#ffd700;
+  box-shadow:0 0 16px rgba(255,215,0,0.2)}
+.streak-future{background:rgba(255,255,255,0.03);border:1.5px solid rgba(255,255,255,0.08);color:rgba(241,245,249,0.3)}
+.streak-num{font-size:24px}.streak-lbl{font-size:11px;margin-top:2px}
+.streak-reward{font-size:14px;color:#ffd700;margin-top:4px}
+
+/* ─── Prestige ───────────────────────────── */
+.prestige-flow{display:flex;align-items:center;gap:20px;margin:20px 0;
+  opacity:0;transform:translateY(16px);transition:opacity 0.5s 0.2s ease,transform 0.5s 0.2s ease}
+.sc.on .prestige-flow{opacity:1;transform:translateY(0)}
+.pf-box{width:200px;padding:24px 16px;border-radius:16px;text-align:center}
+.pf-before{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08)}
+.pf-after{background:rgba(74,222,128,0.06);border:1.5px solid rgba(74,222,128,0.25)}
+.pf-arrow{font-size:48px;color:rgba(255,215,0,0.6)}
+.pf-label{font-size:14px;color:rgba(241,245,249,0.4);margin-bottom:8px}
+.pf-val{font-size:28px;font-weight:800}
+.pf-mult{font-size:16px;font-weight:700;margin-top:6px;color:#4ade80}
+
+/* ─── Income flow ────────────────────────── */
+.income-stack{display:flex;flex-direction:column;gap:12px;width:800px;
+  opacity:0;transform:translateY(16px);transition:opacity 0.5s 0.15s ease,transform 0.5s 0.15s ease}
+.sc.on .income-stack{opacity:1;transform:translateY(0)}
+.inc-row{display:flex;align-items:center;padding:16px 24px;border-radius:14px;
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06)}
+.inc-src{font-size:18px;font-weight:700;flex:1}
+.inc-amt{font-size:20px;font-weight:800;color:#4ade80}
+.inc-total{display:flex;align-items:center;justify-content:space-between;
+  padding:20px 28px;border-radius:16px;margin-top:8px;
+  background:rgba(255,215,0,0.06);border:1.5px solid rgba(255,215,0,0.25)}
+.inc-total-label{font-size:22px;font-weight:700;color:#ffd700}
+.inc-total-amt{font-size:32px;font-weight:900;color:#ffd700;
+  text-shadow:0 0 20px rgba(255,215,0,0.4)}
+
+/* ─── Progress bar ───────────────────────── */
+#prog{position:absolute;bottom:0;left:0;height:5px;z-index:10;
+  background:linear-gradient(90deg,#ffd700,#22d3ee,#a855f7,#ff2d95);background-size:400% 100%;
+  animation:ps 120s linear infinite;transition:width 0.1s linear}
+@keyframes ps{0%{background-position:0% 50%}100%{background-position:400% 50%}}
+</style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+<div id="prog" style="width:0%"></div>
+
+<!-- S0 Hook (0-5s) -->
+<div id="s0" class="sc"><div class="cn tl gc"></div><div class="cn tr gc"></div><div class="cn bl gc"></div><div class="cn br gc"></div>
+  <div class="h1 gold">Build your empire.</div>
+  <div class="sub">Word games meet tycoon strategy.</div>
+</div>
+
+<!-- S1 Overview (5-14s) -->
+<div id="s1" class="sc"><div class="cn tl gc"></div><div class="cn tr gc"></div><div class="cn bl gc"></div><div class="cn br gc"></div>
+  <img class="wt-logo" src="/portal/img/logo.png" alt="">
+  <div class="h1 gold">Word Tycoon</div>
+  <div class="sub">Play word games. Build businesses.<br>Earn coins. Collect everything.</div>
+  <div class="dv dv-gold"></div>
+  <div class="url" style="color:#ffd700;text-shadow:0 0 28px rgba(255,215,0,0.6)">wordtycoon.live</div>
+  <div class="free" style="color:rgba(255,255,255,0.4)">Free to play</div>
+</div>
+
+<!-- S2 Businesses Intro (14-22s) -->
+<div id="s2" class="sc"><div class="cn tl gc"></div><div class="cn tr gc"></div><div class="cn bl gc"></div><div class="cn br gc"></div>
+  <div class="h2 gold">Your Businesses</div>
+  <div class="sub">Own and upgrade businesses that earn coins for you.</div>
+  <div class="panel panel-gold">
+    <div class="p-body">
+      <div class="biz-grid" id="bizGrid">
+        <div class="biz"><div class="biz-icon">🍕</div><div class="biz-name">Pizza Shop</div><div class="biz-income">+1,784/sec</div><div class="biz-level">Level 77</div></div>
+        <div class="biz"><div class="biz-icon">📰</div><div class="biz-name">Newspaper</div><div class="biz-income">+892/sec</div><div class="biz-level">Level 45</div></div>
+        <div class="biz"><div class="biz-icon">🏋️</div><div class="biz-name">Gym</div><div class="biz-income">+2,150/sec</div><div class="biz-level">Level 62</div></div>
+        <div class="biz"><div class="biz-icon">🎬</div><div class="biz-name">Cinema</div><div class="biz-income">+3,400/sec</div><div class="biz-level">Level 58</div></div>
+        <div class="biz"><div class="biz-icon">🚀</div><div class="biz-name">Startup</div><div class="biz-income">+5,200/sec</div><div class="biz-level">Level 34</div></div>
+        <div class="biz"><div class="biz-icon">🏦</div><div class="biz-name">Bank</div><div class="biz-income">+8,900/sec</div><div class="biz-level">Level 28</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S3 Upgrade Animation (22-31s) -->
+<div id="s3" class="sc"><div class="cn tl gc"></div><div class="cn tr gc"></div><div class="cn bl gc"></div><div class="cn br gc"></div>
+  <div class="h2 green">Upgrade & Grow</div>
+  <div class="sub">Invest coins to increase your income.</div>
+  <div class="panel panel-green">
+    <div class="p-head"><span class="p-head-title" style="color:#4ade80">🍕 Pizza Shop</span>
+      <span class="p-head-badge" style="background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.25)" id="ugShopLvl">Level 77</span></div>
+    <div class="p-body">
+      <div class="upgrade-mock" id="ugMock">
+        <div class="ug-row"><div class="ug-icon">🔥</div><div class="ug-info"><div class="ug-name">Oven</div><div class="ug-detail">Faster baking speed</div></div><div class="ug-val"><div class="ug-coins">-15,000</div><div class="ug-rate">+120/sec</div></div><div class="ug-lvl" id="ugOven">Lv 54</div></div>
+        <div class="ug-row"><div class="ug-icon">👨‍🍳</div><div class="ug-info"><div class="ug-name">Staff</div><div class="ug-detail">More employees</div></div><div class="ug-val"><div class="ug-coins">-22,000</div><div class="ug-rate">+180/sec</div></div><div class="ug-lvl" id="ugStaff">Lv 69</div></div>
+        <div class="ug-row"><div class="ug-icon">💺</div><div class="ug-info"><div class="ug-name">Seating</div><div class="ug-detail">More customers</div></div><div class="ug-val"><div class="ug-coins">-18,500</div><div class="ug-rate">+150/sec</div></div><div class="ug-lvl" id="ugSeat">Lv 67</div></div>
+        <div class="ug-row"><div class="ug-icon">📢</div><div class="ug-info"><div class="ug-name">Marketing</div><div class="ug-detail">Attract more diners</div></div><div class="ug-val"><div class="ug-coins">-12,000</div><div class="ug-rate">+95/sec</div></div><div class="ug-lvl" id="ugMkt">Lv 23</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S4 Jackpots (31-40s) -->
+<div id="s4" class="sc"><div class="cn tl gc"></div><div class="cn tr gc"></div><div class="cn bl gc"></div><div class="cn br gc"></div>
+  <div class="h2 gold">Jackpots & Rewards</div>
+  <div class="sub">Win big from playing games.</div>
+  <div class="dv dv-gold"></div>
+  <div class="jackpot-display">
+    <div class="jp-label">🎰 JACKPOT</div>
+    <div class="jp-amount" id="jpAmt">50,000</div>
+    <div class="jp-types">
+      <span class="jp-type">🎯 Word Found</span>
+      <span class="jp-type">🏆 Game Win</span>
+      <span class="jp-type">⭐ Rare Word</span>
+      <span class="jp-type">🔥 Streak Bonus</span>
+    </div>
+  </div>
+</div>
+
+<!-- S5 Online/Offline (40-50s) -->
+<div id="s5" class="sc"><div class="cn tl cc"></div><div class="cn tr cc"></div><div class="cn bl pc"></div><div class="cn br pc"></div>
+  <div class="h2 cyan">Always Earning</div>
+  <div class="sub">Your businesses never stop.</div>
+  <div class="dv dv-cyan"></div>
+  <div class="ol-split" id="olSplit">
+    <div class="ol-card ol-online">
+      <div class="ol-icon">🟢</div>
+      <div class="ol-title" style="color:#4ade80">Online</div>
+      <div class="ol-rate" style="color:#4ade80">100% income</div>
+      <div class="ol-desc">Play games, earn full rate<br>from all your businesses</div>
+    </div>
+    <div class="ol-card ol-offline">
+      <div class="ol-icon">🌙</div>
+      <div class="ol-title" style="color:#a855f7">Offline</div>
+      <div class="ol-rate" style="color:#a855f7">25% income</div>
+      <div class="ol-desc">Close the tab, come back later<br>and collect what you earned</div>
+    </div>
+  </div>
+</div>
+
+<!-- S6 Cosmetics (50-60s) -->
+<div id="s6" class="sc"><div class="cn tl kc"></div><div class="cn tr pc"></div><div class="cn bl cc"></div><div class="cn br kc"></div>
+  <div class="h2 pink">Cosmetics</div>
+  <div class="sub">Customize everything about your player.</div>
+  <div class="dv dv-purple"></div>
+  <div class="cos-grid" id="cosGrid">
+    <div class="cos-item"><div class="cos-preview cos-nc" style="font-size:28px;font-weight:800">PlayerName</div><div class="cos-name">Name Color</div><div class="cos-type">Pink Glow</div></div>
+    <div class="cos-item"><div class="cos-preview cos-ng" style="font-size:28px;font-weight:800">PlayerName</div><div class="cos-name">Name Glow</div><div class="cos-type">Cyan Pulse</div></div>
+    <div class="cos-item"><div class="cos-preview cos-wc" style="font-size:28px;font-weight:800">HELLO</div><div class="cos-name">Word Color</div><div class="cos-type">Gold Shine</div></div>
+    <div class="cos-item"><div class="cos-preview"><span class="cos-title">Champion</span></div><div class="cos-name">Title</div><div class="cos-type">Equipped below name</div></div>
+    <div class="cos-item"><div class="cos-preview"><span class="cos-badge">👑</span></div><div class="cos-name">Hero Badge</div><div class="cos-type">Winner background</div></div>
+    <div class="cos-item"><div class="cos-preview"><span class="cos-border">😎</span></div><div class="cos-name">Profile Border</div><div class="cos-type">Colored ring</div></div>
+  </div>
+</div>
+
+<!-- S7 Daily Claim (60-70s) -->
+<div id="s7" class="sc"><div class="cn tl gc"></div><div class="cn tr gc"></div><div class="cn bl gc"></div><div class="cn br gc"></div>
+  <div class="h2 gold">Daily Rewards</div>
+  <div class="sub">Log in every day for free coins and loot boxes.</div>
+  <div class="dv dv-gold"></div>
+  <div class="streak-row" id="streakRow">
+    <div class="streak-day streak-done"><div class="streak-num">1</div><div class="streak-lbl">Day</div><div class="streak-reward">500</div></div>
+    <div class="streak-day streak-done"><div class="streak-num">2</div><div class="streak-lbl">Day</div><div class="streak-reward">500</div></div>
+    <div class="streak-day streak-done"><div class="streak-num">3</div><div class="streak-lbl">Day</div><div class="streak-reward">750</div></div>
+    <div class="streak-day streak-done"><div class="streak-num">4</div><div class="streak-lbl">Day</div><div class="streak-reward">750</div></div>
+    <div class="streak-day streak-done"><div class="streak-num">5</div><div class="streak-lbl">Day</div><div class="streak-reward">1,000</div></div>
+    <div class="streak-day streak-done"><div class="streak-num">6</div><div class="streak-lbl">Day</div><div class="streak-reward">1,000</div></div>
+    <div class="streak-day streak-cur"><div class="streak-num">7</div><div class="streak-lbl">Day</div><div class="streak-reward">🎁</div></div>
+    <div class="streak-day streak-future"><div class="streak-num">14</div><div class="streak-lbl">Day</div><div class="streak-reward">🎁🎁</div></div>
+  </div>
+  <div class="sub" style="font-size:28px;margin-top:12px">7-day streak = Loot Box 🎁</div>
+</div>
+
+<!-- S8 Donor Class membership (70-80s) — was the Season Pass slide -->
+<div id="s8" class="sc"><div class="cn tl pc"></div><div class="cn tr pc"></div><div class="cn bl pc"></div><div class="cn br pc"></div>
+  <div class="h2 purple">Donor Class</div>
+  <div class="sub">$2/mo &mdash; every premium game mode unlocked.</div>
+  <div class="panel panel-purple">
+    <div class="p-head"><span class="p-head-title" style="color:#c084fc">Membership perks</span>
+      <span class="p-head-badge" style="background:rgba(180,100,255,0.12);color:#c084fc;border:1px solid rgba(180,100,255,0.25)">$2/mo</span></div>
+    <div class="p-body">
+      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap" id="passTiers">
+        <div class="streak-day streak-done" style="width:90px;height:90px"><div class="streak-num">🎮</div><div class="streak-lbl">Premium</div><div class="streak-reward">Games</div></div>
+        <div class="streak-day streak-done" style="width:90px;height:90px"><div class="streak-num">🎙️</div><div class="streak-lbl">Stream</div><div class="streak-reward">Voice</div></div>
+        <div class="streak-day streak-cur" style="width:90px;height:90px"><div class="streak-num">⚡</div><div class="streak-lbl">Batch</div><div class="streak-reward">Guessing</div></div>
+        <div class="streak-day streak-future" style="width:90px;height:90px"><div class="streak-num">🏅</div><div class="streak-lbl">Donor</div><div class="streak-reward">Logos</div></div>
+        <div class="streak-day streak-future" style="width:90px;height:90px"><div class="streak-num">💙</div><div class="streak-lbl">Support</div><div class="streak-reward">Jorry</div></div>
+        <div class="streak-day streak-future" style="width:90px;height:90px"><div class="streak-num">$2</div><div class="streak-lbl">per</div><div class="streak-reward">month</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S9 Prestige (80-90s) -->
+<div id="s9" class="sc"><div class="cn tl gc"></div><div class="cn tr cc"></div><div class="cn bl cc"></div><div class="cn br gc"></div>
+  <div class="h2 gold">Prestige</div>
+  <div class="sub">Reset a business. Come back stronger.</div>
+  <div class="dv dv-gold"></div>
+  <div class="prestige-flow">
+    <div class="pf-box pf-before">
+      <div class="pf-label">Before</div>
+      <div class="pf-val" style="color:#f1f5f9">Level 100</div>
+      <div class="pf-mult" style="color:rgba(241,245,249,0.5)">1x multiplier</div>
+    </div>
+    <div class="pf-arrow">→</div>
+    <div class="pf-box" style="background:rgba(255,215,0,0.06);border:1.5px solid rgba(255,215,0,0.25);text-align:center">
+      <div class="pf-label" style="color:#ffd700">⭐ PRESTIGE ⭐</div>
+      <div class="pf-val" style="color:#ffd700;font-size:22px">Reset to Lv 1</div>
+    </div>
+    <div class="pf-arrow">→</div>
+    <div class="pf-box pf-after">
+      <div class="pf-label">After</div>
+      <div class="pf-val" style="color:#4ade80">Level 1</div>
+      <div class="pf-mult">2x multiplier</div>
+    </div>
+  </div>
+  <div class="sub" style="font-size:26px;margin-top:8px">Higher prestige = faster growth forever</div>
+</div>
+
+<!-- S10 Income Stack (90-102s) -->
+<div id="s10" class="sc"><div class="cn tl gc"></div><div class="cn tr gc"></div><div class="cn bl gc"></div><div class="cn br gc"></div>
+  <div class="h2 gold">Your Income Empire</div>
+  <div class="sub">Every source stacks together.</div>
+  <div class="income-stack">
+    <div class="inc-row"><span class="inc-src">🍕 Pizza Shop</span><span class="inc-amt">+1,784/sec</span></div>
+    <div class="inc-row"><span class="inc-src">📰 Newspaper</span><span class="inc-amt">+892/sec</span></div>
+    <div class="inc-row"><span class="inc-src">🏋️ Gym</span><span class="inc-amt">+2,150/sec</span></div>
+    <div class="inc-row"><span class="inc-src">🎬 Cinema</span><span class="inc-amt">+3,400/sec</span></div>
+    <div class="inc-row"><span class="inc-src">🚀 Startup</span><span class="inc-amt">+5,200/sec</span></div>
+    <div class="inc-row"><span class="inc-src">🏦 Bank</span><span class="inc-amt">+8,900/sec</span></div>
+    <div class="inc-total"><span class="inc-total-label">Total Income</span><span class="inc-total-amt">+22,326/sec</span></div>
+  </div>
+</div>
+
+<!-- S11 CTA (102-120s) -->
+<div id="s11" class="sc"><div class="cn tl gc"></div><div class="cn tr gc"></div><div class="cn bl gc"></div><div class="cn br gc"></div>
+  <img class="wt-logo" src="/portal/img/logo.png" alt="">
+  <div class="h1 multi">Start building.</div>
+  <div class="dv dv-gold"></div>
+  <div class="url" style="color:#ffd700;text-shadow:0 0 28px rgba(255,215,0,0.6);animation:wtP 2.2s ease-in-out infinite alternate">wordtycoon.live</div>
+  <div class="free" style="color:rgba(255,255,255,0.5);font-size:32px;letter-spacing:4px;animation:fp 2s ease-in-out infinite alternate">Free to play. No download.</div>
+</div>
+
+<script>
+(function(){
+'use strict';
+// ── Background particles ──────────────────
+var c=document.getElementById('bgCanvas'),x=c.getContext('2d');
+c.width=1080;c.height=1920;
+var H=[45,187,270,330,145],sp=[];
+for(var i=0;i<50;i++)sp.push({ox:Math.random()*1080,oy:Math.random()*1920,
+  ax:20+Math.random()*80,ay:20+Math.random()*80,wx:0.03+Math.random()*0.1,
+  wy:0.04+Math.random()*0.12,px:Math.random()*6.28,py:Math.random()*6.28,
+  r:1.5+Math.random()*4,al:0.08+Math.random()*0.18,hue:H[i%5],
+  pulse:Math.random()*6.28,pw:0.03+Math.random()*0.1});
+function bg(ts){var t=ts/1000;x.clearRect(0,0,1080,1920);
+  for(var i=0;i<sp.length;i++){var s=sp[i],p=0.4+0.6*Math.sin(s.pw*t+s.pulse);
+    x.globalAlpha=s.al*p;x.fillStyle='hsl('+s.hue+',75%,75%)';
+    x.shadowColor='hsl('+s.hue+',90%,70%)';x.shadowBlur=8;
+    var rad=Math.max(0.1,s.r*p);
+    x.beginPath();x.arc(s.ox+s.ax*Math.sin(s.wx*t+s.px),s.oy+s.ay*Math.sin(s.wy*t+s.py),rad,0,6.28);x.fill();}
+  x.shadowBlur=0;x.globalAlpha=1;requestAnimationFrame(bg);}
+requestAnimationFrame(bg);
+
+// ── Timeline ──────────────────────────────
+var TL=[
+  ['s0',0,5000],['s1',5000,14000],['s2',14000,22000],['s3',22000,31000],
+  ['s4',31000,40000],['s5',40000,50000],['s6',50000,60000],
+  ['s7',60000,70000],['s8',70000,80000],['s9',80000,90000],
+  ['s10',90000,102000],['s11',102000,120000]
+];
+var TOTAL=120000,prog=document.getElementById('prog'),cur=-1,t0=null;
+
+// ── Scene-specific animations ─────────────
+function animBiz(){
+  var items=document.querySelectorAll('#bizGrid .biz');
+  items.forEach(function(b,i){setTimeout(function(){b.classList.add('show')},200+i*250)});
+}
+function resetBiz(){document.querySelectorAll('#bizGrid .biz').forEach(function(b){b.classList.remove('show')})}
+
+function animUg(){
+  var rows=document.querySelectorAll('#ugMock .ug-row');
+  rows.forEach(function(r,i){setTimeout(function(){r.classList.add('show')},300+i*400)});
+  // Animate level ups
+  var lvls=[['ugOven',54,55],['ugStaff',69,70],['ugSeat',67,68],['ugMkt',23,24]];
+  lvls.forEach(function(l,i){
+    setTimeout(function(){
+      var el=document.getElementById(l[0]);
+      el.textContent='Lv '+l[2];el.classList.add('up');
+      var shop=document.getElementById('ugShopLvl');
+      shop.textContent='Level '+(78+i);
+    },1500+i*1200);
+  });
+}
+function resetUg(){
+  document.querySelectorAll('#ugMock .ug-row').forEach(function(r){r.classList.remove('show')});
+  var lvls=[['ugOven',54],['ugStaff',69],['ugSeat',67],['ugMkt',23]];
+  lvls.forEach(function(l){var el=document.getElementById(l[0]);el.textContent='Lv '+l[1];el.classList.remove('up')});
+  document.getElementById('ugShopLvl').textContent='Level 77';
+}
+
+var jpInterval=null;
+function animJP(){
+  var el=document.getElementById('jpAmt');var val=50000;
+  jpInterval=setInterval(function(){val+=Math.floor(Math.random()*5000)+1000;
+    el.textContent=val.toLocaleString();},800);
+}
+function resetJP(){if(jpInterval){clearInterval(jpInterval);jpInterval=null}
+  document.getElementById('jpAmt').textContent='50,000';}
+
+function animOL(){
+  var cards=document.querySelectorAll('#olSplit .ol-card');
+  cards.forEach(function(c,i){setTimeout(function(){c.classList.add('show')},300+i*500)});
+}
+function resetOL(){document.querySelectorAll('#olSplit .ol-card').forEach(function(c){c.classList.remove('show')})}
+
+function animCos(){
+  var items=document.querySelectorAll('#cosGrid .cos-item');
+  items.forEach(function(c,i){setTimeout(function(){c.classList.add('show')},200+i*200)});
+}
+function resetCos(){document.querySelectorAll('#cosGrid .cos-item').forEach(function(c){c.classList.remove('show')})}
+
+function animStreak(){
+  var days=document.querySelectorAll('#streakRow .streak-day');
+  days.forEach(function(d,i){setTimeout(function(){d.classList.add('show')},200+i*250)});
+}
+function resetStreak(){document.querySelectorAll('#streakRow .streak-day').forEach(function(d){d.classList.remove('show')})}
+
+function animPass(){
+  var tiers=document.querySelectorAll('#passTiers .streak-day');
+  tiers.forEach(function(t,i){setTimeout(function(){t.classList.add('show')},300+i*300)});
+}
+function resetPass(){document.querySelectorAll('#passTiers .streak-day').forEach(function(t){t.classList.remove('show')})}
+
+var ANIMS={s2:[animBiz,resetBiz],s3:[animUg,resetUg],s4:[animJP,resetJP],
+  s5:[animOL,resetOL],s6:[animCos,resetCos],s7:[animStreak,resetStreak],s8:[animPass,resetPass]};
+
+function tick(ts){
+  if(!t0)t0=ts;var el=ts-t0;
+  if(el>=TOTAL){t0=ts;el=0;cur=-1;
+    Object.keys(ANIMS).forEach(function(k){ANIMS[k][1]()});
+    TL.forEach(function(t){document.getElementById(t[0]).classList.remove('on','off')});}
+  prog.style.width=(el/TOTAL*100)+'%';
+  var nx=-1;for(var i=0;i<TL.length;i++)if(el>=TL[i][1]&&el<TL[i][2]){nx=i;break;}
+  if(nx!==cur){
+    if(cur>=0){var oid=TL[cur][0];document.getElementById(oid).classList.remove('on');document.getElementById(oid).classList.add('off');
+      if(ANIMS[oid])ANIMS[oid][1]();}
+    if(nx>=0){var nid=TL[nx][0];document.getElementById(nid).classList.remove('off');document.getElementById(nid).classList.add('on');
+      if(ANIMS[nid])setTimeout(ANIMS[nid][0],300);}
+    cur=nx;}
+  requestAnimationFrame(tick);}
+requestAnimationFrame(tick);
+
+// ── Viewport fit ──────────────────────────
+function fit(){var s=Math.min(window.innerWidth/1080,window.innerHeight/1920);
+  document.body.style.transform='scale('+s+')';document.body.style.marginLeft=((window.innerWidth-1080*s)/2)+'px';}
+fit();window.addEventListener('resize',fit);
+
+// Reuse keyframes from social-ad
+var style=document.createElement('style');
+style.textContent='@keyframes wtP{from{text-shadow:0 0 28px rgba(255,215,0,0.6)}to{text-shadow:0 0 40px rgba(255,215,0,0.9),0 0 90px rgba(255,180,0,0.55)}}@keyframes fp{from{opacity:0.55}to{opacity:1}}';
+document.head.appendChild(style);
+})();
+</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

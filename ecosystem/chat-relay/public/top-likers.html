@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440">
+<title>Top Likers — OBS Overlay</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --overlay-width: 1440px;
+    --overlay-height: 2560px;
+    --base-width: 1080px;
+    --base-height: 1920px;
+    --frame-scale: 1.3333333333;
+  }
+
+  html, body {
+    width: var(--overlay-width);
+    height: var(--overlay-height);
+    background: transparent;
+    overflow: hidden;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+  }
+
+  /* Gradient-flow keyframe used by hero_badge cosmetics (animated gem backgrounds).
+     One-way 0→100% loop. Hero badge gradients are palindromes (first color = last color),
+     so at position 100% the visual matches position 0% and the loop is seamless.
+     Paired with animation-timing-function:linear (set in JS) to avoid ease-in/out hitch. */
+  @keyframes ov-gradient-flow {
+    from { background-position: 0% 50%; }
+    to   { background-position: 100% 50%; }
+  }
+
+  /* ── Root frame — keep the tuned 1080×1920 composition, then render it
+     at 1440×2560 for a higher-density OBS browser source. */
+  #frame {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--base-width);
+    height: var(--base-height);
+    padding: 40px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    transform: scale(var(--frame-scale));
+    transform-origin: top left;
+  }
+
+  /* Cards (header, hero, rows) capped and centered — drops ~50% of the unused
+     horizontal space from the original layout. Rows/header are the tightest;
+     hero gets a bit more room so the big count fits comfortably. */
+  #header, .row {
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+  #hero {
+    max-width: 620px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+
+  /* ── Header ── */
+  #header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 18px 28px;
+    background: linear-gradient(135deg, rgba(255, 140, 32, 0.18) 0%, rgba(255, 60, 140, 0.18) 100%);
+    border: 1px solid rgba(255, 180, 90, 0.32);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+
+  #header-icon {
+    font-size: 34px;
+    filter: drop-shadow(0 0 10px rgba(255, 100, 80, 0.8));
+  }
+
+  #header-title {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, #ff9e4a 0%, #ff4a90 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  #header-sub {
+    font-size: 15px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.55);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  /* ── Hero (Rank #1) ──
+     Sized to ~1.5× a normal row so it still reads as champion without dominating. */
+  #hero {
+    position: relative;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(255, 180, 80, 0.22) 0%, transparent 55%),
+      linear-gradient(155deg, rgba(26, 18, 8, 0.96) 0%, rgba(12, 10, 18, 0.96) 100%);
+    border: 2px solid rgba(255, 200, 90, 0.38);
+    border-radius: 24px;
+    padding: 22px 28px;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    min-height: 170px;
+    overflow: hidden;
+    box-shadow:
+      0 24px 80px rgba(0, 0, 0, 0.7),
+      0 0 80px rgba(255, 160, 60, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+
+  /* GPU-composited pulsing glow behind the hero — cheaper than animating box-shadow. */
+  #hero::after {
+    content: "";
+    position: absolute;
+    inset: -30px;
+    border-radius: 32px;
+    background: radial-gradient(ellipse at center, rgba(255, 160, 60, 0.35) 0%, transparent 65%);
+    opacity: 0.5;
+    z-index: 0;
+    pointer-events: none;
+    animation: hero-glow-pulse 4.5s ease-in-out infinite;
+    will-change: opacity;
+  }
+  #hero > * { position: relative; z-index: 1; }
+
+  @keyframes hero-glow-pulse {
+    0%, 100% { opacity: 0.4; }
+    50%      { opacity: 0.75; }
+  }
+
+  /* Crown badge on hero */
+  #hero::before {
+    content: "👑";
+    position: absolute;
+    top: -14px;
+    left: 32px;
+    font-size: 40px;
+    filter: drop-shadow(0 4px 12px rgba(255, 180, 60, 0.7));
+    animation: crown-float 3s ease-in-out infinite;
+    z-index: 2;
+  }
+
+  @keyframes crown-float {
+    0%, 100% { transform: translateY(0) rotate(-8deg); }
+    50%      { transform: translateY(-5px) rotate(-12deg); }
+  }
+
+  #hero-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    position: relative;
+    background: linear-gradient(135deg, #3a2a1a 0%, #1a1a24 100%);
+    box-shadow:
+      0 0 0 3px rgba(255, 200, 90, 0.9),
+      0 0 0 6px rgba(255, 140, 60, 0.3),
+      0 10px 28px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #hero-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  #hero-avatar-fallback {
+    font-size: 48px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  #hero-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  #hero-rank-label {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #ffc36a;
+  }
+
+  #hero-name {
+    font-size: 34px;
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.5px;
+    color: #fff;
+    /* Truncate long names with ellipsis instead of wrapping */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  #hero-count-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-top: 2px;
+  }
+
+  #hero-count {
+    font-size: 44px;
+    font-weight: 900;
+    letter-spacing: -1.5px;
+    line-height: 1;
+    background: linear-gradient(180deg, #ffe9a8 0%, #ff8c3c 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #hero-count-label {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: rgba(255, 200, 90, 0.85);
+  }
+
+  .game-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .game-stat {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: rgba(255, 236, 188, 0.12);
+    border: 1px solid rgba(255, 206, 122, 0.24);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 18px rgba(0, 0, 0, 0.18);
+  }
+
+  .game-stat-value {
+    font-size: 26px;
+    font-weight: 900;
+    color: #fff7dc;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    letter-spacing: -0.4px;
+  }
+
+  .game-stat-label {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: rgba(255, 232, 185, 0.82);
+    line-height: 1;
+  }
+
+  /* ── List (ranks 2-10) ── */
+  #list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    position: relative;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 14px 22px;
+    background: linear-gradient(90deg, rgba(28, 28, 38, 0.85) 0%, rgba(20, 20, 28, 0.85) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    min-height: 118px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    transition: transform 0.45s cubic-bezier(0.25, 1, 0.3, 1),
+                background 0.3s ease,
+                border-color 0.3s ease;
+    will-change: transform;
+  }
+
+  .row.just-liked {
+    animation: row-pulse 0.8s ease;
+  }
+
+  /* Pulse uses box-shadow + border, not background — keeps hero_badge gradient intact */
+  @keyframes row-pulse {
+    0%   { box-shadow: 0 8px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04), 0 0 0 0 rgba(255,180,90,0);     border-color: rgba(255,255,255,0.06); }
+    40%  { box-shadow: 0 8px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04), 0 0 36px 8px rgba(255,140,80,0.55); border-color: rgba(255,180,90,0.75); }
+    100% { box-shadow: 0 8px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04), 0 0 0 0 rgba(255,180,90,0);     border-color: rgba(255,255,255,0.06); }
+  }
+
+  /* Row with hero_badge active: slightly darken the left edge so rank/avatar stay readable.
+     will-change hint promotes the animating row to its own compositor layer. */
+  .row.has-badge {
+    background-blend-mode: normal;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06), inset 600px 0 120px -200px rgba(0,0,0,0.35);
+    will-change: background-position;
+  }
+  #hero.has-badge {
+    will-change: background-position;
+  }
+
+  .row-rank {
+    font-size: 38px;
+    font-weight: 900;
+    min-width: 56px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.35);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .row-rank.rank-2 { color: #e0e0e8; }
+  .row-rank.rank-3 { color: #cd9063; }
+
+  .row-avatar {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #2a2a38 0%, #1a1a24 100%);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08), 0 4px 12px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .row-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+  .row-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .row-name {
+    font-size: 34px;
+    font-weight: 800;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+  }
+
+  .row-handle {
+    font-size: 20px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .row-game-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .row-game-stats .game-stat {
+    gap: 7px;
+    padding: 7px 12px;
+    background: rgba(255, 233, 184, 0.1);
+    border-color: rgba(255, 206, 122, 0.18);
+  }
+
+  .row-game-stats .game-stat-value {
+    font-size: 21px;
+    color: #ffe7bb;
+  }
+
+  .row-game-stats .game-stat-label {
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    color: rgba(255, 229, 179, 0.76);
+  }
+
+  .row-count-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  .row-count {
+    font-size: 34px;
+    font-weight: 900;
+    color: #ff9a4a;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    letter-spacing: -0.5px;
+  }
+
+  .row-count-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  /* ── Floating +N burst on a row ── */
+  .row-burst {
+    position: absolute;
+    right: 130px;
+    font-size: 28px;
+    font-weight: 900;
+    color: #ff6a8a;
+    pointer-events: none;
+    opacity: 0;
+    text-shadow: 0 0 20px rgba(255, 100, 140, 0.9);
+    animation: burst-float 1.1s ease-out forwards;
+  }
+
+  @keyframes burst-float {
+    0%   { opacity: 0; transform: translateY(0) scale(0.9); }
+    15%  { opacity: 1; transform: translateY(-8px) scale(1.15); }
+    100% { opacity: 0; transform: translateY(-48px) scale(1); }
+  }
+
+  /* ── Empty state ── */
+  #empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    color: rgba(255, 255, 255, 0.35);
+  }
+
+  #empty-icon {
+    font-size: 88px;
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50%      { opacity: 1;   transform: scale(1.08); }
+  }
+
+  #empty-text {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ── Hidden state (no data) ── */
+  .hidden { display: none !important; }
+
+  /* ── Session meta (bottom) ── */
+  #meta {
+    position: absolute;
+    bottom: 18px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.25);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+  <div id="frame">
+    <div id="header">
+      <span id="header-icon">❤️</span>
+      <span id="header-title">Top Likers</span>
+      <span id="header-sub">This Session</span>
+    </div>
+
+    <div id="hero" class="hidden">
+      <div id="hero-avatar">
+        <span id="hero-avatar-fallback">?</span>
+      </div>
+      <div id="hero-info">
+        <div id="hero-rank-label">Rank #1 — Biggest Fan</div>
+        <div id="hero-name">—</div>
+        <div id="hero-count-wrap">
+          <span id="hero-count">0</span>
+          <span id="hero-count-label">Likes</span>
+        </div>
+        <div id="hero-game-stats" class="game-stats hidden"></div>
+      </div>
+    </div>
+
+    <div id="list"></div>
+
+    <div id="empty">
+      <div id="empty-icon">❤️</div>
+      <div id="empty-text">Waiting for likes…</div>
+    </div>
+
+    <div id="meta"></div>
+  </div>
+
+  <link rel="stylesheet" href="/css/cosmetics-fx.css?v=2">
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    (() => {
+      // Streamer Discord ID from URL: /toplikers/:discordId
+      const path = window.location.pathname.split('/').filter(Boolean);
+      const streamerId = path[path.length - 1] || '';
+      // Not always a Discord snowflake — Google/GitHub/TikTok logins are keyed
+      // `go_`/`gh_`/`tt_` and site-native accounts `wt-…`. Matches the server's
+      // isPublicStreamerId(); a digits-only test blanked the overlay for them.
+      if (!/^[A-Za-z0-9_-]{3,64}$/.test(streamerId)) {
+        document.getElementById('empty-text').textContent = 'Invalid Streamer ID';
+        return;
+      }
+
+      const heroEl       = document.getElementById('hero');
+      const heroAvatar   = document.getElementById('hero-avatar');
+      const heroFallback = document.getElementById('hero-avatar-fallback');
+      const headerSub    = document.getElementById('header-sub');
+      const heroName     = document.getElementById('hero-name');
+      const heroCount    = document.getElementById('hero-count');
+      const heroGameStats = document.getElementById('hero-game-stats');
+      const listEl       = document.getElementById('list');
+      const emptyEl      = document.getElementById('empty');
+      const metaEl       = document.getElementById('meta');
+
+      // Track the prior top-10 so we can detect which row "just liked" this tick.
+      let prior = new Map(); // tiktokUserId → likes
+
+      function escapeHtml(s) {
+        return String(s || '').replace(/[&<>"']/g, m => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[m]));
+      }
+
+      // Apply the equipped hero_badge cosmetic as the hero card's background.
+      // Falls back to the default orange gradient when no badge is equipped.
+      //
+      // Animation strategy: linear timing + alternate direction.
+      //   - `linear` eliminates the speed hitch you get from `ease`/`ease-in-out`.
+      //   - `alternate` bounces 0%↔100% so the motion is guaranteed seamless
+      //     regardless of whether the gradient is palindromic (otherwise a
+      //     one-way loop would visibly jump at the boundary).
+      //   - Double the duration so the perceptual cycle time stays similar.
+      function applyHeroBadge(cos) {
+        const badge = cos && cos.hero_badge;
+        if (badge && badge.background) {
+          heroEl.style.background = badge.background;
+          heroEl.style.backgroundSize = badge.backgroundSize || '';
+          heroEl.style.animation = badge.animation || 'none';
+          heroEl.style.animationTimingFunction = 'linear';
+          heroEl.style.animationDirection = 'alternate';
+          heroEl.classList.add('has-badge');
+        } else {
+          heroEl.style.background = '';
+          heroEl.style.backgroundSize = '';
+          heroEl.style.animation = '';
+          heroEl.style.animationTimingFunction = '';
+          heroEl.style.animationDirection = '';
+          heroEl.classList.remove('has-badge');
+        }
+      }
+
+      // Apply hero_badge cosmetic to a row background (ranks 2-10).
+      function applyRowBadge(row, cos) {
+        const badge = cos && cos.hero_badge;
+        if (badge && badge.background) {
+          row.style.background = badge.background;
+          row.style.backgroundSize = badge.backgroundSize || '';
+          row.style.animation = badge.animation || '';
+          row.style.animationTimingFunction = 'linear';
+          row.style.animationDirection = 'alternate';
+          row.classList.add('has-badge');
+        }
+      }
+
+      function applyNameCosmetics(el, cos) {
+        // Reset any previously-applied cosmetic styling
+        el.style.color = '';
+        el.style.textShadow = '';
+        el.style.animation = '';
+        el.style.background = '';
+        el.style.webkitBackgroundClip = '';
+        el.style.backgroundClip = '';
+        el.style.webkitTextFillColor = '';
+        el.classList.remove('has-cosmetic');
+        if (!cos) return;
+
+        if (cos.name_color) {
+          if (cos.name_color.color) el.style.color = cos.name_color.color;
+          const grad = cos.name_color.backgroundImage || cos.name_color.background;
+          if (grad) {
+            el.style.background = grad;
+            if (cos.name_color.backgroundSize) el.style.backgroundSize = cos.name_color.backgroundSize;
+            el.style.webkitBackgroundClip = 'text';
+            el.style.backgroundClip = 'text';
+            el.style.webkitTextFillColor = 'transparent';
+          }
+          if (cos.name_color.animation) el.style.animation = cos.name_color.animation;
+        }
+        if (cos.name_glow) {
+          if (cos.name_glow.textShadow) el.style.textShadow = cos.name_glow.textShadow;
+          if (cos.name_glow.animation && !el.style.animation) el.style.animation = cos.name_glow.animation;
+        }
+      }
+
+      function initialFor(name) {
+        const s = String(name || '').trim();
+        if (!s) return '?';
+        const ch = s.codePointAt(0);
+        return String.fromCodePoint(ch).toUpperCase();
+      }
+
+      function formatCount(n) {
+        if (n >= 1_000_000) return (n / 1_000_000).toFixed(n < 10_000_000 ? 1 : 0) + 'M';
+        if (n >= 10_000)   return (n / 1_000).toFixed(0) + 'K';
+        if (n >= 1_000)    return (n / 1_000).toFixed(1) + 'K';
+        return String(n);
+      }
+
+      function formatGameStatValue(n) {
+        return Number(n || 0).toLocaleString();
+      }
+
+      function renderGameStats(container, gameStats) {
+        if (!container) return;
+        const items = Array.isArray(gameStats?.items)
+          ? gameStats.items.filter((item) => item && item.label)
+          : [];
+        if (!items.length) {
+          container.innerHTML = '';
+          container.classList.add('hidden');
+          return;
+        }
+        container.innerHTML = items.map((item) => `
+          <div class="game-stat">
+            <span class="game-stat-value">${escapeHtml(formatGameStatValue(item.value))}</span>
+            <span class="game-stat-label">${escapeHtml(item.label)}</span>
+          </div>
+        `).join('');
+        container.classList.remove('hidden');
+      }
+
+      function render(payload) {
+        const top = Array.isArray(payload?.top) ? payload.top : [];
+        const totalLikers = payload?.totalLikers || 0;
+        headerSub.textContent = payload?.activeGameLabel
+          ? `This Session • ${payload.activeGameLabel}`
+          : 'This Session';
+
+        // Compute which users just gained likes vs prior snapshot
+        const gains = new Map();
+        for (const e of top) {
+          const prev = prior.get(e.tiktokUserId) || 0;
+          if (e.likes > prev) gains.set(e.tiktokUserId, e.likes - prev);
+        }
+
+        // ── Empty state ──
+        if (top.length === 0) {
+          heroEl.classList.add('hidden');
+          listEl.innerHTML = '';
+          emptyEl.classList.remove('hidden');
+          metaEl.textContent = '';
+          prior = new Map();
+          return;
+        }
+
+        emptyEl.classList.add('hidden');
+
+        // ── Hero (rank 1) ──
+        const hero = top[0];
+        heroEl.classList.remove('hidden');
+        heroName.textContent = hero.displayName || hero.username;
+        applyNameCosmetics(heroName, hero.cosmetics);
+        applyHeroBadge(hero.cosmetics);
+        heroCount.textContent = hero.likes.toLocaleString();
+        renderGameStats(heroGameStats, hero.gameStats);
+
+        if (hero.profilePic) {
+          heroAvatar.innerHTML = `<img src="${escapeHtml(hero.profilePic)}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{id:'hero-avatar-fallback',textContent:'${escapeHtml(initialFor(hero.displayName || hero.username))}'}))">`;
+        } else {
+          heroAvatar.innerHTML = `<span id="hero-avatar-fallback">${escapeHtml(initialFor(hero.displayName || hero.username))}</span>`;
+        }
+
+        // ── FLIP animation for ranks 2-10 ──
+        // 1. Record current row positions (by tiktokUserId)
+        const oldRects = new Map();
+        listEl.querySelectorAll('.row').forEach(row => {
+          oldRects.set(row.dataset.uid, row.getBoundingClientRect());
+        });
+
+        // 2. Rebuild list DOM
+        const rest = top.slice(1);
+        const frag = document.createDocumentFragment();
+        rest.forEach((e) => {
+          const row = document.createElement('div');
+          row.className = 'row';
+          row.dataset.uid = e.tiktokUserId;
+
+          const rankCls = `rank-${e.rank}`;
+          const nameHtml = escapeHtml(e.displayName || e.username);
+          const handleHtml = e.username && e.username !== (e.displayName || '')
+            ? `<div class="row-handle">@${escapeHtml(e.username)}</div>` : '';
+
+          const avatarInner = e.profilePic
+            ? `<img src="${escapeHtml(e.profilePic)}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'${escapeHtml(initialFor(e.displayName || e.username))}'}))">`
+            : escapeHtml(initialFor(e.displayName || e.username));
+
+          row.innerHTML = `
+            <div class="row-rank ${rankCls}">${e.rank}</div>
+            <div class="row-avatar">${avatarInner}</div>
+            <div class="row-info">
+              <div class="row-name"></div>
+              ${handleHtml}
+              <div class="row-game-stats hidden"></div>
+            </div>
+            <div class="row-count-wrap">
+              <div class="row-count">${formatCount(e.likes)}</div>
+              <div class="row-count-label">Likes</div>
+            </div>
+          `;
+          // Apply cosmetics to name element (can't inline-style via innerHTML cleanly)
+          const nameEl = row.querySelector('.row-name');
+          nameEl.textContent = e.displayName || e.username;
+          applyNameCosmetics(nameEl, e.cosmetics);
+          applyRowBadge(row, e.cosmetics);
+          renderGameStats(row.querySelector('.row-game-stats'), e.gameStats);
+
+          frag.appendChild(row);
+        });
+        listEl.innerHTML = '';
+        listEl.appendChild(frag);
+
+        // 3. FLIP: for each new row, invert from old position, then play to new
+        requestAnimationFrame(() => {
+          listEl.querySelectorAll('.row').forEach(row => {
+            const uid = row.dataset.uid;
+            const newRect = row.getBoundingClientRect();
+            const oldRect = oldRects.get(uid);
+            if (oldRect) {
+              const dy = oldRect.top - newRect.top;
+              if (Math.abs(dy) > 1) {
+                row.style.transform = `translateY(${dy}px)`;
+                row.style.transition = 'transform 0s';
+                requestAnimationFrame(() => {
+                  row.style.transition = '';
+                  row.style.transform = '';
+                });
+              }
+            } else {
+              // Row is new to the visible set — fade/slide in
+              row.style.opacity = '0';
+              row.style.transform = 'translateX(40px)';
+              row.style.transition = 'opacity 0s, transform 0s';
+              requestAnimationFrame(() => {
+                row.style.transition = 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.25,1,0.3,1)';
+                row.style.opacity = '';
+                row.style.transform = '';
+              });
+            }
+
+            // Pulse + burst if this user just gained likes
+            const gained = gains.get(uid);
+            if (gained) {
+              row.classList.add('just-liked');
+              setTimeout(() => row.classList.remove('just-liked'), 800);
+
+              const burst = document.createElement('div');
+              burst.className = 'row-burst';
+              burst.textContent = `+${gained}`;
+              row.appendChild(burst);
+              setTimeout(() => burst.remove(), 1200);
+            }
+          });
+        });
+
+        // Update hero pulse on gain too
+        if (gains.get(hero.tiktokUserId)) {
+          heroEl.animate([
+            { boxShadow: '0 24px 80px rgba(0,0,0,0.7), 0 0 140px rgba(255,180,60,0.6), inset 0 1px 0 rgba(255,255,255,0.08)' },
+            { boxShadow: '0 24px 80px rgba(0,0,0,0.7), 0 0 80px rgba(255,160,60,0.18), inset 0 1px 0 rgba(255,255,255,0.08)' }
+          ], { duration: 1100, easing: 'ease-out' });
+        }
+
+        // Meta line
+        metaEl.textContent = `${totalLikers} unique ${totalLikers === 1 ? 'liker' : 'likers'} this session`;
+
+        // Snapshot for next tick
+        prior = new Map(top.map(e => [e.tiktokUserId, e.likes]));
+      }
+
+      // ── Initial fetch ──
+      async function fetchInitial() {
+        try {
+          const r = await fetch(`/api/toplikers/${encodeURIComponent(streamerId)}`);
+          if (r.ok) {
+            const data = await r.json();
+            render(data);
+          }
+        } catch (err) {
+          console.warn('[TopLikers] initial fetch failed', err);
+        }
+      }
+
+      // ── Socket live updates ──
+      const socket = io({ transports: ['websocket', 'polling'] });
+      socket.on('connect', () => {
+        socket.emit('join-toplikers', streamerId);
+        fetchInitial();
+      });
+      socket.on('toplikers-update', (payload) => {
+        if (payload?.streamerId === streamerId) render(payload);
+      });
+      socket.on('toplikers-reset', (payload) => {
+        if (payload?.streamerId === streamerId) render({ top: [], totalLikers: 0 });
+      });
+      socket.on('disconnect', () => {
+        // keep last render visible — will refresh on reconnect
+      });
+
+      fetchInitial();
+      setInterval(fetchInitial, 15000);
+    })();
+  </script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="royalStroke" x1="18" y1="18" x2="238" y2="238" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF1B6"/>
+      <stop offset="0.34" stop-color="#FFD96B"/>
+      <stop offset="0.7" stop-color="#B57CFF"/>
+      <stop offset="1" stop-color="#8A58FF"/>
+    </linearGradient>
+    <radialGradient id="royalAura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(128 122) rotate(90) scale(126)">
+      <stop stop-color="#FFD96B" stop-opacity="0.24"/>
+      <stop offset="0.62" stop-color="#A76BFF" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#A76BFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="128" cy="128" r="120" fill="url(#royalAura)"/>
+  <rect x="18" y="18" width="220" height="220" rx="68" stroke="url(#royalStroke)" stroke-width="8"/>
+  <rect x="28" y="28" width="200" height="200" rx="60" stroke="rgba(255,255,255,0.34)" stroke-width="2"/>
+  <path d="M52 82C72 60 96 48 128 48C160 48 184 60 204 82" stroke="#FFD96B" stroke-opacity="0.82" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M52 174C72 196 96 208 128 208C160 208 184 196 204 174" stroke="#A76BFF" stroke-opacity="0.76" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M84 52C94 64 110 72 128 72C146 72 162 64 172 52" stroke="rgba(255,247,216,0.62)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M84 204C94 192 110 184 128 184C146 184 162 192 172 204" stroke="rgba(255,247,216,0.44)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M44 110L64 94L80 94" stroke="#FFD96B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M212 110L192 94L176 94" stroke="#FFD96B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M44 146L64 162L80 162" stroke="#A76BFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M212 146L192 162L176 162" stroke="#A76BFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="44" cy="110" r="5" fill="#FFF1B6"/>
+  <circle cx="212" cy="110" r="5" fill="#FFF1B6"/>
+  <circle cx="44" cy="146" r="5" fill="#B57CFF"/>
+  <circle cx="212" cy="146" r="5" fill="#B57CFF"/>
+  <circle cx="128" cy="36" r="4.5" fill="rgba(255,255,255,0.8)"/>
+  <circle cx="128" cy="220" r="4.5" fill="rgba(255,255,255,0.65)"/>
+</svg>

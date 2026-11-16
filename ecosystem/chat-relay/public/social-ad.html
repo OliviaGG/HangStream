@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080, height=1920">
+<title>Word Tycoon — Social Ad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{background:#000;height:100%}
+body{width:1080px;height:1920px;overflow:hidden;background:#06020f;
+  transform-origin:top left;font-family:'Inter',system-ui,sans-serif;color:#f1f5f9;}
+#bgCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:0.35}
+.sc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;transform:scale(0.97);z-index:1;padding:80px 60px;pointer-events:none;
+  transition:opacity 0.5s ease,transform 0.5s cubic-bezier(0.34,1.56,0.64,1);}
+.sc.on{opacity:1;transform:scale(1);pointer-events:auto}
+.sc.off{opacity:0;transform:scale(1.03);transition:opacity 0.4s ease,transform 0.4s ease}
+.cn{position:absolute;width:80px;height:80px;border-style:solid;z-index:5;opacity:0;transition:opacity 0.5s 0.25s ease}
+.sc.on .cn{opacity:1}
+.cn.tl{top:24px;left:24px;border-width:2px 0 0 2px;border-radius:14px 0 0 0}
+.cn.tr{top:24px;right:24px;border-width:2px 2px 0 0;border-radius:0 14px 0 0}
+.cn.bl{bottom:24px;left:24px;border-width:0 0 2px 2px;border-radius:0 0 0 14px}
+.cn.br{bottom:24px;right:24px;border-width:0 2px 2px 0;border-radius:0 0 14px 0}
+.h1{font-size:96px;font-weight:900;letter-spacing:-2px;line-height:1.05;text-align:center;margin-bottom:28px;padding:8px 16px;
+  opacity:0;transform:translateY(30px);transition:opacity 0.45s 0.15s ease,transform 0.45s 0.15s cubic-bezier(0.34,1.56,0.64,1);}
+.sc.on .h1{opacity:1;transform:translateY(0)}
+.sub{font-size:38px;font-weight:500;text-align:center;line-height:1.35;color:rgba(241,245,249,0.7);margin-bottom:28px;
+  opacity:0;transform:translateY(16px);transition:opacity 0.45s 0.28s ease,transform 0.45s 0.28s ease;}
+.sc.on .sub{opacity:1;transform:translateY(0)}
+.dv{width:400px;height:2px;border-radius:2px;margin:16px auto;opacity:0;transition:opacity 0.45s 0.35s ease;}
+.sc.on .dv{opacity:1}
+.url{font-size:72px;font-weight:800;letter-spacing:-1px;text-align:center;padding:8px 16px;
+  opacity:0;transform:scale(0.93);transition:opacity 0.45s 0.4s ease,transform 0.45s 0.4s cubic-bezier(0.34,1.4,0.64,1);}
+.sc.on .url{opacity:1;transform:scale(1)}
+.free{font-size:26px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-top:16px;
+  opacity:0;transition:opacity 0.45s 0.5s ease;}
+.sc.on .free{opacity:1}
+.pills{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin:20px 0;
+  opacity:0;transform:translateY(12px);transition:opacity 0.45s 0.32s ease,transform 0.45s 0.32s ease;}
+.sc.on .pills{opacity:1;transform:translateY(0)}
+.pill{padding:14px 28px;border-radius:100px;font-size:22px;font-weight:700;backdrop-filter:blur(4px)}
+.wt-logo{width:340px;height:340px;border-radius:50%;filter:drop-shadow(0 0 40px rgba(255,215,0,0.6));margin-bottom:24px;
+  opacity:0;transform:translateY(24px) scale(0.85);transition:opacity 0.45s 0.08s ease,transform 0.45s 0.08s cubic-bezier(0.34,1.56,0.64,1);}
+.sc.on .wt-logo{opacity:1;transform:translateY(0) scale(1)}
+.game-logo{font-family:'Fredoka',sans-serif;font-size:100px;font-weight:700;letter-spacing:3px;margin-bottom:12px;
+  filter:drop-shadow(0 0 28px rgba(34,211,238,0.5));padding:12px 20px;
+  opacity:0;transform:translateY(24px) scale(0.92);transition:opacity 0.45s 0.1s ease,transform 0.45s 0.1s cubic-bezier(0.34,1.56,0.64,1);}
+.sc.on .game-logo{opacity:1;transform:translateY(0) scale(1)}
+.searchle-logo{font-family:'Inter',sans-serif;font-size:100px;font-weight:900;letter-spacing:-2px;
+  background:linear-gradient(135deg,#ff2d95,#a855f7,#22d3ee);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 28px rgba(255,45,149,0.5));margin-bottom:12px;padding:12px 20px;
+  opacity:0;transform:translateY(24px) scale(0.92);transition:opacity 0.45s 0.1s ease,transform 0.45s 0.1s cubic-bezier(0.34,1.56,0.64,1);}
+.sc.on .searchle-logo{opacity:1;transform:translateY(0) scale(1)}
+.le{color:#F5920A}.lr{color:#3EC8E8}.lc{color:#EFC000}.lT{color:#1E52C8}
+.la{color:#E83020}.ln{color:#42B238}.lg{color:#88AAFF}.ll{color:#C835B8}.ld{color:#1EB8A8}
+
+/* ── S0 Hook ── */
+#s0 .cn{border-color:rgba(255,215,0,0.4)}
+#s0 .h1{font-size:108px;background:linear-gradient(135deg,#ffd700,#ffb300,#ffe066);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+#s0 .sub{font-size:42px;color:rgba(255,255,255,0.55)}
+
+/* ── S1 Word Tycoon ── */
+#s1 .cn{border-color:rgba(255,215,0,0.35)}
+#s1 .h1{background:linear-gradient(135deg,#ffd700,#ffb300,#ffe066);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+#s1 .dv{background:linear-gradient(90deg,transparent,rgba(255,215,0,0.5),rgba(180,100,255,0.5),transparent)}
+.wt-g{border:1.5px solid rgba(255,215,0,0.35);background:rgba(255,180,0,0.1);color:#ffd700}
+.wt-w{border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#fff}
+.wt-p{border:1.5px solid rgba(180,100,255,0.35);background:rgba(140,60,255,0.1);color:#c084fc}
+#s1 .url{color:#ffd700;text-shadow:0 0 28px rgba(255,215,0,0.6),0 0 70px rgba(255,180,0,0.35);
+  animation:wtP 2.2s ease-in-out infinite alternate;}
+@keyframes wtP{from{text-shadow:0 0 28px rgba(255,215,0,0.6)}to{text-shadow:0 0 40px rgba(255,215,0,0.9),0 0 90px rgba(255,180,0,0.55)}}
+#s1 .free{color:rgba(255,255,255,0.4)}
+
+/* ── S3 erecTangled ── */
+#s3 .cn.tl{border-color:rgba(34,211,238,0.4)}#s3 .cn.tr{border-color:rgba(167,139,250,0.4)}
+#s3 .cn.bl{border-color:rgba(74,222,128,0.4)}#s3 .cn.br{border-color:rgba(56,189,248,0.4)}
+#s3 .dv{background:linear-gradient(90deg,transparent,rgba(34,211,238,0.5),rgba(167,139,250,0.5),transparent)}
+.et-c{border:1.5px solid rgba(34,211,238,0.35);background:rgba(34,211,238,0.08);color:#22d3ee}
+.et-p{border:1.5px solid rgba(167,139,250,0.35);background:rgba(167,139,250,0.08);color:#a78bfa}
+.et-g{border:1.5px solid rgba(74,222,128,0.35);background:rgba(74,222,128,0.08);color:#4ade80}
+#s3 .url{font-family:'Fredoka',sans-serif;
+  background:linear-gradient(135deg,#22d3ee,#38bdf8,#a78bfa,#22d3ee);background-size:300% 300%;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:us 4s ease-in-out infinite alternate;}
+@keyframes us{0%{background-position:0% 50%;filter:drop-shadow(0 0 24px rgba(34,211,238,0.5))}
+  100%{background-position:100% 50%;filter:drop-shadow(0 0 32px rgba(167,139,250,0.6))}}
+#s3 .free{color:rgba(34,211,238,0.4);font-family:'Fredoka',sans-serif}
+
+/* ── S3b erecTangled Gameplay ── */
+#s3b .cn.tl{border-color:rgba(34,211,238,0.3)}#s3b .cn.br{border-color:rgba(167,139,250,0.3)}
+#s3b .cn.tr{border-color:rgba(74,222,128,0.3)}#s3b .cn.bl{border-color:rgba(56,189,248,0.3)}
+.et-board{width:860px;border-radius:24px;background:rgba(11,15,25,0.92);border:1.5px solid rgba(34,211,238,0.15);
+  overflow:hidden;opacity:0;transform:translateY(20px) scale(0.96);
+  transition:opacity 0.5s 0.1s ease,transform 0.5s 0.1s cubic-bezier(0.34,1.4,0.64,1);}
+.sc.on .et-board{opacity:1;transform:translateY(0) scale(1)}
+.et-hdr{display:flex;align-items:center;justify-content:space-between;padding:20px 28px;
+  border-bottom:1px solid rgba(255,255,255,0.06)}
+.et-hdr .et-title{font-family:'Fredoka',sans-serif;font-size:28px;font-weight:700}
+.et-hdr .et-score{font-size:22px;font-weight:700;color:#4ade80}
+.et-hdr .et-ring{font-size:16px;color:rgba(241,245,249,0.4)}
+.et-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;padding:20px 24px}
+.et-cell{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative;
+  font-family:'Fredoka',sans-serif;font-size:28px;font-weight:700;
+  background:rgba(15,23,42,0.8);border:1.5px solid rgba(255,255,255,0.06);color:rgba(148,163,184,0.9)}
+.et-cell.empty{background:rgba(10,15,25,0.4);border-color:rgba(255,255,255,0.03);color:transparent}
+.et-cell.found{border-color:rgba(255,222,0,0.5);color:#fde047;background:rgba(255,222,0,0.06)}
+.et-cell.rare-c{border-color:rgba(167,139,250,0.5);color:#a78bfa;background:rgba(167,139,250,0.06)}
+.et-cell.active{border-color:rgba(74,222,128,0.6);color:#4ade80;background:rgba(74,222,128,0.08);
+  box-shadow:0 0 12px rgba(74,222,128,0.2)}
+.et-cell .hint{position:absolute;bottom:2px;right:4px;font-size:10px;color:rgba(255,222,0,0.5);font-weight:600}
+.et-cell.anim-find{animation:cellFind 0.4s ease forwards}
+@keyframes cellFind{0%{transform:scale(1)}40%{transform:scale(1.15)}100%{transform:scale(1)}}
+.et-words{display:flex;gap:8px;justify-content:center;padding:16px 24px;flex-wrap:wrap;
+  border-top:1px solid rgba(255,255,255,0.06)}
+.et-w{padding:6px 14px;border-radius:8px;font-family:'Fredoka',sans-serif;font-size:16px;font-weight:600}
+.et-w-c{background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.2)}
+.et-w-r{background:rgba(255,222,0,0.08);color:#fde047;border:1px solid rgba(255,222,0,0.18)}
+.et-w-u{background:rgba(167,139,250,0.1);color:#a78bfa;border:1px solid rgba(167,139,250,0.2)}
+.et-input{display:flex;align-items:center;gap:10px;padding:14px 24px;margin:0 24px 20px;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px}
+.et-input span{font-size:16px;color:rgba(241,245,249,0.3);font-weight:500}
+.et-input .et-sot{font-size:14px;color:rgba(241,245,249,0.25);text-transform:uppercase;letter-spacing:1px;
+  margin-left:auto}
+
+/* ── S4 Searchle ── */
+#s4 .cn.tl{border-color:rgba(255,45,149,0.4)}#s4 .cn.tr{border-color:rgba(168,85,247,0.4)}
+#s4 .cn.bl{border-color:rgba(34,211,238,0.4)}#s4 .cn.br{border-color:rgba(99,102,241,0.4)}
+#s4 .dv{background:linear-gradient(90deg,transparent,rgba(255,45,149,0.5),rgba(168,85,247,0.5),rgba(34,211,238,0.5),transparent)}
+.sl-k{border:1.5px solid rgba(255,45,149,0.35);background:rgba(255,45,149,0.08);color:#ff2d95}
+.sl-p{border:1.5px solid rgba(168,85,247,0.35);background:rgba(168,85,247,0.08);color:#a855f7}
+.sl-c{border:1.5px solid rgba(34,211,238,0.35);background:rgba(34,211,238,0.08);color:#22d3ee}
+#s4 .url{font-family:'Inter',sans-serif;font-weight:900;
+  background:linear-gradient(135deg,#ff2d95,#a855f7,#22d3ee,#ff2d95);background-size:300% 300%;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:us 4s ease-in-out infinite alternate;}
+#s4 .free{color:rgba(168,85,247,0.4)}
+.smock{display:flex;align-items:center;gap:14px;padding:18px 32px;
+  background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.12);border-radius:18px;
+  width:680px;backdrop-filter:blur(4px);margin-bottom:14px;
+  opacity:0;transform:translateY(12px);transition:opacity 0.45s 0.18s ease,transform 0.45s 0.18s ease;}
+.sc.on .smock{opacity:1;transform:translateY(0)}
+.smock svg{width:28px;height:28px;color:rgba(255,45,149,0.6);flex-shrink:0}
+.smock .mt{font-size:24px;color:rgba(241,245,249,0.35);font-weight:500}
+.smock .mb{margin-left:auto;padding:10px 22px;border-radius:12px;background:#4f46e5;color:#fff;
+  font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;border:none}
+.rr{display:flex;gap:14px;margin-bottom:18px;opacity:0;transform:translateY(10px);
+  transition:opacity 0.45s 0.26s ease,transform 0.45s 0.26s ease;}
+.sc.on .rr{opacity:1;transform:translateY(0)}
+.rb{padding:10px 22px;border-radius:12px;font-size:20px;font-weight:700;color:#fff}
+.rb-h{background:linear-gradient(135deg,#ff2d95,#ff6b6b)}
+.rb-w{background:linear-gradient(135deg,#a855f7,#6366f1)}
+.rb-c{background:linear-gradient(135deg,#22d3ee,#3b82f6)}
+
+/* ── S4b Searchle Gameplay ── */
+#s4b .cn.tl{border-color:rgba(255,45,149,0.3)}#s4b .cn.br{border-color:rgba(34,211,238,0.3)}
+#s4b .cn.tr{border-color:rgba(168,85,247,0.3)}#s4b .cn.bl{border-color:rgba(99,102,241,0.3)}
+.sl-board{width:860px;border-radius:24px;background:rgba(8,2,18,0.92);border:1.5px solid rgba(255,45,149,0.12);
+  overflow:hidden;opacity:0;transform:translateY(20px) scale(0.96);
+  transition:opacity 0.5s 0.1s ease,transform 0.5s 0.1s cubic-bezier(0.34,1.4,0.64,1);}
+.sc.on .sl-board{opacity:1;transform:translateY(0) scale(1)}
+.sl-hdr{display:flex;align-items:center;gap:14px;padding:20px 28px;
+  border-bottom:1px solid rgba(255,255,255,0.06)}
+.sl-avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:24px;font-weight:800;color:#fff}
+.sl-hdr-info{flex:1}
+.sl-hdr-name{font-size:22px;font-weight:700;color:#f1f5f9}
+.sl-hdr-sub{font-size:14px;color:rgba(241,245,249,0.4)}
+.sl-hdr-stats{text-align:right}
+.sl-hdr-stats div{font-size:14px;color:rgba(241,245,249,0.4)}
+.sl-hdr-stats span{font-size:22px;font-weight:800;color:#f1f5f9}
+.sl-xp{height:28px;background:rgba(0,0,0,0.3);display:flex;align-items:center;padding:0 20px}
+.sl-xp-bar{height:6px;border-radius:3px;background:linear-gradient(90deg,#22c55e,#4ade80);flex:1;margin-right:12px}
+.sl-xp-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#22c55e,#4ade80);width:65%}
+.sl-xp-num{font-size:16px;font-weight:800;color:#4ade80}
+.sl-row{display:flex;align-items:center;padding:14px 20px;margin:6px 12px;border-radius:14px;
+  position:relative;overflow:hidden;background:rgba(15,20,30,0.7);
+  border:1px solid rgba(140,200,60,0.3);
+  opacity:0;transform:translateX(-40px);transition:opacity 0.35s ease,transform 0.35s cubic-bezier(0.34,1.4,0.64,1);}
+.sl-row.show{opacity:1;transform:translateX(0)}
+.sl-bar{position:absolute;left:0;top:0;bottom:0;border-radius:14px;
+  background:linear-gradient(90deg,rgba(100,180,40,0.55),rgba(130,210,50,0.35));z-index:0;
+  border-right:2px solid rgba(140,220,60,0.4)}
+.sl-row>*{position:relative;z-index:1}
+.sl-word{font-size:24px;font-weight:800;color:#f1f5f9;flex:0 0 180px}
+.sl-player{font-size:16px;font-weight:600;color:rgba(241,245,249,0.6);flex:1}
+.sl-rank-num{font-size:20px;font-weight:800;color:#f1f5f9;width:54px;height:36px;display:flex;
+  align-items:center;justify-content:center;background:rgba(0,0,0,0.25);border-radius:10px}
+.sl-input{display:flex;align-items:center;gap:10px;margin:12px 16px 16px;padding:14px 20px;
+  background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);border-radius:14px}
+.sl-input svg{width:22px;height:22px;color:rgba(241,245,249,0.3)}
+.sl-input .sl-ph{font-size:18px;color:rgba(241,245,249,0.25);flex:1}
+.sl-input .sl-btn{padding:8px 20px;border-radius:10px;background:#4f46e5;color:#fff;
+  font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+
+/* ── S5 recTangled ── */
+#s5 .cn.tl{border-color:rgba(34,211,238,0.4)}#s5 .cn.tr{border-color:rgba(167,139,250,0.4)}
+#s5 .cn.bl{border-color:rgba(74,222,128,0.4)}#s5 .cn.br{border-color:rgba(56,189,248,0.4)}
+#s5 .dv{background:linear-gradient(90deg,transparent,rgba(34,211,238,0.5),rgba(167,139,250,0.5),transparent)}
+#s5 .url{font-family:'Fredoka',sans-serif;
+  background:linear-gradient(135deg,#22d3ee,#38bdf8,#a78bfa,#22d3ee);background-size:300% 300%;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:us 4s ease-in-out infinite alternate;}
+#s5 .free{color:rgba(34,211,238,0.4);font-family:'Fredoka',sans-serif}
+
+/* ── S6 Closing ── */
+#s6 .cn{border-color:rgba(255,215,0,0.35)}
+#s6 .h1{font-size:88px;background:linear-gradient(135deg,#ffd700,#22d3ee,#a855f7,#ff2d95);background-size:300% 300%;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:fs 4s ease-in-out infinite;}
+@keyframes fs{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.sites{display:flex;flex-direction:column;align-items:center;gap:22px;margin:32px 0;
+  opacity:0;transform:translateY(20px);transition:opacity 0.45s 0.25s ease,transform 0.45s 0.25s ease;}
+.sc.on .sites{opacity:1;transform:translateY(0)}
+.si{font-size:46px;font-weight:700;letter-spacing:-0.3px}
+.si-wt{color:#ffd700;text-shadow:0 0 20px rgba(255,215,0,0.4)}
+.si-et{color:#22d3ee;text-shadow:0 0 20px rgba(34,211,238,0.4);font-family:'Fredoka',sans-serif}
+.si-sl{background:linear-gradient(135deg,#ff2d95,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 14px rgba(255,45,149,0.3))}
+.si-rt{color:#a78bfa;text-shadow:0 0 20px rgba(167,139,250,0.4);font-family:'Fredoka',sans-serif}
+#s6 .free{font-size:32px;letter-spacing:4px;color:rgba(255,255,255,0.55);animation:fp 2s ease-in-out infinite alternate;}
+@keyframes fp{from{opacity:0.55}to{opacity:1}}
+.gp-cap{text-align:center;font-size:26px;font-weight:600;color:rgba(255,255,255,0.45);margin-top:24px;
+  opacity:0;transition:opacity 0.5s 0.35s ease;}
+.sc.on .gp-cap{opacity:1}
+#prog{position:absolute;bottom:0;left:0;height:5px;z-index:10;
+  background:linear-gradient(90deg,#ffd700,#22d3ee,#a855f7,#ff2d95);background-size:400% 100%;
+  animation:ps 60s linear infinite;transition:width 0.1s linear;}
+@keyframes ps{0%{background-position:0% 50%}100%{background-position:400% 50%}}
+</style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+<div id="prog" style="width:0%"></div>
+
+<!-- S0 Hook (0-4s) -->
+<div id="s0" class="sc"><div class="cn tl"></div><div class="cn tr"></div><div class="cn bl"></div><div class="cn br"></div>
+  <div class="h1">Love word games?</div>
+  <div class="sub">Play free. Earn rewards.<br>No download needed.</div>
+</div>
+
+<!-- S1 Word Tycoon (4-12s) -->
+<div id="s1" class="sc"><div class="cn tl"></div><div class="cn tr"></div><div class="cn bl"></div><div class="cn br"></div>
+  <img class="wt-logo" src="/portal/img/logo.png" alt="">
+  <div class="h1">Word Tycoon</div>
+  <div class="sub">Play word games. Win coins.<br>Collect cosmetics.</div>
+  <div class="dv"></div>
+  <div class="pills">
+    <span class="pill wt-g">10+ Games</span>
+    <span class="pill wt-w">Daily Rewards</span>
+    <span class="pill wt-p">Cosmetics</span>
+  </div>
+  <div class="url">wordtycoon.live</div>
+  <div class="free">Free to play</div>
+</div>
+
+<!-- S3 erecTangled (12-19s) -->
+<div id="s3" class="sc"><div class="cn tl"></div><div class="cn tr"></div><div class="cn bl"></div><div class="cn br"></div>
+  <div class="game-logo"><span class="le">e</span><span class="lr">r</span><span class="le">e</span><span class="lc">c</span><span class="lT">T</span><span class="la">a</span><span class="ln">n</span><span class="lg">g</span><span class="ll">l</span><span class="le">e</span><span class="ld">d</span></div>
+  <div class="sub">Swipe. Connect. Discover words.</div>
+  <div class="dv"></div>
+  <div class="pills">
+    <span class="pill et-c">Find Words</span>
+    <span class="pill et-p">Earn Rewards</span>
+    <span class="pill et-g">Compete</span>
+  </div>
+  <div class="url">erecTangled.com</div>
+  <div class="free">Free to play</div>
+</div>
+
+<!-- S3b erecTangled Gameplay (22-29s) -->
+<div id="s3b" class="sc"><div class="cn tl"></div><div class="cn tr"></div><div class="cn bl"></div><div class="cn br"></div>
+  <div class="et-board">
+    <div class="et-hdr">
+      <div><span class="et-title"><span class="le">e</span><span class="lr">r</span><span class="le">e</span><span class="lc">c</span><span class="lT">T</span><span class="la">a</span><span class="ln">n</span><span class="lg">g</span><span class="ll">l</span><span class="le">e</span><span class="ld">d</span></span></div>
+      <div style="text-align:right"><span class="et-score">13 / 172</span> <span style="font-size:16px;color:rgba(241,245,249,0.5)">words</span><br><span class="et-ring">Ring 2/7 · 34 words to expand</span></div>
+    </div>
+    <div class="et-grid">
+      <div class="et-cell empty"></div><div class="et-cell empty"></div><div class="et-cell found">T</div><div class="et-cell found">E<span class="hint">2</span></div><div class="et-cell found">A</div><div class="et-cell">R</div><div class="et-cell empty"></div><div class="et-cell empty"></div>
+      <div class="et-cell empty"></div><div class="et-cell">S</div><div class="et-cell">O</div><div class="et-cell">R</div><div class="et-cell">T</div><div class="et-cell found">E<span class="hint">4</span></div><div class="et-cell">D</div><div class="et-cell empty"></div>
+      <div class="et-cell empty"></div><div class="et-cell found">A</div><div class="et-cell found">N<span class="hint">6</span></div><div class="et-cell">D</div><div class="et-cell">I</div><div class="et-cell">N</div><div class="et-cell">E</div><div class="et-cell empty"></div>
+      <div class="et-cell empty"></div><div class="et-cell">L</div><div class="et-cell">U</div><div class="et-cell">N</div><div class="et-cell">C</div><div class="et-cell">H</div><div class="et-cell found">S</div><div class="et-cell empty"></div>
+      <div class="et-cell empty"></div><div class="et-cell found">E<span class="hint">3</span></div><div class="et-cell">T</div><div class="et-cell">I</div><div class="et-cell found">M<span class="hint">5</span></div><div class="et-cell found">E</div><div class="et-cell">T</div><div class="et-cell empty"></div>
+      <div class="et-cell empty"></div><div class="et-cell empty"></div><div class="et-cell">A</div><div class="et-cell">G</div><div class="et-cell">E</div><div class="et-cell">S</div><div class="et-cell empty"></div><div class="et-cell empty"></div>
+    </div>
+    <div class="et-input"><span>tap here to type a guess</span><span class="et-sot">Swipe or type</span></div>
+    <div class="et-words">
+      <span class="et-w et-w-c">TEA</span><span class="et-w et-w-c">ANT</span><span class="et-w et-w-c">TIME</span>
+      <span class="et-w et-w-r">TEAR</span><span class="et-w et-w-r">LANE</span><span class="et-w et-w-u">SORTED</span>
+    </div>
+  </div>
+</div>
+
+<!-- S4 Searchle (29-36s) -->
+<div id="s4" class="sc"><div class="cn tl"></div><div class="cn tr"></div><div class="cn bl"></div><div class="cn br"></div>
+  <div class="searchle-logo">Searchle</div>
+  <div class="smock">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16.5 16.5L21 21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <span class="mt">Type a word to guess...</span><span class="mb">Enter</span>
+  </div>
+  <div class="rr">
+    <span class="rb rb-h">#1 Hot</span><span class="rb rb-w">#42 Warm</span><span class="rb rb-c">#128 Cool</span>
+  </div>
+  <div class="sub">Guess words. Climb the ranks.</div>
+  <div class="dv"></div>
+  <div class="pills">
+    <span class="pill sl-k">Word Search</span><span class="pill sl-p">Rankings</span><span class="pill sl-c">Multiplayer</span>
+  </div>
+  <div class="url">subtextle.com</div>
+  <div class="free">Free to play</div>
+</div>
+
+<!-- S4b Searchle Gameplay (36-43s) -->
+<div id="s4b" class="sc"><div class="cn tl"></div><div class="cn tr"></div><div class="cn bl"></div><div class="cn br"></div>
+  <div class="sl-board">
+    <div class="sl-hdr">
+      <div class="sl-avatar" style="background:linear-gradient(135deg,#a855f7,#6366f1)">M</div>
+      <div class="sl-hdr-info"><div class="sl-hdr-name">mana.bear</div><div class="sl-hdr-sub">106 guesses</div></div>
+      <div class="sl-hdr-stats"><div>GUESSES</div><span>336</span></div>
+      <div class="sl-hdr-stats" style="margin-left:16px"><div>TIME</div><span>92:45</span></div>
+    </div>
+    <div class="sl-xp"><div style="flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,0.08)"><div class="sl-xp-fill"></div></div><span class="sl-xp-num">285,842 XP</span></div>
+    <div class="sl-row"><div class="sl-bar" style="width:95%"></div><span class="sl-word">HOPEFUL</span><span class="sl-player">chickadee1959</span><span class="sl-rank-num">21</span></div>
+    <div class="sl-row"><div class="sl-bar" style="width:82%"></div><span class="sl-word">GOOD</span><span class="sl-player">leetrick</span><span class="sl-rank-num">56</span></div>
+    <div class="sl-row"><div class="sl-bar" style="width:72%"></div><span class="sl-word">HAPPY</span><span class="sl-player">leetrick</span><span class="sl-rank-num">72</span></div>
+    <div class="sl-row"><div class="sl-bar" style="width:65%"></div><span class="sl-word">BALANCED</span><span class="sl-player">leetrick</span><span class="sl-rank-num">83</span></div>
+    <div class="sl-row"><div class="sl-bar" style="width:60%"></div><span class="sl-word">HEALTHY</span><span class="sl-player">chickadee1959</span><span class="sl-rank-num">87</span></div>
+    <div class="sl-row"><div class="sl-bar" style="width:42%"></div><span class="sl-word">BAD</span><span class="sl-player">leetrick</span><span class="sl-rank-num">111</span></div>
+    <div class="sl-row"><div class="sl-bar" style="width:22%"></div><span class="sl-word">TRUTHFUL</span><span class="sl-player">chickadee1959</span><span class="sl-rank-num">190</span></div>
+    <div class="sl-input">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16.5 16.5L21 21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span class="sl-ph">Guess a word...</span><span class="sl-btn">ENTER</span>
+    </div>
+  </div>
+</div>
+
+<!-- S5 recTangled (43-49s) -->
+<div id="s5" class="sc"><div class="cn tl"></div><div class="cn tr"></div><div class="cn bl"></div><div class="cn br"></div>
+  <div class="game-logo"><span class="lr">r</span><span class="le">e</span><span class="lc">c</span><span class="lT">T</span><span class="la">a</span><span class="ln">n</span><span class="lg">g</span><span class="ll">l</span><span class="le">e</span><span class="ld">d</span></div>
+  <div class="sub">The original grid word game.</div>
+  <div class="dv"></div>
+  <div class="pills">
+    <span class="pill et-c">Find Words</span><span class="pill et-p">Daily Puzzles</span><span class="pill et-g">Play Free</span>
+  </div>
+  <div class="url">rectangled.live</div>
+  <div class="free">Free to play</div>
+</div>
+
+<!-- S6 Closing (49-60s) -->
+<div id="s6" class="sc"><div class="cn tl"></div><div class="cn tr"></div><div class="cn bl"></div><div class="cn br"></div>
+  <div class="h1">Play today.</div>
+  <div class="sites">
+    <span class="si si-wt">wordtycoon.live</span>
+    <span class="si si-et">erecTangled.com</span>
+    <span class="si si-sl">subtextle.com</span>
+    <span class="si si-rt">rectangled.live</span>
+  </div>
+  <div class="free">All free. No download.</div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var c=document.getElementById('bgCanvas'),x=c.getContext('2d');
+c.width=1080;c.height=1920;
+var H=[45,187,270,330,145],sp=[];
+for(var i=0;i<50;i++)sp.push({ox:Math.random()*1080,oy:Math.random()*1920,
+  ax:20+Math.random()*80,ay:20+Math.random()*80,wx:0.03+Math.random()*0.1,
+  wy:0.04+Math.random()*0.12,px:Math.random()*6.28,py:Math.random()*6.28,
+  r:1.5+Math.random()*4,al:0.08+Math.random()*0.18,hue:H[i%5],
+  pulse:Math.random()*6.28,pw:0.03+Math.random()*0.1});
+function bg(ts){var t=ts/1000;x.clearRect(0,0,1080,1920);
+  for(var i=0;i<sp.length;i++){var s=sp[i],p=0.4+0.6*Math.sin(s.pw*t+s.pulse);
+    x.globalAlpha=s.al*p;x.fillStyle='hsl('+s.hue+',75%,75%)';
+    x.shadowColor='hsl('+s.hue+',90%,70%)';x.shadowBlur=8;
+    var rad=Math.max(0.1,s.r*p);x.beginPath();x.arc(s.ox+s.ax*Math.sin(s.wx*t+s.px),s.oy+s.ay*Math.sin(s.wy*t+s.py),rad,0,6.28);x.fill();}
+  x.shadowBlur=0;x.globalAlpha=1;requestAnimationFrame(bg);}
+requestAnimationFrame(bg);
+// Timeline — no transition slide, more time for gameplay
+var TL=[['s0',0,4000],['s1',4000,12000],['s3',12000,19000],['s3b',19000,28000],
+  ['s4',28000,35000],['s4b',35000,44000],['s5',44000,50000],['s6',50000,60000]];
+var TOTAL=60000,prog=document.getElementById('prog'),cur=-1,t0=null;
+
+// ── erecTangled gameplay animation ──────────────
+// Cells that will "find" words over time (indices into the grid)
+var etAnimated=false;
+var ET_SWIPES=[
+  // Each swipe: array of cell indices, delay ms, word to add, word class
+  {cells:[9,10,11,12],delay:800,word:'SORT',cls:'et-w-c'},         // S-O-R-T
+  {cells:[19,20,21,22],delay:2400,word:'DINE',cls:'et-w-c'},       // D-I-N-E
+  {cells:[25,26,27,28,29],delay:4200,word:'LUNCH',cls:'et-w-r'},   // L-U-N-C-H (rare)
+  {cells:[42,43,44,45],delay:6000,word:'AGES',cls:'et-w-c'},       // A-G-E-S
+];
+function animateET(){
+  if(etAnimated)return;etAnimated=true;
+  var board=document.getElementById('s3b');
+  var cells=board.querySelectorAll('.et-cell');
+  var wordBox=board.querySelector('.et-words');
+  var scoreEl=board.querySelector('.et-score');
+  var wordCount=13;
+  // Start with only pre-found cells visible, others plain
+  ET_SWIPES.forEach(function(swipe){
+    swipe.cells.forEach(function(ci){
+      var c=cells[ci];if(c&&!c.classList.contains('empty')){
+        c.classList.remove('found','active','rare-c');
+      }
+    });
+  });
+  // Animate each swipe
+  ET_SWIPES.forEach(function(swipe,si){
+    // Step 1: highlight cells green (swiping)
+    setTimeout(function(){
+      swipe.cells.forEach(function(ci,i){
+        setTimeout(function(){
+          var c=cells[ci];if(!c||c.classList.contains('empty'))return;
+          c.classList.add('active');c.classList.add('anim-find');
+        },i*150);
+      });
+    },swipe.delay);
+    // Step 2: convert to found (yellow) after swipe completes
+    setTimeout(function(){
+      swipe.cells.forEach(function(ci){
+        var c=cells[ci];if(!c||c.classList.contains('empty'))return;
+        c.classList.remove('active','anim-find');
+        c.classList.add(swipe.cls==='et-w-r'?'rare-c':'found');
+      });
+      // Add word pill
+      wordCount++;
+      if(scoreEl)scoreEl.textContent=wordCount+' / 172';
+      var wp=document.createElement('span');
+      wp.className='et-w '+swipe.cls;wp.textContent=swipe.word;
+      wp.style.opacity='0';wp.style.transform='scale(0.8)';
+      wordBox.appendChild(wp);
+      setTimeout(function(){wp.style.transition='all 0.3s ease';wp.style.opacity='1';wp.style.transform='scale(1)';},50);
+    },swipe.delay+swipe.cells.length*150+300);
+  });
+}
+function resetET(){
+  etAnimated=false;
+  var board=document.getElementById('s3b');
+  var cells=board.querySelectorAll('.et-cell');
+  cells.forEach(function(c){c.classList.remove('anim-find');});
+  // Remove dynamically added word pills
+  var wordBox=board.querySelector('.et-words');
+  while(wordBox.children.length>6)wordBox.removeChild(wordBox.lastChild);
+  var scoreEl=board.querySelector('.et-score');
+  if(scoreEl)scoreEl.textContent='13 / 172';
+}
+
+// ── Searchle gameplay animation ─────────────────
+var slAnimated=false;
+function animateSL(){
+  if(slAnimated)return;slAnimated=true;
+  var rows=document.querySelectorAll('#s4b .sl-row');
+  rows.forEach(function(r,i){
+    setTimeout(function(){r.classList.add('show');},400+i*600);
+  });
+}
+function resetSL(){
+  slAnimated=false;
+  var rows=document.querySelectorAll('#s4b .sl-row');
+  rows.forEach(function(r){r.classList.remove('show');});
+}
+
+function tick(ts){
+  if(!t0)t0=ts;var el=ts-t0;
+  if(el>=TOTAL){t0=ts;el=0;cur=-1;resetET();resetSL();
+    TL.forEach(function(t){var e=document.getElementById(t[0]);e.classList.remove('on','off');});}
+  prog.style.width=(el/TOTAL*100)+'%';
+  var nx=-1;for(var i=0;i<TL.length;i++)if(el>=TL[i][1]&&el<TL[i][2]){nx=i;break;}
+  if(nx!==cur){
+    if(cur>=0){var o=document.getElementById(TL[cur][0]);o.classList.remove('on');o.classList.add('off');}
+    if(nx>=0){
+      var nid=TL[nx][0];
+      var n=document.getElementById(nid);n.classList.remove('off');n.classList.add('on');
+      if(nid==='s3b'){resetET();setTimeout(animateET,400);}
+      if(nid==='s4b'){resetSL();setTimeout(animateSL,200);}
+    }
+    cur=nx;}
+  requestAnimationFrame(tick);}
+requestAnimationFrame(tick);
+function fit(){var s=Math.min(window.innerWidth/1080,window.innerHeight/1920);
+  document.body.style.transform='scale('+s+')';document.body.style.marginLeft=((window.innerWidth-1080*s)/2)+'px';}
+fit();window.addEventListener('resize',fit);
+})();
+</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

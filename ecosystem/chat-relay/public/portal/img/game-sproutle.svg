@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@700&amp;display=swap');
+    </style>
+
+    <linearGradient id="eBgGrad" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0%" stop-color="#1a0608"/>
+      <stop offset="100%" stop-color="#0e0305"/>
+    </linearGradient>
+
+    <!-- Normal tile -->
+    <linearGradient id="eTileNormal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2d1418"/>
+      <stop offset="100%" stop-color="#1c0d10"/>
+    </linearGradient>
+
+    <!-- Crimson highlighted tile (found word) -->
+    <linearGradient id="eTileGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a0c14"/>
+      <stop offset="100%" stop-color="#26070e"/>
+    </linearGradient>
+
+    <!-- Purple faded tile (no common words) -->
+    <linearGradient id="eTilePurple" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e1228"/>
+      <stop offset="100%" stop-color="#140b1c"/>
+    </linearGradient>
+
+    <!-- Glow for crimson row -->
+    <filter id="eGreenGlow" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="10" result="blur"/>
+      <feFlood flood-color="#ff4466" flood-opacity="0.45" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Glow for purple tiles -->
+    <filter id="ePurpleGlow" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="blur"/>
+      <feFlood flood-color="#b46cb4" flood-opacity="0.3" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" ry="80" fill="url(#eBgGrad)"/>
+  <rect width="512" height="512" rx="80" ry="80" fill="none" stroke="#2d1418" stroke-width="2"/>
+
+  <!-- ═══════════════════════════════════════════
+       GRID: 4×4, cell=80px, gap=8px
+       Col x: 84, 172, 260, 348
+       Row y: 44, 132, 220, 308
+  ════════════════════════════════════════════ -->
+
+  <!-- ── ROW 0: ring-unrevealed (completely black outer ring) ── -->
+  <rect x="84"  y="44" width="80" height="80" rx="14" fill="#050709"/>
+  <rect x="172" y="44" width="80" height="80" rx="14" fill="#050709"/>
+  <rect x="260" y="44" width="80" height="80" rx="14" fill="#050709"/>
+  <rect x="348" y="44" width="80" height="80" rx="14" fill="#050709"/>
+
+  <!-- ── ROW 1: G R O W — GREEN (found word, inner ring revealed) ── -->
+  <g filter="url(#eGreenGlow)">
+    <!-- (0,1) G -->
+    <rect x="84" y="132" width="80" height="80" rx="14" fill="url(#eTileGreen)" stroke="#ff4466" stroke-width="2"/>
+    <text x="124" y="188" text-anchor="middle" dominant-baseline="auto"
+          font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#ff4466">G</text>
+    <text x="157" y="205" text-anchor="end"
+          font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#ff4466" opacity="0.65">3</text>
+
+    <!-- (1,1) R -->
+    <rect x="172" y="132" width="80" height="80" rx="14" fill="url(#eTileGreen)" stroke="#ff4466" stroke-width="2"/>
+    <text x="212" y="188" text-anchor="middle" dominant-baseline="auto"
+          font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#ff4466">R</text>
+    <text x="245" y="205" text-anchor="end"
+          font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#ff4466" opacity="0.65">2</text>
+
+    <!-- (2,1) O -->
+    <rect x="260" y="132" width="80" height="80" rx="14" fill="url(#eTileGreen)" stroke="#ff4466" stroke-width="2"/>
+    <text x="300" y="188" text-anchor="middle" dominant-baseline="auto"
+          font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#ff4466">O</text>
+    <text x="333" y="205" text-anchor="end"
+          font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#ff4466" opacity="0.65">1</text>
+
+    <!-- (3,1) W -->
+    <rect x="348" y="132" width="80" height="80" rx="14" fill="url(#eTileGreen)" stroke="#ff4466" stroke-width="2"/>
+    <text x="388" y="188" text-anchor="middle" dominant-baseline="auto"
+          font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#ff4466">W</text>
+    <text x="421" y="205" text-anchor="end"
+          font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#ff4466" opacity="0.65">4</text>
+  </g>
+
+  <!-- ── ROW 2: normal tiles (inner ring) ── -->
+  <!-- (0,2) E — has-words blue -->
+  <rect x="84" y="220" width="80" height="80" rx="14" fill="url(#eTileNormal)" stroke="#502830" stroke-width="1.5"/>
+  <text x="124" y="276" text-anchor="middle" dominant-baseline="auto"
+        font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#c8a0a8">E</text>
+  <text x="157" y="293" text-anchor="end"
+        font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#603040" opacity="0.9">2</text>
+
+  <!-- (1,2) V — has-words -->
+  <rect x="172" y="220" width="80" height="80" rx="14" fill="url(#eTileNormal)" stroke="#502830" stroke-width="1.5"/>
+  <text x="212" y="276" text-anchor="middle" dominant-baseline="auto"
+        font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#c8a0a8">V</text>
+  <text x="245" y="293" text-anchor="end"
+        font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#603040" opacity="0.9">3</text>
+
+  <!-- (2,2) L — purple/faded (rare only) -->
+  <g filter="url(#ePurpleGlow)">
+    <rect x="260" y="220" width="80" height="80" rx="14" fill="url(#eTilePurple)" stroke="rgba(180,100,160,0.2)" stroke-width="1.5"/>
+    <text x="300" y="276" text-anchor="middle" dominant-baseline="auto"
+          font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#7a5080" opacity="0.7">L</text>
+  </g>
+
+  <!-- (3,2) S — has-words -->
+  <rect x="348" y="220" width="80" height="80" rx="14" fill="url(#eTileNormal)" stroke="#502830" stroke-width="1.5"/>
+  <text x="388" y="276" text-anchor="middle" dominant-baseline="auto"
+        font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif" font-size="42" font-weight="700" fill="#c8a0a8">S</text>
+  <text x="421" y="293" text-anchor="end"
+        font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#603040" opacity="0.9">1</text>
+
+  <!-- ── ROW 3: ring-unrevealed (completely black outer ring) ── -->
+  <rect x="84"  y="308" width="80" height="80" rx="14" fill="#050709"/>
+  <rect x="172" y="308" width="80" height="80" rx="14" fill="#050709"/>
+  <rect x="260" y="308" width="80" height="80" rx="14" fill="#050709"/>
+  <rect x="348" y="308" width="80" height="80" rx="14" fill="#050709"/>
+
+  <!-- ── "eRecTangled" logo — per-letter colors matching the game ── -->
+  <text x="256" y="457" text-anchor="middle"
+        font-family="Fredoka, 'Arial Rounded MT Bold', sans-serif"
+        font-size="46" font-weight="700" letter-spacing="0.5">
+    <tspan fill="#ff4466">e</tspan><tspan fill="#3EC8E8">r</tspan><tspan fill="#F5920A">e</tspan><tspan fill="#EFC000">c</tspan><tspan fill="#1E52C8">T</tspan><tspan fill="#E83020">a</tspan><tspan fill="#42B238">n</tspan><tspan fill="#88AAFF">g</tspan><tspan fill="#C835B8">l</tspan><tspan fill="#F5920A">e</tspan><tspan fill="#1EB8A8">d</tspan>
+  </text>
+</svg>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Word Tycoon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f14;
+    --surface: #1a1a24;
+    --surface-2: #232330;
+    --border: #2a2a3a;
+    --text: #e0e0e0;
+    --text-dim: #888;
+    --blue: #4a9eff;
+    --blue-hover: #3a8eef;
+    --green: #4fc34f;
+    --amber: #f5b942;
+    --purple: #a78bfa;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 80px; }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(15,15,20,0.95); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .topbar h1 { font-size: 18px; font-weight: 700; }
+  .topbar .grow { flex: 1; }
+  .topbar .status { font-size: 13px; color: var(--text-dim); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+  .intro {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+
+  a.card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    transition: transform .08s, border-color .15s, background .15s;
+  }
+  a.card:hover {
+    background: var(--surface-2);
+    border-color: var(--blue);
+    transform: translateY(-2px);
+  }
+  a.card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  a.card p {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.45;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 3px 7px;
+    border-radius: 999px;
+    margin-left: auto;
+  }
+  .badge.new { background: var(--green); color: #0f0f14; }
+  .badge.login { background: var(--amber); color: #0f0f14; }
+
+  footer {
+    max-width: 1100px;
+    margin: 32px auto 0;
+    padding: 0 24px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>🎛️ Word Tycoon Admin</h1>
+    <span class="grow"></span>
+    <span class="status">Production tools — login required for most pages</span>
+  </header>
+
+  <main>
+    <p class="intro">Jump to the admin tool you need. Pages marked <span class="badge login">login</span> require an admin session.</p>
+
+    <div class="grid">
+      <a class="card" href="/admin/voices.html">
+        <h3>🎙️ Voice Assignments <span class="badge new">new</span></h3>
+        <p>Assign premium ElevenLabs voices to viewers by TikTok handle, manage overrides, and review voice gains.</p>
+      </a>
+
+      <a class="card" href="/admin/superfans">
+        <h3>💎 Super Fans <span class="badge login">login</span></h3>
+        <p>Manage TikTok Super Fan overrides and fan-club memberships.</p>
+      </a>
+
+      <a class="card" href="/admin/members">
+        <h3>👤 Members <span class="badge login">login</span></h3>
+        <p>Search accounts, link/unlink members, manage fan club and donor tiers.</p>
+      </a>
+
+      <a class="card" href="/admin/balances">
+        <h3>💰 Balances Owing <span class="badge login">login</span></h3>
+        <p>Flag viewers who must pay before they can play again.</p>
+      </a>
+
+      <a class="card" href="/admin/jackpots">
+        <h3>🎰 Jackpots</h3>
+        <p>Configure and monitor game jackpots.</p>
+      </a>
+
+      <a class="card" href="/admin/usage">
+        <h3>📊 Site Usage <span class="badge login">login</span></h3>
+        <p>Page views, unique visitors, top pages, and referrers.</p>
+      </a>
+
+      <a class="card" href="/admin/dashboard">
+        <h3>🖥️ Admin Dashboard <span class="badge login">login</span></h3>
+        <p>The legacy admin dashboard and account tools.</p>
+      </a>
+    </div>
+  </main>
+
+  <footer>
+    Not sure where to go? <a href="/" style="color:var(--blue)">Return to wordtycoon.live</a>
+  </footer>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

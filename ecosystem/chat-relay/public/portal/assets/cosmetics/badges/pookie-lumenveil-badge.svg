@@ -1,0 +1,39 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="lumBorder" x1="34" y1="24" x2="222" y2="232" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF4CF"/>
+      <stop offset="0.34" stop-color="#FFD86F"/>
+      <stop offset="0.7" stop-color="#C992FF"/>
+      <stop offset="1" stop-color="#8B5BFF"/>
+    </linearGradient>
+    <radialGradient id="lumCore" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(128 118) rotate(90) scale(108)">
+      <stop stop-color="#FFF6DD" stop-opacity="0.98"/>
+      <stop offset="0.28" stop-color="#FFD86F" stop-opacity="0.82"/>
+      <stop offset="0.62" stop-color="#C992FF" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#2B183E" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="18" y="18" width="220" height="220" rx="68" fill="rgba(21,11,33,0.96)" stroke="url(#lumBorder)" stroke-width="8"/>
+  <rect x="32" y="32" width="192" height="192" rx="56" stroke="rgba(255,246,221,0.18)" stroke-width="2"/>
+
+  <path d="M128 42L168 72L188 122L168 184L128 214L88 184L68 122L88 72L128 42Z" fill="url(#lumCore)"/>
+  <path d="M128 56L156 78L170 118L156 168L128 190L100 168L86 118L100 78L128 56Z" stroke="url(#lumBorder)" stroke-width="4.5" stroke-linejoin="round"/>
+
+  <path d="M128 74L140 102L170 106L148 126L154 156L128 142L102 156L108 126L86 106L116 102L128 74Z" fill="rgba(255,244,207,0.92)" stroke="rgba(255,255,255,0.46)" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="128" cy="128" r="18" fill="rgba(255,247,226,0.88)" stroke="#FFD86F" stroke-width="4"/>
+  <circle cx="128" cy="128" r="7" fill="#8B5BFF"/>
+
+  <path d="M72 84L92 98" stroke="rgba(255,216,111,0.55)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M184 84L164 98" stroke="rgba(255,216,111,0.55)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M72 172L94 158" stroke="rgba(201,146,255,0.52)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M184 172L162 158" stroke="rgba(201,146,255,0.52)" stroke-width="4" stroke-linecap="round"/>
+
+  <circle cx="128" cy="28" r="5" fill="#FFF4CF"/>
+  <circle cx="208" cy="64" r="5" fill="#FFD86F"/>
+  <circle cx="218" cy="146" r="5" fill="#C992FF"/>
+  <circle cx="166" cy="222" r="5" fill="#FFF4CF"/>
+  <circle cx="90" cy="222" r="5" fill="#FFD86F"/>
+  <circle cx="38" cy="146" r="5" fill="#C992FF"/>
+  <circle cx="48" cy="64" r="5" fill="#FFF4CF"/>
+</svg>

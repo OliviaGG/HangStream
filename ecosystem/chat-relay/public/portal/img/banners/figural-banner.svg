@@ -1,0 +1,30 @@
+<svg width="1600" height="500" viewBox="0 0 1600 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="500">
+      <stop stop-color="#0B0D1C"/>
+      <stop offset="0.48" stop-color="#1B1650"/>
+      <stop offset="1" stop-color="#081420"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="500" rx="34" fill="url(#bg)"/>
+  <rect x="24" y="24" width="1552" height="452" rx="28" stroke="#00E5FF" stroke-opacity="0.22" stroke-width="2"/>
+  <g opacity="0.92">
+    <rect x="1040" y="88" width="400" height="324" rx="28" fill="#111530"/>
+    <path d="M1086 118H1390" stroke="#00E5FF" stroke-opacity="0.18"/>
+    <path d="M1086 166H1390" stroke="#00E5FF" stroke-opacity="0.18"/>
+    <path d="M1086 214H1390" stroke="#00E5FF" stroke-opacity="0.18"/>
+    <path d="M1086 262H1390" stroke="#00E5FF" stroke-opacity="0.18"/>
+    <path d="M1086 310H1390" stroke="#00E5FF" stroke-opacity="0.18"/>
+    <path d="M1120 110V390" stroke="#C026D3" stroke-opacity="0.22"/>
+    <path d="M1200 110V390" stroke="#C026D3" stroke-opacity="0.22"/>
+    <path d="M1280 110V390" stroke="#C026D3" stroke-opacity="0.22"/>
+    <path d="M1360 110V390" stroke="#C026D3" stroke-opacity="0.22"/>
+    <circle cx="1200" cy="214" r="34" fill="#00E5FF" fill-opacity="0.16" stroke="#00E5FF" stroke-width="3"/>
+    <circle cx="1280" cy="262" r="24" fill="#C026D3" fill-opacity="0.16" stroke="#C026D3" stroke-width="3"/>
+  </g>
+  <text x="92" y="122" fill="#7DEFFF" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="7">FIGURAL</text>
+  <text x="92" y="228" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="98" font-weight="800">Pattern logic with a glow.</text>
+  <text x="92" y="292" fill="#D5F7FF" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="500">Grid intuition, figure reading, and a cooler sci-fi puzzle surface.</text>
+  <rect x="92" y="338" width="196" height="62" rx="31" fill="#00E5FF"/>
+  <text x="144" y="380" fill="#071D24" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="800">AURORA GRID</text>
+</svg>

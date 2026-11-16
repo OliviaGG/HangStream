@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Tycoon.io — Build Your Empire</title>
+  <meta name="description" content="Tycoon.io — an idle empire builder. Grow nine businesses, design your town, and zoom out to see the whole city.">
+  <meta property="og:title" content="Tycoon.io — Build Your Empire">
+  <meta property="og:description" content="Grow nine businesses, design your town, and explore everyone's empires in one shared city.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tycoonio.com/">
+  <meta name="theme-color" content="#7ec8f2">
+  <link rel="icon" href="/portal/img/logo.png">
+  <link rel="stylesheet" href="/tycoonio/v2/style.css?v=3">
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <!-- ── Top HUD ─────────────────────────────────────────── -->
+  <div id="hud" class="hud">
+    <div class="hud-left">
+      <div id="hud-avatar" class="hud-avatar">T</div>
+      <div class="hud-id">
+        <div id="hud-name" class="hud-name">Tycoon</div>
+        <div id="hud-town" class="hud-town">My Town</div>
+      </div>
+    </div>
+    <div class="hud-right">
+      <div class="hud-pill hud-coins"><span class="pill-ico">⚡</span><span id="hud-coins">0</span></div>
+      <div class="hud-pill hud-income"><span class="pill-ico">📈</span><span id="hud-income">0/s</span></div>
+    </div>
+  </div>
+
+  <!-- Visiting banner -->
+  <div id="visit-banner" class="visit-banner hidden">
+    <span id="visit-name">Visiting</span>
+    <button id="visit-home">⌂ My Town</button>
+  </div>
+
+  <!-- ── Bottom nav ──────────────────────────────────────── -->
+  <div id="nav" class="nav">
+    <button id="nav-world" class="nav-btn"><span class="nav-ico">🌆</span><span class="nav-lbl">City</span></button>
+    <button id="nav-biz" class="nav-btn nav-primary"><span class="nav-ico">🏪</span><span class="nav-lbl">Businesses</span></button>
+    <button id="nav-edit" class="nav-btn"><span class="nav-ico">✏️</span><span class="nav-lbl">Edit</span></button>
+  </div>
+
+  <!-- Edit mode toolbar -->
+  <div id="edit-bar" class="edit-bar hidden">
+    <span class="edit-hint">Drag buildings to rearrange your town</span>
+    <div class="edit-actions">
+      <button id="edit-cancel" class="edit-btn ghost">Cancel</button>
+      <button id="edit-save" class="edit-btn solid">Save</button>
+    </div>
+  </div>
+
+  <!-- ── Business sheet (slide-up) ───────────────────────── -->
+  <div id="sheet-scrim" class="sheet-scrim hidden"></div>
+  <div id="sheet" class="sheet hidden">
+    <div class="sheet-grab"></div>
+    <div id="sheet-body" class="sheet-body"></div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Login prompt -->
+  <div id="login-card" class="login-card hidden">
+    <div class="login-title">Tycoon.io</div>
+    <div class="login-sub">Log in to build your empire — or look around first.</div>
+    <a id="login-go" class="login-btn" href="#">Log In</a>
+    <button id="login-skip" class="login-skip">Just browsing</button>
+  </div>
+
+  <div id="loading" class="loading">
+    <div class="load-spin"></div>
+    <div class="load-txt">Raising the skyline…</div>
+  </div>
+
+  <script src="/tycoonio/v2/js/data.js?v=3"></script>
+  <script src="/tycoonio/v2/js/camera.js?v=3"></script>
+  <script src="/tycoonio/v2/js/art.js?v=3"></script>
+  <script src="/tycoonio/v2/js/world.js?v=3"></script>
+  <script src="/tycoonio/v2/js/ui.js?v=3"></script>
+  <script src="/tycoonio/v2/js/main.js?v=3"></script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

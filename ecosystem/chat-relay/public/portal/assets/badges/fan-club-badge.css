@@ -1,0 +1,66 @@
+/* TikTok Fan Club badge — universal overlay.
+   Add `.has-fan-club-badge` to ANY element rendering an avatar (the wrapping
+   element, the img directly, or a sibling container) to get the heart-crown
+   badge anchored to its top-right corner.
+
+   Works cross-origin: the image URL is absolute. Designed to be dropped onto
+   any game page that wants FC indicators without per-game CSS plumbing. */
+
+.has-fan-club-badge {
+  position: relative;
+  overflow: visible;
+}
+
+.has-fan-club-badge::after {
+  content: '';
+  position: absolute;
+  top: -10%;
+  right: -10%;
+  width: 42%;
+  height: 42%;
+  min-width: 14px;
+  min-height: 14px;
+  max-width: 64px;
+  max-height: 64px;
+  background-image: url('https://wordtycoon.live/portal/assets/badges/tiktok-fanclub.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+  z-index: 5;
+}
+
+/* Super Fan badge — same anchoring, gold heart w/ purple crown. Add
+   `.has-superfan-badge`; when both classes are present the Super Fan
+   image wins (declared after, same specificity). */
+.has-superfan-badge {
+  position: relative;
+  overflow: visible;
+}
+
+.has-superfan-badge::after {
+  content: '';
+  position: absolute;
+  top: -12%;
+  right: -12%;
+  width: 46%;
+  height: 46%;
+  min-width: 15px;
+  min-height: 15px;
+  max-width: 70px;
+  max-height: 70px;
+  background-image: url('https://wordtycoon.live/cosmetics/superfan-heart.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.55));
+  z-index: 5;
+}
+
+.avatar-wrap {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}

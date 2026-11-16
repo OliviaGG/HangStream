@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Word Tycoon — Free Word Games, TTS &amp; Streamer Tools</title>
+
+  <!-- SEO -->
+  <meta name="description" content="13 free word games, free TTS for streamers, and a multi-platform stream relay (TikTok, YouTube, Discord, Web). No account required. Play Searchle, WiKirecTangled, erecTangled and more.">
+  <link rel="canonical" href="https://wordtycoon.live/">
+  <link rel="icon" href="/portal/img/logo-favicon.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+  <!-- Inter webfont (declared in :root but was never loaded — page silently fell back to Segoe UI) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Word Tycoon">
+  <meta property="og:url" content="https://wordtycoon.live/">
+  <meta property="og:title" content="Word Tycoon — Free Word Games, TTS &amp; Streamer Tools">
+  <meta property="og:description" content="13 free word games, free TTS, and a multi-platform stream relay. No sign-up required.">
+  <meta property="og:image" content="https://wordtycoon.live/portal/img/wordtycoon.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Word Tycoon — Free Word Games, TTS &amp; Streamer Tools">
+  <meta name="twitter:description" content="13 free word games, free TTS, and a multi-platform stream relay.">
+  <meta name="twitter:image" content="https://wordtycoon.live/portal/img/wordtycoon.png">
+
+  <script>
+    // Redirect returning visitors only when they still have an active session
+    (function() {
+      if (!localStorage.getItem('wt-visited')) return;
+      fetch('/api/me/session', { credentials: 'same-origin' })
+        .then(function(res) { return res.ok ? res.json() : { ok: false }; })
+        .then(function(data) {
+          if (data && data.ok && data.user) {
+            window.location.replace('/me');
+          }
+        })
+        .catch(function() {});
+    })();
+  </script>
+
+  <style>
+    :root {
+      --border: rgba(255,255,255,0.08);
+      --text: #f3f7ff;
+      --muted: #9ba9c7;
+      --cyan: #4ad6ff;
+      --green: #57db68;
+      --violet: #ab8dff;
+      --gold: #ffbe43;
+      --rose: #ff7198;
+      --google: #ea4335;
+      font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { color: var(--text); background: #050a14; }
+    body {
+      background:
+        radial-gradient(circle at 0% 0%, rgba(74,214,255,0.10), transparent 40%),
+        radial-gradient(circle at 100% 30%, rgba(255,113,152,0.10), transparent 40%),
+        radial-gradient(circle at 50% 100%, rgba(255,190,67,0.07), transparent 40%),
+        linear-gradient(180deg, #050a14, #06101c 50%);
+      padding: 12px;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+
+    .container { max-width: 720px; margin: 0 auto; }
+
+    .nav { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 14px; }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand img { width: 32px; height: 32px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,0.08); }
+    .brand b { font-size: 14px; font-weight: 800; letter-spacing: -0.02em; }
+    .brand small { display: block; font-size: 9px; color: var(--cyan); letter-spacing: 0.16em; font-weight: 800; }
+    .nav-login {
+      padding: 8px 14px; border-radius: 999px;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      font-size: 12px; font-weight: 700;
+    }
+
+    .bento { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; grid-auto-rows: minmax(120px, auto); }
+    .cell {
+      position: relative; overflow: hidden; border-radius: 20px;
+      border: 1px solid var(--border); padding: 16px;
+      background: rgba(20,28,44,0.6); backdrop-filter: blur(8px);
+      transition: transform 0.15s;
+      text-decoration: none; color: inherit;
+      display: flex; flex-direction: column;
+    }
+    .cell:active { transform: scale(0.98); }
+    .span-2 { grid-column: span 2; }
+
+    /* HERO */
+    .cell.hero {
+      background:
+        radial-gradient(ellipse at 80% 10%, rgba(74,214,255,0.20), transparent 60%),
+        radial-gradient(ellipse at 10% 100%, rgba(255,113,152,0.18), transparent 60%),
+        linear-gradient(135deg, #07101c 0%, #0a1830 60%);
+      padding: 24px 20px; min-height: 200px; justify-content: center;
+    }
+    .eyebrow {
+      display: inline-block; padding: 4px 10px; margin-bottom: 12px;
+      background: rgba(74,214,255,0.10); border: 1px solid rgba(74,214,255,0.25);
+      border-radius: 999px; font-size: 9px; font-weight: 800; letter-spacing: 0.18em;
+      color: var(--cyan); text-transform: uppercase; align-self: flex-start;
+    }
+    .hero h1 {
+      font-size: clamp(28px, 7.5vw, 38px); letter-spacing: -0.04em; line-height: 1.0; margin-bottom: 8px;
+    }
+    .hero h1 .gradient {
+      background: linear-gradient(135deg, var(--cyan), var(--rose), var(--gold));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .hero p { color: var(--muted); font-size: 13px; line-height: 1.45; margin-bottom: 14px; }
+    .hero-actions { display: flex; gap: 8px; }
+    .hero-btn {
+      flex: 1; padding: 11px 14px; border-radius: 12px;
+      text-align: center; font-size: 13px; font-weight: 800;
+    }
+    .hero-btn.primary { background: linear-gradient(135deg, var(--cyan), var(--green)); color: #051019; }
+    .hero-btn.ghost { background: rgba(255,255,255,0.05); border: 1px solid var(--border); }
+
+    /* Pillar cells */
+    .cell-label {
+      font-size: 9px; font-weight: 800; letter-spacing: 0.18em;
+      text-transform: uppercase; margin-bottom: 6px;
+    }
+    .cell h3 { font-size: 18px; letter-spacing: -0.025em; line-height: 1.1; margin-bottom: 4px; }
+    .cell p.desc { font-size: 11px; color: var(--muted); line-height: 1.4; margin-bottom: auto; }
+    .cell-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+    .cell-arrow {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 800;
+      background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.18);
+    }
+
+    .cell.games {
+      background: radial-gradient(ellipse at 90% 90%, rgba(74,214,255,0.20), transparent 60%), linear-gradient(160deg, #042029 0%, #07101c 60%);
+      border-color: rgba(74,214,255,0.25);
+    }
+    .cell.games .cell-label { color: var(--cyan); }
+    .game-thumbs { display: flex; margin-top: 8px; }
+    .game-thumbs img {
+      width: 28px; height: 28px; border-radius: 8px;
+      border: 2px solid #07101c; margin-left: -8px;
+    }
+    .game-thumbs img:first-child { margin-left: 0; }
+    .pill-count {
+      display: none; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px;
+      background: rgba(87,219,104,0.10); border: 1px solid rgba(87,219,104,0.25);
+      color: var(--green); font-size: 10px; font-weight: 700;
+      margin-top: 8px; align-self: flex-start;
+    }
+    .pill-count.visible { display: inline-flex; }
+    .pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+
+    .cell.tts {
+      background: radial-gradient(ellipse at 20% 100%, rgba(255,113,152,0.22), transparent 60%), linear-gradient(160deg, #2a0d1a 0%, #150610 60%);
+      border-color: rgba(255,113,152,0.25);
+    }
+    .cell.tts .cell-label { color: var(--rose); }
+    .tts-counter {
+      font-size: 36px; font-weight: 900; letter-spacing: -0.04em;
+      background: linear-gradient(135deg, var(--rose), var(--violet));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      line-height: 1;
+    }
+    .tts-counter span { font-size: 13px; color: var(--muted); font-weight: 700; -webkit-text-fill-color: var(--muted); letter-spacing: 0.04em; margin-left: 4px; }
+    .waves { display: flex; align-items: center; gap: 3px; margin-top: 10px; height: 24px; }
+    .waves span {
+      width: 3px; border-radius: 2px;
+      background: linear-gradient(180deg, var(--rose), var(--violet));
+      animation: dance 1.4s ease-in-out infinite;
+    }
+    .waves span:nth-child(1){height:14px;} .waves span:nth-child(2){height:20px;animation-delay:.1s}
+    .waves span:nth-child(3){height:8px;animation-delay:.2s} .waves span:nth-child(4){height:22px;animation-delay:.3s}
+    .waves span:nth-child(5){height:14px;animation-delay:.4s} .waves span:nth-child(6){height:18px;animation-delay:.5s}
+    .waves span:nth-child(7){height:10px;animation-delay:.6s}
+    @keyframes dance { 0%,100%{transform:scaleY(0.4)} 50%{transform:scaleY(1.2)} }
+
+    .cell.streamer {
+      background: radial-gradient(ellipse at 80% 10%, rgba(171,141,255,0.22), transparent 60%), linear-gradient(160deg, #1a0f30 0%, #0d0820 60%);
+      border-color: rgba(171,141,255,0.25);
+    }
+    .cell.streamer .cell-label { color: var(--violet); }
+    .platforms-mini {
+      display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap;
+    }
+    .plat-pill {
+      padding: 3px 8px; border-radius: 999px;
+      background: rgba(0,0,0,0.35); border: 1px solid rgba(171,141,255,0.30);
+      font-size: 9px; font-weight: 700; color: var(--violet); letter-spacing: 0.04em;
+    }
+
+    .cell.tycoon {
+      background: radial-gradient(ellipse at 80% 100%, rgba(255,190,67,0.20), transparent 60%), linear-gradient(160deg, #25180a 0%, #140c05 60%);
+      border-color: rgba(255,190,67,0.22);
+    }
+    .cell.tycoon .cell-label { color: var(--gold); }
+    .tycoon-icons { display: flex; gap: 6px; margin-top: 8px; }
+    .tycoon-icons span {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: rgba(0,0,0,0.32); border: 1px solid rgba(255,190,67,0.20);
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
+    }
+
+    /* Flagship row */
+    .cell.flagships { grid-column: span 2; background: rgba(20,28,44,0.5); padding: 14px; }
+    .flagship-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
+    .flag-mini {
+      padding: 10px 6px; border-radius: 14px;
+      background: rgba(0,0,0,0.28); border: 1px solid var(--border);
+      text-align: center; text-decoration: none; color: inherit;
+      position: relative;
+    }
+    .flag-mini img { width: 40px; height: 40px; border-radius: 12px; margin: 0 auto 6px; }
+    .flag-mini b { font-size: 11px; display: block; line-height: 1.1; }
+    .flag-mini small { font-size: 9px; color: var(--cyan); display: block; margin-top: 2px; }
+    .flag-live {
+      display: none; position: absolute; top: 6px; right: 6px;
+      padding: 2px 6px; border-radius: 999px;
+      background: rgba(87,219,104,0.15); border: 1px solid rgba(87,219,104,0.3);
+      color: var(--green); font-size: 8px; font-weight: 800; letter-spacing: 0.04em;
+    }
+    .flag-live.visible { display: inline-flex; }
+
+    /* All games */
+    .cell.allgames { grid-column: span 2; padding: 16px; }
+    .games-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+    .g-mini {
+      padding: 8px 4px; border-radius: 10px; text-align: center;
+      background: rgba(0,0,0,0.32); border: 1px solid var(--border);
+      text-decoration: none; color: inherit;
+    }
+    .g-mini img { width: 28px; height: 28px; border-radius: 8px; margin: 0 auto 4px; }
+    .g-mini b { font-size: 9px; display: block; line-height: 1.1; }
+
+    /* CTA */
+    .cell.cta {
+      grid-column: span 2;
+      background: linear-gradient(135deg, rgba(74,214,255,0.18), rgba(171,141,255,0.14));
+      border-color: rgba(74,214,255,0.25); padding: 18px; text-align: center;
+    }
+    .cell.cta h3 { font-size: 18px; letter-spacing: -0.025em; margin-bottom: 6px; }
+    .cell.cta p { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .cta-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 12px; }
+    .cta-btn { padding: 10px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; text-decoration: none; color: inherit; text-align: center; }
+    .cta-btn.discord { background: #5865F2; color: #fff; }
+    .cta-btn.github { background: #24292e; color: #fff; }
+    .cta-btn.google { background: var(--google); color: #fff; }
+    .cta-portal-pill { display: none; grid-column: span 3; margin-top: 8px; }
+    .cta-portal-pill.visible { display: block; }
+    .cta-btn.portal { background: linear-gradient(135deg, rgba(74,214,255,0.40), rgba(171,141,255,0.40)); color: #fff; border: 1px solid rgba(74,214,255,0.5); }
+
+    /* Footer socials */
+    .footer-socials {
+      display: flex; justify-content: center; gap: 10px; margin: 22px 0 14px;
+    }
+    .footer-socials a {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); transition: all 0.2s;
+    }
+    .footer-socials a:hover {
+      background: rgba(74,214,255,0.15); color: var(--cyan);
+      border-color: rgba(74,214,255,0.2);
+    }
+    .footer-socials a svg { width: 16px; height: 16px; fill: currentColor; }
+
+    .footer {
+      padding: 18px 4px; text-align: center;
+      color: var(--muted); font-size: 11px;
+    }
+    .footer a { color: var(--muted); margin: 0 6px; }
+
+    @media (min-width: 720px) {
+      .bento { grid-template-columns: repeat(4, 1fr); gap: 12px; }
+      .cell.hero { grid-column: span 4; }
+      .cell.games, .cell.tts, .cell.streamer, .cell.tycoon { grid-column: span 2; }
+      .cell.flagships, .cell.allgames, .cell.cta { grid-column: span 4; }
+      .cta-actions { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <nav class="nav">
+    <a href="/" class="brand">
+      <img src="/portal/img/logo.png" alt="Word Tycoon">
+      <div>
+        <small>Free · No Sign-Up</small>
+        <b>Word Tycoon</b>
+      </div>
+    </a>
+    <a href="/me" class="nav-login">Log In</a>
+  </nav>
+
+  <div class="bento">
+
+    <div class="cell hero span-2">
+      <span class="eyebrow">Free · Forever · No Account</span>
+      <h1>Games. TTS.<br><span class="gradient">Streamer tools.</span></h1>
+      <p>Free word games, free text-to-speech, and a multi-platform stream relay. Pick what you want — none of it locks you in.</p>
+      <div class="hero-actions">
+        <a href="https://subtextle.com/solo" class="hero-btn primary" onclick="localStorage.setItem('wt-visited','1')">▶ Play Now</a>
+        <a href="#flagships" class="hero-btn ghost">Browse</a>
+      </div>
+    </div>
+
+    <a href="#allgames" class="cell games">
+      <div class="cell-label">◆ Games</div>
+      <h3>13 free word games</h3>
+      <p class="desc">Solo or live with the stream — no install required.</p>
+      <div class="game-thumbs">
+        <img src="/portal/img/game-searchle.png" alt="">
+        <img src="/portal/img/game-wikirectangled.png" alt="">
+        <img src="/portal/img/game-erectangled.png" alt="">
+        <img src="/portal/img/game-wordle.png" alt="">
+      </div>
+      <div class="cell-foot">
+        <span class="pill-count" id="games-live"><span class="pulse"></span> <span class="games-live-text"></span></span>
+        <span class="cell-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="/me" class="cell tts">
+      <div class="cell-label">♪ TTS</div>
+      <div class="tts-counter">26<span>voices</span></div>
+      <h3 style="font-size:14px;margin-top:8px">Text-to-speech for streams</h3>
+      <p class="desc" style="margin-top:auto">Viewer chat read aloud in your chosen voice — free, no subscription.</p>
+      <div class="cell-foot">
+        <div class="waves">
+          <span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+        </div>
+        <span class="cell-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="/streamer" class="cell streamer">
+      <div class="cell-label">▶ Streamer Tools</div>
+      <h3>Multi-platform relay</h3>
+      <p class="desc">Chat from anywhere → your games.</p>
+      <div class="platforms-mini">
+        <span class="plat-pill">TikTok</span>
+        <span class="plat-pill">YouTube</span>
+        <span class="plat-pill">Discord</span>
+        <span class="plat-pill">Web</span>
+      </div>
+      <div class="cell-foot">
+        <span></span>
+        <span class="cell-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="/me" class="cell tycoon">
+      <div class="cell-label">★ Tycoon</div>
+      <h3>Optional progression</h3>
+      <p class="desc">Track wins, cosmetics, streaks — log in only if you want.</p>
+      <div class="tycoon-icons">
+        <span>📊</span><span>✨</span><span>🔥</span><span>🏆</span>
+      </div>
+      <div class="cell-foot">
+        <span></span>
+        <span class="cell-arrow">→</span>
+      </div>
+    </a>
+
+    <div class="cell flagships span-2" id="flagships">
+      <div class="cell-label" style="color:var(--cyan)">◆ Flagships · Start Here</div>
+      <div class="flagship-row">
+        <a href="https://subtextle.com/solo" class="flag-mini" onclick="localStorage.setItem('wt-visited','1')">
+          <span class="flag-live" id="live-searchle"><span class="pulse"></span></span>
+          <img src="/portal/img/game-searchle.png" alt="">
+          <b>Searchle</b>
+          <small>PLAY →</small>
+        </a>
+        <a href="https://wikirectangled.com/" class="flag-mini" onclick="localStorage.setItem('wt-visited','1')">
+          <span class="flag-live" id="live-wikirectangled"><span class="pulse"></span></span>
+          <img src="/portal/img/game-wikirectangled.png" alt="">
+          <b>WiKirecTangled</b>
+          <small>PLAY →</small>
+        </a>
+        <a href="https://erectangled.com/solo" class="flag-mini" onclick="localStorage.setItem('wt-visited','1')">
+          <span class="flag-live" id="live-erectangled"><span class="pulse"></span></span>
+          <img src="/portal/img/game-erectangled.png" alt="">
+          <b>erecTangled</b>
+          <small>PLAY →</small>
+        </a>
+      </div>
+    </div>
+
+    <div class="cell allgames span-2" id="allgames">
+      <div class="cell-label" style="color:var(--muted)">All Games</div>
+      <div class="games-list">
+        <a href="https://rectangled.live/solo" class="g-mini" onclick="localStorage.setItem('wt-visited','1')"><img src="/portal/img/game-rectangled.png" alt=""><b>recTangled</b></a>
+        <a href="https://wikicontexto.com/" class="g-mini" onclick="localStorage.setItem('wt-visited','1')"><img src="/portal/img/game-wikisearchle.png" alt=""><b>WikiContexto</b></a>
+        <a href="/word500/solo/" class="g-mini" onclick="localStorage.setItem('wt-visited','1')"><img src="/portal/img/game-word500.png" alt=""><b>Word 500</b></a>
+        <a href="/wordle/solo/" class="g-mini" onclick="localStorage.setItem('wt-visited','1')"><img src="/portal/img/game-wordle.png" alt=""><b>Wordle</b></a>
+        <a href="/betwixt/solo/" class="g-mini" onclick="localStorage.setItem('wt-visited','1')"><img src="/portal/img/game-betwixt.png" alt=""><b>Betwixt</b></a>
+        <a href="/pixeletters/solo/" class="g-mini" onclick="localStorage.setItem('wt-visited','1')"><img src="/portal/img/game-pixeletters.png" alt=""><b>PixeLetters</b></a>
+        <a href="/spellingbee/solo/" class="g-mini" onclick="localStorage.setItem('wt-visited','1')"><img src="/portal/img/game-spellingbee.png" alt=""><b>Spelling Bee</b></a>
+        <a href="/figural/solo/" class="g-mini" onclick="localStorage.setItem('wt-visited','1')"><img src="/portal/img/game-figural.png" alt=""><b>Figural</b></a>
+        <a href="/unwordle/solo/" class="g-mini" onclick="localStorage.setItem('wt-visited','1')"><img src="/portal/img/game-unwordle.png" alt=""><b>UnWordle</b></a>
+        <a href="https://triangled.io/" class="g-mini" onclick="localStorage.setItem('wt-visited','1')"><img src="/portal/img/game-triangled.png" alt=""><b>Triangled</b></a>
+        <a href="https://junkdrawer.live/" class="g-mini" onclick="localStorage.setItem('wt-visited','1')"><img src="/portal/img/game-junkdrawer.png" alt=""><b>Junk Drawer</b></a>
+        <a href="/synapse" class="g-mini" onclick="localStorage.setItem('wt-visited','1')"><img src="/portal/img/game-synapse.png" alt=""><b>Synapse</b></a>
+      </div>
+    </div>
+
+    <div class="cell cta span-2">
+      <h3>Ready when you are</h3>
+      <p>Optional login unlocks profile, cosmetics, daily streaks, and leaderboards.</p>
+      <div class="cta-actions">
+        <a href="/auth/discord" class="cta-btn discord">Discord</a>
+        <a href="/auth/github" class="cta-btn github">GitHub</a>
+        <a href="/auth/google" class="cta-btn google">Google</a>
+        <a href="/me" class="cta-btn portal cta-portal-pill" id="cta-portal">Go to My Portal →</a>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer-socials">
+    <a href="https://www.tiktok.com/@wordtycoon" target="_blank" rel="noopener" title="TikTok">
+      <svg viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V9.48a8.27 8.27 0 004.76 1.5V7.56a4.84 4.84 0 01-1-.87z"/></svg>
+    </a>
+    <a href="https://www.youtube.com/@WordTycoon" target="_blank" rel="noopener" title="YouTube">
+      <svg viewBox="0 0 24 24"><path d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 00.5 6.19 31.6 31.6 0 000 12a31.6 31.6 0 00.5 5.81 3.02 3.02 0 002.12 2.14c1.84.55 9.38.55 9.38.55s7.54 0 9.38-.55a3.02 3.02 0 002.12-2.14A31.6 31.6 0 0024 12a31.6 31.6 0 00-.5-5.81zM9.55 15.57V8.43L15.82 12l-6.27 3.57z"/></svg>
+    </a>
+    <a href="https://x.com/WordTycoonGame" target="_blank" rel="noopener" title="X">
+      <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+    </a>
+    <a href="https://discord.gg/4hunfxbFh2" target="_blank" rel="noopener" title="Discord">
+      <svg viewBox="0 0 24 24"><path d="M20.32 4.37A19.8 19.8 0 0015.36.96a.07.07 0 00-.08.04c-.21.38-.45.87-.61 1.26a18.27 18.27 0 00-5.5 0 12.64 12.64 0 00-.63-1.26.08.08 0 00-.08-.04 19.74 19.74 0 00-4.96 3.41.07.07 0 00-.03.03C.53 9.62-.32 14.72.1 19.76a.08.08 0 00.03.06 19.9 19.9 0 005.99 3.04.08.08 0 00.08-.03c.46-.63.87-1.3 1.22-2a.08.08 0 00-.04-.1 13.1 13.1 0 01-1.87-.9.08.08 0 01-.01-.12c.13-.09.25-.19.37-.29a.07.07 0 01.08-.01c3.93 1.8 8.18 1.8 12.07 0a.07.07 0 01.08.01c.12.1.25.2.37.29a.08.08 0 01 0 .12c-.6.35-1.22.65-1.87.9a.08.08 0 00-.04.1c.36.7.77 1.37 1.22 2a.07.07 0 00.08.03 19.83 19.83 0 006-3.04.08.08 0 00.04-.05c.5-5.18-.84-9.68-3.55-13.66a.06.06 0 00-.03-.03zM8.02 16.48c-1.18 0-2.15-1.09-2.15-2.42s.95-2.42 2.15-2.42c1.21 0 2.17 1.1 2.15 2.42 0 1.33-.95 2.42-2.15 2.42zm7.97 0c-1.18 0-2.15-1.09-2.15-2.42s.95-2.42 2.15-2.42c1.21 0 2.17 1.1 2.15 2.42 0 1.33-.94 2.42-2.15 2.42z"/></svg>
+    </a>
+    <a href="https://www.instagram.com/wordtycoon/" target="_blank" rel="noopener" title="Instagram">
+      <svg viewBox="0 0 24 24"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.97.25 2.43.41.61.24 1.05.52 1.51.98.46.46.74.9.98 1.51.17.46.36 1.26.41 2.43.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.97-.41 2.43a4.07 4.07 0 01-.98 1.51c-.46.46-.9.74-1.51.98-.46.17-1.26.36-2.43.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.97-.25-2.43-.41a4.07 4.07 0 01-1.51-.98 4.07 4.07 0 01-.98-1.51c-.17-.46-.36-1.26-.41-2.43C2.17 15.58 2.16 15.2 2.16 12s.01-3.58.07-4.85c.05-1.17.25-1.97.41-2.43.24-.61.52-1.05.98-1.51.46-.46.9-.74 1.51-.98.46-.17 1.26-.36 2.43-.41C8.83 2.17 9.21 2.16 12 2.16zM12 0C8.74 0 8.33.01 7.05.07 5.78.13 4.9.33 4.14.63a5.77 5.77 0 00-2.09 1.36A5.77 5.77 0 00.63 4.14C.33 4.9.13 5.78.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.06 1.27.26 2.15.56 2.91.3.79.71 1.47 1.36 2.09a5.77 5.77 0 002.09 1.36c.76.3 1.64.5 2.91.56C8.33 23.99 8.74 24 12 24s3.67-.01 4.95-.07c1.27-.06 2.15-.26 2.91-.56a5.77 5.77 0 002.09-1.36 5.77 5.77 0 001.36-2.09c.3-.76.5-1.64.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.27-.26-2.15-.56-2.91a5.77 5.77 0 00-1.36-2.09A5.77 5.77 0 0019.86.63c-.76-.3-1.64-.5-2.91-.56C15.67.01 15.26 0 12 0zm0 5.84a6.16 6.16 0 100 12.32 6.16 6.16 0 000-12.32zM12 16a4 4 0 110-8 4 4 0 010 8zm6.41-11.85a1.44 1.44 0 100 2.88 1.44 1.44 0 000-2.88z"/></svg>
+    </a>
+  </div>
+
+  <footer class="footer">
+    <div>
+      <a href="/privacy">Privacy</a>·<a href="/terms">Terms</a>·<a href="/goat">Leaderboard</a>·<a href="https://discord.gg/4hunfxbFh2">Discord</a>·<a href="https://www.jorry.live" target="_blank" rel="noopener">jorry.live</a>
+    </div>
+    <div style="margin-top:8px">© 2026 Word Tycoon · wordtycoon.live</div>
+  </footer>
+
+</div>
+
+<script>
+  // Mark visited on any outbound nav
+  document.addEventListener('click', function(e) {
+    var link = e.target.closest('a[href]');
+    if (link && link.href && !link.href.startsWith('#') && !link.href.endsWith('#flagships') && !link.href.endsWith('#allgames')) {
+      localStorage.setItem('wt-visited', '1');
+    }
+  });
+
+  // Live data — wired to real /api/games/live
+  function fetchLiveData() {
+    fetch('/api/games/live')
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(data){
+        if (!data || !data.games) return;
+        var total = 0;
+        data.games.forEach(function(g){
+          total += (g.playerCount || 0);
+          var el = document.getElementById('live-' + g.id);
+          if (el) {
+            if (g.playerCount > 0) el.classList.add('visible');
+            else el.classList.remove('visible');
+          }
+        });
+        var pill = document.getElementById('games-live');
+        if (pill) {
+          if (total > 0) {
+            pill.classList.add('visible');
+            pill.querySelector('.games-live-text').textContent = total + ' playing now';
+          } else {
+            pill.classList.remove('visible');
+          }
+        }
+      })
+      .catch(function(){});
+  }
+
+  // Reveal portal pill if already logged in
+  function checkLogin() {
+    fetch('/api/me')
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(data){
+        if (data && data.discordUser) {
+          var portal = document.getElementById('cta-portal');
+          if (portal) portal.classList.add('visible');
+        }
+      })
+      .catch(function(){});
+  }
+
+  fetchLiveData();
+  checkLogin();
+  setInterval(fetchLiveData, 15000);
+</script>
+
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

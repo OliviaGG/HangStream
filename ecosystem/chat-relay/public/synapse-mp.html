@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Synapse — Multiplayer Arena | Word Tycoon</title>
+<meta name="description" content="Synapse Multiplayer — race to bridge two distant words. Every player is a coloured planet building their own constellation; first to connect wins.">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; overflow:hidden; }
+body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:#05060f; color:#eaf0ff; -webkit-user-select:none; user-select:none; position:relative; }
+button { font-family:inherit; cursor:pointer; } input { font-family:inherit; }
+.bg { position:fixed; inset:0; z-index:0; overflow:hidden; background: radial-gradient(120% 90% at 50% 110%, #0d1030 0%, #070a1e 45%, #05060f 100%); }
+.nebula { position:absolute; border-radius:50%; filter:blur(110px); will-change:transform; }
+.nebula.n1 { width:52vmax; height:40vmax; left:-14vmax; top:-12vmax; opacity:.34; background:radial-gradient(circle,#5b21b6,transparent 70%); animation:neb1 44s ease-in-out infinite alternate; }
+.nebula.n2 { width:44vmax; height:36vmax; right:-12vmax; top:26vmax; opacity:.26; background:radial-gradient(circle,#0e7490,transparent 70%); animation:neb2 52s ease-in-out infinite alternate; }
+.nebula.n3 { width:36vmax; height:30vmax; left:30vmax; bottom:-18vmax; opacity:.2; background:radial-gradient(circle,#9d174d,transparent 70%); animation:neb3 38s ease-in-out infinite alternate; }
+@keyframes neb1 { to { transform:translate(7vmax,6vmax) scale(1.12); } }
+@keyframes neb2 { to { transform:translate(-6vmax,-7vmax) scale(1.18); } }
+@keyframes neb3 { to { transform:translate(5vmax,-6vmax) scale(1.08); } }
+#stars { position:fixed; inset:0; z-index:1; pointer-events:none; }
+#graph { position:fixed; inset:0; z-index:2; touch-action:none; }
+.glass { background:rgba(13,17,38,.62); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid rgba(139,155,255,.16); box-shadow:0 8px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05); }
+#topbar { position:fixed; top:0; left:0; right:0; z-index:20; display:flex; align-items:center; gap:10px; padding:calc(10px + env(safe-area-inset-top)) 14px 10px; pointer-events:none; }
+#topbar > * { pointer-events:auto; }
+#logo { display:flex; align-items:baseline; gap:8px; text-decoration:none; }
+#logo .name { font-size:clamp(20px,4.6vw,27px); font-weight:800; letter-spacing:.14em; background:linear-gradient(92deg,#c4b5fd 0%, #67e8f9 45%, #fde68a 100%); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 0 14px rgba(139,92,246,.55)); }
+#corners { font-size:11.5px; font-weight:700; letter-spacing:.05em; color:#a5b4fc; padding:4px 10px; border-radius:999px; border:1px solid rgba(165,180,252,.3); background:rgba(99,102,241,.12); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:min(62vw,520px); }
+#corners b.a{color:#fde68a} #corners b.b{color:#67e8f9} #corners .st{color:#7d8cb8;font-weight:600}
+#topspacer { flex:1; }
+/* race legend */
+#legend { position:fixed; z-index:20; right:12px; top:calc(58px + env(safe-area-inset-top)); width:min(226px,calc(100vw - 24px)); border-radius:16px; padding:9px 10px; }
+#legend h4 { font-size:10px; letter-spacing:1.3px; color:#7d8cb8; font-weight:700; text-transform:uppercase; margin-bottom:7px; }
+.lrow { display:flex; align-items:center; gap:8px; padding:4px 2px; }
+.lrow .dot { width:12px; height:12px; border-radius:50%; flex:none; box-shadow:0 0 8px 1px currentColor; }
+.lrow .nm { flex:1; min-width:0; font-size:12.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#dbe3ff; }
+.lrow.me .nm { color:#fff7df; }
+.lrow .wc { font-size:11.5px; font-weight:800; color:#93a3c8; font-variant-numeric:tabular-nums; }
+.lrow .won { color:#34d399; }
+#legEmpty { font-size:11px; color:#5d6a92; padding:2px; }
+/* bottom dock (play mode) */
+#dock { position:fixed; left:50%; transform:translateX(-50%); z-index:20; bottom:calc(12px + env(safe-area-inset-bottom)); width:min(560px, calc(100vw - 20px)); border-radius:20px; padding:12px 14px; }
+#mineRow { display:flex; align-items:center; justify-content:space-between; margin-bottom:9px; font-size:11px; letter-spacing:.06em; color:#93a3c8; }
+#mineRow b { color:#e2e8ff; } #minePlanet { display:inline-flex; align-items:center; gap:6px; }
+#minePlanet .dot { width:11px; height:11px; border-radius:50%; box-shadow:0 0 8px 1px currentColor; }
+#inputRow { display:flex; gap:8px; }
+#wordInput { flex:1; min-width:0; padding:13px 16px; font-size:16px; font-weight:600; letter-spacing:.03em; color:#f2f6ff; background:rgba(8,11,26,.8); border:1px solid rgba(139,155,255,.25); border-radius:14px; outline:none; transition:border-color .2s, box-shadow .2s; }
+#wordInput:focus { border-color:rgba(103,232,249,.65); box-shadow:0 0 0 3px rgba(34,211,238,.14), 0 0 18px rgba(34,211,238,.18); }
+#wordInput::placeholder { color:#5d6a92; font-weight:500; }
+#addBtn { padding:0 22px; border:none; border-radius:14px; font-size:14px; font-weight:800; letter-spacing:.1em; color:#0b1020; background:linear-gradient(135deg,#a78bfa,#22d3ee); box-shadow:0 4px 20px rgba(103,232,249,.35); transition:transform .12s, filter .2s; }
+#addBtn:active { transform:scale(.95); } #addBtn:disabled { filter:grayscale(.7) brightness(.6); cursor:default; }
+#recenterBtn { position:fixed; right:14px; z-index:22; display:none; align-items:center; gap:6px; bottom:calc(150px + env(safe-area-inset-bottom)); padding:9px 14px; border-radius:999px; border:1px solid rgba(139,155,255,.25); font-size:11.5px; font-weight:800; letter-spacing:.1em; color:#a5b4fc; cursor:pointer; background:rgba(13,17,38,.62); }
+#recenterBtn:active { transform:scale(.95); }
+@media (min-width:768px) { #recenterBtn { bottom:auto; top:calc(110px + env(safe-area-inset-top)); } }
+#banner { position:fixed; left:50%; top:calc(58px + env(safe-area-inset-top)); transform:translateX(-50%); z-index:30; display:none; padding:9px 20px; border-radius:999px; font-size:14px; font-weight:800; letter-spacing:.04em; color:#fde68a; background:rgba(20,27,46,.9); border:1px solid rgba(253,230,138,.5); box-shadow:0 6px 30px rgba(0,0,0,.5); }
+#toast { position:fixed; left:50%; transform:translateX(-50%) translateY(8px); z-index:40; bottom:calc(120px + env(safe-area-inset-bottom)); padding:10px 18px; border-radius:12px; font-size:13.5px; font-weight:600; color:#ffd9d9; background:rgba(40,12,24,.85); border:1px solid rgba(248,113,113,.35); backdrop-filter:blur(10px); opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; max-width:calc(100vw - 40px); text-align:center; }
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+#toast.good { color:#d6ffe9; background:rgba(8,36,24,.85); border-color:rgba(52,211,153,.4); }
+.overlay { position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center; background:rgba(3,4,12,.7); backdrop-filter:blur(6px); padding:18px; }
+.overlay.open { display:flex; }
+.modal { width:min(360px,100%); border-radius:22px; padding:26px 24px; text-align:center; }
+.modal h2 { font-size:20px; font-weight:800; letter-spacing:.08em; margin-bottom:10px; background:linear-gradient(92deg,#c4b5fd,#67e8f9,#fde68a); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.modal p { font-size:13.5px; line-height:1.55; color:#b9c4e4; margin-bottom:16px; }
+.modal a { display:inline-block; padding:12px 22px; border-radius:14px; font-size:14px; font-weight:800; letter-spacing:.06em; text-decoration:none; color:#0b1020; background:linear-gradient(135deg,#a78bfa,#22d3ee); box-shadow:0 4px 22px rgba(103,232,249,.3); }
+canvas, #graph { display:block; }
+</style>
+</head>
+<body>
+<div class="bg"><div class="nebula n1"></div><div class="nebula n2"></div><div class="nebula n3"></div></div>
+<canvas id="stars"></canvas>
+<canvas id="graph"></canvas>
+
+<div id="topbar">
+  <a id="logo" href="/synapse"><span class="name">SYNAPSE</span></a>
+  <span id="corners"><span class="st">connecting…</span></span>
+  <span id="topspacer"></span>
+</div>
+
+<div id="legend" class="glass">
+  <h4 id="legHdr">Race</h4>
+  <div id="legRows"><div id="legEmpty">waiting for players…</div></div>
+</div>
+
+<button id="recenterBtn" class="glass">⌖ RECENTER</button>
+<div id="banner"></div>
+<div id="toast"></div>
+
+<div id="dock" class="glass" style="display:none">
+  <div id="mineRow">
+    <span id="minePlanet">planet <b>—</b></span>
+    <span id="wordCount"><b>0</b> words</span>
+  </div>
+  <div id="inputRow">
+    <input id="wordInput" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Add words — space-separated to batch…" maxlength="1600" enterkeyhint="go">
+    <button id="addBtn">LINK</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay"><div class="modal glass" id="card"></div></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+'use strict';
+/* ════════════════════════════════════════════════════════════════
+   SYNAPSE MULTIPLAYER — reuses the single-player world-space render
+   engine (planet/sun sprites, camera, physics) from synapse.html, but
+   renders EVERY player's tree color-coded by their planet, driven by
+   the arena socket instead of the SP daily/practice flow.
+   ════════════════════════════════════════════════════════════════ */
+const $ = (id) => document.getElementById(id);
+const SEP = '';                        // player|word node-id separator
+const CFG = { threshold: 0.38 };             // for spring tightness only
+
+/* ── scene (fed by the socket) ── */
+const scene = {
+  cornerA: null, cornerB: null, matchNo: null, status: null, winnerId: null,
+  players: new Map(),   // pid -> { id, name, planet, color:[r,g,b], hue, board }
+  edges: [],            // { na, nb, score, color:[r,g,b], owner }
+  youId: null, myName: null,
+};
+
+function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
+function hexToRgb(h) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(h || '')); if (!m) return [167, 139, 250];
+  const n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function rgbToHue(c) {
+  const r = c[0] / 255, g = c[1] / 255, b = c[2] / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  if (d === 0) return 220;
+  let h; if (mx === r) h = ((g - b) / d) % 6; else if (mx === g) h = (b - r) / d + 2; else h = (r - g) / d + 4;
+  h *= 60; if (h < 0) h += 360; return h;
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ── seeded RNG (planet sprites seeded by word — same as SP) ── */
+function hashString(s) { let h = 2166136261 >>> 0; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+function mulberry32(seed) { let a = seed >>> 0; return function () { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+/* ════════════ CAMERA (verbatim from SP) ════════════ */
+const cam = { x: 0, y: 0, scale: 0.62, auto: true };
+function vw() { return innerWidth; } function vh() { return innerHeight; }
+function portrait() { return innerHeight > innerWidth; }
+function screenToWorld(sx, sy) { return { x: cam.x + (sx - vw() / 2) / cam.scale, y: cam.y + (sy - vh() / 2) / cam.scale }; }
+function manualCam() { if (cam.auto) { cam.auto = false; $('recenterBtn').style.display = 'flex'; } }
+function zoomAround(sx, sy, f) { const b = screenToWorld(sx, sy); cam.scale = Math.max(0.12, Math.min(3.5, cam.scale * f)); const a = screenToWorld(sx, sy); cam.x += b.x - a.x; cam.y += b.y - a.y; }
+function fitTarget() {
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const [, n] of nodes) { const r = n.corner !== undefined ? SUN_R * SUN_VIEW * 1.5 : PLANET_R * 2.4; minX = Math.min(minX, n.x - r); maxX = Math.max(maxX, n.x + r); minY = Math.min(minY, n.y - r); maxY = Math.max(maxY, n.y + r); }
+  if (minX > maxX) return null;
+  const pad = 40; minX -= pad; maxX += pad; minY -= pad; maxY += pad + 20;   // node radii already included above
+  const topH = 96, dockH = ($('dock').style.display !== 'none' ? 120 : 24);
+  const availW = Math.max(120, vw() - 44), availH = Math.max(120, vh() - topH - dockH - 18);
+  const scale = Math.max(0.12, Math.min(1.15, Math.min(availW / (maxX - minX), availH / (maxY - minY))));
+  const usableCy = topH + availH / 2 + 10;
+  return { scale, x: (minX + maxX) / 2, y: (minY + maxY) / 2 + (vh() / 2 - usableCy) / scale };
+}
+function autoFitTick() { if (!cam.auto) return; const t = fitTarget(); if (!t) return; cam.scale += (t.scale - cam.scale) * 0.07; cam.x += (t.x - cam.x) * 0.07; cam.y += (t.y - cam.y) * 0.07; }
+function worldFont(px, weight) { const s = Math.max(13, Math.min(52, px * cam.scale)); return weight + ' ' + (s / cam.scale) + 'px system-ui'; }
+
+/* ════════════ STARFIELD (verbatim from SP) ════════════ */
+const starsCv = $('stars'), starsCtx = starsCv.getContext('2d');
+let starList = [];
+function buildStars() { const n = Math.round((innerWidth * innerHeight) / 4200); starList = []; for (let i = 0; i < n; i++) starList.push({ x: Math.random() * innerWidth, y: Math.random() * innerHeight, r: Math.random() * 1.3 + 0.3, tw: Math.random() * Math.PI * 2, sp: 0.4 + Math.random() * 1.4, layer: Math.random() < 0.3 ? 2 : 1 }); }
+function drawStars(t) {
+  starsCtx.clearRect(0, 0, starsCv.width, starsCv.height);
+  const dpr = window.devicePixelRatio || 1; starsCtx.save(); starsCtx.scale(dpr, dpr);
+  const w = vw(), h = vh();
+  for (const s of starList) {
+    const px = ((s.x - cam.x * 0.045 * s.layer) % w + w) % w, py = ((s.y - cam.y * 0.045 * s.layer) % h + h) % h;
+    const a = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(t * 0.0011 * s.sp + s.tw));
+    starsCtx.globalAlpha = s.layer === 2 ? a : a * 0.6; starsCtx.fillStyle = '#cfe3ff';
+    starsCtx.beginPath(); starsCtx.arc(px, py, s.r * s.layer, 0, 7); starsCtx.fill();
+  }
+  starsCtx.restore();
+}
+
+/* ════════════ PLANET SPRITES (from SP; hue overridable per player) ════════════ */
+const PLANET_R = 24, SUN_R = 40, SUN_VIEW = 4, SPR = 6;   // MP: corner suns drawn 4x (sprite stays small to spare OBS memory)
+const spriteCache = new Map();
+function planetSprite(word, hueOverride) {
+  const key = word + (hueOverride != null ? ':' + Math.round(hueOverride) : '');
+  if (spriteCache.has(key)) return spriteCache.get(key);
+  const rng = mulberry32(hashString('planet:' + word));
+  const R = PLANET_R * SPR, M = Math.ceil(R * 2.1);
+  const c = document.createElement('canvas'); c.width = c.height = M * 2;
+  const g = c.getContext('2d'); const cx = M, cy = M;
+  const HUES = [262, 262, 248, 215, 215, 198, 288, 330, 158];
+  const hueIdx = Math.floor(rng() * HUES.length);            // advance rng identically to SP
+  const hue = (hueOverride != null) ? hueOverride : HUES[hueIdx];
+  const sat = 55 + rng() * 25;
+  const roll = rng(); const type = roll < 0.45 ? 'gas' : (roll < 0.8 ? 'rock' : 'ice');
+  const hasRing = rng() < 0.15; const ringTilt = -0.3 - rng() * 0.55;
+  const col = (l, a = 1) => 'hsla(' + hue + ',' + sat + '%,' + l + '%,' + a + ')';
+  const lx = cx - R * 0.38, ly = cy - R * 0.42;
+  const ring = (front) => { if (!hasRing) return; g.save(); g.translate(cx, cy); g.rotate(ringTilt); g.strokeStyle = col(70, 0.5); g.lineWidth = R * 0.16; g.beginPath(); g.ellipse(0, 0, R * 1.62, R * 0.5, 0, front ? 0 : Math.PI, front ? Math.PI : Math.PI * 2); g.stroke(); g.strokeStyle = col(85, 0.25); g.lineWidth = R * 0.34; g.beginPath(); g.ellipse(0, 0, R * 1.62, R * 0.5, 0, front ? 0 : Math.PI, front ? Math.PI : Math.PI * 2); g.stroke(); g.restore(); };
+  ring(false);
+  const base = g.createRadialGradient(lx, ly, R * 0.1, cx, cy, R * 1.25);
+  base.addColorStop(0, col(74)); base.addColorStop(0.45, col(48)); base.addColorStop(0.8, col(26)); base.addColorStop(1, col(14));
+  g.save(); g.beginPath(); g.arc(cx, cy, R, 0, 7); g.clip(); g.fillStyle = base; g.fillRect(0, 0, M * 2, M * 2);
+  if (type === 'gas') {
+    g.save(); g.translate(cx, cy); g.rotate((rng() - 0.5) * 0.5);
+    const bands = 6 + Math.floor(rng() * 5);
+    for (let i = 0; i < bands; i++) { const y = -R + (i + 0.5) * (2 * R / bands) + (rng() - 0.5) * R * 0.08; const hgt = (2 * R / bands) * (0.55 + rng() * 0.5); g.fillStyle = col(rng() < 0.5 ? 30 + rng() * 14 : 62 + rng() * 16, 0.16 + rng() * 0.16); g.beginPath(); g.ellipse(0, y, R * 1.05, hgt / 2, 0, 0, 7); g.fill(); }
+    if (rng() < 0.6) { g.fillStyle = col(78, 0.5); g.beginPath(); g.ellipse((rng() - 0.5) * R, (rng() - 0.5) * R * 0.9, R * 0.16, R * 0.09, 0.3, 0, 7); g.fill(); }
+    g.restore();
+  } else if (type === 'rock') {
+    const craters = 9 + Math.floor(rng() * 7);
+    for (let i = 0; i < craters; i++) { const a = rng() * Math.PI * 2, d = rng() * R * 0.82; const px = cx + Math.cos(a) * d, py = cy + Math.sin(a) * d; const cr = R * (0.05 + rng() * 0.1); g.fillStyle = 'rgba(4,6,16,' + (0.18 + rng() * 0.2) + ')'; g.beginPath(); g.arc(px, py, cr, 0, 7); g.fill(); g.strokeStyle = col(80, 0.35); g.lineWidth = cr * 0.28; g.beginPath(); g.arc(px, py, cr, Math.PI * 0.85, Math.PI * 1.55); g.stroke(); }
+    for (let i = 0; i < 5; i++) { const a = rng() * Math.PI * 2, d = rng() * R * 0.7; g.fillStyle = col(rng() < 0.5 ? 30 : 60, 0.1); g.beginPath(); g.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, R * (0.2 + rng() * 0.3), 0, 7); g.fill(); }
+  } else {
+    for (let i = 0; i < 8; i++) { const a = rng() * Math.PI * 2, d = rng() * R * 0.85; const px = cx + Math.cos(a) * d, py = cy + Math.sin(a) * d; const br = R * (0.18 + rng() * 0.4); const blob = g.createRadialGradient(px, py, 0, px, py, br); blob.addColorStop(0, 'hsla(' + (hue + 10) + ',40%,' + (82 + rng() * 12) + '%,' + (0.14 + rng() * 0.12) + ')'); blob.addColorStop(1, 'hsla(' + hue + ',40%,90%,0)'); g.fillStyle = blob; g.beginPath(); g.arc(px, py, br, 0, 7); g.fill(); }
+  }
+  const term = g.createRadialGradient(lx, ly, R * 0.55, lx, ly, R * 2.35); term.addColorStop(0, 'rgba(3,5,16,0)'); term.addColorStop(0.55, 'rgba(3,5,16,0)'); term.addColorStop(1, 'rgba(3,5,16,0.88)'); g.fillStyle = term; g.fillRect(0, 0, M * 2, M * 2);
+  const spec = g.createRadialGradient(lx, ly, 0, lx, ly, R * 0.55); spec.addColorStop(0, 'rgba(255,255,255,0.4)'); spec.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = spec; g.fillRect(0, 0, M * 2, M * 2);
+  g.restore();
+  const atmo = g.createRadialGradient(cx, cy, R * 0.9, cx, cy, R * 1.22); atmo.addColorStop(0, col(70, 0)); atmo.addColorStop(0.42, col(72, 0.4)); atmo.addColorStop(0.62, col(75, 0.16)); atmo.addColorStop(1, col(78, 0)); g.fillStyle = atmo; g.beginPath(); g.arc(cx, cy, R * 1.22, 0, 7); g.fill();
+  ring(true);
+  const sprite = { canvas: c, worldSize: (M * 2) / SPR }; spriteCache.set(key, sprite); return sprite;
+}
+function sunSprite(idx) {
+  const key = ' sun' + idx; if (spriteCache.has(key)) return spriteCache.get(key);
+  const R = SUN_R * SPR, M = Math.ceil(R * 2.6);
+  const c = document.createElement('canvas'); c.width = c.height = M * 2; const g = c.getContext('2d');
+  const warm = idx === 0; const core = warm ? ['#fffdf4', '#ffedb0', '#ffc85e', '#f59e0b'] : ['#f5fdff', '#c5f1ff', '#67d8f9', '#0ea5e9'];
+  const halo = g.createRadialGradient(M, M, 0, M, M, M); halo.addColorStop(0, warm ? 'rgba(255,214,120,0.55)' : 'rgba(125,222,250,0.55)'); halo.addColorStop(0.45, warm ? 'rgba(255,190,80,0.16)' : 'rgba(90,200,245,0.16)'); halo.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = halo; g.fillRect(0, 0, M * 2, M * 2);
+  const body = g.createRadialGradient(M - R * 0.2, M - R * 0.25, 0, M, M, R); body.addColorStop(0, core[0]); body.addColorStop(0.4, core[1]); body.addColorStop(0.78, core[2]); body.addColorStop(1, core[3]); g.fillStyle = body; g.beginPath(); g.arc(M, M, R, 0, 7); g.fill();
+  const rng = mulberry32(hashString(key)); g.save(); g.beginPath(); g.arc(M, M, R, 0, 7); g.clip();
+  for (let i = 0; i < 26; i++) { const a = rng() * Math.PI * 2, d = rng() * R * 0.9; g.fillStyle = 'rgba(255,255,255,' + (0.04 + rng() * 0.08) + ')'; g.beginPath(); g.arc(M + Math.cos(a) * d, M + Math.sin(a) * d, R * (0.06 + rng() * 0.14), 0, 7); g.fill(); }
+  g.restore();
+  const rim = g.createRadialGradient(M, M, R * 0.86, M, M, R * 1.25); rim.addColorStop(0, 'rgba(255,255,255,0)'); rim.addColorStop(0.4, warm ? 'rgba(255,232,160,0.5)' : 'rgba(190,240,255,0.5)'); rim.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = rim; g.beginPath(); g.arc(M, M, R * 1.25, 0, 7); g.fill();
+  const sprite = { canvas: c, worldSize: (M * 2) / SPR }; spriteCache.set(key, sprite); return sprite;
+}
+
+/* ════════════ NODES + PHYSICS ════════════ */
+const cv = $('graph'), ctx = cv.getContext('2d');
+const nodes = new Map();   // nodeId -> {x,y,vx,vy,pinned,corner,born,word,hue}
+let sparks = []; let winFlash = 0;
+const CORNER_GAP = 2400;   // MP: wider gap for the 4x suns (framed fully by fitTarget)
+function cornerPos(i) { if (portrait()) return { x: 0, y: i === 0 ? -CORNER_GAP / 2 : CORNER_GAP / 2 }; return { x: i === 0 ? -CORNER_GAP / 2 : CORNER_GAP / 2, y: 0 }; }
+function ensureCorner(word, idx) {
+  if (!word) return;
+  let n = nodes.get(word);
+  const p = cornerPos(idx);
+  if (!n) { nodes.set(word, { x: p.x, y: p.y, vx: 0, vy: 0, pinned: true, corner: idx, born: performance.now(), word }); }
+  else { n.corner = idx; n.pinned = true; n.word = word; }
+}
+function ensureNode(id, word, hue, owner) {
+  if (nodes.has(id)) { const n = nodes.get(id); n.hue = hue; n.owner = owner; return; }
+  const x = (Math.random() - 0.5) * 520, y = (Math.random() - 0.5) * 360;
+  nodes.set(id, { x, y, vx: 0, vy: 0, pinned: false, corner: undefined, born: performance.now(), word, hue, owner });
+  planetSprite(word, hue);
+  const c = hexToRgb('#a78bfa');
+  for (let i = 0; i < 12; i++) { const a = Math.random() * Math.PI * 2, v = 0.9 + Math.random() * 3; sparks.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, c }); }
+}
+function physicsTick() {
+  const arr = [...nodes.values()];
+  for (let i = 0; i < arr.length; i++) for (let j = i + 1; j < arr.length; j++) {
+    const A = arr[i], B = arr[j]; let dx = B.x - A.x, dy = B.y - A.y, d2 = dx * dx + dy * dy;
+    if (d2 < 1) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d2 = 1; }
+    const d = Math.sqrt(d2), f = Math.min(16000 / d2, 5), fx = (dx / d) * f, fy = (dy / d) * f;
+    if (!A.pinned) { A.vx -= fx; A.vy -= fy; } if (!B.pinned) { B.vx += fx; B.vy += fy; }
+  }
+  for (const e of scene.edges) {
+    const A = nodes.get(e.na), B = nodes.get(e.nb); if (!A || !B) continue;
+    const f01 = Math.min(1, (e.score - CFG.threshold) / (1 - CFG.threshold));
+    const cornerEdge = (A.corner !== undefined) || (B.corner !== undefined);
+    const rest = cornerEdge ? (620 - 140 * f01) : (270 - 130 * f01);   // planets settle clear of the 4x suns
+    const dx = B.x - A.x, dy = B.y - A.y, d = Math.sqrt(dx * dx + dy * dy) || 1, f = (d - rest) * 0.012;
+    if (!A.pinned) { A.vx += (dx / d) * f; A.vy += (dy / d) * f; } if (!B.pinned) { B.vx -= (dx / d) * f; B.vy -= (dy / d) * f; }
+  }
+  // clear-zone: the 4x suns' point-repulsion is too weak, so explicitly push
+  // every planet out of a generous radius around each corner (keeps planets off
+  // the big suns; the radius scales with the drawn sun size).
+  const CLEAR_R = SUN_R * SUN_VIEW * 5;   // ~800 world — hold planets clear of the sun's glow
+  for (const cw of [scene.cornerA, scene.cornerB]) {
+    const cn = cw && nodes.get(cw); if (!cn) continue;
+    for (const n of arr) {
+      if (n.pinned) continue;
+      const dx = n.x - cn.x, dy = n.y - cn.y; const d = Math.hypot(dx, dy) || 1;
+      if (d < CLEAR_R) { const push = (CLEAR_R - d) * 0.05; n.vx += (dx / d) * push; n.vy += (dy / d) * push; }
+    }
+  }
+  const flat = portrait() ? 'x' : 'y';
+  for (const n of arr) { if (n.pinned) continue; n.vx += -n.x * (flat === 'x' ? 0.0034 : 0.0008); n.vy += -n.y * (flat === 'y' ? 0.0034 : 0.0008); n.vx *= 0.88; n.vy *= 0.88; const sp = Math.sqrt(n.vx * n.vx + n.vy * n.vy); if (sp > 10) { n.vx = (n.vx / sp) * 10; n.vy = (n.vy / sp) * 10; } n.x += n.vx; n.y += n.vy; }
+  if (scene.cornerA) { const n = nodes.get(scene.cornerA); if (n) { const p = cornerPos(0); n.x = p.x; n.y = p.y; } }
+  if (scene.cornerB) { const n = nodes.get(scene.cornerB); if (n) { const p = cornerPos(1); n.x = p.x; n.y = p.y; } }
+}
+
+function draw(t) {
+  const dpr = window.devicePixelRatio || 1;
+  ctx.clearRect(0, 0, cv.width, cv.height); ctx.save(); ctx.scale(dpr, dpr);
+  ctx.translate(vw() / 2, vh() / 2); ctx.scale(cam.scale, cam.scale); ctx.translate(-cam.x, -cam.y);
+  /* edges — colored by owning player */
+  for (const e of scene.edges) {
+    const A = nodes.get(e.na), B = nodes.get(e.nb); if (!A || !B) continue;
+    const c = e.color; const f01 = Math.min(1, (e.score - CFG.threshold) / (1 - CFG.threshold)); const w = 3 + f01 * 4.5;
+    ctx.strokeStyle = rgba(c, 0.16); ctx.lineWidth = w + 4; ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
+    const grad = ctx.createLinearGradient(A.x, A.y, B.x, B.y);
+    grad.addColorStop(0, rgba(c, 0.8)); grad.addColorStop(0.5, rgba([255, 255, 255], 0.35 + f01 * 0.3)); grad.addColorStop(1, rgba(c, 0.8));
+    ctx.strokeStyle = grad; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
+  }
+  /* nodes — suns + planets */
+  for (const [id, n] of nodes) {
+    const isCorner = n.corner !== undefined;
+    const age = Math.min(1, (t - n.born) / 500); const grow = 0.4 + 0.6 * (1 - Math.pow(1 - age, 3));
+    const R = (isCorner ? SUN_R * SUN_VIEW : PLANET_R) * grow; const breathe = 1 + 0.05 * Math.sin(t * 0.0016 + n.x);
+    const cc = isCorner ? (n.corner === 0 ? [253, 230, 138] : [103, 232, 249]) : (scene.players.get(n.owner)?.color || [196, 181, 253]);
+    if (isCorner) {
+      ctx.save(); ctx.translate(n.x, n.y);
+      for (const layer of [{ n: 7, sp: 0.00016, len: 2.5, a: 0.3 }, { n: 11, sp: -0.00011, len: 1.9, a: 0.2 }]) {
+        ctx.save(); ctx.rotate(t * layer.sp); ctx.strokeStyle = rgba(cc, layer.a * (0.7 + 0.3 * Math.sin(t * 0.002))); ctx.lineWidth = 2.2;
+        for (let k = 0; k < layer.n; k++) { ctx.rotate((Math.PI * 2) / layer.n); ctx.beginPath(); ctx.moveTo(R * 1.15, 0); ctx.lineTo(R * layer.len * breathe, 0); ctx.stroke(); }
+        ctx.restore();
+      }
+      ctx.restore();
+      const spr = sunSprite(n.corner); const s = spr.worldSize * grow * breathe * SUN_VIEW; ctx.drawImage(spr.canvas, n.x - s / 2, n.y - s / 2, s, s);
+    } else {
+      const halo = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, R * 2.4 * breathe); halo.addColorStop(0, rgba(cc, 0.22)); halo.addColorStop(1, rgba(cc, 0));
+      ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(n.x, n.y, R * 2.4 * breathe, 0, 7); ctx.fill();
+      const spr = planetSprite(n.word, n.hue); const s = spr.worldSize * grow; ctx.drawImage(spr.canvas, n.x - s / 2, n.y - s / 2, s, s);
+    }
+    ctx.textAlign = 'center';
+    if (isCorner) {
+      // starting words: black, centered directly ON the sun
+      ctx.font = worldFont(26, '800'); ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(255,255,255,0.55)'; ctx.shadowBlur = 6; ctx.fillStyle = '#000';
+      ctx.fillText(n.word.toUpperCase(), n.x, n.y); ctx.shadowBlur = 0; ctx.textBaseline = 'alphabetic';
+    } else {
+      ctx.font = worldFont(26, '700');   // MP: 2x SP label size, below the planet
+      ctx.shadowColor = rgba(cc, 0.9); ctx.shadowBlur = 10; ctx.fillStyle = '#eef0ff';
+      ctx.fillText(n.word.toUpperCase(), n.x, n.y + R + 12 + 14 / cam.scale); ctx.shadowBlur = 0;
+    }
+  }
+  sparks = sparks.filter((s) => s.life > 0);
+  for (const s of sparks) { s.x += s.vx; s.y += s.vy; s.vx *= 0.97; s.vy *= 0.97; s.life -= 0.02; ctx.globalAlpha = Math.max(0, s.life); ctx.fillStyle = rgba(s.c, 1); ctx.beginPath(); ctx.arc(s.x, s.y, 2.2, 0, 7); ctx.fill(); }
+  ctx.globalAlpha = 1; ctx.restore();
+  if (winFlash > 0.01) { ctx.save(); ctx.scale(dpr, dpr); const g = ctx.createRadialGradient(vw() / 2, vh() / 2, 0, vw() / 2, vh() / 2, Math.max(vw(), vh()) * 0.75); g.addColorStop(0, 'rgba(255,250,230,' + winFlash * 0.55 + ')'); g.addColorStop(1, 'rgba(255,250,230,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, vw(), vh()); winFlash *= 0.94; ctx.restore(); }
+}
+function resize() { const dpr = window.devicePixelRatio || 1; for (const c of [cv, starsCv]) { c.width = Math.round(innerWidth * dpr); c.height = Math.round(innerHeight * dpr); c.style.width = innerWidth + 'px'; c.style.height = innerHeight + 'px'; } buildStars(); }
+addEventListener('resize', resize); resize();
+function frame(t) { const dpr = window.devicePixelRatio || 1; if (cv.width !== Math.round(innerWidth * dpr) || cv.height !== Math.round(innerHeight * dpr)) resize(); physicsTick(); autoFitTick(); drawStars(t); draw(t); requestAnimationFrame(frame); }
+requestAnimationFrame(frame);
+
+/* ════════════ CAMERA INPUT (drag / wheel / pinch — verbatim from SP) ════════════ */
+const pointers = new Map();
+cv.addEventListener('pointerdown', (e) => {
+  try { cv.setPointerCapture(e.pointerId); } catch (err) { /* capture is best-effort */ }
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+});
+cv.addEventListener('pointermove', (e) => {
+  if (!pointers.has(e.pointerId)) return;
+  const prev = pointers.get(e.pointerId);
+  if (pointers.size === 1) {
+    const dx = e.clientX - prev.x, dy = e.clientY - prev.y;
+    if (dx || dy) { manualCam(); cam.x -= dx / cam.scale; cam.y -= dy / cam.scale; }
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  } else if (pointers.size === 2) {
+    const otherEntry = [...pointers.entries()].find(([id]) => id !== e.pointerId);
+    if (!otherEntry) return;
+    const other = otherEntry[1];
+    const oldDist = Math.hypot(prev.x - other.x, prev.y - other.y);
+    const oldMid = { x: (prev.x + other.x) / 2, y: (prev.y + other.y) / 2 };
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const newDist = Math.hypot(e.clientX - other.x, e.clientY - other.y);
+    const newMid = { x: (e.clientX + other.x) / 2, y: (e.clientY + other.y) / 2 };
+    if (oldDist > 8) { manualCam(); zoomAround(oldMid.x, oldMid.y, newDist / oldDist); cam.x -= (newMid.x - oldMid.x) / cam.scale; cam.y -= (newMid.y - oldMid.y) / cam.scale; }
+  }
+});
+const releasePointer = (e) => pointers.delete(e.pointerId);
+cv.addEventListener('pointerup', releasePointer);
+cv.addEventListener('pointercancel', releasePointer);
+cv.addEventListener('wheel', (e) => { e.preventDefault(); manualCam(); zoomAround(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0013)); }, { passive: false });
+$('recenterBtn').addEventListener('click', () => { cam.auto = true; $('recenterBtn').style.display = 'none'; });
+
+/* ════════════ SCENE SYNC ════════════ */
+function isCorner(w) { return w === scene.cornerA || w === scene.cornerB; }
+function upsertPlayer(p) {
+  if (!p || !p.id) return;
+  const pl = scene.players.get(p.id) || { id: p.id };
+  pl.name = p.name || pl.name || 'Player';
+  if (p.planet) { pl.planet = p.planet; pl.color = hexToRgb(p.planet.color); pl.hue = rgbToHue(pl.color); }
+  if (!pl.color) { pl.color = [167, 139, 250]; pl.hue = 258; }
+  if (p.board !== undefined) pl.board = p.board;
+  scene.players.set(p.id, pl);
+}
+function reconcile() {
+  if (scene.cornerA) ensureCorner(scene.cornerA, 0);
+  if (scene.cornerB) ensureCorner(scene.cornerB, 1);
+  scene.edges = [];
+  const wanted = new Set(); if (scene.cornerA) wanted.add(scene.cornerA); if (scene.cornerB) wanted.add(scene.cornerB);
+  for (const [pid, pl] of scene.players) {
+    const words = (pl.board && pl.board.words) || [];
+    for (const w of words) { const id = pid + SEP + w; wanted.add(id); ensureNode(id, w, pl.hue, pid); }
+    const edges = (pl.board && pl.board.edges) || [];
+    for (const e of edges) { const na = isCorner(e.a) ? e.a : pid + SEP + e.a; const nb = isCorner(e.b) ? e.b : pid + SEP + e.b; scene.edges.push({ na, nb, score: e.score, color: pl.color, owner: pid }); }
+  }
+  for (const id of [...nodes.keys()]) { if (!wanted.has(id)) nodes.delete(id); } // drop stale nodes incl. old corners
+  renderLegend(); renderCorners(); renderMine();
+}
+function setSnapshot(snap) {
+  if (!snap || !snap.match) return;
+  const changingMatch = scene.matchNo !== snap.match.no;
+  scene.cornerA = snap.match.cornerA; scene.cornerB = snap.match.cornerB;
+  scene.matchNo = snap.match.no; scene.status = snap.match.status; scene.winnerId = snap.match.winnerId;
+  if (changingMatch) { for (const id of [...nodes.keys()]) nodes.delete(id); cam.auto = true; $('recenterBtn').style.display = 'none'; }
+  scene.players.clear();
+  (snap.players || []).forEach(upsertPlayer);
+  reconcile();
+}
+function renderCorners() { $('corners').innerHTML = scene.cornerA ? '<b class="a">' + esc(scene.cornerA.toUpperCase()) + '</b> ↔ <b class="b">' + esc(scene.cornerB.toUpperCase()) + '</b> <span class="st">· first to connect · #' + (scene.matchNo || '') + '</span>' : '<span class="st">waiting…</span>'; }
+function renderMine() { const me = scene.players.get(scene.youId); if (!me) return; $('minePlanet').innerHTML = 'planet <span class="dot" style="color:' + (me.planet ? me.planet.color : '#a78bfa') + ';background:' + (me.planet ? me.planet.color : '#a78bfa') + '"></span> <b>' + esc(me.planet ? me.planet.name : '—') + '</b>'; $('wordCount').innerHTML = '<b>' + (((me.board && me.board.words) || []).length) + '</b> / 200'; }
+function renderLegend() {
+  const arr = [...scene.players.values()];
+  arr.sort((a, b) => { const ac = a.board && a.board.connected ? 1 : 0, bc = b.board && b.board.connected ? 1 : 0; if (ac !== bc) return bc - ac; const ar = (a.board && a.board.reach) || 0, br = (b.board && b.board.reach) || 0; if (ar !== br) return br - ar; return (((a.board && a.board.words) || []).length) - (((b.board && b.board.words) || []).length); });
+  $('legHdr').textContent = 'Race · ' + arr.length + ' player' + (arr.length === 1 ? '' : 's');
+  if (!arr.length) { $('legRows').innerHTML = '<div id="legEmpty">waiting for players…</div>'; return; }
+  $('legRows').innerHTML = arr.map((p) => { const col = p.planet ? p.planet.color : '#a78bfa'; const wc = ((p.board && p.board.words) || []).length; const conn = p.board && p.board.connected; return '<div class="lrow' + (p.id === scene.youId ? ' me' : '') + '"><span class="dot" style="color:' + col + ';background:' + col + '"></span><span class="nm">' + esc(p.name) + (p.id === scene.youId ? ' · you' : '') + '</span>' + (conn ? '<span class="wc won">✓</span>' : '<span class="wc">' + wc + '</span>') + '</div>'; }).join('');
+}
+
+/* ════════════ SOCKET ════════════ */
+const params = new URLSearchParams(location.search);
+const watchStreamer = params.get('streamer');
+const watchMode = (watchStreamer != null) || (params.get('watch') != null);
+let socket = null;
+function boot() {
+  if (watchMode) return connect(null);
+  fetch('/api/synapse/mp/token', { credentials: 'same-origin', cache: 'no-store' }).then((r) => r.json()).then((t) => { if (!t || !t.ok) { showLogin(); return; } connect(t.token); }).catch(() => showError('Could not reach the arena. Please retry.'));
+}
+function connect(authToken) {
+  socket = authToken ? io({ auth: { token: authToken }, transports: ['websocket', 'polling'] }) : io({ transports: ['websocket', 'polling'] });
+  socket.on('connect', () => watchMode ? doWatch() : doJoin());
+  socket.on('synapse-mp:newmatch', (snap) => { $('banner').style.display = 'none'; setSnapshot(snap); });
+  socket.on('synapse-mp:join', (d) => { if (d && d.player) { upsertPlayer(d.player); reconcile(); } });
+  socket.on('synapse-mp:leave', (d) => { if (d && d.playerId) { scene.players.delete(d.playerId); reconcile(); } });
+  socket.on('synapse-mp:update', (d) => { if (d && d.playerId) { upsertPlayer({ id: d.playerId, board: d.board }); reconcile(); } });
+  socket.on('synapse-mp:win', (d) => {
+    if (!d) return; winFlash = 1;
+    const mine = d.winnerId === scene.youId;
+    $('banner').textContent = (mine ? 'You connected' : esc(d.name) + ' connected') + ' in ' + d.wordsUsed + ' word' + (d.wordsUsed === 1 ? '' : 's') + '!';
+    $('banner').style.display = 'block';
+    const w = scene.players.get(d.winnerId); if (w && w.board) w.board.connected = true; renderLegend();
+  });
+  socket.on('disconnect', () => { $('corners').innerHTML = '<span class="st">reconnecting…</span>'; });
+}
+function doJoin() {
+  socket.emit('synapse-mp:join', {}, (res) => {
+    if (!res || !res.ok) { if (res && res.error === 'login-required') showLogin(); else if (res && res.error === 'premium-required') showPremiumWall(); else showError((res && res.error) || 'could not join'); return; }
+    $('overlay').classList.remove('open'); scene.youId = res.you; setSnapshot(res.snapshot);
+    $('dock').style.display = 'block'; $('wordInput').disabled = false; $('addBtn').disabled = false; $('wordInput').focus();
+  });
+}
+function doWatch() {
+  socket.emit('synapse-mp:watch', { streamerId: watchStreamer || null }, (res) => {
+    if (!res || !res.ok) { showError('This stream isn’t in the arena yet — type a word in chat to start.'); return; }
+    $('overlay').classList.remove('open'); scene.youId = null; setSnapshot(res.snapshot);
+  });
+}
+let toastTimer = null;
+const REASONS = { duplicate: 'already on your board', 'unknown-word': 'no model knows that word', 'not-a-word': 'not a valid word', 'bad-word': '3–15 letters only', 'is-corner': 'that’s a corner word', 'board-full': 'board is full', 'match-over': 'this match is over', 'no-match': 'no match running' };
+function toast(msg, good) { const el = $('toast'); el.textContent = msg; el.classList.toggle('good', !!good); el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2000); }
+function submit() {
+  const raw = ($('wordInput').value || '').trim().toLowerCase();
+  if (!raw) return;
+  const words = raw.split(/[\s,]+/).filter(Boolean);   // space/comma/newline separated
+  $('wordInput').value = '';
+  if (words.length <= 1) {
+    socket.emit('synapse-mp:word', { word: words[0] }, (res) => { if (!res || !res.ok) toast(REASONS[res && res.reason] || REASONS[res && res.error] || 'rejected'); });
+  } else {
+    socket.emit('synapse-mp:words', { words }, (res) => {   // batch (Searchle-style)
+      if (!res || !res.ok) { toast(REASONS[res && res.reason] || 'no valid words'); return; }
+      const a = (res.accepted || []).length, r = (res.rejected || []).length;
+      toast(a + (a === 1 ? ' word added' : ' words added') + (r ? ' · ' + r + ' skipped' : ''), a > 0);
+    });
+  }
+}
+$('addBtn').addEventListener('click', submit);
+$('wordInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+function showLogin() { $('overlay').classList.add('open'); const back = encodeURIComponent(location.pathname + location.search); $('card').innerHTML = '<h2>Log in to race</h2><p>Multiplayer tracks your planet and awards XP, so it needs your Word Tycoon account.</p><a href="/auth/discord?returnTo=' + back + '">Log in on Word Tycoon</a>'; }
+function showError(msg) { $('overlay').classList.add('open'); $('card').innerHTML = '<h2>Arena unavailable</h2><p>' + esc(msg) + '</p><a href="/synapse">Back to Synapse</a>'; }
+function showPremiumWall() { $('overlay').classList.add('open'); $('card').innerHTML = '<h2>Multiplayer is Donor-only</h2><p>The Synapse daily and practice are free for everyone, forever. The multiplayer arena needs <strong>Donor Class</strong> &mdash; $2/month. TikTok Super Fans get it free.</p><a href="/me?tab=pass">Become a Donor &mdash; $2/mo</a> <a href="/synapse">Play the free daily</a>'; }
+boot();
+</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,349 @@
+{
+  "apps": [
+    {
+      "id": "word500",
+      "name": "Word 500",
+      "description": "5-letter word deduction game (Wordle-style)",
+      "path": "/opt/word500",
+      "port": 3011,
+      "entryPoint": "server.js",
+      "pages": [
+        {
+          "label": "Game",
+          "path": "/",
+          "overlay": true,
+          "desc": "Word deduction game"
+        },
+        {
+          "label": "Admin",
+          "path": "/admin.html"
+        }
+      ]
+    },
+    {
+      "id": "colour500",
+      "name": "Color 500",
+      "description": "Classic Mastermind played with colors \u2014 crack the secret code from chat",
+      "path": "/opt/colour500",
+      "port": 3033,
+      "entryPoint": "server.js",
+      "pages": [
+        {
+          "label": "Game",
+          "path": "/",
+          "desc": "Colour code deduction game"
+        }
+      ]
+    },
+    {
+      "id": "pixeletters",
+      "name": "PixeLetters",
+      "description": "Word guessing game with progressive pixel reveals",
+      "path": "/opt/pixeletters",
+      "port": 3012,
+      "entryPoint": "server.js",
+      "pages": [
+        {
+          "label": "Overlay",
+          "path": "/overlay.html",
+          "overlay": true,
+          "desc": "Pixel art word guessing"
+        },
+        {
+          "label": "Admin",
+          "path": "/admin.html"
+        }
+      ]
+    },
+    {
+      "id": "spellingbee",
+      "name": "Spelling Bee",
+      "description": "Find valid words from 7 letters with a center letter constraint",
+      "path": "/opt/spellingbee",
+      "port": 3013,
+      "entryPoint": "server.js",
+      "pages": [
+        {
+          "label": "Overlay",
+          "path": "/overlay.html",
+          "overlay": true,
+          "desc": "Honeycomb word finder"
+        },
+        {
+          "label": "Admin",
+          "path": "/admin.html"
+        }
+      ]
+    },
+    {
+      "id": "wordle",
+      "name": "Wordle",
+      "description": "Variable-length Wordle word guessing game",
+      "path": "/opt/wordle",
+      "port": 3014,
+      "entryPoint": "server.js",
+      "pages": [
+        {
+          "label": "Game",
+          "path": "/",
+          "overlay": true,
+          "desc": "Wordle-style game"
+        }
+      ]
+    },
+    {
+      "id": "word1000",
+      "name": "Word5000 Solo",
+      "description": "Word5000 Solo \u2014 client-side word guessing game",
+      "path": "/opt/word1000",
+      "port": 3018,
+      "entryPoint": "server.js",
+      "pages": [
+        {
+          "label": "Game",
+          "path": "/play.html",
+          "overlay": true,
+          "desc": "Single player word deduction \u2014 choose word length and guess locally"
+        }
+      ]
+    },
+    {
+      "id": "searchle",
+      "aliases": [
+        "subtextle"
+      ],
+      "name": "Subtextle Mobile",
+      "description": "Semantic word guessing with Three.js visuals and multi-model rankings",
+      "path": "/opt/searchle",
+      "port": 3015,
+      "entryPoint": "server/server.js",
+      "pages": [
+        {
+          "label": "Game",
+          "path": "/",
+          "overlay": true,
+          "desc": "Semantic word guessing"
+        }
+      ]
+    },
+    {
+      "id": "rectangled",
+      "name": "RecTangled",
+      "description": "Word search puzzle - find valid words in a letter grid",
+      "path": "/opt/rectangled",
+      "port": 3016,
+      "entryPoint": "server.js",
+      "pages": [
+        {
+          "label": "Game",
+          "path": "/",
+          "overlay": true,
+          "desc": "Letter grid word search"
+        },
+        {
+          "label": "Admin",
+          "path": "/admin.html"
+        }
+      ]
+    },
+    {
+      "id": "betwixt",
+      "name": "Betwixt",
+      "description": "Alphabetical word guessing game",
+      "path": "/opt/betwixt",
+      "port": 3017,
+      "entryPoint": "server.js",
+      "pages": [
+        {
+          "label": "Game",
+          "path": "/",
+          "overlay": true,
+          "desc": "Alphabetical word guessing"
+        },
+        {
+          "label": "Play",
+          "path": "/play",
+          "desc": "Mobile play page"
+        },
+        {
+          "label": "Admin",
+          "path": "/admin.html"
+        }
+      ]
+    },
+    {
+      "id": "figural",
+      "name": "Figural",
+      "description": "Symbol-based word deduction game",
+      "path": "/opt/figural",
+      "port": 3019,
+      "entryPoint": "server.js",
+      "pages": [
+        {
+          "label": "Overlay",
+          "path": "/",
+          "overlay": true,
+          "desc": "Symbol deduction game"
+        },
+        {
+          "label": "SP",
+          "path": "/sp.html",
+          "desc": "Single-player Figural"
+        },
+        {
+          "label": "MP",
+          "path": "/mp.html",
+          "desc": "Multiplayer Figural"
+        }
+      ]
+    },
+    {
+      "id": "word-tycoon",
+      "name": "Mobile Tycoon",
+      "description": "Mobile Tycoon - Interactive tycoon clicker game",
+      "path": "/opt/word-tycoon",
+      "port": 3020,
+      "entryPoint": "server.js",
+      "pages": [
+        {
+          "label": "Game Overlay",
+          "path": "/overlay.html",
+          "overlay": true,
+          "desc": "Main game panel"
+        },
+        {
+          "label": "Income Bubbles",
+          "path": "/overlay2.html",
+          "overlay": true,
+          "desc": "Floating coin bubbles"
+        }
+      ]
+    },
+    {
+      "id": "discord-bot",
+      "name": "Discord Bot",
+      "description": "Mobile Tycoon Discord bot \u2014 slash commands, game cards, account linking",
+      "path": "/opt/word-tycoon/discord-bot",
+      "port": 3026,
+      "entryPoint": "src/index.js",
+      "pages": []
+    },
+    {
+      "id": "erectangled",
+      "aliases": [
+        "sproutle"
+      ],
+      "name": "erecTangled",
+      "description": "Expanding ring word game \u2014 grid grows with every word found",
+      "path": "/opt/sproutle",
+      "port": 3023,
+      "entryPoint": "server.js",
+      "pages": [
+        {
+          "label": "Overlay",
+          "path": "/",
+          "overlay": true,
+          "desc": "Compact grid overlay for OBS"
+        },
+        {
+          "label": "MP",
+          "path": "/mp.html",
+          "desc": "Multiplayer live board"
+        },
+        {
+          "label": "SP",
+          "path": "/sp.html",
+          "desc": "Single-player board"
+        },
+        {
+          "label": "Admin",
+          "path": "/admin.html"
+        }
+      ]
+    },
+    {
+      "id": "unwordle",
+      "name": "UnWordle",
+      "description": "Reverse Wordle \u2014 fill in the grid given color patterns and the answer",
+      "path": "/opt/unwordle",
+      "port": 3021,
+      "entryPoint": "server.js",
+      "pages": [
+        {
+          "label": "SP",
+          "path": "/sp.html",
+          "desc": "Single player reverse Wordle puzzle"
+        }
+      ]
+    },
+    {
+      "id": "triangled",
+      "name": "Triangled",
+      "description": "Triangle-grid word game \u2014 find words by tracing paths on a triangular grid",
+      "path": "/opt/triangled",
+      "port": 3024,
+      "entryPoint": "server.js",
+      "pages": [
+        {
+          "label": "Game",
+          "path": "/",
+          "overlay": true,
+          "desc": "Triangle grid word search"
+        }
+      ]
+    },
+    {
+      "id": "wikisearchle",
+      "name": "WikiSearchle",
+      "description": "Composite \u2014 Searchle's semantic cards + WikiWord's redacted article on the same target",
+      "path": "/opt/wikisearchle",
+      "port": 3029,
+      "entryPoint": "server.js",
+      "pages": [
+        {
+          "label": "Overlay",
+          "path": "/overlay.html",
+          "overlay": true,
+          "desc": "Combined OBS overlay"
+        }
+      ]
+    },
+    {
+      "id": "wikirectangled",
+      "name": "WiKirecTangled",
+      "description": "Wiki article + word-search hybrid \u2014 find title words hidden in a 5x9 letter grid",
+      "path": "/opt/wikirectangled",
+      "port": 3031,
+      "entryPoint": "server.js",
+      "pages": [
+        {
+          "label": "Game",
+          "path": "/",
+          "overlay": false,
+          "desc": "Main multiplayer page"
+        },
+        {
+          "label": "Solo",
+          "path": "/solo",
+          "desc": "Daily + practice solo modes"
+        },
+        {
+          "label": "Overlay",
+          "path": "/overlay/",
+          "overlay": true,
+          "desc": "OBS browser-source overlay (per-handle)"
+        }
+      ]
+    },
+    {
+      "id": "voice",
+      "name": "Voice TTS",
+      "description": "voice.wordtycoon.live \u2014 ElevenLabs TTS gateway, portal-gated playback to OBS",
+      "type": "tool",
+      "path": "/opt/voice",
+      "port": 3032,
+      "entryPoint": "server.js",
+      "pages": []
+    }
+  ]
+}

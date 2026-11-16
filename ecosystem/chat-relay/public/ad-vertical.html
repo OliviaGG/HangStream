@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=2000, initial-scale=1">
+<title>Word Tycoon OBS Ad Overlay</title>
+<style>
+  html, body {
+    width: 2000px;
+    height: 2000px;
+    margin: 0;
+    overflow: hidden;
+    background: transparent;
+  }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+  }
+
+  #overlay-frame {
+    width: 2000px;
+    height: 2000px;
+    border: 0;
+    display: block;
+    background: transparent;
+  }
+
+  #overlay-status {
+    position: fixed;
+    left: 24px;
+    bottom: 24px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: rgba(6, 12, 20, 0.72);
+    color: rgba(255, 255, 255, 0.8);
+    font: 600 18px/1 'Segoe UI', Arial, sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    backdrop-filter: blur(10px);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 180ms ease;
+  }
+
+  body[data-debug='1'] #overlay-status {
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+<iframe id="overlay-frame" title="Universal OBS Ad Overlay" src="/ad-vertical-generic.html"></iframe>
+<div id="overlay-status">Loading overlay…</div>
+<script>
+(function() {
+  'use strict';
+
+  var POLL_MS = 5000;
+  var DEFAULT_PATH = '/ad-vertical-generic.html';
+  var frame = document.getElementById('overlay-frame');
+  var statusEl = document.getElementById('overlay-status');
+  var params = new URLSearchParams(window.location.search);
+  var debug = params.get('debug') === '1';
+  var forcedGame = (params.get('game') || '').trim().toLowerCase();
+  // Streamer-scoped ad overlay. Handle comes from the URL path (the new
+  // /ad-vertical/<handle> route) or from ?streamer= as a fallback so legacy
+  // URLs still work. Forwarded to the inner per-game iframe so the inner
+  // overlay can join the per-streamer win room.
+  var forcedStreamer = (function() {
+    try {
+      var m = location.pathname.match(/^\/ad-vertical\/([a-z0-9_-]{1,32})\/?$/i);
+      if (m && m[1]) return m[1].toLowerCase();
+      return (params.get('streamer') || '').trim().toLowerCase() || '';
+    } catch (_) { return ''; }
+  })();
+  var currentPath = frame.getAttribute('src') || DEFAULT_PATH;
+  var currentGame = null;
+
+  document.body.dataset.debug = debug ? '1' : '0';
+
+  function setStatus(text) {
+    if (!statusEl) return;
+    statusEl.textContent = text;
+  }
+
+  function buildApiUrl() {
+    var qs = [];
+    if (forcedGame) qs.push('game=' + encodeURIComponent(forcedGame));
+    if (forcedStreamer) qs.push('streamer=' + encodeURIComponent(forcedStreamer));
+    return '/api/ad-overlay/current' + (qs.length ? '?' + qs.join('&') : '');
+  }
+
+  // Optional ?layer=bg|fg — passed through to the inner overlay so the
+  // streamer can add two OBS browser sources (one for background, one for
+  // content) and stack or toggle them independently.
+  var forcedLayer = (params.get('layer') || '').trim().toLowerCase();
+  // Presentation params forwarded verbatim to the inner banner:
+  // ?orient=h (horizontal ticker) and ?bg=transparent|%23hex (background
+  // override) — both consumed by /ad-banner-extras.js on the banner pages.
+  var forcedOrient = (params.get('orient') || '').trim().toLowerCase();
+  var forcedBg = (params.get('bg') || '').trim().toLowerCase();
+  function _appendQuery(path, key, value) {
+    return path + (path.indexOf('?') === -1 ? '?' : '&') + key + '=' + encodeURIComponent(value);
+  }
+  function withLayer(path) {
+    var out = path;
+    if (forcedLayer) out = _appendQuery(out, 'layer', forcedLayer);
+    if (forcedStreamer) out = _appendQuery(out, 'streamer', forcedStreamer);
+    if (forcedOrient) out = _appendQuery(out, 'orient', forcedOrient);
+    if (forcedBg) out = _appendQuery(out, 'bg', forcedBg);
+    return out;
+  }
+
+  function setOverlay(path, gameId, source) {
+    var nextPath = withLayer(path || DEFAULT_PATH);
+    if (nextPath === currentPath) {
+      setStatus((gameId || 'wordtycoon') + ' · ' + source);
+      return;
+    }
+    currentPath = nextPath;
+    currentGame = gameId || null;
+    frame.src = nextPath;
+    setStatus((gameId || 'wordtycoon') + ' · ' + source);
+  }
+
+  async function refreshOverlay() {
+    try {
+      var res = await fetch(buildApiUrl(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('overlay lookup failed');
+      var data = await res.json();
+      setOverlay(data.overlayPath, data.activeGame, data.source || 'api');
+    } catch (error) {
+      setOverlay(DEFAULT_PATH, null, 'fallback');
+      if (debug) setStatus('fallback · ' + (error && error.message ? error.message : 'error'));
+    }
+  }
+
+  refreshOverlay();
+  setInterval(refreshOverlay, POLL_MS);
+})();
+</script>
+<script src="/ad-banner-extras.js?v=4" defer></script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+/* Perk badges — Super Donor / Super Fan / Donor Class / Fan Club hearts on an
+   avatar. Loaded by every game so the badge reads identically everywhere.
+
+   Markup contract: put .perk-badges on the element that WRAPS the avatar
+   image, then add .has-sd / .has-sf / .has-dc / .has-fc for each perk held.
+   perk-badges.js does both for you.
+
+   ONE badge is drawn — the highest tier the player holds. Precedence is
+   Super Donor -> Super Fan -> Donor Class -> Fan Club, assigned in JS, so the
+   top tier is always the one in slot 1. Stacking hearts was tried and read as
+   clutter at the sizes these avatars actually render (many are 20-30px).
+
+   A Super Donor holds Super Fan and Donor Class by definition, so that holder
+   always has three spans — only the Super Donor one is ever visible.
+
+   All tiers share one anchor: same right edge, same bottom edge. They differ
+   only in size, so a bigger tier grows UPWARD from a common baseline instead
+   of sitting somewhere else entirely. That is what makes Super Donor read as
+   "more" rather than "different". */
+
+/* NOTE: `position` is deliberately NOT set here.
+   The badges need a positioned ancestor, but forcing `position: relative` from
+   this stylesheet CLOBBERS hosts that position themselves — Subtextle's ticker
+   face is `.rt-av { position: absolute; right: 0 }`, and this file loads after
+   it, so an equal-specificity `position: relative` won the cascade and threw
+   the avatar to the wrong end of the chip. perk-badges.js now sets
+   `position: relative` inline, and only when the host computes to `static`.
+
+   `overflow` is not set here either, for the same reason: a wrapper whose
+   overflow:hidden is what rounds the avatar must keep it. Hosts that need to
+   release a clip do it in their own stylesheet, where they know it is safe. */
+.perk-badges {
+  /* intentionally empty — see note above */
+}
+
+.perk-badge {
+  position: absolute;
+  display: block;
+  /* Anchored bottom-right, NOT top-left: with `top` set, a taller tier would
+     hang lower as well as higher and the tiers would stop lining up. Pinning
+     the bottom edge gives every tier one shared baseline. */
+  top: auto;
+  left: auto;
+  right: -26%;
+  bottom: 66%;
+  width: 56%;
+  height: 56%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+  z-index: 4;
+}
+
+/* Size ladder. Same anchor, so these grow upward off the shared baseline. */
+.perk-badge-dc { width: 66%; height: 66%; }
+.perk-badge-sf { width: 78%; height: 78%; }
+.perk-badge-sd { width: 90%; height: 90%; }
+
+.perk-badge-sd { background-image: url('https://wordtycoon.live/cosmetics/superdonor-heart.png'); }
+.perk-badge-sf { background-image: url('https://wordtycoon.live/cosmetics/superfan-heart.png'); }
+.perk-badge-dc { background-image: url('https://wordtycoon.live/cosmetics/donorclass-heart.png'); }
+.perk-badge-fc { background-image: url('https://wordtycoon.live/portal/assets/badges/tiktok-fanclub.png'); }
+
+/* Top tier gets a glow the others don't — at 90% it is already the biggest
+   thing on the avatar, and the emerald crown is what distinguishes it from
+   Super Fan's gold-on-violet at a glance. drop-shadow rather than box-shadow
+   so it follows the heart's alpha instead of boxing it. */
+.perk-badge-sd {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55))
+          drop-shadow(0 0 4px rgba(110, 227, 74, 0.55))
+          drop-shadow(0 0 9px rgba(255, 215, 0, 0.35));
+}
+
+/* Highest tier only. JS still injects a span per perk held so a host can style
+   or count them if it ever needs to; everything below slot 1 stays hidden. */
+.perk-badge:not([data-slot="1"]) { display: none; }

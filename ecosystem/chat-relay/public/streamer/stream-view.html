@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Stream View</title>
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" type="image/png" href="/streamer/icons/icon-512.png">
+  <link rel="apple-touch-icon" href="/streamer/icons/icon-1024.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="WT Stream">
+  <link id="stream-view-manifest-link" rel="manifest" href="/streamer/stream-view-manifest.webmanifest">
+  <script>
+    // Stream View is now a thin redirect to the unified goals overlay with
+    // embedGame=1, which loads the game iframe behind the widgets in a SINGLE
+    // document. That co-location is what makes the widgets' glass
+    // backdrop-filter actually blur the game pixels (cross-iframe blur is
+    // impossible). Param contract is unchanged.
+    (function () {
+      const p = new URLSearchParams(location.search);
+      const sid = p.get('streamerId') || '';
+      const mode = (p.get('mode') || 'portrait').toLowerCase() === 'landscape' ? 'landscape' : 'portrait';
+      const manifestLink = document.getElementById('stream-view-manifest-link');
+      if (manifestLink && sid) {
+        manifestLink.href = '/streamer/stream-view-manifest.webmanifest?streamerId=' + encodeURIComponent(sid) + '&mode=' + mode;
+      }
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/streamer/sw.js', { scope: '/streamer/' }).catch(() => {});
+        });
+      }
+      const destParams = new URLSearchParams(p);
+      if (sid) destParams.set('streamerId', sid);
+      destParams.set('mode', mode);
+      destParams.set('embedGame', '1');
+      const dest = '/streamer/goals-overlay.html'
+        + '?' + destParams.toString();
+      location.replace(dest);
+    })();
+  </script>
+</head>
+<body style="background:#000;color:#fff;font-family:system-ui;padding:20px;text-align:center;">
+  Loading stream view…
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

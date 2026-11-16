@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>TycoonIO — Your City Empire</title>
+  <meta name="description" content="TycoonIO — Build and manage your Word Tycoon empire in an interactive pixel art city.">
+  <meta property="og:title" content="TycoonIO — Your City Empire">
+  <meta property="og:description" content="Build your business empire in an interactive isometric pixel art city. 11 businesses, cosmetics, and live multiplayer.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tycoonio.com/">
+  <meta property="og:site_name" content="TycoonIO">
+  <meta property="og:image" content="https://tycoonio.com/tycoonio/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="TycoonIO — build your empire in a pixel-art city">
+  <link rel="canonical" href="https://tycoonio.com/">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TycoonIO — Your City Empire">
+  <meta name="twitter:description" content="Build your business empire in an interactive isometric pixel art city.">
+  <meta name="twitter:image" content="https://tycoonio.com/tycoonio/og-image.png">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"VideoGame","name":"TycoonIO","url":"https://tycoonio.com/","description":"Build and manage your business empire in an interactive isometric pixel art city.","genre":["Simulation","Strategy"],"gamePlatform":["Web browser"],"applicationCategory":"Game","operatingSystem":"Any","publisher":{"@type":"Organization","name":"Word Tycoon","url":"https://wordtycoon.live/"},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+  </script>
+  <link rel="icon" href="/portal/img/logo.png">
+  <link rel="stylesheet" href="/tycoonio/style.css?v=10">
+</head>
+<body>
+  <!-- Full-viewport canvas -->
+  <canvas id="city-canvas"></canvas>
+
+  <!-- Left side panel (city builder toolbar) — hidden until logged in -->
+  <div id="side-panel" class="side-panel hidden">
+    <div class="sp-header">
+      <div class="sp-drag-handle"></div>
+      <span class="city-logo">TycoonIO</span>
+      <button id="sp-find-me" class="sp-find-btn" title="Center on my city">📍</button>
+    </div>
+    <div class="sp-player">
+      <div id="sp-player-name" class="sp-name">Player</div>
+      <div id="sp-player-coins" class="sp-coins">0 XP</div>
+    </div>
+    <div class="sp-section-label">BUILDINGS</div>
+    <div id="sp-buildings" class="sp-items"></div>
+    <div class="sp-section-label">DECORATIONS <span id="sp-slot-count" class="sp-slots">0/10</span></div>
+    <div id="sp-decorations" class="sp-items"></div>
+    <div class="sp-footer">
+      <button id="sp-save" class="sp-save-btn">Save Layout</button>
+    </div>
+  </div>
+
+  <!-- Top bar overlay -->
+  <div id="top-bar" class="top-bar">
+    <div class="top-bar-left">
+      <span id="top-logo" class="city-logo">TycoonIO</span>
+    </div>
+    <div id="top-player-info" class="top-player-info">
+      <span id="top-player-name" class="top-player-name"></span>
+      <span id="top-player-coins" class="top-player-coins"></span>
+    </div>
+    <div class="top-bar-right">
+      <button id="panel-toggle" class="panel-toggle hidden" title="My City">&#9776;</button>
+      <button id="login-btn" class="top-btn" title="Log In">Log In</button>
+    </div>
+  </div>
+
+  <!-- Minimap -->
+  <canvas id="minimap" class="minimap" width="160" height="100"></canvas>
+
+  <!-- Loading overlay -->
+  <div id="loading" class="loading-overlay">
+    <div class="loading-content">
+      <div class="loading-pixel-spinner"></div>
+      <p>Building your city...</p>
+    </div>
+  </div>
+
+  <!-- Info card overlay (shows when clicking a building) -->
+  <div id="info-card" class="info-card hidden"></div>
+
+  <!-- Business management panel -->
+  <div id="biz-panel" class="biz-panel hidden"></div>
+
+  <!-- Scripts loaded in dependency order -->
+  <script src="/tycoonio/js/city-camera.js?v=10"></script>
+  <script src="/tycoonio/js/city-cosmetics.js?v=10"></script>
+  <script src="/tycoonio/js/city-decorations.js?v=10"></script>
+  <script src="/tycoonio/js/city-characters.js?v=10"></script>
+  <script src="/tycoonio/js/city-buildings.js?v=10"></script>
+  <script src="/tycoonio/js/city-layout.js?v=10"></script>
+  <script src="/tycoonio/js/city-renderer.js?v=10"></script>
+  <script src="/tycoonio/js/city-data.js?v=10"></script>
+  <script src="/tycoonio/js/city-interaction.js?v=10"></script>
+  <script src="/tycoonio/js/city-effects.js?v=10"></script>
+  <script src="/tycoonio/js/city-main.js?v=10"></script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

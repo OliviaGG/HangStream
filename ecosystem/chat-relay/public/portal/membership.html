@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Membership — Word Tycoon</title>
+<meta name="description" content="Support Word Tycoon — Donor Class unlocks every premium game mode, stream voice perks and batch guessing; Pookie Pass adds the Super Fan set.">
+<link rel="canonical" href="https://wordtycoon.live/membership">
+<meta name="theme-color" content="#fdf6e9">
+<link rel="manifest" href="/portal/manifest.webmanifest?v=4">
+<link rel="icon" href="/portal/img/logo-favicon.png?v=2">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link rel="stylesheet" href="/portal/css/toon.css?v=6">
+  <link rel="stylesheet" href="/portal/css/hangstream-skin.css">
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   THE PENTHOUSE — /membership
+   The pass floor: your plan on the door, three suites to choose from.
+   Tokens, primitives, topbar, elevator, footer and toasts come from
+   /portal/css/toon.css. Below is only this page's own furniture.
+   Plan copy, prices and the Stripe flows are ported verbatim from the
+   portal SPA's Membership tab (renderPassPlanCards in portal.js).
+   ════════════════════════════════════════════════════════════════════ */
+main { position: relative; z-index: 2; }
+
+/* ══ FLOOR PLATE ═════════════════════════════════════════════════════ */
+.pent-plate {
+  position: relative; margin: 18px 0 0;
+  background: var(--landing-bg);
+  background-image: repeating-linear-gradient(90deg, transparent 0 42px, rgba(27,20,48,.043) 42px 84px);
+  border-top: 2.5px solid var(--ink); border-bottom: 2.5px solid var(--ink);
+  box-shadow: inset 0 4px 0 rgba(255,255,255,.3), inset 0 -8px 14px rgba(27,20,48,.06);
+  height: 74px; overflow: hidden;
+  transition: background 1s ease;
+}
+.pent-plate .fp {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%) rotate(-2deg);
+  display: flex; align-items: center; gap: 10px;
+  border: 2.5px solid var(--ink); border-radius: 12px;
+  padding: 8px 20px; font-weight: 900; font-size: .88rem;
+  letter-spacing: 1px; text-transform: uppercase; color: #fff;
+  text-shadow: 0 1.5px 0 rgba(0,0,0,.25);
+  background: linear-gradient(180deg, #ffa8c4 0 45%, var(--pink) 45%);
+  box-shadow: 0 4px 0 var(--ink); white-space: nowrap;
+}
+.pent-plate .fp b {
+  display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid var(--ink); background: var(--card); color: var(--ink);
+  text-shadow: none; font-size: .82rem;
+}
+
+/* ══ DAY / NIGHT BUTTON ══════════════════════════════════════════════ */
+.sky-btn { padding: 9px 14px; font-size: 1rem; line-height: 1; }
+.sky-btn .sky-day { display: none; }
+.sky-btn .sky-night { display: inline; }
+body.night .sky-btn .sky-day { display: inline; }
+body.night .sky-btn .sky-night { display: none; }
+
+/* ══ STATUS STRIP ════════════════════════════════════════════════════
+   The buzzer panel: which suite is yours right now. */
+.pent-status {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px;
+  max-width: 640px; margin: 0 auto 30px;
+  border: 2.5px solid var(--ink); border-radius: 999px;
+  background: var(--card);
+  box-shadow: 0 5px 0 var(--ink), inset 0 3px 0 rgba(255,255,255,.35);
+  padding: 12px 22px;
+  font-weight: 700; font-size: .92rem;
+  transition: background 1s ease;
+}
+.pent-pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 2.5px solid var(--ink); border-radius: 999px;
+  padding: 5px 15px; font-size: .8rem; font-weight: 900;
+  letter-spacing: .6px; text-transform: uppercase; color: #fff;
+  text-shadow: 0 1.5px 0 rgba(0,0,0,.25);
+  background: linear-gradient(180deg, #b3a6f6 0 45%, var(--purple) 45%);
+  box-shadow: 0 3px 0 var(--ink);
+}
+.pent-status .note { color: var(--muted); }
+
+/* ══ PLAN CARDS ══════════════════════════════════════════════════════ */
+.plan-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  max-width: 980px; margin: 0 auto; align-items: stretch;
+}
+.plan {
+  position: relative; display: flex; flex-direction: column;
+  border: 2.5px solid var(--ink); border-radius: 18px;
+  background: var(--card);
+  box-shadow: 0 6px 0 var(--ink), inset 0 4px 0 rgba(255,255,255,.35);
+  padding: 20px 20px 18px;
+  transition: transform .15s, box-shadow .15s, background 1s ease;
+}
+.plan:hover { transform: translateY(-4px); box-shadow: 0 10px 0 var(--ink), inset 0 4px 0 rgba(255,255,255,.35); }
+.plan-name { font-size: 1.15rem; font-weight: 900; letter-spacing: -.3px; }
+.plan-price { font-size: 1.7rem; font-weight: 900; margin-top: 2px; }
+.plan-price small { font-size: .8rem; font-weight: 800; color: var(--muted); }
+.plan-state {
+  position: absolute; top: -13px; right: 14px;
+  border: 2px solid var(--ink); border-radius: 999px;
+  padding: 3px 12px; font-size: .64rem; font-weight: 900;
+  letter-spacing: .8px; text-transform: uppercase;
+  background: var(--paper-2); color: var(--text);
+  box-shadow: 0 3px 0 var(--ink); transform: rotate(2deg);
+}
+.plan-state.is-active {
+  background: linear-gradient(180deg, #b7f3cf 0 45%, var(--mint) 45%); color: #123c24;
+}
+.plan-state.is-unlocked {
+  background: linear-gradient(180deg, #ffd84d 0 45%, var(--amber) 45%); color: #3d2c00;
+}
+.plan-perks { list-style: none; padding: 0; margin: 14px 0 18px; flex: 1; }
+.plan-perks li {
+  position: relative; padding: 6px 0 6px 26px;
+  font-size: .86rem; font-weight: 600; color: var(--muted); line-height: 1.4;
+}
+.plan-perks li::before {
+  content: '★'; position: absolute; left: 2px; top: 5px;
+  color: var(--amber); font-size: .9rem; text-shadow: 0 1px 0 rgba(27,20,48,.3);
+}
+.plan-cta {
+  border: 2.5px solid var(--ink); border-radius: 999px;
+  padding: 11px 18px; font: inherit; font-size: .92rem; font-weight: 900; cursor: pointer;
+  background: var(--paper-2); color: var(--text);
+  box-shadow: 0 4px 0 var(--ink); text-align: center;
+  transition: transform .12s, box-shadow .12s, background .15s;
+}
+.plan-cta:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 0 var(--ink); }
+.plan-cta:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 var(--ink); }
+.plan-cta:disabled { opacity: .6; cursor: default; }
+.plan-cta.cta-go {
+  background: linear-gradient(180deg, #ffd84d 0 45%, var(--amber) 45%); color: #3d2c00;
+}
+
+/* tier accents: a colored roofline on each card */
+.plan::before {
+  content: ''; position: absolute; left: -2.5px; right: -2.5px; top: -2.5px; height: 12px;
+  border: 2.5px solid var(--ink); border-radius: 18px 18px 0 0;
+  background: var(--roof, var(--paper-2));
+}
+.plan { padding-top: 30px; }
+.plan-free  { --roof: linear-gradient(180deg, #e8e2d2, #cfc7b2); }
+.plan-donor { --roof: linear-gradient(180deg, #7cc0ff, var(--blue)); }
+.plan-pookie { --roof: linear-gradient(180deg, #ffa8c4, var(--pink)); }
+
+/* the flagship suite reads as the penthouse: gold frame + a little lift */
+.plan-pookie {
+  box-shadow: 0 6px 0 var(--ink), 0 0 0 3px rgba(255,216,77,.55), inset 0 4px 0 rgba(255,255,255,.35);
+}
+.plan-pookie .plan-name::after { content: ' 👑'; }
+
+/* current plan glows mint */
+.plan.current { box-shadow: 0 6px 0 var(--ink), 0 0 0 3px rgba(74,222,128,.6), inset 0 4px 0 rgba(255,255,255,.35); }
+
+/* ══ FINE PRINT ══════════════════════════════════════════════════════ */
+.pent-note {
+  max-width: 640px; margin: 26px auto 0; text-align: center;
+  color: var(--muted); font-weight: 600; font-size: .86rem;
+}
+
+/* ══ GUEST KEYCARDS ══════════════════════════════════════════════════ */
+.guest { text-align: center; max-width: 620px; margin: 34px auto 0; }
+.guest .keycards { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 18px; }
+.guest .keycard {
+  border: 2.5px solid var(--ink); border-radius: 16px; padding: 16px 18px 15px;
+  background: var(--card); box-shadow: 0 6px 0 var(--ink), inset 0 4px 0 rgba(255,255,255,.4);
+  width: 200px; text-align: center; font-weight: 800;
+  transition: transform .12s, box-shadow .12s, background 1s ease;
+}
+.guest .keycard:hover { transform: translateY(-3px); box-shadow: 0 9px 0 var(--ink), inset 0 4px 0 rgba(255,255,255,.4); }
+.guest .keycard .kc-dot {
+  width: 34px; height: 34px; border-radius: 50%; margin: 0 auto 9px;
+  border: 2.5px solid var(--ink); background: var(--kc, var(--amber));
+  box-shadow: 0 3px 0 var(--ink);
+}
+
+/* ══ RESPONSIVE ══════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .plan-grid { grid-template-columns: 1fr; max-width: 460px; }
+}
+
+/* ══ REDUCED MOTION ══════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .plan, .plan-cta, .guest .keycard { transition: none; }
+}
+</style>
+</head>
+<body>
+<!-- Restore the visitor's time of day before anything paints. Inline and
+     first-thing-in-body on purpose: an external or deferred script would
+     let the page flash daylight before flipping to night. -->
+<script>try{var t=localStorage.getItem('wt-night');var p=(localStorage.getItem('wordtycoon_theme')||localStorage.getItem('portal-theme'));var n=t===null?p!=='light':t==='1';if(n)document.body.classList.add('night')}catch(e){}</script>
+<noscript><p style="padding:24px;text-align:center;font-weight:700">Membership needs JavaScript. <a href="/">Back to the tower</a>.</p></noscript>
+
+<!-- ═══ ELEVATOR ═══ -->
+<aside class="elevator" id="elevator" aria-label="Floor navigation">
+  <div class="elev-label">Floor</div>
+  <div class="elev-btns">
+    <a class="elev-btn eb-r" href="/#rooftop" title="Rooftop" aria-label="Ride to the Rooftop">R</a>
+    <a class="elev-btn eb-p lit" href="/#penthouse" title="Penthouse" aria-label="Ride to the Penthouse">P</a>
+    <a class="elev-btn eb-v" href="/#vault" title="The Vault" aria-label="Ride to the Vault">V</a>
+    <a class="elev-btn eb-2" href="/#empire" title="The Empire" aria-label="Ride to the Empire">2</a>
+    <a class="elev-btn eb-1" href="/#games" title="The Game Floor" aria-label="Ride to the Game Floor">1</a>
+    <a class="elev-btn eb-l" href="/" title="Lobby" aria-label="Ride to the Lobby">L</a>
+  </div>
+  <div class="elev-floorname">The Penthouse</div>
+</aside>
+
+<div class="shell">
+  <!-- ═══ TOPBAR ═══ -->
+  <header class="topbar">
+    <a class="brand" href="/">
+      <span class="brand-mark"><img src="/portal/img/wt-logo.svg?v=1" alt="" width="46" height="46"></span>
+      <span>Word<b>Tycoon</b></span>
+    </a>
+    <nav>
+      <a class="btn btn-ghost btn-nav-sec" href="/goat">🐐 GOAT</a>
+      <a class="btn btn-ghost btn-nav-sec" href="/profile">🛎️ Your Suite</a>
+      <!-- This floor has no sky, so the day/night toggle lives in the
+           topbar — otherwise night mode could never be undone here. -->
+      <button class="btn btn-ghost sky-btn" id="skyToggle" type="button" aria-pressed="false" title="Toggle day / night">
+        <span class="sky-day">☀️</span><span class="sky-night">🌙</span>
+      </button>
+      <a class="btn" href="/">🏢 The Tower</a>
+    </nav>
+  </header>
+</div>
+
+<div class="pent-plate"><span class="fp"><b>P</b>The Penthouse</span></div>
+
+<main>
+  <section class="floor" id="membership">
+    <div class="shell">
+      <div class="sec-head">
+        <span class="sec-kicker" style="background:linear-gradient(180deg,#ffa8c4 0 45%,var(--pink) 45%)">Floor P</span>
+        <h2 class="sec-title">Support <span class="cd">Word Tycoon</span></h2>
+        <p class="sec-sub">Donor Class unlocks every premium game mode, stream voice perks, batch guessing, and exclusive profile logos. TikTok Super Fans of the owner channel get the game unlock free.</p>
+      </div>
+
+      <!-- ═══ STATUS STRIP ═══ -->
+      <div class="pent-status" id="pentStatus">
+        <span class="pent-pill" id="pentPill">Free Tier</span>
+        <span class="note" id="pentNote">Support Word Tycoon and unlock every premium game mode.</span>
+      </div>
+
+      <!-- ═══ PLANS ═══ -->
+      <div class="plan-grid" id="planGrid"></div>
+
+      <p class="pent-note">Subscriptions are handled by Stripe and can be managed or cancelled any time from the Manage Subscription button on your active plan.</p>
+
+      <!-- ═══ SIGNED OUT ═══ -->
+      <div class="guest" id="pentGuest" hidden>
+        <p class="sec-sub" style="margin:0">Sign in first so your upgrade lands on the right account.</p>
+        <div class="keycards">
+          <a class="keycard" href="/auth/google?returnTo=%2Fmembership" style="--kc:#ea4335"><div class="kc-dot"></div>Continue with Google</a>
+          <a class="keycard" href="/auth/discord?returnTo=%2Fmembership" style="--kc:#5865f2"><div class="kc-dot"></div>Continue with Discord</a>
+          <a class="keycard" href="/auth/github?returnTo=%2Fmembership" style="--kc:#24292f"><div class="kc-dot"></div>Continue with GitHub</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="foot-walk">🚶‍♀️ 🚶 🐈‍⬛</div>
+  <a href="/">The Tower</a> · <a href="/goat">GOAT</a> · <a href="/profile">Your Suite</a> · <a href="/how-to-play">How to Play</a> · <a href="/library">Library</a>
+  <div style="margin-top:8px">
+    <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="https://discord.gg/C8Nm2jEZFC" target="_blank" rel="noopener">Discord</a> · <span>&copy; 2026 Word Tycoon</span>
+  </div>
+</footer>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="/portal/js/toon.js?v=5"></script>
+<!-- The Switchboard: Lobby chat (site-only) + Live Feed (stream relay). -->
+<script src="/chat-widget.js?v=21" defer></script>
+<script>
+/* Ported from the portal SPA's Membership tab (renderPassPlanCards /
+   getPassPlanAction / beginPassCheckout / managePassSubscription in
+   portal.js) — same tiers, same copy, same Stripe endpoints.
+   🔴 The membership field is profile.passStats.membershipTier (NOT
+   passStats.tier), with a sibling membershipStatus that can be
+   'canceled' — active means 'active' or 'trialing'. */
+(function () {
+  'use strict';
+
+  var TIER_LABELS = { free: 'Free Tier', donor_class: 'Donor Class', pookie_pass: 'Pookie Pass' };
+  var TIER_RANK = { free: 0, donor_class: 1, pookie_pass: 2 };
+  var CARDS = [
+    {
+      id: 'free',
+      name: 'Free Tier',
+      price: 'Free',
+      accent: 'free',
+      perks: ['All daily game modes', 'XP, streaks, and the cosmetics store', 'Daily Claim profile logos']
+    },
+    {
+      id: 'donor_class',
+      name: 'Donor Class',
+      price: '$2<small>/mo</small>',
+      accent: 'donor',
+      perks: ['Every premium game mode unlocked', 'Custom TTS voice + batch guessing in streams', 'Exclusive donor profile logos']
+    },
+    {
+      id: 'pookie_pass',
+      name: 'Pookie Pass',
+      price: '$10<small>/mo</small>',
+      accent: 'pookie',
+      perks: [
+        'Super Fan status without TikTok',
+        'Everything in Donor Class, plus the Super Fan set',
+        'The Super Donor set — the only set that needs both memberships',
+        'Premium TTS voices and the Pookie reward lane'
+      ]
+    }
+  ];
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function rank(tier) { return TIER_RANK[String(tier || 'free').toLowerCase()] || 0; }
+  function label(tier) { return TIER_LABELS[String(tier || 'free').toLowerCase()] || 'Free Tier'; }
+
+  function toast(msg) {
+    var t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    $('toasts').appendChild(t);
+    setTimeout(function () { t.classList.add('out'); }, 3200);
+    setTimeout(function () { t.remove(); }, 3600);
+  }
+
+  /* Same decision table as the SPA's getPassPlanAction. */
+  function planAction(cardId, membership, guest) {
+    if (guest) {
+      if (cardId === 'free') return { label: 'Current Plan', disabled: true };
+      return { label: 'Sign in to upgrade', href: '#pentGuest' };
+    }
+    var currentTier = String(membership.tier || 'free').toLowerCase();
+    var active = !!membership.active;
+    if (cardId === 'free') {
+      if (!active || currentTier === 'free') return { label: 'Current Plan', disabled: true };
+      return { label: 'Included', disabled: true };
+    }
+    if (active && cardId === currentTier) return { label: 'Manage Subscription', action: 'manage' };
+    if (active && rank(cardId) < rank(currentTier)) return { label: 'Included', disabled: true };
+    return { label: active ? 'Switch Plan' : 'Upgrade', action: 'checkout', tier: cardId };
+  }
+
+  function render(membership, guest) {
+    var currentTier = String(membership.tier || 'free').toLowerCase();
+    var active = !!membership.active;
+
+    $('pentPill').textContent = label(currentTier);
+    $('pentNote').textContent = guest
+      ? 'Support Word Tycoon and unlock every premium game mode.'
+      : (active ? label(currentTier) + ' is active on your account.'
+                : 'Support Word Tycoon and unlock every premium game mode.');
+    if ($('pentGuest')) $('pentGuest').hidden = !guest;
+
+    var grid = $('planGrid');
+    grid.innerHTML = CARDS.map(function (card) {
+      // Guests are on the free plan in every way that matters here, so the
+      // Free card reads Active for them rather than Locked.
+      var isCurrent = card.id === currentTier && (guest ? card.id === 'free' : true);
+      var unlocked = !guest && rank(currentTier) >= rank(card.id) && (card.id === 'free' || active);
+      var action = planAction(card.id, membership, guest);
+      var state = isCurrent ? 'Active' : unlocked ? 'Unlocked' : 'Locked';
+      var stateCls = isCurrent ? ' is-active' : unlocked ? ' is-unlocked' : '';
+      var ctaGo = !!(action.action === 'checkout' || action.href);
+      var cta;
+      if (action.href) {
+        cta = '<a class="plan-cta cta-go" href="' + esc(action.href) + '">' + esc(action.label) + '</a>';
+      } else {
+        cta = '<button type="button" class="plan-cta' + (ctaGo ? ' cta-go' : '') + '"' +
+          (action.disabled ? ' disabled' : '') +
+          (action.action ? ' data-action="' + esc(action.action) + '"' : '') +
+          (action.tier ? ' data-tier="' + esc(action.tier) + '"' : '') +
+          '>' + esc(action.label) + '</button>';
+      }
+      return '<article class="plan plan-' + card.accent + (isCurrent ? ' current' : '') + '">' +
+        '<span class="plan-state' + stateCls + '">' + state + '</span>' +
+        '<div class="plan-name">' + esc(card.name) + '</div>' +
+        '<div class="plan-price">' + card.price + '</div>' +
+        '<ul class="plan-perks">' + card.perks.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul>' +
+        cta +
+      '</article>';
+    }).join('');
+
+    grid.querySelectorAll('.plan-cta[data-action]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (btn.disabled) return;
+        var original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = btn.dataset.action === 'manage' ? 'Opening…' : 'Redirecting…';
+        var done = function () { btn.disabled = false; btn.textContent = original; };
+        if (btn.dataset.action === 'manage') {
+          fetch('/api/me/pass/manage', { credentials: 'same-origin' })
+            .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+            .then(function (res) {
+              if (!res.ok || !res.d.ok || !res.d.url) { toast(res.d.message || res.d.error || 'Membership management is not configured yet'); done(); return; }
+              window.location.href = res.d.url;
+            })
+            .catch(function () { toast('Membership management is unavailable'); done(); });
+        } else if (btn.dataset.action === 'checkout') {
+          fetch('/api/me/pass/checkout', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tier: btn.dataset.tier })
+          })
+            .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+            .then(function (res) {
+              if (!res.ok || !res.d.ok || !res.d.url) { toast(res.d.message || res.d.error || 'Membership checkout is not configured yet'); done(); return; }
+              window.location.href = res.d.url;
+            })
+            .catch(function () { toast('Membership checkout failed'); done(); });
+        }
+      });
+    });
+  }
+
+  function boot() {
+    if (window.WTToon) WTToon.wireToggle($('skyToggle'));
+    // Guests still see the plans (it's the sales floor) — render free/guest
+    // immediately, then upgrade in place once the profile answers.
+    render({ tier: 'free', active: false }, true);
+    fetch('/api/me/profile', { credentials: 'same-origin' })
+      .then(function (r) {
+        if (r.status === 401) return null;
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data) { render({ tier: 'free', active: false }, true); return; }
+        var pass = (data && data.profile && data.profile.passStats) || {};
+        render({
+          tier: String(pass.membershipTier || 'free').toLowerCase(),
+          active: pass.membershipStatus === 'active' || pass.membershipStatus === 'trialing'
+        }, false);
+      })
+      .catch(function () { /* keep the guest render */ });
+  }
+
+  // Exposed so a session/state change can re-render without a reload
+  // (also what the verification harness drives).
+  window.__pentRender = render;
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="traceStroke" x1="18" y1="18" x2="238" y2="238" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9DE0FF"/>
+      <stop offset="0.44" stop-color="#6AA8FF"/>
+      <stop offset="1" stop-color="#7B61FF"/>
+    </linearGradient>
+    <radialGradient id="traceGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(128 128) rotate(90) scale(126)">
+      <stop stop-color="#6AA8FF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#6AA8FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="128" cy="128" r="120" fill="url(#traceGlow)"/>
+  <rect x="18" y="18" width="220" height="220" rx="68" stroke="url(#traceStroke)" stroke-width="8"/>
+  <rect x="28" y="28" width="200" height="200" rx="60" stroke="rgba(255,255,255,0.28)" stroke-width="2"/>
+  <path d="M48 86L74 60H106L126 40" stroke="#9DE0FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M208 86L182 60H150L130 40" stroke="#9DE0FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M48 170L74 196H106L126 216" stroke="#A986FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M208 170L182 196H150L130 216" stroke="#A986FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M82 48H112" stroke="rgba(255,255,255,0.6)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M144 48H174" stroke="rgba(255,255,255,0.6)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M82 208H112" stroke="rgba(255,255,255,0.54)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M144 208H174" stroke="rgba(255,255,255,0.54)" stroke-width="3.5" stroke-linecap="round"/>
+  <circle cx="48" cy="86" r="5" fill="#9DE0FF"/>
+  <circle cx="208" cy="86" r="5" fill="#9DE0FF"/>
+  <circle cx="48" cy="170" r="5" fill="#A986FF"/>
+  <circle cx="208" cy="170" r="5" fill="#A986FF"/>
+</svg>

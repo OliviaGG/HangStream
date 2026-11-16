@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Link your accounts — Word Tycoon</title>
+  <meta name="robots" content="noindex, nofollow">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0e1621;
+      --panel: #182332;
+      --text: #eef5fb;
+      --muted: #a8bacb;
+      --line: rgba(255,255,255,0.12);
+      --accent: #83c9ff;
+      --primary: #5865f2;
+      --primary-hover: #4752c4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(131, 201, 255, 0.16), transparent 34%),
+        linear-gradient(180deg, #0b1119 0%, var(--bg) 100%);
+      color: var(--text);
+      line-height: 1.55;
+      min-height: 100vh;
+    }
+    main {
+      width: min(720px, calc(100% - 32px));
+      margin: 48px auto;
+      padding: 32px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: rgba(24, 35, 50, 0.94);
+    }
+    h1 { color: var(--accent); font-size: 1.6rem; margin: 0 0 8px; }
+    p.lead { color: var(--muted); margin: 0 0 24px; }
+    .cards { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: stretch; margin-bottom: 24px; }
+    @media (max-width: 560px) { .cards { grid-template-columns: 1fr; } .arrow { display: none; } }
+    .card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+    }
+    .card .label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .card .avatar {
+      width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 10px;
+      background: #2a3a4d url('') center/cover no-repeat;
+      border: 2px solid var(--line);
+    }
+    .card .name { font-weight: 700; margin-bottom: 4px; word-break: break-word; }
+    .card .sub { font-size: 12px; color: var(--muted); }
+    .card .stats { font-size: 12px; color: var(--muted); margin-top: 10px; }
+    .card .stats b { color: var(--accent); font-weight: 600; }
+    .arrow { display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 24px; }
+    .buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      padding: 12px 22px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      border: 1px solid transparent;
+      transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn-ghost { background: transparent; color: var(--muted); border-color: var(--line); }
+    .btn-ghost:hover:not(:disabled) { color: var(--text); border-color: var(--muted); }
+    .btn:disabled { opacity: 0.5; cursor: wait; }
+    .err { color: #ff8888; font-size: 13px; min-height: 18px; text-align: center; margin-top: 12px; }
+    .fine { color: var(--muted); font-size: 12px; margin-top: 18px; text-align: center; }
+    .wt-legal-footer{padding:14px 16px 18px;text-align:center;font:12px/1.4 "Segoe UI",Tahoma,sans-serif;color:#7a8a9b;opacity:.75}
+    .wt-legal-footer a{color:inherit;text-decoration:none;margin:0 2px}
+    .wt-legal-footer a:hover{text-decoration:underline;opacity:1}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Looks like you already have an account</h1>
+    <p class="lead">We noticed another Word Tycoon account uses the same verified email. Want to merge them, or keep them separate?</p>
+
+    <div class="cards">
+      <div class="card" id="card-from">
+        <div class="label">Signing in as</div>
+        <div class="avatar" id="from-avatar"></div>
+        <div class="name" id="from-name">Loading…</div>
+        <div class="sub" id="from-sub"></div>
+        <div class="stats" id="from-stats"></div>
+      </div>
+      <div class="arrow">↔</div>
+      <div class="card" id="card-to">
+        <div class="label">Found account</div>
+        <div class="avatar" id="to-avatar"></div>
+        <div class="name" id="to-name">Loading…</div>
+        <div class="sub" id="to-sub"></div>
+        <div class="stats" id="to-stats"></div>
+      </div>
+    </div>
+
+    <div class="buttons">
+      <button class="btn btn-primary" id="btn-accept">Link them</button>
+      <button class="btn btn-ghost" id="btn-skip">Keep separate</button>
+    </div>
+    <div class="err" id="err"></div>
+    <p class="fine">Linking merges progress, cosmetics, and library entries into a single profile. "Keep separate" is remembered — we won't ask again.</p>
+  </main>
+  <footer class="wt-legal-footer">
+    <a href="/privacy">Privacy</a> &middot; <a href="/terms">Terms</a> &middot; <a href="https://discord.gg/C8Nm2jEZFC" target="_blank" rel="noopener">Discord</a> &middot; <span>&copy; 2026 Word Tycoon</span>
+  </footer>
+  <script>
+    (function() {
+      const $ = (id) => document.getElementById(id);
+      const err = $('err');
+      const acceptBtn = $('btn-accept');
+      const skipBtn = $('btn-skip');
+
+      function fmt(n) { return (Number(n) || 0).toLocaleString(); }
+
+      function setAvatar(el, url) {
+        if (url) el.style.backgroundImage = "url('" + url.replace(/['"\\]/g, '') + "')";
+      }
+
+      function setError(msg) { err.textContent = msg || ''; }
+
+      const urlParams = new URLSearchParams(location.search);
+      const linkToken = urlParams.get('t') || '';
+      if (!linkToken) { location.href = '/'; return; }
+
+      async function load() {
+        try {
+          const r = await fetch('/api/me/link-confirm?t=' + encodeURIComponent(linkToken), { credentials: 'same-origin' });
+          if (r.status === 404) { location.href = '/'; return; }
+          if (!r.ok) throw new Error('Could not load pending link');
+          const data = await r.json();
+          if (!data.ok) throw new Error(data.message || 'No pending link');
+
+          const current = data.currentSide || {};
+          const other = data.otherSide || {};
+          // Left card: who's currently signed in.
+          $('from-name').textContent = current.displayName || current.username || 'You';
+          $('from-sub').textContent = (current.provider || '').toUpperCase();
+          setAvatar($('from-avatar'), current.avatar);
+          // Right card: the matched account.
+          $('to-name').textContent = other.displayName || other.platformUserId || 'Account';
+          $('to-sub').textContent = (other.provider || '').toUpperCase();
+          setAvatar($('to-avatar'), other.avatar);
+          // Indicators may live on either side (whichever has progression).
+          const ind = (current.indicators && Object.keys(current.indicators).length) ? current.indicators : (other.indicators || {});
+          const indCard = (current.indicators && Object.keys(current.indicators).length) ? 'from-stats' : 'to-stats';
+          const stats = [];
+          if (ind.coins) stats.push('<b>' + fmt(ind.coins) + '</b> coins');
+          if (ind.library_words) stats.push('<b>' + fmt(ind.library_words) + '</b> library words');
+          if (ind.xp) stats.push('<b>' + fmt(ind.xp) + '</b> xp');
+          if (ind.cosmetics) stats.push('<b>' + fmt(ind.cosmetics) + '</b> cosmetics');
+          if (stats.length && document.getElementById(indCard)) {
+            document.getElementById(indCard).innerHTML = stats.join(' · ');
+          }
+        } catch (e) {
+          setError(e.message);
+          acceptBtn.disabled = true;
+          skipBtn.disabled = true;
+        }
+      }
+
+      async function send(action) {
+        setError('');
+        acceptBtn.disabled = true;
+        skipBtn.disabled = true;
+        try {
+          const r = await fetch('/api/me/link-confirm', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action, t: linkToken })
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok || !data.ok) throw new Error(data.message || 'Action failed');
+          location.href = data.redirect || '/profile';
+        } catch (e) {
+          setError(e.message);
+          acceptBtn.disabled = false;
+          skipBtn.disabled = false;
+        }
+      }
+
+      acceptBtn.addEventListener('click', () => send('accept'));
+      skipBtn.addEventListener('click', () => send('skip'));
+      load();
+    })();
+  </script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

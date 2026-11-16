@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Word Tycoon operations</title><style>
+:root{color-scheme:dark;font:16px/1.5 system-ui,sans-serif;background:#101820;color:#e5edf4}body{max-width:1100px;margin:auto;padding:20px}a{color:#92caff}button{font:inherit;padding:8px 16px;background:#223d53;color:inherit;border:1px solid #7394ad;border-radius:6px}button:focus-visible,a:focus-visible{outline:3px solid #eaca6b;outline-offset:3px}section{margin:24px 0}table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:8px;text-align:left;border-bottom:1px solid #375062}.scroll{overflow:auto}h1{font-size:26px}.warning{color:#ffc28a}#status{min-height:1.5em}.muted{color:#b3c2ce}
+</style></head><body><nav><a href="/admin">Admin tools</a></nav><h1>Operations</h1>
+<p class="muted">Service status refreshes every minute. Reward queues refresh every five minutes. Counts contain no player identities. Keep reward receipts for replay protection; review growth before pruning.</p>
+<button id="refresh" type="button">Refresh</button><p id="status" role="status" aria-live="polite">Loading…</p>
+<section aria-labelledby="alerts-heading"><h2 id="alerts-heading">Current alerts</h2><ul id="alerts"></ul></section>
+<section aria-labelledby="services-heading"><h2 id="services-heading">Services</h2><div class="scroll"><table><thead><tr><th scope="col">Service</th><th scope="col">Status</th><th scope="col">RSS MB</th><th scope="col">Restarts</th></tr></thead><tbody id="services"></tbody></table></div></section>
+<section aria-labelledby="queues-heading"><h2 id="queues-heading">Reward queues</h2><div class="scroll"><table><thead><tr><th scope="col">Queue</th><th scope="col">Records</th><th scope="col">Pending</th><th scope="col">Review</th><th scope="col">Oldest pending, seconds</th><th scope="col">Scan</th></tr></thead><tbody id="queues"></tbody></table></div></section>
+<section aria-labelledby="requests-heading"><h2 id="requests-heading">HTTP requests in the past hour</h2><p class="muted">Rejected requests include ordinary invalid guesses and expired sessions. These counts alone do not prove an attack. Socket-only decisions are outside this HTTP view.</p><div class="scroll"><table><thead><tr><th scope="col">Category</th><th scope="col">Requests</th><th scope="col">Rejected</th><th scope="col">Server errors</th><th scope="col">Over two seconds</th></tr></thead><tbody id="requests"></tbody></table></div></section>
+<section><h2>Backups and restore</h2><p id="backups">Waiting for backup inventory.</p><p>Online restore is disabled. Stop the economy, validate a complete three-database offline cohort, then apply it with <code>tools/economy-snapshot.cjs</code>. Dry run is the default. Keep the service stopped if validation or installation fails. Complete cohorts are retained; review storage at eight cohorts and preserve rollback copies.</p></section>
+<script>
+'use strict';
+function row(target,values){const tr=document.createElement('tr');for(const value of values){const td=document.createElement('td');td.textContent=String(value);tr.appendChild(td);}target.appendChild(tr);}
+function render(data){
+ const monitor=data.operations||{},status=document.getElementById('status');
+ status.textContent=(monitor.ok?'Updated ':'Monitor unavailable or stale. Last sample ')+(monitor.capturedAt?new Date(monitor.capturedAt).toLocaleString():'unavailable')+'. Queue sample: '+(monitor.queueCapturedAt?new Date(monitor.queueCapturedAt).toLocaleString():'unavailable');
+ const alerts=document.getElementById('alerts');alerts.replaceChildren();
+ for(const alarm of monitor.alarms||[]){const li=document.createElement('li');li.className='warning';li.textContent=alarm.service+': '+alarm.code;alerts.appendChild(li);}
+ if(!alerts.children.length){const li=document.createElement('li');li.textContent=monitor.ok?'No monitored alarms.':'Awaiting a healthy monitor sample.';alerts.appendChild(li);}
+ const services=document.getElementById('services');services.replaceChildren();for(const p of monitor.services||[])row(services,[p.name,p.status,p.rssMB,p.restarts]);
+ const queues=document.getElementById('queues');queues.replaceChildren();for(const [name,q] of Object.entries(monitor.queues||{}))row(queues,[name,q.records,q.pending,q.rejected+q.check+q.invalid,q.oldestPendingSeconds,q.complete?'Complete':'Incomplete']);
+ const b=monitor.backups;document.getElementById('backups').textContent=b?'Complete cohorts: '+b.completeCohorts+'. Incomplete: '+b.incompleteCohorts+'. Latest cohort: '+(b.lastCohortAt?new Date(b.lastCohortAt).toLocaleString():'unavailable')+'. Latest hourly backup: '+(b.lastHourlyAt?new Date(b.lastHourlyAt).toLocaleString():'unavailable')+'. Free disk GB: '+(b.freeDiskBytes==null?'unavailable':Math.floor(b.freeDiskBytes/1073741824)):'Backup inventory unavailable.';
+ const totals={};for(const bucket of data.requests?.buckets||[])for(const [name,c] of Object.entries(bucket.counts)){if(!totals[name])totals[name]={requests:0,rejected:0,errors:0,slow:0};for(const key of Object.keys(totals[name]))totals[name][key]+=c[key];}
+ const requests=document.getElementById('requests');requests.replaceChildren();for(const [name,c] of Object.entries(totals))row(requests,[name,c.requests,c.rejected,c.errors,c.slow]);
+}
+let loading=false;async function refresh(){if(loading)return;loading=true;const button=document.getElementById('refresh');button.disabled=true;try{const response=await fetch('/api/admin/operations-health',{cache:'no-store'});if(!response.ok)throw Error();render(await response.json());}catch{document.getElementById('status').textContent='Operations view unavailable. Sign in as admin and retry.';}finally{button.disabled=false;loading=false;}}
+document.getElementById('refresh').addEventListener('click',refresh);refresh();setInterval(()=>{if(!document.hidden)refresh();},60000);
+</script>  <script src="/js/hangstream-brand.js" defer></script>
+</body></html>

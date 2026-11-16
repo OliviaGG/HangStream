@@ -1,0 +1,20 @@
+<svg width="1200" height="480" viewBox="0 0 1200 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="donorBg" x1="0" y1="0" x2="1200" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#102445"/>
+      <stop offset="0.52" stop-color="#18376B"/>
+      <stop offset="1" stop-color="#271850"/>
+    </linearGradient>
+    <radialGradient id="donorCore" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(878 142) rotate(90) scale(210 360)">
+      <stop stop-color="#70D2FF" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#70D2FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="480" rx="36" fill="url(#donorBg)"/>
+  <rect width="1200" height="480" rx="36" fill="url(#donorCore)"/>
+  <path d="M120 320C240 250 322 224 478 224C628 224 704 254 820 320" stroke="#7ACBFF" stroke-opacity="0.34" stroke-width="12" stroke-linecap="round"/>
+  <path d="M180 360C288 296 372 272 514 272C658 272 726 300 844 360" stroke="#9B6BFF" stroke-opacity="0.28" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="812" cy="136" r="78" stroke="#7ACBFF" stroke-opacity="0.34" stroke-width="10"/>
+  <circle cx="812" cy="136" r="44" stroke="#9B6BFF" stroke-opacity="0.36" stroke-width="10"/>
+  <circle cx="812" cy="136" r="11" fill="#7ACBFF"/>
+</svg>

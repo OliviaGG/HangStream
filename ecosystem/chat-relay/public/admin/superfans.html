@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Members &amp; Linking — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f14;
+    --surface: #1a1a24;
+    --border: #2a2a3a;
+    --text: #e0e0e0;
+    --text-dim: #888;
+    --blue: #4a9eff;
+    --blue-hover: #3a8eef;
+    --green: #4fc34f;
+    --amber: #f5b942;
+    --red: #e94560;
+    --gold: #ffc300;
+    --pink: #ff6fae;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 80px; }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(15,15,20,0.95); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .topbar h1 { font-size: 18px; font-weight: 700; }
+  .topbar .grow { flex: 1; }
+  .topbar .status { font-size: 13px; color: var(--text-dim); }
+  .topbar .status.saved  { color: var(--green); }
+  .topbar .status.error  { color: var(--red); }
+
+  .btn {
+    background: var(--blue); color: white; border: none; padding: 8px 16px;
+    border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;
+    font-size: 14px; transition: background 0.15s; font-family: inherit;
+  }
+  .btn:hover { background: var(--blue-hover); }
+  .btn.danger { background: transparent; color: var(--red); border: 1px solid var(--red); }
+  .btn.danger:hover { background: rgba(233,69,96,0.12); }
+  .btn.subtle { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+  .btn.subtle:hover { color: var(--text); border-color: var(--text-dim); }
+  .btn.sm { padding: 5px 10px; font-size: 12px; }
+  .btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+  main { max-width: 1080px; margin: 0 auto; padding: 24px; }
+  .hint { font-size: 13px; color: var(--text-dim); margin-bottom: 18px; line-height: 1.5; }
+  .hint strong { color: var(--text); }
+
+  .banner {
+    background: rgba(245,185,66,0.1); border: 1px solid rgba(245,185,66,0.35);
+    color: var(--amber); border-radius: var(--radius);
+    padding: 10px 14px; font-size: 13px; margin-bottom: 16px; line-height: 1.45;
+  }
+
+  .group {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-bottom: 16px; overflow: hidden;
+  }
+  .group-header {
+    padding: 12px 16px; background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px; font-weight: 600; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  details.group > summary {
+    padding: 12px 16px; background: rgba(255,255,255,0.02);
+    font-size: 13px; font-weight: 600; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.04em; cursor: pointer;
+    list-style: none;
+  }
+  details.group > summary::-webkit-details-marker { display: none; }
+  details.group > summary::before { content: '▸ '; }
+  details.group[open] > summary { border-bottom: 1px solid var(--border); }
+  details.group[open] > summary::before { content: '▾ '; }
+
+  .add-form {
+    display: grid;
+    grid-template-columns: 1.3fr 1.3fr 1.4fr auto;
+    gap: 10px; padding: 14px 16px; align-items: end;
+  }
+  .add-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-dim); }
+  input[type=text] {
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 8px 10px; border-radius: var(--radius-sm); font-size: 14px; font-family: inherit;
+  }
+  input[type=text]:focus { outline: none; border-color: var(--blue); }
+
+  /* ── Filter bar ─────────────────────────────────────────── */
+  .filters {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+  }
+  .chip {
+    background: transparent; border: 1px solid var(--border); color: var(--text-dim);
+    padding: 6px 12px; border-radius: 99px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap;
+  }
+  .chip:hover { color: var(--text); border-color: var(--text-dim); }
+  .chip.on { background: rgba(74,158,255,0.15); border-color: var(--blue); color: var(--blue); }
+  .chip.warn.on { background: rgba(245,185,66,0.15); border-color: var(--amber); color: var(--amber); }
+  .chip .n { opacity: 0.7; font-weight: 400; }
+  .filters .search { flex: 1; min-width: 180px; }
+  .filters .search input { width: 100%; }
+
+  /* ── People table ───────────────────────────────────────── */
+  .row {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1.5fr auto;
+    align-items: center; gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .row:last-child { border-bottom: none; }
+  .row:hover { background: rgba(255,255,255,0.015); }
+
+  .who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .who img, .who .noimg {
+    width: 32px; height: 32px; border-radius: 50%; flex: 0 0 32px;
+    background: var(--bg); border: 1px solid var(--border); object-fit: cover;
+  }
+  .who .txt { min-width: 0; }
+  .who .name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .who .handle { font-size: 12px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .badges { display: flex; gap: 4px; flex-wrap: wrap; }
+  .pill {
+    display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px;
+    border-radius: 99px; letter-spacing: 0.04em; white-space: nowrap;
+  }
+  .pill.sf     { background: rgba(255,195,0,0.15);   color: var(--gold); }
+  .pill.auto   { background: rgba(74,158,255,0.15);  color: var(--blue); }
+  .pill.donor  { background: rgba(79,195,79,0.15);   color: var(--green); }
+  .pill.fc     { background: rgba(255,111,174,0.15); color: var(--pink); }
+  .pill.plat   { background: rgba(255,255,255,0.06); color: var(--text-dim); font-weight: 600; }
+  .pill.warn   { background: rgba(245,185,66,0.15);  color: var(--amber); }
+
+  .link-cell { font-size: 12px; color: var(--text-dim); line-height: 1.5; min-width: 0; }
+  .link-cell .acct { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; color: var(--text); }
+  .link-cell.unlinked { color: var(--amber); font-weight: 600; }
+  .link-cell .plats { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
+
+  /* Up to four controls per row (Link / SF / Donor / FC) — wrap rather than
+     squeeze the name column when a person holds everything. */
+  .acts { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+
+  /* ── Inline link panel ──────────────────────────────────── */
+  .linkpanel {
+    padding: 12px 16px 14px 58px; background: rgba(74,158,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .linkpanel .lp-head { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; line-height: 1.45; }
+  .linkpanel .lp-head strong { color: var(--text); }
+  .linkpanel .lp-bar { display: flex; gap: 8px; }
+  .linkpanel .lp-bar input { flex: 1; }
+  .lp-results { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; max-height: 240px; overflow-y: auto; }
+  .lp-result {
+    display: flex; align-items: center; gap: 10px; padding: 7px 10px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); cursor: pointer; font-size: 13px;
+  }
+  .lp-result:hover { border-color: var(--blue); }
+  .lp-result .grow { flex: 1; min-width: 0; }
+  .lp-result .rid { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; color: var(--text-dim); }
+  .lp-note { font-size: 12px; color: var(--text-dim); margin-top: 6px; }
+  .lp-note.err { color: var(--red); }
+
+  .empty { padding: 24px 16px; color: var(--text-dim); font-size: 14px; text-align: center; }
+  .count { color: var(--text-dim); font-weight: 400; text-transform: none; letter-spacing: 0; }
+  .sub-hint { padding: 10px 16px; font-size: 12px; color: var(--text-dim); line-height: 1.45; }
+  .more { padding: 12px 16px; text-align: center; }
+
+  @media (max-width: 860px) {
+    .add-form { grid-template-columns: 1fr 1fr; }
+    .row { grid-template-columns: 1.4fr auto; grid-template-areas: "who acts" "badges badges" "link link"; }
+    .row .who { grid-area: who; }
+    .row .badges { grid-area: badges; }
+    .row .link-cell { grid-area: link; }
+    .row .acts { grid-area: acts; }
+    .linkpanel { padding-left: 16px; }
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>⭐ Members &amp; Linking</h1>
+    <div class="grow"></div>
+    <span class="status" id="status">loading…</span>
+    <button class="btn subtle" onclick="loadAll()">Refresh</button>
+  </div>
+
+  <main>
+    <p class="hint">
+      Everyone holding a perk, in one list — <strong>Super Fans</strong> (TikTok), <strong>Donors</strong>
+      (active Donor Class) and your <strong>fan club</strong> — with their Word Tycoon account link on the
+      same row. A Super Fan or Donor showing <strong>NOT LINKED</strong> gets none of their perks on the web
+      games until their TikTok handle is attached to a WT account, so start with the
+      <strong>Needs linking</strong> filter.
+    </p>
+    <p class="hint">
+      Each status is set independently from the buttons on the right.
+      <strong>+ SF</strong> / <strong>− SF</strong> and <strong>+ FC</strong> / <strong>− FC</strong>
+      work off the TikTok handle. <strong>+ Donor</strong> / <strong>− Donor</strong> needs a linked
+      Word Tycoon account, and is only offered on rows without a live Stripe subscription — a
+      paying member shows <em>Donor (Stripe)</em> and has to be cancelled in Stripe.
+    </p>
+
+    <div id="wt-warning" class="banner" style="display:none">
+      Word Tycoon's database could not be read — <strong>Donor and link status are missing</strong> from this
+      list. Super Fan and fan-club data below is still accurate.
+    </div>
+
+    <div class="group">
+      <div class="filters">
+        <button class="chip on"   id="chip-all"     onclick="setFilter('all')">All <span class="n" id="n-all"></span></button>
+        <button class="chip"      id="chip-sf"      onclick="setFilter('sf')">⭐ Super Fans <span class="n" id="n-sf"></span></button>
+        <button class="chip"      id="chip-donor"   onclick="setFilter('donor')">💚 Donors <span class="n" id="n-donor"></span></button>
+        <button class="chip"      id="chip-fc"      onclick="setFilter('fc')">💗 Fan Club <span class="n" id="n-fc"></span></button>
+        <button class="chip warn" id="chip-unlinked" onclick="setFilter('unlinked')">⚠ Needs linking <span class="n" id="n-unlinked"></span></button>
+        <div class="search">
+          <input type="text" id="q" placeholder="Search name, handle or account id…" autocomplete="off" oninput="render()">
+        </div>
+      </div>
+      <div id="people"><div class="empty">Loading…</div></div>
+    </div>
+
+    <details class="group">
+      <summary>Add a Super Fan manually</summary>
+      <div class="sub-hint">
+        Marks a TikTok handle as a Super Fan permanently — the full Donor Class perk set plus premium
+        (ElevenLabs) voices, with no paid membership. Use this when TikTok's automatic signal misses a real
+        Super Fan. <strong>Manual only:</strong> nothing expires on its own.
+      </div>
+      <form class="add-form" id="add-form" onsubmit="return addEntry(event)">
+        <label>TikTok username (with or without @)
+          <input type="text" id="f-id" placeholder="missjoyce345" required maxlength="80" autocomplete="off">
+        </label>
+        <label>Display name (optional)
+          <input type="text" id="f-name" placeholder="Miss Joyce" maxlength="80" autocomplete="off">
+        </label>
+        <label>Note (optional, admin-only)
+          <input type="text" id="f-note" placeholder="e.g. TikTok sub since Jul" maxlength="200" autocomplete="off">
+        </label>
+        <button class="btn" type="submit" id="add-btn">Add</button>
+      </form>
+    </details>
+  </main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  let PEOPLE = [];          // full roster from /api/admin/members
+  let FILTER = 'all';
+  let OPEN_LINK = null;     // row key whose inline link panel is expanded
+  let PAGE_SIZE = 60;       // rows rendered before "show more" (the fan club is ~300 people)
+  let shown = PAGE_SIZE;
+
+  function setStatus(text, cls) {
+    const el = $('status');
+    el.textContent = text;
+    el.className = 'status' + (cls ? ' ' + cls : '');
+  }
+
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  function fmtDate(s) {
+    if (!s) return '';
+    // sqlite datetime('now') is UTC without a zone marker — append Z so it
+    // renders in the admin's local time. ISO strings already carry a zone.
+    const raw = String(s);
+    const d = new Date(/[Zz]|[+-]\d{2}:?\d{2}$/.test(raw) ? raw : raw.replace(' ', 'T') + 'Z');
+    return isNaN(d) ? raw : d.toLocaleDateString();
+  }
+
+  // ── Load ──────────────────────────────────────────────────
+  async function loadAll() {
+    setStatus('loading…');
+    try {
+      const res = await fetch('/api/admin/members', { credentials: 'include' });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'load failed');
+      PEOPLE = data.people || [];
+      const c = data.counts || {};
+      $('n-all').textContent = '(' + (c.total || 0) + ')';
+      $('n-sf').textContent = '(' + (c.superfans || 0) + ')';
+      $('n-donor').textContent = '(' + (c.donors || 0) + ')';
+      $('n-fc').textContent = '(' + (c.fanClub || 0) + ')';
+      $('n-unlinked').textContent = '(' + (c.unlinked || 0) + ')';
+      $('wt-warning').style.display = data.wtOk ? 'none' : '';
+      shown = PAGE_SIZE;
+      render();
+      setStatus(
+        (c.superfans || 0) + ' super fans · ' + (c.donors || 0) + ' donors · ' +
+        (c.fanClub || 0) + ' fan club · ' + (c.unlinked || 0) + ' need linking',
+        (c.unlinked || 0) > 0 ? '' : 'saved'
+      );
+    } catch (e) {
+      setStatus('load failed — are you logged in as admin?', 'error');
+      $('people').innerHTML = '<div class="empty">Could not load. Log in at <a href="/admin/login" style="color:var(--blue)">/admin/login</a> first.</div>';
+    }
+  }
+
+  // ── Filtering + sorting ───────────────────────────────────
+  function setFilter(f) {
+    FILTER = f;
+    for (const id of ['all', 'sf', 'donor', 'fc', 'unlinked']) {
+      $('chip-' + id).classList.toggle('on', id === f);
+    }
+    shown = PAGE_SIZE;
+    render();
+  }
+
+  function matchesFilter(p) {
+    if (FILTER === 'sf') return !!p.superfan;
+    if (FILTER === 'donor') return !!p.donor;
+    if (FILTER === 'fc') return !!p.fanClub;
+    // Fan club alone grants cosmetics without a WT account, so an unlinked
+    // fan-club-only member is normal — not something to fix.
+    if (FILTER === 'unlinked') return !p.linked && (p.superfan || p.donor);
+    return true;
+  }
+
+  function matchesQuery(p, q) {
+    if (!q) return true;
+    return [p.displayName, p.handle, p.accountId].some(v => String(v || '').toLowerCase().includes(q));
+  }
+
+  // Perk weight puts Super Fans and Donors above the long fan-club tail, and
+  // unlinked people above linked ones inside each weight.
+  function weight(p) {
+    return (p.superfan ? 4 : 0) + (p.donor ? 2 : 0) + (p.fanClub ? 1 : 0);
+  }
+  function sortKey(a, b) {
+    const w = weight(b) - weight(a);
+    if (w) return w;
+    const broken = (p) => (!p.linked && (p.superfan || p.donor)) ? 0 : 1;
+    const br = broken(a) - broken(b);
+    if (br) return br;
+    return String(a.displayName || a.handle || a.accountId || '')
+      .localeCompare(String(b.displayName || b.handle || b.accountId || ''));
+  }
+
+  // ── Render ────────────────────────────────────────────────
+  function render() {
+    const q = $('q').value.trim().toLowerCase();
+    const rows = PEOPLE.filter(p => matchesFilter(p) && matchesQuery(p, q)).sort(sortKey);
+    if (!rows.length) {
+      $('people').innerHTML = '<div class="empty">Nobody matches this filter.</div>';
+      return;
+    }
+    const visible = rows.slice(0, shown);
+    let html = visible.map(renderRow).join('');
+    if (rows.length > visible.length) {
+      html += '<div class="more"><button class="btn subtle" onclick="showMore()">Show ' +
+              Math.min(PAGE_SIZE, rows.length - visible.length) + ' more of ' +
+              (rows.length - visible.length) + '</button></div>';
+    }
+    $('people').innerHTML = html;
+  }
+
+  function showMore() {
+    shown += PAGE_SIZE;
+    render();
+  }
+
+  function renderRow(p) {
+    const name = p.displayName || p.handle || p.accountId || 'unknown';
+    const avatar = p.profilePic
+      ? '<img src="' + esc(p.profilePic) + '" alt="" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'noimg\'}))">'
+      : '<div class="noimg"></div>';
+
+    const badges = [];
+    if (p.superfan) {
+      badges.push('<span class="pill sf">★ SUPER FAN</span>');
+      if (!p.superfan.manual && p.superfan.auto) badges.push('<span class="pill auto">AUTO</span>');
+    }
+    if (p.donor) {
+      badges.push('<span class="pill donor">💚 DONOR</span>');
+      // A Stripe-backed donor is billing money right now; the hub can't touch
+      // that row, so say why before the admin goes looking for a button.
+      badges.push('<span class="pill plat">' + (p.donor.stripeBacked ? 'via Stripe' : 'manual') + '</span>');
+      if (p.donor.cancelAtPeriodEnd) badges.push('<span class="pill warn">ENDING</span>');
+    }
+    if (p.fanClub) badges.push('<span class="pill fc">FAN CLUB</span>');
+
+    let link;
+    if (p.linked) {
+      const plats = (p.linkedPlatforms || [])
+        .map(x => '<span class="pill plat">' + esc(x.platform) + '</span>').join('');
+      link = '<div class="link-cell">linked to <span class="acct">' + esc(p.accountId) + '</span>' +
+             (plats ? '<div class="plats">' + plats + '</div>' : '') + '</div>';
+    } else if (p.superfan || p.donor) {
+      link = '<div class="link-cell unlinked">⚠ NOT LINKED — perks inactive on web</div>';
+    } else {
+      link = '<div class="link-cell">no WT account</div>';
+    }
+
+    // Actions carry their arguments as data-* attributes and are dispatched by
+    // one delegated listener. Interpolating a display name into an inline
+    // onclick breaks the moment somebody is called D'Angelo.
+    const acts = [];
+    if (p.handle && !p.linked) {
+      acts.push('<button class="btn sm" data-act="link" data-key="' + esc(p.key) + '">Link</button>');
+    }
+    if (p.superfan && p.superfan.manual) {
+      acts.push('<button class="btn danger sm" data-act="unsf" data-handle="' + esc(p.handle) + '">− SF</button>');
+    } else if (p.handle && (!p.superfan || p.superfan.auto)) {
+      acts.push('<button class="btn subtle sm" data-act="sf" data-handle="' + esc(p.handle) +
+                '" data-name="' + esc(name) + '">' + (p.superfan ? 'Pin SF' : '+ SF') + '</button>');
+    }
+
+    // Donor Class — needs a WT account, since player_memberships is keyed by
+    // it. An unlinked row gets a disabled hint instead of a dead button.
+    if (p.donor && p.donor.stripeBacked) {
+      acts.push('<button class="btn subtle sm" disabled title="Live Stripe subscription — cancel it in Stripe">Donor (Stripe)</button>');
+    } else if (p.donor) {
+      acts.push('<button class="btn danger sm" data-act="undonor" data-account="' + esc(p.accountId) +
+                '" data-name="' + esc(name) + '">− Donor</button>');
+    } else if (p.accountId) {
+      acts.push('<button class="btn subtle sm" data-act="donor" data-account="' + esc(p.accountId) +
+                '" data-name="' + esc(name) + '">+ Donor</button>');
+    }
+
+    // Fan club is TikTok-handle scoped and needs no WT account at all.
+    if (p.handle) {
+      acts.push(p.fanClub
+        ? '<button class="btn danger sm" data-act="unfc" data-handle="' + esc(p.handle) + '">− FC</button>'
+        : '<button class="btn subtle sm" data-act="fc" data-handle="' + esc(p.handle) + '">+ FC</button>');
+    }
+
+    const sub = p.handle
+      ? '@' + esc(p.handle)
+      : '<span class="acct">' + esc(p.accountId || '') + '</span>';
+
+    return '<div class="row">' +
+             '<div class="who">' + avatar +
+               '<div class="txt"><div class="name">' + esc(name) + '</div>' +
+               '<div class="handle">' + sub + '</div></div></div>' +
+             '<div class="badges">' + badges.join('') + '</div>' +
+             link +
+             '<div class="acts">' + acts.join('') + '</div>' +
+           '</div>' +
+           (OPEN_LINK === p.key ? renderLinkPanel(p) : '');
+  }
+
+  // ── Inline linking ────────────────────────────────────────
+  function renderLinkPanel(p) {
+    return '<div class="linkpanel" id="lp" data-handle="' + esc(p.handle) + '">' +
+             '<div class="lp-head">Attach <strong>@' + esc(p.handle) + '</strong> to a Word Tycoon account. ' +
+               'Search by display name, or paste the account id (Discord id, <span class="acct">gh_…</span> or ' +
+               '<span class="acct">go_…</span>).</div>' +
+             '<div class="lp-bar">' +
+               '<input type="text" id="lp-q" placeholder="Name or account id…" autocomplete="off">' +
+               '<button class="btn subtle" data-act="cancel">Cancel</button>' +
+             '</div>' +
+             '<div class="lp-results" id="lp-results"></div>' +
+             '<div class="lp-note" id="lp-note"></div>' +
+           '</div>';
+  }
+
+  // One delegated listener for every row/panel control — the markup is rebuilt
+  // on each render, so per-element listeners would have to be re-bound.
+  $('people').addEventListener('click', (ev) => {
+    const hit = ev.target.closest('[data-act]');
+    if (!hit) return;
+    const d = hit.dataset;
+    if (d.act === 'link')   return toggleLink(d.key);
+    if (d.act === 'cancel') return toggleLink(null);
+    if (d.act === 'unsf')   return removeEntry(d.handle);
+    if (d.act === 'sf')     return pinEntry(d.handle, d.name);
+    if (d.act === 'pick')   return doLink(d.handle, d.account);
+    if (d.act === 'donor')   return setDonor(d.account, d.name, true);
+    if (d.act === 'undonor') return setDonor(d.account, d.name, false);
+    if (d.act === 'fc')      return setFanClub(d.handle, true);
+    if (d.act === 'unfc')    return setFanClub(d.handle, false);
+  });
+  $('people').addEventListener('input', (ev) => {
+    if (ev.target.id === 'lp-q') lpSearch(document.getElementById('lp').dataset.handle);
+  });
+
+  function toggleLink(key) {
+    OPEN_LINK = (OPEN_LINK === key) ? null : key;
+    render();
+    if (OPEN_LINK) $('lp-q')?.focus();
+  }
+
+  let lpTimer = null;
+  function lpSearch(handle) {
+    clearTimeout(lpTimer);
+    const q = $('lp-q').value.trim();
+    if (q.length < 2) { $('lp-results').innerHTML = ''; return; }
+    lpTimer = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/admin/members/account-search?q=' + encodeURIComponent(q), { credentials: 'include' });
+        const data = await res.json();
+        const results = (data.results || []);
+        if (!results.length) {
+          $('lp-results').innerHTML = '';
+          $('lp-note').className = 'lp-note';
+          $('lp-note').textContent = 'No matching account. Paste the exact account id if you know it.';
+          return;
+        }
+        $('lp-note').textContent = '';
+        $('lp-results').innerHTML = results.map(r =>
+          '<div class="lp-result" data-act="pick" data-handle="' + esc(handle) +
+            '" data-account="' + esc(r.accountId) + '">' +
+            '<div class="grow"><div>' + esc(r.name || '(no name)') +
+              (r.donor ? ' <span class="pill donor">DONOR</span>' : '') + '</div>' +
+            '<div class="rid">' + esc(r.accountId) + '</div></div>' +
+            '<span class="pill plat">' + esc((r.platforms || []).join(' · ') || 'account') + '</span>' +
+          '</div>'
+        ).join('');
+      } catch (e) {
+        $('lp-note').className = 'lp-note err';
+        $('lp-note').textContent = 'Search failed: ' + e.message;
+      }
+    }, 250);
+  }
+
+  async function doLink(handle, accountId) {
+    if (!confirm('Link @' + handle + ' to Word Tycoon account ' + accountId + '?\n\nThis merges their TikTok identity into that account.')) return;
+    $('lp-note').className = 'lp-note';
+    $('lp-note').textContent = 'linking…';
+    try {
+      const res = await fetch('/api/admin/members/link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ accountId, platform: 'tiktok', platformUserId: handle }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'link failed');
+      OPEN_LINK = null;
+      await loadAll();
+    } catch (e) {
+      $('lp-note').className = 'lp-note err';
+      $('lp-note').textContent = 'Link failed: ' + e.message;
+    }
+  }
+
+  // ── Super Fan add / remove ────────────────────────────────
+  function pinEntry(handle, name) {
+    const box = document.querySelector('details.group');
+    box.open = true;
+    $('f-id').value = handle;
+    $('f-name').value = name === handle ? '' : name;
+    $('f-id').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    $('f-id').focus();
+  }
+
+  async function addEntry(ev) {
+    ev.preventDefault();
+    const body = {
+      platform_user_id: $('f-id').value.trim().replace(/^@+/, ''),
+      display_name: $('f-name').value.trim(),
+      note: $('f-note').value.trim(),
+    };
+    if (!body.platform_user_id) return false;
+    $('add-btn').disabled = true;
+    setStatus('saving…');
+    try {
+      const res = await fetch('/api/admin/superfan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'save failed');
+      $('add-form').reset();
+      await loadAll();
+    } catch (e) {
+      setStatus('save failed: ' + e.message, 'error');
+    }
+    $('add-btn').disabled = false;
+    return false;
+  }
+
+  async function removeEntry(handle) {
+    if (!confirm('Remove @' + handle + ' as a Super Fan? They lose Donor perks + premium voices immediately.')) return;
+    setStatus('removing…');
+    try {
+      const res = await fetch('/api/admin/superfan', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ platform_user_id: handle }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'remove failed');
+      await loadAll();
+    } catch (e) {
+      setStatus('remove failed: ' + e.message, 'error');
+    }
+  }
+
+  // ── Donor Class (manual) ──────────────────────────────────────────
+  // Only ever hits rows the server told us are NOT Stripe-backed; WT refuses
+  // the rest with a 409 that we surface verbatim rather than swallowing.
+  async function setDonor(accountId, name, grant) {
+    if (!accountId) return;
+    const msg = grant
+      ? 'Give ' + name + ' Donor Class?\n\nThey get the full Donor perk set and the Donor Class cosmetics, with no subscription and no expiry.'
+      : 'Remove Donor Class from ' + name + '?\n\nCosmetics they already own stay owned — same as when a paid subscription lapses.';
+    if (!confirm(msg)) return;
+    setStatus(grant ? 'granting donor…' : 'removing donor…');
+    try {
+      const res = await fetch('/api/admin/members/donor', {
+        method: grant ? 'POST' : 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ accountId }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'donor update failed');
+      await loadAll();
+    } catch (e) {
+      setStatus('donor update failed: ' + e.message, 'error');
+    }
+  }
+
+  // ── Fan club (owner's channel) ────────────────────────────────────
+  async function setFanClub(handle, grant) {
+    if (!handle) return;
+    if (!grant && !confirm('Remove @' + handle + ' from the fan club?\n\nThey lose the fan-club badge and any fan-club-only cosmetics on stream.')) return;
+    setStatus(grant ? 'adding to fan club…' : 'removing from fan club…');
+    try {
+      const res = await fetch('/api/admin/members/fan-club', {
+        method: grant ? 'POST' : 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ platform_user_id: handle }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'fan club update failed');
+      await loadAll();
+    } catch (e) {
+      setStatus('fan club update failed: ' + e.message, 'error');
+    }
+  }
+
+  loadAll();
+</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Word Tycoon Admin</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/cosmetics-fx.css?v=3">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header id="header">
+      <div class="header-left">
+        <h1>Word Tycoon Admin</h1>
+        <div class="header-links">
+          <a href="/" target="_blank" class="header-link">Portal</a>
+          <a href="/admin/usage" target="_blank" class="header-link">Usage</a>
+          <a href="/admin/streamers.html" target="_blank" class="header-link">Streamers</a>
+          <a href="/admin/streamer-applications.html" target="_blank" class="header-link">Applications</a>
+          <a href="/admin/superfans" target="_blank" class="header-link">Super Fans</a>
+          <a href="/admin/balances" target="_blank" class="header-link">Balances</a>
+          <a href="/admin/jackpots" target="_blank" class="header-link">Jackpots</a>
+          <a href="/admin/voice-volumes.html" target="_blank" class="header-link">Voice Volumes</a>
+          <a href="/word-bank" target="_blank" class="header-link">Word Bank</a>
+          <button class="header-link" id="settings-toggle-btn" onclick="toggleSettingsDropdown()">Settings</button>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="status-indicators">
+          <span class="status-dot" id="status-tiktok" title="TikTok">
+            <svg class="platform-icon" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.88-2.88 2.89 2.89 0 012.88-2.88c.28 0 .56.04.82.11v-3.51a6.37 6.37 0 00-.82-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.76a8.28 8.28 0 004.76 1.5v-3.4a4.85 4.85 0 01-1-.17z"/></svg>
+            TikTok
+          </span>
+          <span class="status-dot" id="status-youtube" title="YouTube">
+            <svg class="platform-icon" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 00.5 6.19 31.6 31.6 0 000 12a31.6 31.6 0 00.5 5.81 3.02 3.02 0 002.12 2.14c1.84.55 9.38.55 9.38.55s7.54 0 9.38-.55a3.02 3.02 0 002.12-2.14A31.6 31.6 0 0024 12a31.6 31.6 0 00-.5-5.81zM9.54 15.57V8.43L15.82 12l-6.28 3.57z"/></svg>
+            YouTube
+          </span>
+          <span class="status-dot" id="status-discord" title="Discord">
+            <svg class="platform-icon" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M20.32 4.37A19.8 19.8 0 0015.39 3c-.24.42-.47.87-.65 1.32a18.35 18.35 0 00-5.48 0A12.6 12.6 0 008.61 3 19.72 19.72 0 003.68 4.37 20.49 20.49 0 00.1 17.78a19.9 19.9 0 006.07 3.07 14.92 14.92 0 001.27-2.06 12.88 12.88 0 01-2-.96l.49-.38a14.18 14.18 0 0012.14 0l.49.38a12.94 12.94 0 01-2.01.96 14.92 14.92 0 001.27 2.06 19.86 19.86 0 006.07-3.07A20.44 20.44 0 0020.32 4.37zM8.02 15.33c-1.18 0-2.15-1.08-2.15-2.42s.95-2.42 2.15-2.42 2.17 1.09 2.15 2.42c0 1.34-.95 2.42-2.15 2.42zm7.96 0c-1.18 0-2.15-1.08-2.15-2.42s.95-2.42 2.15-2.42 2.17 1.09 2.15 2.42c0 1.34-.96 2.42-2.15 2.42z"/></svg>
+            Discord
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Settings Dropdown (hidden by default) -->
+    <div class="settings-dropdown" id="settings-dropdown" style="display:none">
+      <div class="settings-dropdown-inner">
+        <div class="setting-group-inline">
+          <h4>
+            <svg class="platform-icon" viewBox="0 0 24 24" width="16" height="16"><path fill="#69C9D0" d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.88-2.88 2.89 2.89 0 012.88-2.88c.28 0 .56.04.82.11v-3.51a6.37 6.37 0 00-.82-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.76a8.28 8.28 0 004.76 1.5v-3.4a4.85 4.85 0 01-1-.17z"/></svg>
+            TikTok
+          </h4>
+          <input type="text" id="setting-tikfinity-url" value="ws://localhost:21213" placeholder="TikFinity WS URL">
+          <input type="text" id="setting-tiktok-username" placeholder="@username">
+          <span class="connection-status" id="conn-tiktok">Disconnected</span>
+          <button class="btn btn-sm" onclick="reconnectPlatform('tiktok')">Reconnect</button>
+        </div>
+        <div class="setting-group-inline">
+          <h4>
+            <svg class="platform-icon" viewBox="0 0 24 24" width="16" height="16"><path fill="#FF0000" d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 00.5 6.19 31.6 31.6 0 000 12a31.6 31.6 0 00.5 5.81 3.02 3.02 0 002.12 2.14c1.84.55 9.38.55 9.38.55s7.54 0 9.38-.55a3.02 3.02 0 002.12-2.14A31.6 31.6 0 0024 12a31.6 31.6 0 00-.5-5.81zM9.54 15.57V8.43L15.82 12l-6.28 3.57z"/></svg>
+            YouTube
+          </h4>
+          <input type="text" id="setting-streamerbot-url" value="ws://localhost:8080/" placeholder="Streamer.bot WS URL">
+          <span class="connection-status" id="conn-youtube">Disconnected</span>
+          <button class="btn btn-sm" onclick="reconnectPlatform('youtube')">Reconnect</button>
+        </div>
+        <div class="setting-group-inline">
+          <h4>
+            <svg class="platform-icon" viewBox="0 0 24 24" width="16" height="16"><path fill="#5865F2" d="M20.32 4.37A19.8 19.8 0 0015.39 3c-.24.42-.47.87-.65 1.32a18.35 18.35 0 00-5.48 0A12.6 12.6 0 008.61 3 19.72 19.72 0 003.68 4.37 20.49 20.49 0 00.1 17.78a19.9 19.9 0 006.07 3.07 14.92 14.92 0 001.27-2.06 12.88 12.88 0 01-2-.96l.49-.38a14.18 14.18 0 0012.14 0l.49.38a12.94 12.94 0 01-2.01.96 14.92 14.92 0 001.27 2.06 19.86 19.86 0 006.07-3.07A20.44 20.44 0 0020.32 4.37zM8.02 15.33c-1.18 0-2.15-1.08-2.15-2.42s.95-2.42 2.15-2.42 2.17 1.09 2.15 2.42c0 1.34-.95 2.42-2.15 2.42zm7.96 0c-1.18 0-2.15-1.08-2.15-2.42s.95-2.42 2.15-2.42 2.17 1.09 2.15 2.42c0 1.34-.96 2.42-2.15 2.42z"/></svg>
+            Discord
+          </h4>
+          <span class="connection-status" id="conn-discord">Disconnected</span>
+          <span class="setting-note">Auto-connects on startup</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <nav id="tabs">
+      <button class="tab active" data-tab="chat">Chat</button>
+      <button class="tab" data-tab="apps">Apps</button>
+      <button class="tab" data-tab="games">Games</button>
+      <button class="tab" data-tab="overlays">Overlays</button>
+      <button class="tab" data-tab="cosmetics">Cosmetics</button>
+      <button class="tab" data-tab="accounts">Accounts</button>
+      <button class="tab" data-tab="tts">TTS</button>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="main">
+      <!-- Chat Tab -->
+      <div class="tab-content active" id="tab-chat">
+        <div class="chat-layout">
+          <div class="chat-feed" id="chat-feed">
+            <div class="chat-welcome">
+              <p>Waiting for messages...</p>
+            </div>
+          </div>
+          <aside class="command-sidebar" id="command-sidebar">
+            <h3>Commands</h3>
+            <div id="command-list"></div>
+          </aside>
+        </div>
+      </div>
+
+      <!-- Apps Tab -->
+      <div class="tab-content" id="tab-apps">
+        <div class="apps-layout">
+          <div class="apps-panel">
+            <div class="apps-header">
+              <h2>Game Apps</h2>
+              <div class="apps-actions">
+                <button class="btn" onclick="refreshOpsSummary()">Refresh Ops</button>
+                <button class="btn btn-accent" onclick="startAllApps()">Start All</button>
+                <button class="btn" onclick="stopAllApps()">Stop All</button>
+                <button class="btn" onclick="reloadApps()" title="Reload apps.json">Reload Config</button>
+              </div>
+            </div>
+            <p class="apps-desc">Manage interactive chat games. Add new apps by editing <code>apps.json</code> and clicking Reload Config.</p>
+            <div class="ops-summary-panel">
+              <div class="ops-summary-header">
+                <div>
+                  <h3>Operations Snapshot</h3>
+                  <p>Live health for the relay stack and the services it depends on.</p>
+                </div>
+                <div class="ops-summary-meta" id="ops-summary-meta">Waiting for first refresh...</div>
+              </div>
+              <div class="ops-focus-strip loading" id="ops-focus-strip">
+                <div class="ops-focus-title">Waiting for operations summary...</div>
+                <div class="ops-focus-copy">Recommended next actions will appear here after the first refresh.</div>
+              </div>
+              <div class="ops-summary-grid" id="ops-summary-grid">
+                <div class="ops-card loading">
+                  <div class="ops-card-title">Loading operations summary...</div>
+                </div>
+              </div>
+              <div class="ops-summary-alerts" id="ops-summary-alerts"></div>
+              <div class="ops-summary-links">
+                <a href="/api/health" target="_blank" class="ops-link">Chat Relay JSON</a>
+                <a href="/api/ops/summary" target="_blank" class="ops-link">Ops Summary JSON</a>
+                <a href="/api/runtime/health" target="_blank" class="ops-link">Sassie Health</a>
+                <a href="/api/runtime/monitor" target="_blank" class="ops-link">Sassie Monitor</a>
+              </div>
+            </div>
+            <div id="apps-grid" class="apps-grid">
+              <div class="apps-loading">Loading apps...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Games Tab (merged Searchle + Word 500 + RecTangled) -->
+      <div class="tab-content" id="tab-games">
+        <div class="game-selector">
+          <button class="game-sel-btn active" data-game="searchle" onclick="switchGameTab('searchle')">Subtextle</button>
+          <button class="game-sel-btn" data-game="word500" onclick="switchGameTab('word500')">Word 500</button>
+          <button class="game-sel-btn" data-game="rectangled" onclick="switchGameTab('rectangled')">RecTangled</button>
+        </div>
+
+        <!-- Searchle Sub-Tab -->
+        <div class="game-sub active" id="game-searchle">
+        <div class="searchle-layout">
+          <div class="searchle-main">
+            <!-- Game Status Card -->
+            <div class="searchle-status-card">
+              <div class="searchle-status-header">
+                <div class="searchle-status-left">
+                  <div class="searchle-connection-dot" id="searchle-conn-dot"></div>
+                  <h2>Subtextle 3.0</h2>
+                  <span class="searchle-game-badge" id="searchle-badge">Offline</span>
+                </div>
+                <div class="searchle-status-right">
+                  <label class="toggle" title="Toggle Jackpot">
+                    <input type="checkbox" id="searchle-jackpot-toggle" checked onchange="searchleToggleJackpot()">
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <button class="btn btn-accent" onclick="searchleNewGame()">New Game</button>
+                  <button class="btn" onclick="searchleReveal()">Reveal Word</button>
+                  <button class="btn btn-danger" onclick="searchleResetJackpot()">Reset Jackpot</button>
+                </div>
+              </div>
+              <div class="searchle-stats-row">
+                <div class="searchle-stat">
+                  <span class="searchle-stat-label">Target Word</span>
+                  <span class="searchle-stat-value" id="searchle-target">???</span>
+                </div>
+                <div class="searchle-stat">
+                  <span class="searchle-stat-label">Guesses</span>
+                  <span class="searchle-stat-value" id="searchle-guesses">0</span>
+                </div>
+                <div class="searchle-stat">
+                  <span class="searchle-stat-label">Vocab Size</span>
+                  <span class="searchle-stat-value" id="searchle-vocab">--</span>
+                </div>
+                <div class="searchle-stat">
+                  <span class="searchle-stat-label">Time</span>
+                  <span class="searchle-stat-value" id="searchle-timer">0:00</span>
+                </div>
+                <div class="searchle-stat">
+                  <span class="searchle-stat-label">Winner</span>
+                  <span class="searchle-stat-value" id="searchle-winner">--</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Embedding Models Settings -->
+            <div class="searchle-settings-card">
+              <div class="searchle-panel-header">
+                <h3>Embedding Models</h3>
+                <span class="searchle-model-badge" id="searchle-model-mode">--</span>
+              </div>
+              <div class="searchle-settings-body">
+                <div class="searchle-toggle-row">
+                  <div class="searchle-model-info">
+                    <label>Numberbatch</label>
+                    <span class="searchle-model-detail" id="searchle-model-nb-detail">--</span>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" id="searchle-model-nb" checked onchange="searchleToggleModel()">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="searchle-toggle-row">
+                  <div class="searchle-model-info">
+                    <label>FastText</label>
+                    <span class="searchle-model-detail" id="searchle-model-ft-detail">--</span>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" id="searchle-model-ft" checked onchange="searchleToggleModel()">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Two-column: Guess Feed + Leaderboard -->
+            <div class="searchle-columns">
+              <!-- Live Guess Feed -->
+              <div class="searchle-feed-panel">
+                <div class="searchle-panel-header">
+                  <h3>Live Guesses</h3>
+                  <span class="searchle-feed-count" id="searchle-feed-count">0</span>
+                </div>
+                <div class="searchle-feed" id="searchle-feed">
+                  <div class="searchle-feed-empty">Waiting for guesses...</div>
+                </div>
+              </div>
+
+              <!-- Leaderboard -->
+              <div class="searchle-leaderboard-panel">
+                <div class="searchle-panel-header">
+                  <h3>Top Winners</h3>
+                </div>
+                <div class="searchle-leaderboard" id="searchle-leaderboard">
+                  <div class="searchle-feed-empty">Loading...</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Win History -->
+            <div class="searchle-history-panel">
+              <div class="searchle-panel-header">
+                <h3>Win History</h3>
+                <span class="searchle-feed-count" id="searchle-history-count">0</span>
+              </div>
+              <div class="searchle-history-table-wrap">
+                <table class="searchle-history-table" id="searchle-history-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Player</th>
+                      <th>Platform</th>
+                      <th>Word</th>
+                      <th>Guesses</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody id="searchle-history-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- SP Pool Words -->
+            <div class="searchle-pool-panel">
+              <div class="searchle-panel-header">
+                <h3>SP Pool Words</h3>
+                <span class="searchle-feed-count" id="searchle-pool-count">0</span>
+              </div>
+              <div class="searchle-pool-grid" id="searchle-pool-grid">
+                <div class="searchle-feed-empty">Loading...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div><!-- /game-searchle -->
+
+        <!-- Word500 Sub-Tab -->
+        <div class="game-sub" id="game-word500">
+        <div class="word500-layout">
+          <div class="word500-main">
+            <!-- Game Status Card -->
+            <div class="word500-status-card">
+              <div class="word500-status-header">
+                <div class="word500-status-left">
+                  <div class="word500-connection-dot" id="word500-conn-dot"></div>
+                  <h2>Word 500</h2>
+                  <span class="word500-game-badge" id="word500-badge">Offline</span>
+                </div>
+                <div class="word500-status-right">
+                  <label class="toggle" title="Toggle Jackpot">
+                    <input type="checkbox" id="word500-jackpot-toggle" checked onchange="word500ToggleJackpot()">
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <label class="toggle" title="Require /slash prefix">
+                    <input type="checkbox" id="word500-slash-toggle" onchange="word500ToggleSlash()">
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <span class="word500-slash-label">Require /prefix</span>
+                  <button class="btn btn-accent" onclick="word500NewGame()">New Game</button>
+                  <button class="btn" onclick="word500Reveal()">Reveal Word</button>
+                  <button class="btn btn-danger" onclick="word500ResetJackpot()">Reset Jackpot</button>
+                </div>
+              </div>
+              <div class="word500-stats-row">
+                <div class="word500-stat">
+                  <span class="word500-stat-label">Current Word</span>
+                  <span class="word500-stat-value" id="word500-word">?????</span>
+                </div>
+                <div class="word500-stat">
+                  <span class="word500-stat-label">Guesses</span>
+                  <span class="word500-stat-value" id="word500-guesses">0</span>
+                </div>
+                <div class="word500-stat">
+                  <span class="word500-stat-label">Status</span>
+                  <span class="word500-stat-value" id="word500-status">--</span>
+                </div>
+                <div class="word500-stat">
+                  <span class="word500-stat-label">Displays</span>
+                  <span class="word500-stat-value" id="word500-displays">0</span>
+                </div>
+                <div class="word500-stat">
+                  <span class="word500-stat-label">Winner</span>
+                  <span class="word500-stat-value" id="word500-winner">--</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Test Guess Card -->
+            <div class="word500-test-card">
+              <div class="word500-panel-header">
+                <h3>Test Guess</h3>
+              </div>
+              <div class="word500-test-body">
+                <input type="text" id="word500-test-word" placeholder="5-letter word" maxlength="5" class="word500-test-input">
+                <input type="text" id="word500-test-user" placeholder="Player name" value="Admin" class="word500-test-input">
+                <button class="btn btn-accent" onclick="word500TestGuess()">Submit</button>
+              </div>
+            </div>
+
+            <!-- Two-column: Guess Feed + Leaderboard -->
+            <div class="word500-columns">
+              <!-- Live Guess Feed -->
+              <div class="word500-feed-panel">
+                <div class="word500-panel-header">
+                  <h3>Live Guesses</h3>
+                  <span class="word500-feed-count" id="word500-feed-count">0</span>
+                </div>
+                <div class="word500-feed" id="word500-feed">
+                  <div class="word500-feed-empty">Waiting for guesses...</div>
+                </div>
+              </div>
+
+              <!-- Leaderboard -->
+              <div class="word500-leaderboard-panel">
+                <div class="word500-panel-header">
+                  <h3>Top Winners</h3>
+                </div>
+                <div class="word500-leaderboard" id="word500-leaderboard">
+                  <div class="word500-feed-empty">Loading...</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Win History -->
+            <div class="word500-history-panel">
+              <div class="word500-panel-header">
+                <h3>Win History</h3>
+                <span class="word500-feed-count" id="word500-history-count">0</span>
+              </div>
+              <div class="word500-history-table-wrap">
+                <table class="word500-history-table" id="word500-history-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Player</th>
+                      <th>Platform</th>
+                      <th>Word</th>
+                      <th>Guesses</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody id="word500-history-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div><!-- /game-word500 -->
+
+        <!-- RecTangled Sub-Tab -->
+        <div class="game-sub" id="game-rectangled">
+        <div class="rectangled-layout">
+          <div class="rectangled-main">
+            <!-- Status Card -->
+            <div class="rectangled-status-card">
+              <div class="rectangled-status-header">
+                <div class="rectangled-status-left">
+                  <div class="rectangled-connection-dot" id="rectangled-conn-dot"></div>
+                  <h2>RecTangled</h2>
+                  <span class="rectangled-game-badge" id="rectangled-badge">Offline</span>
+                </div>
+                <div class="rectangled-status-right">
+                  <label class="toggle" title="Toggle Jackpot">
+                    <input type="checkbox" id="rectangled-jackpot-toggle" checked onchange="rectangledToggleJackpot()">
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <button class="btn btn-accent" onclick="rectangledNewGame()">New Game</button>
+                  <button class="btn btn-accent" onclick="rectangledStartDaily()" style="background:#e94560">Start Daily</button>
+                  <button class="btn" onclick="rectangledClearState()">Clear State</button>
+                  <button class="btn btn-danger" onclick="rectangledResetJackpot()">Reset Jackpot</button>
+                </div>
+              </div>
+              <div class="rectangled-stats-row">
+                <div class="rectangled-stat">
+                  <span class="rectangled-stat-label">Grid</span>
+                  <span class="rectangled-stat-value" id="rectangled-grid-size">--</span>
+                </div>
+                <div class="rectangled-stat">
+                  <span class="rectangled-stat-label">Common</span>
+                  <span class="rectangled-stat-value" id="rectangled-common">0/0</span>
+                </div>
+                <div class="rectangled-stat">
+                  <span class="rectangled-stat-label">Rare</span>
+                  <span class="rectangled-stat-value" id="rectangled-rare">0</span>
+                </div>
+                <div class="rectangled-stat">
+                  <span class="rectangled-stat-label">3-Letter</span>
+                  <span class="rectangled-stat-value" id="rectangled-three-letter">0</span>
+                </div>
+                <div class="rectangled-stat">
+                  <span class="rectangled-stat-label">Jackpot</span>
+                  <span class="rectangled-stat-value" id="rectangled-jackpot">--</span>
+                </div>
+                <div class="rectangled-stat">
+                  <span class="rectangled-stat-label">Progress</span>
+                  <span class="rectangled-stat-value" id="rectangled-progress">0%</span>
+                </div>
+              </div>
+              <div class="rectangled-status-msg" id="rectangled-status-msg"></div>
+            </div>
+
+            <!-- Grid Settings -->
+            <div class="rectangled-settings-card">
+              <div class="rectangled-panel-header">
+                <h3>Grid Settings</h3>
+              </div>
+              <div class="rectangled-settings-body">
+                <div class="rectangled-setting">
+                  <label>Rows</label>
+                  <div class="rectangled-range-row">
+                    <input type="range" id="rectangled-rows" min="2" max="11" value="11">
+                    <span class="rectangled-range-val" id="rectangled-rows-val">11</span>
+                  </div>
+                </div>
+                <div class="rectangled-setting">
+                  <label>Columns</label>
+                  <div class="rectangled-range-row">
+                    <input type="range" id="rectangled-cols" min="2" max="10" value="6">
+                    <span class="rectangled-range-val" id="rectangled-cols-val">6</span>
+                  </div>
+                </div>
+                <div class="rectangled-setting">
+                  <label>Min Word Length</label>
+                  <div class="rectangled-range-row">
+                    <input type="range" id="rectangled-min-length" min="3" max="6" value="3">
+                    <span class="rectangled-range-val" id="rectangled-min-length-val">3</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Display Toggles -->
+            <div class="rectangled-settings-card">
+              <div class="rectangled-panel-header">
+                <h3>Display Options</h3>
+              </div>
+              <div class="rectangled-settings-body">
+                <div class="rectangled-toggle-row">
+                  <label>Show Manual Input</label>
+                  <label class="toggle">
+                    <input type="checkbox" id="rectangled-show-manual" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="rectangled-toggle-row">
+                  <label>Show Found Words</label>
+                  <label class="toggle">
+                    <input type="checkbox" id="rectangled-show-found" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div><!-- /game-rectangled -->
+      </div><!-- /tab-games -->
+
+      <!-- Overlays Tab (merged Chat + Game Overlays) -->
+      <div class="tab-content" id="tab-overlays">
+        <div class="overlay-layout">
+          <div class="overlay-panel">
+            <h2>Chat Overlay for OBS</h2>
+            <p class="overlay-desc">Chat overlays for streaming. Standard and Fade show dot-prefixed messages (<code>.message</code>). All Messages shows everything. Each overlay has independent settings.</p>
+
+            <!-- Overlay URLs -->
+            <div class="overlay-links-card">
+              <div class="overlay-links-header"><h3>Overlay URLs</h3></div>
+              <div class="overlay-links-body">
+                <div class="overlay-link-row">
+                  <div class="overlay-link-info">
+                    <span class="overlay-link-label">Standard</span>
+                    <span class="overlay-link-desc">Dot-prefixed messages, persist on screen</span>
+                  </div>
+                  <div class="overlay-link-actions">
+                    <input type="text" class="overlay-link-url" id="overlay-url" readonly>
+                    <button class="btn" onclick="copyOverlayUrl()">Copy</button>
+                    <a class="btn btn-accent" href="/overlay.html" target="_blank">Open</a>
+                  </div>
+                </div>
+                <div class="overlay-link-row">
+                  <div class="overlay-link-info">
+                    <span class="overlay-link-label">Fade</span>
+                    <span class="overlay-link-desc">Dot-prefixed messages, fade out after duration</span>
+                  </div>
+                  <div class="overlay-link-actions">
+                    <input type="text" class="overlay-link-url" id="overlay2-url" readonly>
+                    <button class="btn" onclick="copyOverlay2Url()">Copy</button>
+                    <a class="btn btn-accent" href="/overlay2.html" target="_blank">Open</a>
+                  </div>
+                </div>
+                <div class="overlay-link-row">
+                  <div class="overlay-link-info">
+                    <span class="overlay-link-label">All Messages</span>
+                    <span class="overlay-link-desc">Displays all chat messages from every platform</span>
+                  </div>
+                  <div class="overlay-link-actions">
+                    <input type="text" class="overlay-link-url" id="overlay3-url" readonly>
+                    <button class="btn" onclick="copyOverlay3Url()">Copy</button>
+                    <a class="btn btn-accent" href="/overlay3.html" target="_blank">Open</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Overlay Type Selector -->
+            <div class="overlay-type-selector">
+              <span class="overlay-type-label">Editing settings for:</span>
+              <div class="overlay-type-buttons">
+                <button class="overlay-type-btn active" data-overlay-type="standard">Standard</button>
+                <button class="overlay-type-btn" data-overlay-type="fade">Fade</button>
+                <button class="overlay-type-btn" data-overlay-type="all">All Messages</button>
+              </div>
+            </div>
+
+            <!-- Appearance Settings -->
+            <div class="overlay-links-card">
+              <div class="overlay-links-header"><h3>Appearance</h3></div>
+              <div class="overlay-settings-body">
+                <div class="overlay-setting">
+                  <label>Font Size: <span id="overlay-fontsize-val">14</span>px</label>
+                  <input type="range" id="overlay-fontsize" min="10" max="32" value="14">
+                </div>
+                <div class="overlay-setting">
+                  <label>Background Opacity: <span id="overlay-bgopacity-val">65</span>%</label>
+                  <input type="range" id="overlay-bgopacity" min="0" max="100" value="65">
+                </div>
+                <div class="overlay-setting">
+                  <label>Fade Duration: <span id="overlay-fade-val">Off</span></label>
+                  <input type="range" id="overlay-fade" min="0" max="120" value="0">
+                  <span class="overlay-hint">0 = persist forever. Fade overlay always fades regardless.</span>
+                </div>
+                <div class="overlay-setting">
+                  <label>Max Messages: <span id="overlay-maxmsg-val">30</span></label>
+                  <input type="range" id="overlay-maxmsg" min="1" max="100" value="30">
+                </div>
+                <div class="overlay-toggle-row">
+                  <label>Show Platform Badge</label>
+                  <label class="toggle">
+                    <input type="checkbox" id="overlay-show-badge" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="overlay-toggle-row">
+                  <label>Show Username</label>
+                  <label class="toggle">
+                    <input type="checkbox" id="overlay-show-username" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="overlay-toggle-row">
+                  <label>Animate Messages</label>
+                  <label class="toggle">
+                    <input type="checkbox" id="overlay-animate" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Preview -->
+            <div class="overlay-preview-container">
+              <h3>Live Preview</h3>
+              <div class="overlay-preview" id="overlay-preview">
+                <div class="overlay-preview-placeholder">Chat messages will appear here</div>
+              </div>
+            </div>
+
+            <!-- Event Overlay (in-game events for the active Sassie game) -->
+            <div class="overlay-divider"></div>
+            <h2>Event Overlay</h2>
+            <p class="overlay-desc">In-game event card overlay (1080×1920). Reacts to whichever game is currently selected in the Sassie monitor — drop one OBS Browser Source per stream.</p>
+            <div class="overlay-links-card">
+              <div class="overlay-link-row">
+                <div class="overlay-link-info">
+                  <span class="overlay-link-label">Event Overlay</span>
+                  <span class="overlay-link-desc app-status-dot-inline" id="event-overlay-active-game-pill">Active: —</span>
+                </div>
+                <div class="overlay-link-actions">
+                  <input type="text" class="overlay-link-url" id="event-overlay-url" value="" readonly>
+                  <button class="btn" onclick="copyGameOverlayUrl(document.getElementById('event-overlay-url').value)">Copy</button>
+                  <a class="btn btn-accent" id="event-overlay-open" href="/event-overlay" target="_blank">Open</a>
+                </div>
+              </div>
+              <div class="overlay-link-row">
+                <div class="overlay-link-info">
+                  <span class="overlay-link-label">Show wrong-guess toasts</span>
+                  <span class="overlay-link-desc">Surface "missed" toasts for incorrect guesses</span>
+                </div>
+                <div class="overlay-link-actions">
+                  <label class="toggle">
+                    <input type="checkbox" id="event-overlay-show-misses">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <script>
+              (function () {
+                const url = window.location.origin + '/event-overlay';
+                const urlEl = document.getElementById('event-overlay-url');
+                const openEl = document.getElementById('event-overlay-open');
+                const pillEl = document.getElementById('event-overlay-active-game-pill');
+                const missesEl = document.getElementById('event-overlay-show-misses');
+                if (urlEl) urlEl.value = url;
+                if (openEl) openEl.href = url;
+
+                async function refreshState() {
+                  try {
+                    const r = await fetch('/api/event-overlay/state');
+                    const j = await r.json();
+                    if (!j || !j.ok) return;
+                    if (pillEl) pillEl.textContent = 'Active: ' + (j.state.activeGame || '(none)');
+                    if (missesEl) missesEl.checked = !!(j.state.settings && j.state.settings.showMisses);
+                  } catch (_) {}
+                }
+                if (missesEl) {
+                  missesEl.addEventListener('change', async () => {
+                    try {
+                      await fetch('/api/event-overlay/settings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ showMisses: missesEl.checked }),
+                      });
+                    } catch (_) {}
+                  });
+                }
+                refreshState();
+                setInterval(refreshState, 15000);
+              })();
+            </script>
+
+            <!-- Game Overlays Section -->
+            <div class="overlay-divider"></div>
+            <h2>Game Overlays</h2>
+            <p class="overlay-desc">Live previews of all game overlays. Use the proxy URLs as OBS Browser Sources — only one port needs to be exposed.</p>
+            <div id="game-overlay-cards" class="overlay-cards-grid">
+              <div class="overlay-link-empty">Loading overlays...</div>
+            </div>
+            <div class="overlay-links-card" style="margin-top:16px">
+              <div class="overlay-links-header"><h3>All Overlay URLs</h3></div>
+              <div class="overlay-links-body" id="game-overlay-links">
+                <div class="overlay-link-empty">Loading...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TTS Tab -->
+      <div class="tab-content" id="tab-tts">
+        <div class="tts-layout">
+          <div class="tts-controls">
+            <h2>TTS Settings</h2>
+            <div class="tts-global-controls">
+              <div class="control-group">
+                <label>TTS Enabled</label>
+                <label class="toggle">
+                  <input type="checkbox" id="tts-global-enabled" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="control-group">
+                <label>Volume: <span id="vol-label">80%</span></label>
+                <input type="range" id="tts-volume" min="0" max="100" value="80">
+              </div>
+              <div class="control-group">
+                <label>Speed: <span id="rate-label">1.0x</span></label>
+                <input type="range" id="tts-rate" min="0.5" max="2" value="1" step="0.1">
+              </div>
+              <div class="control-group">
+                <label>Pitch: <span id="pitch-label">1.0</span></label>
+                <input type="range" id="tts-pitch" min="0.5" max="2" value="1" step="0.1">
+              </div>
+            </div>
+
+            <h3>Available Voices</h3>
+            <div id="voices-list" class="voices-list"></div>
+
+            <h3>Users with TTS</h3>
+            <div id="tts-users-list" class="tts-users-list"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Accounts Tab -->
+      <div class="tab-content" id="tab-accounts">
+        <div class="accounts-layout">
+          <!-- Left: Search & Account Details -->
+          <div class="accounts-main-panel">
+            <div class="accounts-search-section">
+              <h2>Account Management</h2>
+
+              <!-- Quick Link by Discord ID -->
+              <div class="accounts-quicklink-box">
+                <h4>Link Account by Discord ID</h4>
+                <div class="accounts-quicklink-row">
+                  <input type="text" id="accounts-discord-id-input" placeholder="Discord User ID" autocomplete="off">
+                  <select id="accounts-quicklink-platform">
+                    <option value="tiktok">TikTok</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="discord">Discord</option>
+                    <option value="twitch">Twitch</option>
+                    <option value="mobile">Mobile</option>
+                    <option value="web">Web</option>
+                    <option value="github">GitHub</option>
+                    <option value="google">Google</option>
+                  </select>
+                  <input type="text" id="accounts-quicklink-userid" placeholder="Platform username" autocomplete="off">
+                  <button class="btn btn-accent" onclick="accountsQuickLinkByDiscord()">Link</button>
+                </div>
+                <div id="accounts-quicklink-status" class="accounts-quicklink-status"></div>
+              </div>
+
+              <div class="accounts-search-bar">
+                <input type="text" id="accounts-search-input" placeholder="Search by username, Discord ID, or #playerID..." autocomplete="off">
+                <button class="btn btn-accent" onclick="accountsSearch()">Search</button>
+              </div>
+              <div class="accounts-search-results" id="accounts-search-results"></div>
+              <div class="accounts-multilink-actions" id="accounts-multilink-actions" style="display:none">
+                <span id="accounts-multilink-count">0 selected</span>
+                <button class="btn btn-accent" onclick="accountsMultiLink()">Link Selected</button>
+              </div>
+            </div>
+
+            <!-- Account Details (shown when an account is selected) -->
+            <div class="accounts-detail-panel" id="accounts-detail-panel" style="display:none">
+              <div class="accounts-detail-header">
+                <div class="accounts-detail-pfp">
+                  <img id="accounts-detail-pfp-img" src="" alt="pfp">
+                </div>
+                <div class="accounts-detail-info">
+                  <h3 id="accounts-detail-name">--</h3>
+                  <span class="accounts-detail-id" id="accounts-detail-discord-id">--</span>
+                  <div class="accounts-detail-stats">
+                    <span id="accounts-detail-coins">0 coins</span>
+                    <span id="accounts-detail-taps">0 taps</span>
+                  </div>
+                </div>
+                <div class="accounts-detail-actions">
+                  <button class="btn btn-accent" onclick="accountsTriggerMerge()">Re-merge</button>
+                </div>
+              </div>
+
+              <!-- Linked Platforms -->
+              <div class="accounts-section">
+                <h4>Linked Platforms</h4>
+                <div id="accounts-linked-platforms"></div>
+                <div class="accounts-link-form">
+                  <select id="accounts-link-platform">
+                    <option value="tiktok">TikTok</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="discord">Discord</option>
+                    <option value="twitch">Twitch</option>
+                    <option value="mobile">Mobile</option>
+                    <option value="web">Web</option>
+                    <option value="github">GitHub</option>
+                    <option value="google">Google</option>
+                  </select>
+                  <input type="text" id="accounts-link-userid" placeholder="Platform User ID">
+                  <button class="btn" onclick="accountsManualLink()">Link</button>
+                </div>
+              </div>
+
+              <!-- Quick-Link to Discord (shown for unlinked players) -->
+              <div class="accounts-section" id="accounts-quicklink-section" style="display:none">
+                <h4>Link to Discord Account</h4>
+                <div class="accounts-quicklink-bar">
+                  <input type="text" id="accounts-quicklink-input" placeholder="Search Discord players..." autocomplete="off">
+                  <button class="btn btn-accent" onclick="accountsQuicklinkSearch()">Search</button>
+                </div>
+                <div id="accounts-quicklink-results"></div>
+              </div>
+
+              <!-- Preferences -->
+              <div class="accounts-section">
+                <h4>Preferences</h4>
+                <div class="accounts-pref-row">
+                  <label>Preferred PFP</label>
+                  <select id="accounts-pref-pfp"></select>
+                  <button class="btn" onclick="accountsSavePfpPref()">Save</button>
+                </div>
+                <div class="accounts-pref-row">
+                  <label>Display Name</label>
+                  <input type="text" id="accounts-pref-name" placeholder="Override display name">
+                  <button class="btn" onclick="accountsSaveNamePref()">Save</button>
+                </div>
+              </div>
+
+              <!-- Inventory: Businesses -->
+              <div class="accounts-section">
+                <h4>Businesses</h4>
+                <div class="accounts-inventory-table" id="accounts-businesses"></div>
+              </div>
+
+              <!-- Command History / Ledger -->
+              <div class="accounts-section">
+                <h4>Command History</h4>
+                <div class="accounts-ledger-filters">
+                  <select id="accounts-ledger-type" onchange="accountsLedgerFilter()">
+                    <option value="">All Types</option>
+                    <option value="buy">Buy</option>
+                    <option value="upgrade">Upgrade</option>
+                    <option value="cosmetic">Cosmetic</option>
+                    <option value="set">Set</option>
+                    <option value="buybest">Buy Best</option>
+                    <option value="buybestmax">Buy Best Max</option>
+                    <option value="gift">Gift</option>
+                    <option value="reward">Reward</option>
+                    <option value="deduct">Deduct</option>
+                    <option value="merge">Merge</option>
+                    <option value="play">Play</option>
+                    <option value="command">Other Command</option>
+                  </select>
+                  <input type="text" id="accounts-ledger-search" placeholder="Search commands..." onkeydown="if(event.key==='Enter')accountsLedgerFilter()">
+                  <button class="btn btn-sm" onclick="accountsLedgerFilter()">Filter</button>
+                </div>
+                <div class="accounts-ledger-table-wrap" id="accounts-ledger-table">
+                  <div class="accounts-no-results">Select a player to view command history</div>
+                </div>
+                <div class="accounts-ledger-pagination" id="accounts-ledger-pagination" style="display:none">
+                  <button class="btn btn-sm" onclick="accountsLedgerPage(-1)" id="accounts-ledger-prev">Prev</button>
+                  <span id="accounts-ledger-page-info">Page 1</span>
+                  <button class="btn btn-sm" onclick="accountsLedgerPage(1)" id="accounts-ledger-next">Next</button>
+                </div>
+              </div>
+
+              <!-- Potential Matches -->
+              <div class="accounts-section">
+                <h4>Potential Matches</h4>
+                <div id="accounts-potential-matches"></div>
+              </div>
+
+              <!-- Inventory: Cosmetics -->
+              <div class="accounts-section">
+                <h4>Cosmetics</h4>
+                <div class="accounts-inventory-grid" id="accounts-cosmetics"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Linked Groups Overview -->
+          <div class="accounts-groups-panel">
+            <h3>Linked Account Groups</h3>
+            <button class="btn" onclick="accountsLoadGroups()" style="margin-bottom:8px">Refresh</button>
+            <div class="accounts-groups-list" id="accounts-groups-list">
+              <div class="accounts-groups-empty">Click Refresh to load linked groups</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cosmetics Tab -->
+      <div class="tab-content" id="tab-cosmetics">
+        <div class="cosmetics-layout">
+          <!-- Left: Catalog -->
+          <div class="cosmetics-catalog-panel">
+            <div class="cosmetics-filters">
+              <div class="cosmetic-filter-bar" id="cosmetic-category-filters">
+                <button class="cosmetic-filter active" data-category="all">All</button>
+                <button class="cosmetic-filter" data-category="word_color">Word Colors</button>
+                <button class="cosmetic-filter" data-category="word_glow">Word Glows</button>
+                <button class="cosmetic-filter" data-category="profile_border">Borders</button>
+                <button class="cosmetic-filter" data-category="profile_glow">Glows</button>
+                <button class="cosmetic-filter" data-category="name_glow">Name Glows</button>
+                <button class="cosmetic-filter" data-category="name_color">Name Colors</button>
+                <button class="cosmetic-filter" data-category="title">Titles</button>
+                <button class="cosmetic-filter" data-category="win_effect">Win Effects</button>
+              </div>
+              <div class="cosmetic-filter-bar" id="cosmetic-rarity-filters">
+                <button class="cosmetic-filter active" data-rarity="all">All</button>
+                <button class="cosmetic-filter" data-rarity="common">Common</button>
+                <button class="cosmetic-filter" data-rarity="uncommon">Uncommon</button>
+                <button class="cosmetic-filter" data-rarity="rare">Rare</button>
+                <button class="cosmetic-filter" data-rarity="epic">Epic</button>
+                <button class="cosmetic-filter" data-rarity="legendary">Legendary</button>
+                <button class="cosmetic-filter" data-rarity="ultra">Ultra Rare</button>
+                <button class="cosmetic-filter" data-rarity="aux">AUX</button>
+              </div>
+              <div class="cosmetic-filter-bar" id="cosmetic-set-filters">
+                <button class="cosmetic-filter active" data-set="all">All</button>
+                <button class="cosmetic-filter" data-set="none">No Set</button>
+                <button class="cosmetic-filter" data-set="pixel">Pixel</button>
+                <button class="cosmetic-filter" data-set="steampunk">Steampunk</button>
+                <button class="cosmetic-filter" data-set="sakura">Sakura</button>
+                <button class="cosmetic-filter" data-set="storm">Storm</button>
+                <button class="cosmetic-filter" data-set="dragon">Dragon</button>
+                <button class="cosmetic-filter" data-set="quantum">Quantum</button>
+                <button class="cosmetic-filter" data-set="america">Stars & Stripes</button>
+                <button class="cosmetic-filter" data-set="canada">Great North</button>
+              </div>
+            </div>
+            <div class="cosmetics-grid" id="cosmetics-grid">
+              <div class="cosmetics-loading">Click the Cosmetics tab to load catalog...</div>
+            </div>
+          </div>
+
+          <!-- Right: Player Manager -->
+          <div class="cosmetics-player-panel">
+            <div class="cosmetics-merge-all-section">
+              <button class="cosmetics-merge-all-btn" id="cosmetics-merge-all-btn" onclick="cosmeticsMergeAll()">
+                🔄 Merge All Duplicates
+              </button>
+              <div class="cosmetics-merge-all-status" id="cosmetics-merge-all-status"></div>
+            </div>
+            <div class="cosmetics-player-search">
+              <h3>Player Manager</h3>
+              <input type="text" id="cosmetics-player-search" placeholder="Search player name..." autocomplete="off">
+              <div class="cosmetics-player-results" id="cosmetics-player-results"></div>
+            </div>
+            <div class="cosmetics-selected-player" id="cosmetics-selected-player">
+              <div class="cosmetics-no-player">Search and select a player above</div>
+            </div>
+            <div class="cosmetics-player-owned" id="cosmetics-player-owned"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/tts.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/app.js"></script>
+  <footer class="wt-legal-footer">
+    <a href="/privacy">Privacy</a> &middot; <a href="/terms">Terms</a> &middot; <a href="https://discord.gg/C8Nm2jEZFC" target="_blank" rel="noopener">Discord</a> &middot; <span>&copy; 2026 Word Tycoon</span>
+  </footer>
+  <style>
+    .wt-legal-footer{padding:14px 16px 18px;text-align:center;font:12px/1.4 "Segoe UI",Tahoma,sans-serif;color:#7a8a9b;opacity:.75}
+    .wt-legal-footer a{color:inherit;text-decoration:none;margin:0 2px}
+    .wt-legal-footer a:hover{text-decoration:underline;opacity:1}
+  </style>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

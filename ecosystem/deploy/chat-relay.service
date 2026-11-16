@@ -1,0 +1,18 @@
+[Unit]
+Description=chat-relay (play.hangstream.me — relay, games, TTS hub)
+After=network.target voice-tts.service
+Wants=voice-tts.service
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/opt/chat-relay
+Environment=NODE_ENV=production
+EnvironmentFile=/opt/chat-relay/.env
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+MemoryMax=3G
+
+[Install]
+WantedBy=multi-user.target

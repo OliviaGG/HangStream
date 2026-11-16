@@ -1,0 +1,28 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="donorStroke" x1="18" y1="18" x2="238" y2="238" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7ED0FF"/>
+      <stop offset="0.5" stop-color="#6AA8FF"/>
+      <stop offset="1" stop-color="#8F6FFF"/>
+    </linearGradient>
+    <radialGradient id="donorGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(128 128) rotate(90) scale(126)">
+      <stop stop-color="#7B61FF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#7B61FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="128" cy="128" r="120" fill="url(#donorGlow)"/>
+  <rect x="18" y="18" width="220" height="220" rx="68" stroke="url(#donorStroke)" stroke-width="8"/>
+  <rect x="28" y="28" width="200" height="200" rx="60" stroke="rgba(255,255,255,0.34)" stroke-width="2"/>
+  <path d="M52 72C72 56 94 46 128 46C162 46 184 56 204 72" stroke="#90DAFF" stroke-opacity="0.78" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M52 184C72 200 94 210 128 210C162 210 184 200 204 184" stroke="#9E7AFF" stroke-opacity="0.78" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M46 118L66 98L88 98L106 80" stroke="#7ED0FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M210 118L190 98L168 98L150 80" stroke="#7ED0FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M46 138L66 158L88 158L106 176" stroke="#8F6FFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M210 138L190 158L168 158L150 176" stroke="#8F6FFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="46" cy="118" r="5" fill="#90DAFF"/>
+  <circle cx="210" cy="118" r="5" fill="#90DAFF"/>
+  <circle cx="46" cy="138" r="5" fill="#B896FF"/>
+  <circle cx="210" cy="138" r="5" fill="#B896FF"/>
+  <circle cx="128" cy="32" r="4" fill="rgba(255,255,255,0.72)"/>
+  <circle cx="128" cy="224" r="4" fill="rgba(255,255,255,0.72)"/>
+</svg>

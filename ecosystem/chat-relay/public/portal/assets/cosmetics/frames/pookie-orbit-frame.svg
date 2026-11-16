@@ -1,0 +1,30 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="pookieStroke" x1="18" y1="18" x2="238" y2="238" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE38A"/>
+      <stop offset="0.38" stop-color="#F0B93A"/>
+      <stop offset="0.74" stop-color="#A56BFF"/>
+      <stop offset="1" stop-color="#7E4DFF"/>
+    </linearGradient>
+    <radialGradient id="pookieAura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(128 128) rotate(90) scale(126)">
+      <stop stop-color="#FFD56B" stop-opacity="0.22"/>
+      <stop offset="0.56" stop-color="#9C63FF" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#9C63FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="128" cy="128" r="120" fill="url(#pookieAura)"/>
+  <rect x="18" y="18" width="220" height="220" rx="68" stroke="url(#pookieStroke)" stroke-width="8"/>
+  <rect x="28" y="28" width="200" height="200" rx="60" stroke="rgba(255,255,255,0.34)" stroke-width="2"/>
+  <path d="M40 128C40 88 88 40 128 40" stroke="#FFD56B" stroke-opacity="0.82" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M128 40C168 40 216 88 216 128" stroke="#F0B93A" stroke-opacity="0.8" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M216 128C216 168 168 216 128 216" stroke="#A56BFF" stroke-opacity="0.76" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M128 216C88 216 40 168 40 128" stroke="#7E4DFF" stroke-opacity="0.76" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="128" cy="40" r="6" fill="#FFF2B8"/>
+  <circle cx="216" cy="128" r="6" fill="#FFD56B"/>
+  <circle cx="128" cy="216" r="6" fill="#B286FF"/>
+  <circle cx="40" cy="128" r="6" fill="#A56BFF"/>
+  <path d="M64 64L84 52" stroke="rgba(255,255,255,0.6)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M192 64L172 52" stroke="rgba(255,255,255,0.6)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M64 192L84 204" stroke="rgba(255,255,255,0.5)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M192 192L172 204" stroke="rgba(255,255,255,0.5)" stroke-width="3.5" stroke-linecap="round"/>
+</svg>

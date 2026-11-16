@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /game/
+
+Sitemap: https://wordtycoon.live/sitemap.xml
+Sitemap: https://wordtycoon.live/betwixt/sitemap.xml

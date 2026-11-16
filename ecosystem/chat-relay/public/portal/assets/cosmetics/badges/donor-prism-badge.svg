@@ -1,0 +1,30 @@
+<svg width="1200" height="480" viewBox="0 0 1200 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="donorPrismBg" x1="0" y1="0" x2="1200" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#101d39"/>
+      <stop offset="0.46" stop-color="#18315f"/>
+      <stop offset="1" stop-color="#211641"/>
+    </linearGradient>
+    <radialGradient id="donorPrismGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(864 156) rotate(90) scale(220 360)">
+      <stop stop-color="#7BD7FF" stop-opacity="0.28"/>
+      <stop offset="0.62" stop-color="#7B61FF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#7B61FF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="prismStroke" x1="780" y1="96" x2="984" y2="248" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#DFF6FF"/>
+      <stop offset="0.46" stop-color="#7BD7FF"/>
+      <stop offset="1" stop-color="#8E74FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="480" rx="36" fill="url(#donorPrismBg)"/>
+  <rect width="1200" height="480" rx="36" fill="url(#donorPrismGlow)"/>
+  <path d="M134 318C280 244 386 214 568 214C746 214 848 246 994 318" stroke="#7BD7FF" stroke-opacity="0.22" stroke-width="16" stroke-linecap="round"/>
+  <path d="M168 360C318 288 418 258 586 258C748 258 844 288 984 360" stroke="#8E74FF" stroke-opacity="0.2" stroke-width="10" stroke-linecap="round"/>
+  <path d="M782 132L870 84L962 132L944 230H800L782 132Z" fill="rgba(123,215,255,0.14)" stroke="url(#prismStroke)" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M870 84V230" stroke="rgba(255,255,255,0.38)" stroke-width="4"/>
+  <path d="M782 132L870 170L962 132" stroke="rgba(255,255,255,0.34)" stroke-width="4" stroke-linejoin="round"/>
+  <circle cx="870" cy="84" r="10" fill="#E8FAFF"/>
+  <circle cx="782" cy="132" r="8" fill="#7BD7FF"/>
+  <circle cx="962" cy="132" r="8" fill="#8E74FF"/>
+  <circle cx="870" cy="170" r="9" fill="rgba(255,255,255,0.22)" stroke="#7BD7FF" stroke-width="4"/>
+</svg>

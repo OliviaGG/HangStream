@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Synapse — Bridge the Meaning Gap | Word Tycoon</title>
+<meta name="description" content="Synapse — the semantic constellation game. Connect two distant words by building a bridge of meaning. Every word you add lights up links to the words it resembles. Daily puzzle + endless practice.">
+<link rel="canonical" href="https://wordtycoon.live/synapse">
+<meta property="og:title" content="Synapse — Bridge the Meaning Gap">
+<meta property="og:description" content="Connect two distant words through a constellation of meaning. A new pair every day.">
+<style>
+/* ════════════════════════ RESET / BASE ════════════════════════ */
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; overflow:hidden; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background:#05060f;
+  color:#eaf0ff;
+  -webkit-user-select:none; user-select:none;
+  position:relative;
+}
+button { font-family:inherit; cursor:pointer; }
+input { font-family:inherit; }
+
+/* ════════════════════════ NEBULA BACKDROP ════════════════════════ */
+.bg { position:fixed; inset:0; z-index:0; overflow:hidden;
+  background: radial-gradient(120% 90% at 50% 110%, #0d1030 0%, #070a1e 45%, #05060f 100%); }
+.nebula { position:absolute; border-radius:50%; filter:blur(110px); will-change:transform; }
+.nebula.n1 { width:52vmax; height:40vmax; left:-14vmax; top:-12vmax; opacity:.34;
+  background:radial-gradient(circle,#5b21b6,transparent 70%); animation:neb1 44s ease-in-out infinite alternate; }
+.nebula.n2 { width:44vmax; height:36vmax; right:-12vmax; top:26vmax; opacity:.26;
+  background:radial-gradient(circle,#0e7490,transparent 70%); animation:neb2 52s ease-in-out infinite alternate; }
+.nebula.n3 { width:36vmax; height:30vmax; left:30vmax; bottom:-18vmax; opacity:.2;
+  background:radial-gradient(circle,#9d174d,transparent 70%); animation:neb3 38s ease-in-out infinite alternate; }
+@keyframes neb1 { to { transform:translate(7vmax,6vmax) scale(1.12); } }
+@keyframes neb2 { to { transform:translate(-6vmax,-7vmax) scale(1.18); } }
+@keyframes neb3 { to { transform:translate(5vmax,-6vmax) scale(1.08); } }
+#stars { position:fixed; inset:0; z-index:1; pointer-events:none; }
+#graph { position:fixed; inset:0; z-index:2; touch-action:none; }
+
+/* ════════════════════════ GLASS CHROME ════════════════════════ */
+.glass {
+  background:rgba(13,17,38,.62);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(139,155,255,.16);
+  box-shadow:0 8px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+/* ── top bar ── */
+#topbar { position:fixed; top:0; left:0; right:0; z-index:20;
+  display:flex; align-items:center; gap:10px;
+  padding:calc(10px + env(safe-area-inset-top)) 14px 10px; pointer-events:none; }
+#topbar > * { pointer-events:auto; }
+#logo { display:flex; align-items:baseline; gap:8px; text-decoration:none; }
+#logo .name {
+  font-size:clamp(20px,4.6vw,27px); font-weight:800; letter-spacing:.14em;
+  background:linear-gradient(92deg,#c4b5fd 0%, #67e8f9 45%, #fde68a 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 0 14px rgba(139,92,246,.55));
+}
+#modePill { font-size:11px; font-weight:700; letter-spacing:.09em; color:#a5b4fc;
+  padding:4px 10px; border-radius:999px; border:1px solid rgba(165,180,252,.3);
+  background:rgba(99,102,241,.12); white-space:nowrap; }
+#topspacer { flex:1; }
+#streakChip { display:none; align-items:center; gap:5px; font-size:12px; font-weight:800;
+  color:#fbbf24; padding:5px 10px; border-radius:999px;
+  background:rgba(251,191,36,.1); border:1px solid rgba(251,191,36,.3); }
+.iconbtn { display:flex; align-items:center; gap:6px; border-radius:999px;
+  padding:7px 12px; font-size:12px; font-weight:700; letter-spacing:.05em;
+  color:#dbe3ff; border:1px solid rgba(139,155,255,.22); background:rgba(13,17,38,.62);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+.iconbtn:active { transform:scale(.96); }
+#authBtn img { width:20px; height:20px; border-radius:50%; }
+
+/* ── bottom dock ── */
+#dock { position:fixed; left:50%; transform:translateX(-50%); z-index:20;
+  bottom:calc(12px + env(safe-area-inset-bottom));
+  width:min(560px, calc(100vw - 20px));
+  border-radius:20px; padding:12px 14px; }
+#gapRow { display:flex; align-items:center; gap:10px; margin-bottom:10px; min-height:22px; }
+#gapLabel { font-size:11px; letter-spacing:.06em; color:#93a3c8; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; flex:1; }
+#gapLabel b { color:#e2e8ff; font-weight:700; }
+#gapPct { font-size:13px; font-weight:800; color:#67e8f9; white-space:nowrap; }
+#gapTrack { position:relative; height:6px; border-radius:3px; overflow:hidden;
+  background:rgba(148,163,216,.14); margin-bottom:10px; }
+#gapFill { position:absolute; inset:0 auto 0 0; width:0%; border-radius:3px;
+  background:linear-gradient(90deg,#8b5cf6,#22d3ee,#fbbf24);
+  box-shadow:0 0 12px rgba(103,232,249,.6); transition:width .6s cubic-bezier(.2,.9,.3,1.2); }
+#gapGoal { position:absolute; top:-2px; bottom:-2px; width:2px; background:rgba(253,230,138,.85);
+  box-shadow:0 0 8px rgba(253,230,138,.8); }
+#inputRow { display:flex; gap:8px; }
+#wordInput {
+  flex:1; min-width:0; padding:13px 16px; font-size:16px; font-weight:600; letter-spacing:.03em;
+  color:#f2f6ff; background:rgba(8,11,26,.8); border:1px solid rgba(139,155,255,.25);
+  border-radius:14px; outline:none; transition:border-color .2s, box-shadow .2s;
+}
+#wordInput:focus { border-color:rgba(103,232,249,.65); box-shadow:0 0 0 3px rgba(34,211,238,.14), 0 0 18px rgba(34,211,238,.18); }
+#wordInput::placeholder { color:#5d6a92; font-weight:500; }
+#addBtn {
+  padding:0 22px; border:none; border-radius:14px; font-size:14px; font-weight:800; letter-spacing:.1em;
+  color:#0b1020; background:linear-gradient(135deg,#a78bfa,#22d3ee);
+  box-shadow:0 4px 20px rgba(103,232,249,.35);
+  transition:transform .12s, filter .2s;
+}
+#addBtn:active { transform:scale(.95); }
+#addBtn:disabled { filter:grayscale(.7) brightness(.6); cursor:default; }
+#dockMeta { display:flex; justify-content:space-between; align-items:center; margin-top:9px; }
+#wordCount { font-size:11px; letter-spacing:.08em; color:#93a3c8; font-weight:600; }
+#wordCount b { color:#e2e8ff; }
+#linksBtn { border:none; background:none; color:#a5b4fc; font-size:11px; font-weight:700;
+  letter-spacing:.08em; display:flex; align-items:center; gap:5px; padding:4px 2px; }
+
+/* ── links drawer ── */
+#drawer { position:fixed; z-index:25; right:12px; border-radius:18px; padding:14px;
+  width:min(320px, calc(100vw - 24px));
+  bottom:calc(12px + env(safe-area-inset-bottom));
+  max-height:min(52vh, 460px); display:none; flex-direction:column; }
+#drawer.open { display:flex; }
+#drawer h3 { font-size:12px; letter-spacing:.14em; color:#a5b4fc; margin-bottom:10px;
+  display:flex; justify-content:space-between; align-items:center; }
+#drawer h3 button { border:none; background:none; color:#93a3c8; font-size:16px; padding:2px 6px; }
+#linkList { overflow-y:auto; display:flex; flex-direction:column; gap:7px; }
+.linkrow { display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:600; }
+.linkrow .pair { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#dbe3ff; }
+.linkrow .pair .sep { color:#5d6a92; margin:0 4px; }
+.linkrow .bar { width:64px; height:5px; border-radius:3px; background:rgba(148,163,216,.14); overflow:hidden; flex-shrink:0; }
+.linkrow .bar i { display:block; height:100%; border-radius:3px; }
+.linkrow .pct { width:44px; text-align:right; font-size:11.5px; font-weight:800; flex-shrink:0; }
+.linkrow.onpath .pair { color:#fde68a; }
+#linkEmpty { font-size:12px; color:#5d6a92; text-align:center; padding:14px 0; }
+
+/* ── recenter ── */
+#recenterBtn { position:fixed; right:14px; z-index:22; display:none; align-items:center; gap:6px;
+  bottom:calc(200px + env(safe-area-inset-bottom));
+  padding:9px 14px; border-radius:999px; border:1px solid rgba(139,155,255,.25);
+  font-size:11.5px; font-weight:800; letter-spacing:.1em; color:#a5b4fc; cursor:pointer; }
+#recenterBtn:active { transform:scale(.95); }
+@media (min-width:768px) { #recenterBtn { bottom:auto; top:calc(64px + env(safe-area-inset-top)); } }
+
+/* ── toast ── */
+#toast { position:fixed; left:50%; transform:translateX(-50%) translateY(8px); z-index:40;
+  bottom:calc(118px + env(safe-area-inset-bottom));
+  padding:10px 18px; border-radius:12px; font-size:13.5px; font-weight:600; color:#ffd9d9;
+  background:rgba(40,12,24,.85); border:1px solid rgba(248,113,113,.35);
+  backdrop-filter:blur(10px); opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;
+  max-width:calc(100vw - 40px); text-align:center; }
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+#toast.good { color:#d6ffe9; background:rgba(8,36,24,.85); border-color:rgba(52,211,153,.4); }
+
+/* ════════════════════════ MODALS ════════════════════════ */
+.overlay { position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center;
+  background:rgba(3,4,12,.7); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  padding:18px; }
+.overlay.open { display:flex; }
+.modal { width:min(430px, 100%); max-height:calc(100dvh - 60px); overflow-y:auto;
+  border-radius:22px; padding:24px 22px; position:relative;
+  animation:pop .35s cubic-bezier(.2,1.2,.3,1); }
+@keyframes pop { from { transform:scale(.86); opacity:0; } }
+.modal .x { position:absolute; top:12px; right:14px; border:none; background:none;
+  color:#93a3c8; font-size:22px; line-height:1; padding:4px 8px; }
+.modal h2 { font-size:21px; font-weight:800; letter-spacing:.1em; margin-bottom:14px;
+  background:linear-gradient(92deg,#c4b5fd,#67e8f9,#fde68a);
+  -webkit-background-clip:text; background-clip:text; color:transparent; }
+.modal p { font-size:13.5px; line-height:1.55; color:#b9c4e4; margin-bottom:10px; }
+.modal p b { color:#eef2ff; }
+.howstep { display:flex; gap:12px; align-items:flex-start; margin:14px 0; }
+.hownum { width:26px; height:26px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:800; color:#0b1020; background:linear-gradient(135deg,#a78bfa,#22d3ee); }
+.howstep p { margin:0; }
+.btnrow { display:flex; gap:10px; margin-top:18px; }
+.btn-main { flex:1; padding:13px 16px; border:none; border-radius:14px; font-size:14px; font-weight:800;
+  letter-spacing:.08em; color:#0b1020; background:linear-gradient(135deg,#a78bfa,#22d3ee);
+  box-shadow:0 4px 22px rgba(103,232,249,.3); }
+.btn-ghost { flex:1; padding:13px 16px; border-radius:14px; font-size:13px; font-weight:700; letter-spacing:.05em;
+  color:#dbe3ff; background:rgba(99,102,241,.12); border:1px solid rgba(165,180,252,.28); }
+.btn-main:active, .btn-ghost:active { transform:scale(.97); }
+
+/* win modal */
+#winTitle { font-size:26px; text-align:center; margin-bottom:4px; }
+#winSub { text-align:center; font-size:12.5px; color:#93a3c8; letter-spacing:.08em; margin-bottom:16px; }
+#chainViz { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:4px; margin:14px 0 18px; }
+.chainword { font-size:13.5px; font-weight:800; letter-spacing:.05em; padding:6px 11px; border-radius:999px;
+  background:rgba(139,92,246,.16); border:1px solid rgba(196,181,253,.35); color:#e6dcff; }
+.chainword.corner { background:rgba(251,191,36,.14); border-color:rgba(253,230,138,.45); color:#fde68a; }
+.chainlink { font-size:10.5px; font-weight:800; color:#67e8f9; padding:0 2px; }
+#statGrid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:6px; }
+.stat { text-align:center; padding:10px 4px; border-radius:14px; background:rgba(8,11,26,.6);
+  border:1px solid rgba(139,155,255,.14); }
+.stat .v { font-size:19px; font-weight:800; color:#eef2ff; }
+.stat .k { font-size:9.5px; letter-spacing:.1em; color:#7d8cb8; margin-top:3px; }
+#xpLine { text-align:center; font-size:13px; font-weight:800; color:#fbbf24; margin:10px 0 0; min-height:18px; }
+
+/* leaderboard */
+#lbList { display:flex; flex-direction:column; gap:6px; margin-top:6px; }
+.lbrow { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:12px;
+  background:rgba(8,11,26,.55); border:1px solid rgba(139,155,255,.1); font-size:13px; }
+.lbrow.me { border-color:rgba(253,230,138,.5); background:rgba(251,191,36,.08); }
+.lbrow .rk { width:22px; font-weight:800; color:#7d8cb8; font-size:12px; }
+.lbrow img { width:22px; height:22px; border-radius:50%; }
+.lbrow .nm { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; }
+.lbrow .sc { font-weight:800; color:#67e8f9; }
+.lbrow .avg { font-size:11px; color:#7d8cb8; width:48px; text-align:right; }
+#lbEmpty { text-align:center; color:#5d6a92; font-size:13px; padding:18px 0; }
+
+/* fail modal reuse of modal styles */
+@media (min-width:768px) {
+  #drawer { bottom:auto; top:calc(64px + env(safe-area-inset-top)); }
+}
+</style>
+</head>
+<body>
+
+<div class="bg">
+  <div class="nebula n1"></div><div class="nebula n2"></div><div class="nebula n3"></div>
+</div>
+<canvas id="stars"></canvas>
+<canvas id="graph"></canvas>
+
+<div id="topbar">
+  <a id="logo" href="/portal"><span class="name">SYNAPSE</span></a>
+  <span id="modePill">DAILY</span>
+  <span id="topspacer"></span>
+  <span id="streakChip">🔥 <span id="streakN">0</span></span>
+  <a class="iconbtn" id="mpBtn" href="/synapse/mp" title="Multiplayer arena" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center">VS</a>
+  <button class="iconbtn" id="helpBtn" title="How to play">?</button>
+  <button class="iconbtn" id="authBtn"><span>SIGN IN</span></button>
+</div>
+
+<div id="dock" class="glass">
+  <div id="gapRow">
+    <span id="gapLabel">Connecting the constellation…</span>
+    <span id="gapPct"></span>
+  </div>
+  <div id="gapTrack"><div id="gapFill"></div><div id="gapGoal"></div></div>
+  <div id="inputRow">
+    <input id="wordInput" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"
+      placeholder="Add words — space-separated to batch…" maxlength="1600" enterkeyhint="go">
+    <button id="addBtn">LINK</button>
+  </div>
+  <div id="dockMeta">
+    <span id="wordCount"><b>0</b> / 200 words</span>
+    <button id="linksBtn">⛓ LINKS <span id="linkCount">(0)</span></button>
+  </div>
+</div>
+
+<div id="drawer" class="glass">
+  <h3>LINKS FORMED <button id="drawerX">✕</button></h3>
+  <div id="linkList"></div>
+  <div id="linkEmpty">No links yet — add words similar to your corner stars.</div>
+</div>
+
+<button id="recenterBtn" class="glass" title="Recenter the constellation">⌖ RECENTER</button>
+
+<div id="toast"></div>
+
+<!-- ── how to play ── -->
+<div class="overlay" id="helpModal">
+  <div class="modal glass">
+    <button class="x" data-close="helpModal">✕</button>
+    <h2>SYNAPSE</h2>
+    <p>Two distant stars. One gap in meaning. <b>Build the bridge.</b></p>
+    <div class="howstep"><div class="hownum">1</div><p>Each day you get <b>two unrelated words</b> anchored at opposite ends of the sky.</p></div>
+    <div class="howstep"><div class="hownum">2</div><p>Add words one at a time. A <b>link ignites</b> between two words when their meanings are close enough (<b id="thrPct">38%</b>+ similarity). Chains beat hubs — a word only keeps its strongest few links.</p></div>
+    <div class="howstep"><div class="hownum">3</div><p>Connect the corners through an unbroken chain to win. <b>Fewer words = better score.</b> You have 200 words before the sky fills up.</p></div>
+    <p style="font-size:12px;color:#7d8cb8">Similarity is judged by word-embedding models — the same brains behind Searchle.</p>
+    <div class="btnrow"><button class="btn-main" data-close="helpModal">PLAY</button></div>
+  </div>
+</div>
+
+<!-- ── win ── -->
+<div class="overlay" id="winModal">
+  <div class="modal glass">
+    <button class="x" data-close="winModal">✕</button>
+    <h2 id="winTitle">BRIDGED!</h2>
+    <div id="winSub">SYNAPSE #1</div>
+    <div id="chainViz"></div>
+    <div id="statGrid">
+      <div class="stat"><div class="v" id="stWords">0</div><div class="k">WORDS</div></div>
+      <div class="stat"><div class="v" id="stAvg">0%</div><div class="k">AVG LINK</div></div>
+      <div class="stat"><div class="v" id="stBottle">0%</div><div class="k">WEAKEST</div></div>
+      <div class="stat"><div class="v" id="stStreak">–</div><div class="k">STREAK</div></div>
+    </div>
+    <div id="xpLine"></div>
+    <div class="btnrow">
+      <button class="btn-main" id="shareBtn">SHARE</button>
+      <button class="btn-ghost" id="winLbBtn">RANKS</button>
+      <button class="btn-ghost" id="winPracticeBtn">PRACTICE</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── board full ── -->
+<div class="overlay" id="failModal">
+  <div class="modal glass">
+    <h2>SKY FULL</h2>
+    <p>200 words and the corners never touched. The gap wins this one.</p>
+    <div class="btnrow">
+      <button class="btn-main" id="failPracticeBtn">PRACTICE A NEW PAIR</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── leaderboard ── -->
+<div class="overlay" id="lbModal">
+  <div class="modal glass">
+    <button class="x" data-close="lbModal">✕</button>
+    <h2>TODAY'S BRIDGES</h2>
+    <div id="lbList"></div>
+    <div id="lbEmpty" style="display:none">No bridges completed yet — be the first.</div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ════════════════════════════════════════════════════════════════
+   SYNAPSE — semantic constellation game
+   Server APIs in src/synapse.js. buildLinks() below MUST match the
+   server copy exactly (threshold + mutual top-K), or the client will
+   render links the server won't honor at /complete time.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── config (overwritten by server /daily response) ── */
+let CFG = { threshold: 0.38, maxLinks: 5, cap: 200 };
+
+/* ── game state ── */
+const state = {
+  mode: 'daily',          // 'daily' | 'practice'
+  day: null, gameNo: null, seed: null,
+  corners: [],            // [wordA, wordB]
+  words: [],              // added words, in order
+  sims: new Map(),        // 'a|b' (sorted) -> score
+  edges: [],              // surviving links {a,b,score}
+  bridge: null,           // {bottleneck, path, avgLink} once connected
+  over: false,            // win or board-full
+  submitting: false,
+};
+const auth = { user: null };
+
+const $ = (id) => document.getElementById(id);
+
+/* ════════════════ shared graph rules (mirror of src/synapse.js) ════════════════ */
+function simKey(a, b) { return a < b ? a + '|' + b : b + '|' + a; }
+function simFor(a, b) { const v = state.sims.get(simKey(a, b)); return typeof v === 'number' ? v : null; }
+
+function buildLinks(words) {
+  const candidates = [];
+  for (let i = 0; i < words.length; i++) {
+    for (let j = i + 1; j < words.length; j++) {
+      const s = simFor(words[i], words[j]);
+      if (typeof s === 'number' && s >= CFG.threshold) candidates.push({ a: words[i], b: words[j], score: s });
+    }
+  }
+  const perNode = new Map();
+  for (const e of candidates) {
+    if (!perNode.has(e.a)) perNode.set(e.a, []);
+    if (!perNode.has(e.b)) perNode.set(e.b, []);
+    perNode.get(e.a).push(e); perNode.get(e.b).push(e);
+  }
+  const keep = new Set();
+  for (const [node, list] of perNode) {
+    list.sort((x, y) => y.score - x.score);
+    for (let i = 0; i < Math.min(list.length, CFG.maxLinks); i++) {
+      keep.add(node + '>' + simKey(list[i].a, list[i].b));
+    }
+  }
+  return candidates.filter((e) => {
+    const k = simKey(e.a, e.b);
+    return keep.has(e.a + '>' + k) && keep.has(e.b + '>' + k);
+  });
+}
+
+/* maximin bottleneck path across an arbitrary edge list */
+function bestBridge(cornerA, cornerB, edges) {
+  const sorted = [...edges].sort((x, y) => y.score - x.score);
+  const parent = new Map();
+  const find = (x) => { while (parent.get(x) !== x) { parent.set(x, parent.get(parent.get(x))); x = parent.get(x); } return x; };
+  const ensure = (x) => { if (!parent.has(x)) parent.set(x, x); };
+  ensure(cornerA); ensure(cornerB);
+  let bottleneck = null;
+  for (const e of sorted) {
+    ensure(e.a); ensure(e.b);
+    parent.set(find(e.a), find(e.b));
+    if (find(cornerA) === find(cornerB)) { bottleneck = e.score; break; }
+  }
+  if (bottleneck === null) return null;
+  const adj = new Map();
+  for (const e of edges) {
+    if (e.score < bottleneck) continue;
+    if (!adj.has(e.a)) adj.set(e.a, []);
+    if (!adj.has(e.b)) adj.set(e.b, []);
+    adj.get(e.a).push(e.b); adj.get(e.b).push(e.a);
+  }
+  const prev = new Map([[cornerA, null]]);
+  const q = [cornerA];
+  while (q.length) {
+    const cur = q.shift();
+    if (cur === cornerB) break;
+    for (const n of adj.get(cur) || []) if (!prev.has(n)) { prev.set(n, cur); q.push(n); }
+  }
+  if (!prev.has(cornerB)) return null;
+  const path = [];
+  for (let cur = cornerB; cur !== null; cur = prev.get(cur)) path.unshift(cur);
+  let sum = 0;
+  for (let i = 0; i < path.length - 1; i++) sum += simFor(path[i], path[i + 1]) || 0;
+  return { bottleneck, path, avgLink: path.length > 1 ? sum / (path.length - 1) : 0 };
+}
+
+/* "smallest gap" display — maximin over ALL similarities (even sub-threshold),
+   so the meter always shows the weakest stretch of the best potential chain */
+function frontierGap() {
+  const all = [];
+  const board = [state.corners[0], state.corners[1], ...state.words];
+  for (let i = 0; i < board.length; i++) {
+    for (let j = i + 1; j < board.length; j++) {
+      const s = simFor(board[i], board[j]);
+      if (typeof s === 'number') all.push({ a: board[i], b: board[j], score: s });
+    }
+  }
+  return bestBridge(state.corners[0], state.corners[1], all);
+}
+
+/* ════════════════════════ COLOR / FX HELPERS ════════════════════════ */
+const RAMP = [
+  { t: 0.42, c: [147, 112, 240] },   // violet
+  { t: 0.55, c: [62, 198, 255] },    // cyan
+  { t: 0.70, c: [125, 255, 212] },   // mint
+  { t: 0.85, c: [255, 233, 163] },   // gold
+];
+function rampColor(s) {
+  if (s <= RAMP[0].t) return RAMP[0].c;
+  for (let i = 0; i < RAMP.length - 1; i++) {
+    const a = RAMP[i], b = RAMP[i + 1];
+    if (s <= b.t) {
+      const f = (s - a.t) / (b.t - a.t);
+      return [0, 1, 2].map((k) => Math.round(a.c[k] + (b.c[k] - a.c[k]) * f));
+    }
+  }
+  return RAMP[RAMP.length - 1].c;
+}
+function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
+function pct(s) { return (s * 100).toFixed(1) + '%'; }
+
+/* ── seeded RNG (planet sprites are seeded by their word) ── */
+function hashString(s) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* ════════════════════════ CAMERA ════════════════════════ */
+/* The constellation lives in WORLD coordinates. The camera pans/zooms the
+   view; auto mode keeps the whole graph framed until the player takes over
+   (drag/wheel/pinch), then the ⌖ recenter button hands control back. */
+const cam = { x: 0, y: 0, scale: 0.7, auto: true };
+function screenToWorld(sx, sy) {
+  return { x: cam.x + (sx - vw() / 2) / cam.scale, y: cam.y + (sy - vh() / 2) / cam.scale };
+}
+function manualCam() {
+  if (cam.auto) { cam.auto = false; $('recenterBtn').style.display = 'flex'; }
+}
+function zoomAround(sx, sy, f) {
+  const before = screenToWorld(sx, sy);
+  cam.scale = Math.max(0.12, Math.min(3.5, cam.scale * f));
+  const after = screenToWorld(sx, sy);
+  cam.x += before.x - after.x;
+  cam.y += before.y - after.y;
+}
+function fitTarget() {
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const [, n] of nodes) {
+    // expand bounds by each node's VISUAL radius so the 4x suns are framed
+    // with margin instead of clipped (their center alone under-counts badly)
+    const r = n.corner !== undefined ? SUN_R * SUN_VIEW * 1.5 : PLANET_R * 2.4;
+    minX = Math.min(minX, n.x - r); maxX = Math.max(maxX, n.x + r);
+    minY = Math.min(minY, n.y - r); maxY = Math.max(maxY, n.y + r);
+  }
+  if (minX > maxX) return null;
+  const pad = 40;
+  minX -= pad; maxX += pad; minY -= pad; maxY += pad + 20; // node radii already included above
+  const topH = 62;
+  const dockEl = $('dock');
+  const dockH = (dockEl ? dockEl.getBoundingClientRect().height : 150) + 26;
+  const availW = Math.max(120, vw() - 44);
+  const availH = Math.max(120, vh() - topH - dockH - 18);
+  const scale = Math.max(0.12, Math.min(1.15, Math.min(availW / (maxX - minX), availH / (maxY - minY))));
+  const usableCy = topH + availH / 2 + 10;
+  return {
+    scale,
+    x: (minX + maxX) / 2,
+    y: (minY + maxY) / 2 + (vh() / 2 - usableCy) / scale,
+  };
+}
+function autoFitTick() {
+  if (!cam.auto) return;
+  const t = fitTarget();
+  if (!t) return;
+  cam.scale += (t.scale - cam.scale) * 0.07;
+  cam.x += (t.x - cam.x) * 0.07;
+  cam.y += (t.y - cam.y) * 0.07;
+}
+function snapFit() {
+  const t = fitTarget();
+  if (t) { cam.scale = t.scale; cam.x = t.x; cam.y = t.y; }
+}
+/* label sizes stay readable at any zoom: target a screen px size, clamp,
+   convert back to world units for drawing under the camera transform */
+function worldFont(px, weight) {
+  const s = Math.max(13, Math.min(52, px * cam.scale));
+  return weight + ' ' + (s / cam.scale) + 'px system-ui';
+}
+
+/* ════════════════════════ STARFIELD (screen space + parallax) ════════════════════════ */
+const starsCv = $('stars'), starsCtx = starsCv.getContext('2d');
+let starList = [];
+function buildStars() {
+  const n = Math.round((innerWidth * innerHeight) / 4200);
+  starList = [];
+  for (let i = 0; i < n; i++) {
+    starList.push({
+      x: Math.random() * innerWidth, y: Math.random() * innerHeight,
+      r: Math.random() * 1.3 + 0.3, tw: Math.random() * Math.PI * 2,
+      sp: 0.4 + Math.random() * 1.4, layer: Math.random() < 0.3 ? 2 : 1,
+    });
+  }
+}
+function drawStars(t) {
+  starsCtx.clearRect(0, 0, starsCv.width, starsCv.height);
+  const dpr = window.devicePixelRatio || 1;
+  starsCtx.save(); starsCtx.scale(dpr, dpr);
+  const w = vw(), h = vh();
+  for (const s of starList) {
+    // gentle parallax: deeper layer drifts more with the camera
+    const px = ((s.x - cam.x * 0.045 * s.layer) % w + w) % w;
+    const py = ((s.y - cam.y * 0.045 * s.layer) % h + h) % h;
+    const a = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(t * 0.0011 * s.sp + s.tw));
+    starsCtx.globalAlpha = s.layer === 2 ? a : a * 0.6;
+    starsCtx.fillStyle = '#cfe3ff';
+    starsCtx.beginPath();
+    starsCtx.arc(px, py, s.r * s.layer, 0, 7);
+    starsCtx.fill();
+  }
+  starsCtx.restore();
+}
+
+/* ════════════════════════ PROCEDURAL PLANET SPRITES ════════════════════════ */
+/* Each word gets a planet rendered ONCE into an offscreen canvas, seeded by
+   the word itself — every player sees the same planet for "castle". Types:
+   banded gas giant / cratered rocky world / marbled ice world, with sphere
+   shading, atmosphere rim, specular highlight, and a 15% chance of rings. */
+const PLANET_R = 24;        // world-unit radius of word planets
+const SUN_R = 40;           // world-unit radius of corner suns
+const SUN_VIEW = 4;         // corner suns drawn 4x (sprite stays SUN_R-sized to spare canvas memory)
+const SPR = 6;              // sprite px per world unit (crisp up to ~3.5x zoom)
+const spriteCache = new Map();
+
+function planetSprite(word) {
+  if (spriteCache.has(word)) return spriteCache.get(word);
+  const rng = mulberry32(hashString('planet:' + word));
+  const R = PLANET_R * SPR;
+  const M = Math.ceil(R * 2.1);           // margin for atmosphere + rings
+  const c = document.createElement('canvas');
+  c.width = c.height = M * 2;
+  const g = c.getContext('2d');
+  const cx = M, cy = M;
+  const HUES = [262, 262, 248, 215, 215, 198, 288, 330, 158];
+  const hue = HUES[Math.floor(rng() * HUES.length)];
+  const sat = 55 + rng() * 25;
+  const roll = rng();
+  const type = roll < 0.45 ? 'gas' : (roll < 0.8 ? 'rock' : 'ice');
+  const hasRing = rng() < 0.15;
+  const ringTilt = -0.3 - rng() * 0.55;
+  const col = (l, a = 1) => 'hsla(' + hue + ',' + sat + '%,' + l + '%,' + a + ')';
+  const lx = cx - R * 0.38, ly = cy - R * 0.42;   // light from upper-left
+
+  const ring = (front) => {
+    if (!hasRing) return;
+    g.save();
+    g.translate(cx, cy); g.rotate(ringTilt);
+    g.strokeStyle = col(70, 0.5);
+    g.lineWidth = R * 0.16;
+    g.beginPath();
+    g.ellipse(0, 0, R * 1.62, R * 0.5, 0, front ? 0 : Math.PI, front ? Math.PI : Math.PI * 2);
+    g.stroke();
+    g.strokeStyle = col(85, 0.25);
+    g.lineWidth = R * 0.34;
+    g.beginPath();
+    g.ellipse(0, 0, R * 1.62, R * 0.5, 0, front ? 0 : Math.PI, front ? Math.PI : Math.PI * 2);
+    g.stroke();
+    g.restore();
+  };
+
+  ring(false); // back half behind the body
+
+  // sphere base
+  const base = g.createRadialGradient(lx, ly, R * 0.1, cx, cy, R * 1.25);
+  base.addColorStop(0, col(74));
+  base.addColorStop(0.45, col(48));
+  base.addColorStop(0.8, col(26));
+  base.addColorStop(1, col(14));
+  g.save();
+  g.beginPath(); g.arc(cx, cy, R, 0, 7); g.clip();
+  g.fillStyle = base;
+  g.fillRect(0, 0, M * 2, M * 2);
+
+  // surface texture
+  if (type === 'gas') {
+    g.save();
+    g.translate(cx, cy); g.rotate((rng() - 0.5) * 0.5);
+    const bands = 6 + Math.floor(rng() * 5);
+    for (let i = 0; i < bands; i++) {
+      const y = -R + (i + 0.5) * (2 * R / bands) + (rng() - 0.5) * R * 0.08;
+      const hgt = (2 * R / bands) * (0.55 + rng() * 0.5);
+      g.fillStyle = col(rng() < 0.5 ? 30 + rng() * 14 : 62 + rng() * 16, 0.16 + rng() * 0.16);
+      g.beginPath();
+      g.ellipse(0, y, R * 1.05, hgt / 2, 0, 0, 7);
+      g.fill();
+    }
+    // one storm spot
+    if (rng() < 0.6) {
+      g.fillStyle = col(78, 0.5);
+      g.beginPath();
+      g.ellipse((rng() - 0.5) * R, (rng() - 0.5) * R * 0.9, R * 0.16, R * 0.09, 0.3, 0, 7);
+      g.fill();
+    }
+    g.restore();
+  } else if (type === 'rock') {
+    const craters = 9 + Math.floor(rng() * 7);
+    for (let i = 0; i < craters; i++) {
+      const a = rng() * Math.PI * 2, d = rng() * R * 0.82;
+      const px = cx + Math.cos(a) * d, py = cy + Math.sin(a) * d;
+      const cr = R * (0.05 + rng() * 0.1);
+      g.fillStyle = 'rgba(4,6,16,' + (0.18 + rng() * 0.2) + ')';
+      g.beginPath(); g.arc(px, py, cr, 0, 7); g.fill();
+      g.strokeStyle = col(80, 0.35);
+      g.lineWidth = cr * 0.28;
+      g.beginPath(); g.arc(px, py, cr, Math.PI * 0.85, Math.PI * 1.55); g.stroke();
+    }
+    // mottling
+    for (let i = 0; i < 5; i++) {
+      const a = rng() * Math.PI * 2, d = rng() * R * 0.7;
+      g.fillStyle = col(rng() < 0.5 ? 30 : 60, 0.1);
+      g.beginPath(); g.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, R * (0.2 + rng() * 0.3), 0, 7); g.fill();
+    }
+  } else { // ice — marbled swirls
+    for (let i = 0; i < 8; i++) {
+      const a = rng() * Math.PI * 2, d = rng() * R * 0.85;
+      const px = cx + Math.cos(a) * d, py = cy + Math.sin(a) * d;
+      const br = R * (0.18 + rng() * 0.4);
+      const blob = g.createRadialGradient(px, py, 0, px, py, br);
+      blob.addColorStop(0, 'hsla(' + (hue + 10) + ',40%,' + (82 + rng() * 12) + '%,' + (0.14 + rng() * 0.12) + ')');
+      blob.addColorStop(1, 'hsla(' + hue + ',40%,90%,0)');
+      g.fillStyle = blob;
+      g.beginPath(); g.arc(px, py, br, 0, 7); g.fill();
+    }
+  }
+
+  // terminator (night side away from the light)
+  const term = g.createRadialGradient(lx, ly, R * 0.55, lx, ly, R * 2.35);
+  term.addColorStop(0, 'rgba(3,5,16,0)');
+  term.addColorStop(0.55, 'rgba(3,5,16,0)');
+  term.addColorStop(1, 'rgba(3,5,16,0.88)');
+  g.fillStyle = term;
+  g.fillRect(0, 0, M * 2, M * 2);
+
+  // specular kiss
+  const spec = g.createRadialGradient(lx, ly, 0, lx, ly, R * 0.55);
+  spec.addColorStop(0, 'rgba(255,255,255,0.4)');
+  spec.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = spec;
+  g.fillRect(0, 0, M * 2, M * 2);
+  g.restore(); // unclip
+
+  // atmosphere rim
+  const atmo = g.createRadialGradient(cx, cy, R * 0.9, cx, cy, R * 1.22);
+  atmo.addColorStop(0, col(70, 0));
+  atmo.addColorStop(0.42, col(72, 0.4));
+  atmo.addColorStop(0.62, col(75, 0.16));
+  atmo.addColorStop(1, col(78, 0));
+  g.fillStyle = atmo;
+  g.beginPath(); g.arc(cx, cy, R * 1.22, 0, 7); g.fill();
+
+  ring(true); // front half over the body
+
+  const sprite = { canvas: c, worldSize: (M * 2) / SPR };
+  spriteCache.set(word, sprite);
+  return sprite;
+}
+
+/* corner suns: cached body sprite + live-drawn corona in draw() */
+function sunSprite(idx) {
+  const key = ' sun' + idx;
+  if (spriteCache.has(key)) return spriteCache.get(key);
+  const R = SUN_R * SPR;
+  const M = Math.ceil(R * 2.6);
+  const c = document.createElement('canvas');
+  c.width = c.height = M * 2;
+  const g = c.getContext('2d');
+  const warm = idx === 0;
+  const core = warm
+    ? ['#fffdf4', '#ffedb0', '#ffc85e', '#f59e0b']
+    : ['#f5fdff', '#c5f1ff', '#67d8f9', '#0ea5e9'];
+  // big soft glow
+  const halo = g.createRadialGradient(M, M, 0, M, M, M);
+  halo.addColorStop(0, warm ? 'rgba(255,214,120,0.55)' : 'rgba(125,222,250,0.55)');
+  halo.addColorStop(0.45, warm ? 'rgba(255,190,80,0.16)' : 'rgba(90,200,245,0.16)');
+  halo.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = halo;
+  g.fillRect(0, 0, M * 2, M * 2);
+  // body with granulation
+  const body = g.createRadialGradient(M - R * 0.2, M - R * 0.25, 0, M, M, R);
+  body.addColorStop(0, core[0]);
+  body.addColorStop(0.4, core[1]);
+  body.addColorStop(0.78, core[2]);
+  body.addColorStop(1, core[3]);
+  g.fillStyle = body;
+  g.beginPath(); g.arc(M, M, R, 0, 7); g.fill();
+  const rng = mulberry32(hashString(key));
+  g.save();
+  g.beginPath(); g.arc(M, M, R, 0, 7); g.clip();
+  for (let i = 0; i < 26; i++) {
+    const a = rng() * Math.PI * 2, d = rng() * R * 0.9;
+    g.fillStyle = 'rgba(255,255,255,' + (0.04 + rng() * 0.08) + ')';
+    g.beginPath(); g.arc(M + Math.cos(a) * d, M + Math.sin(a) * d, R * (0.06 + rng() * 0.14), 0, 7); g.fill();
+  }
+  g.restore();
+  // rim flare
+  const rim = g.createRadialGradient(M, M, R * 0.86, M, M, R * 1.25);
+  rim.addColorStop(0, 'rgba(255,255,255,0)');
+  rim.addColorStop(0.4, warm ? 'rgba(255,232,160,0.5)' : 'rgba(190,240,255,0.5)');
+  rim.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = rim;
+  g.beginPath(); g.arc(M, M, R * 1.25, 0, 7); g.fill();
+  const sprite = { canvas: c, worldSize: (M * 2) / SPR };
+  spriteCache.set(key, sprite);
+  return sprite;
+}
+
+/* ════════════════════════ GRAPH RENDER + PHYSICS ════════════════════════ */
+const cv = $('graph'), ctx = cv.getContext('2d');
+const nodes = new Map(); // word -> {x,y,vx,vy,pinned,born,corner}
+let ghosts = [];         // near-miss dashed lines {a,b,score,until}
+let sparks = [];         // particles {x,y,vx,vy,life,c}
+let pulses = [];         // traveling lights on path edges {a,b,f,speed}
+let winFlash = 0;        // 0..1 white radial burst on win
+let shake = 0;
+
+function vw() { return innerWidth; }
+function vh() { return innerHeight; }
+function portrait() { return innerHeight > innerWidth; }
+
+const CORNER_GAP = 2400; // world distance between the two suns (wide — the 4x suns are framed fully by fitTarget)
+
+function cornerPos(i) {
+  // world-space anchors; portrait stacks them vertically
+  if (portrait()) return { x: 0, y: i === 0 ? -CORNER_GAP / 2 : CORNER_GAP / 2 };
+  return { x: i === 0 ? -CORNER_GAP / 2 : CORNER_GAP / 2, y: 0 };
+}
+
+function addNode(word, corner) {
+  if (nodes.has(word)) return;
+  let x, y;
+  if (corner !== undefined) {
+    const p = cornerPos(corner); x = p.x; y = p.y;
+  } else {
+    x = (Math.random() - 0.5) * 520;
+    y = (Math.random() - 0.5) * 360;
+  }
+  nodes.set(word, { x, y, vx: 0, vy: 0, pinned: corner !== undefined, corner, born: performance.now() });
+  if (corner === undefined) planetSprite(word); // pre-render off the hot path
+  const c = corner !== undefined ? [253, 230, 138] : [167, 139, 250];
+  for (let i = 0; i < 14; i++) {
+    const a = Math.random() * Math.PI * 2, v = 0.9 + Math.random() * 3;
+    sparks.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, c });
+  }
+}
+
+function physicsTick() {
+  const arr = [...nodes.entries()];
+  // repulsion (world units)
+  for (let i = 0; i < arr.length; i++) {
+    for (let j = i + 1; j < arr.length; j++) {
+      const A = arr[i][1], B = arr[j][1];
+      let dx = B.x - A.x, dy = B.y - A.y;
+      let d2 = dx * dx + dy * dy;
+      if (d2 < 1) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d2 = 1; }
+      const d = Math.sqrt(d2);
+      const f = Math.min(16000 / d2, 5);
+      const fx = (dx / d) * f, fy = (dy / d) * f;
+      if (!A.pinned) { A.vx -= fx; A.vy -= fy; }
+      if (!B.pinned) { B.vx += fx; B.vy += fy; }
+    }
+  }
+  // springs along surviving links — stronger similarity pulls tighter
+  for (const e of state.edges) {
+    const A = nodes.get(e.a), B = nodes.get(e.b);
+    if (!A || !B) continue;
+    const f01 = Math.min(1, (e.score - CFG.threshold) / (1 - CFG.threshold));
+    const cornerEdge = (A.corner !== undefined) || (B.corner !== undefined);
+    const rest = cornerEdge ? (620 - 140 * f01) : (270 - 130 * f01); // planets settle clear of the 4x suns
+    const dx = B.x - A.x, dy = B.y - A.y;
+    const d = Math.sqrt(dx * dx + dy * dy) || 1;
+    const f = (d - rest) * 0.012;
+    if (!A.pinned) { A.vx += (dx / d) * f; A.vy += (dy / d) * f; }
+    if (!B.pinned) { B.vx -= (dx / d) * f; B.vy -= (dy / d) * f; }
+  }
+  // clear-zone: the 4x suns' point-repulsion is too weak, so explicitly push
+  // every planet out of a generous radius around each corner (keeps planets
+  // off the big suns; the radius scales with the drawn sun size).
+  const CLEAR_R = SUN_R * SUN_VIEW * 5; // ~800 world — hold planets clear of the sun's glow
+  for (const cw of state.corners) {
+    const cn = cw && nodes.get(cw);
+    if (!cn) continue;
+    for (const [, n] of arr) {
+      if (n.pinned) continue;
+      const cdx = n.x - cn.x, cdy = n.y - cn.y;
+      const cd = Math.hypot(cdx, cdy) || 1;
+      if (cd < CLEAR_R) { const push = (CLEAR_R - cd) * 0.05; n.vx += (cdx / cd) * push; n.vy += (cdy / cd) * push; }
+    }
+  }
+  // gentle pull toward the space between the suns + integrate; the pull is
+  // stronger across the corner axis so the constellation stays ribbon-shaped
+  const flat = portrait() ? 'x' : 'y';
+  for (const [, n] of arr) {
+    if (n.pinned) continue;
+    n.vx += -n.x * (flat === 'x' ? 0.0034 : 0.0008);
+    n.vy += -n.y * (flat === 'y' ? 0.0034 : 0.0008);
+    n.vx *= 0.88; n.vy *= 0.88;
+    const sp = Math.sqrt(n.vx * n.vx + n.vy * n.vy);
+    if (sp > 10) { n.vx = (n.vx / sp) * 10; n.vy = (n.vy / sp) * 10; }
+    n.x += n.vx; n.y += n.vy;
+  }
+  // re-pin corners (also covers portrait/landscape flips)
+  state.corners.forEach((w, i) => {
+    const n = nodes.get(w);
+    if (n) { const p = cornerPos(i); n.x = p.x; n.y = p.y; }
+  });
+}
+
+function pathEdgeSet() {
+  const s = new Set();
+  if (state.bridge) {
+    const p = state.bridge.path;
+    for (let i = 0; i < p.length - 1; i++) s.add(simKey(p[i], p[i + 1]));
+  }
+  return s;
+}
+
+function draw(t) {
+  const dpr = window.devicePixelRatio || 1;
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.save(); ctx.scale(dpr, dpr);
+  if (shake > 0.2) { ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake); shake *= 0.86; }
+
+  /* camera transform — everything below draws in WORLD coordinates */
+  ctx.translate(vw() / 2, vh() / 2);
+  ctx.scale(cam.scale, cam.scale);
+  ctx.translate(-cam.x, -cam.y);
+
+  const onPath = pathEdgeSet();
+
+  /* ghosts — near-miss dashed lines */
+  ghosts = ghosts.filter((g) => g.until > t);
+  for (const g of ghosts) {
+    const A = nodes.get(g.a), B = nodes.get(g.b);
+    if (!A || !B) continue;
+    const fade = Math.min(1, (g.until - t) / 900);
+    ctx.setLineDash([5, 7]);
+    ctx.strokeStyle = 'rgba(248,113,113,' + 0.45 * fade + ')';
+    ctx.lineWidth = 1.4 / cam.scale;
+    ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
+    ctx.setLineDash([]);
+    const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
+    ctx.font = worldFont(11.5, '700');
+    ctx.fillStyle = 'rgba(252,165,165,' + 0.9 * fade + ')';
+    ctx.textAlign = 'center';
+    ctx.fillText(pct(g.score), mx, my - 8);
+  }
+
+  /* edges */
+  for (const e of state.edges) {
+    const A = nodes.get(e.a), B = nodes.get(e.b);
+    if (!A || !B) continue;
+    const c = rampColor(e.score);
+    const f01 = Math.min(1, (e.score - CFG.threshold) / (1 - CFG.threshold));
+    const isPath = onPath.has(simKey(e.a, e.b));
+    const w = 3 + f01 * 4.5;
+    // outer glow
+    ctx.strokeStyle = rgba(c, isPath ? 0.34 : 0.16);
+    ctx.lineWidth = w + (isPath ? 7 : 4);
+    ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
+    // core
+    const grad = ctx.createLinearGradient(A.x, A.y, B.x, B.y);
+    grad.addColorStop(0, rgba(c, isPath ? 1 : 0.75));
+    grad.addColorStop(0.5, rgba([255, 255, 255], isPath ? 0.9 : 0.35 + f01 * 0.3));
+    grad.addColorStop(1, rgba(c, isPath ? 1 : 0.75));
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = isPath ? w + 0.8 : w;
+    ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
+    if (isPath) {
+      // golden pulse overlay
+      const g = 0.5 + 0.5 * Math.sin(t * 0.005 + e.score * 20);
+      ctx.strokeStyle = 'rgba(253,230,138,' + (0.25 + 0.3 * g) + ')';
+      ctx.lineWidth = w + 3 + 2 * g;
+      ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
+    }
+  }
+
+  /* traveling pulses along the winning path */
+  pulses = pulses.filter((p) => p.f <= 1);
+  for (const p of pulses) {
+    const A = nodes.get(p.a), B = nodes.get(p.b);
+    if (!A || !B) { p.f = 2; continue; }
+    p.f += p.speed;
+    const x = A.x + (B.x - A.x) * p.f, y = A.y + (B.y - A.y) * p.f;
+    const r = ctx.createRadialGradient(x, y, 0, x, y, 9);
+    r.addColorStop(0, 'rgba(255,255,255,.95)'); r.addColorStop(0.4, 'rgba(253,230,138,.7)'); r.addColorStop(1, 'rgba(253,230,138,0)');
+    ctx.fillStyle = r;
+    ctx.beginPath(); ctx.arc(x, y, 9, 0, 7); ctx.fill();
+  }
+  if (state.bridge && Math.random() < 0.06) {
+    const p = state.bridge.path;
+    const i = Math.floor(Math.random() * (p.length - 1));
+    pulses.push({ a: p[i], b: p[i + 1], f: 0, speed: 0.016 + Math.random() * 0.014 });
+  }
+
+  /* nodes — procedural planets + animated corner suns */
+  for (const [word, n] of nodes) {
+    const isCorner = n.corner !== undefined;
+    const age = Math.min(1, (t - n.born) / 500);
+    const grow = 0.4 + 0.6 * (1 - Math.pow(1 - age, 3));
+    const R = (isCorner ? SUN_R * SUN_VIEW : PLANET_R) * grow;
+    const breathe = 1 + 0.05 * Math.sin(t * 0.0016 + n.x);
+    const cc = isCorner
+      ? (n.corner === 0 ? [253, 230, 138] : [103, 232, 249])
+      : [196, 181, 253];
+
+    if (isCorner) {
+      // corona: two counter-rotating ray layers behind the body
+      ctx.save();
+      ctx.translate(n.x, n.y);
+      for (const layer of [{ n: 7, sp: 0.00016, len: 2.5, a: 0.3 }, { n: 11, sp: -0.00011, len: 1.9, a: 0.2 }]) {
+        ctx.save();
+        ctx.rotate(t * layer.sp);
+        ctx.strokeStyle = rgba(cc, layer.a * (0.7 + 0.3 * Math.sin(t * 0.002)));
+        ctx.lineWidth = 2.2;
+        for (let k = 0; k < layer.n; k++) {
+          ctx.rotate((Math.PI * 2) / layer.n);
+          ctx.beginPath();
+          ctx.moveTo(R * 1.15, 0);
+          ctx.lineTo(R * layer.len * breathe, 0);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+      ctx.restore();
+      const spr = sunSprite(n.corner);
+      const s = spr.worldSize * grow * breathe * SUN_VIEW;
+      ctx.drawImage(spr.canvas, n.x - s / 2, n.y - s / 2, s, s);
+      // occasional flare sparks
+      if (Math.random() < 0.02) {
+        const a = Math.random() * Math.PI * 2;
+        sparks.push({ x: n.x + Math.cos(a) * R, y: n.y + Math.sin(a) * R, vx: Math.cos(a) * 1.6, vy: Math.sin(a) * 1.6, life: 0.9, c: cc });
+      }
+    } else {
+      // soft halo so unlinked planets still read against the void
+      const halo = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, R * 2.4 * breathe);
+      halo.addColorStop(0, rgba(cc, 0.2));
+      halo.addColorStop(1, rgba(cc, 0));
+      ctx.fillStyle = halo;
+      ctx.beginPath(); ctx.arc(n.x, n.y, R * 2.4 * breathe, 0, 7); ctx.fill();
+      const spr = planetSprite(word);
+      const s = spr.worldSize * grow;
+      ctx.drawImage(spr.canvas, n.x - s / 2, n.y - s / 2, s, s);
+    }
+
+    // label
+    ctx.textAlign = 'center';
+    if (isCorner) {
+      // starting words: black, centered directly ON the sun
+      ctx.font = worldFont(26, '800'); ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(255,255,255,0.55)'; ctx.shadowBlur = 6; ctx.fillStyle = '#000';
+      ctx.fillText(word.toUpperCase(), n.x, n.y);
+      ctx.shadowBlur = 0; ctx.textBaseline = 'alphabetic';
+    } else {
+      ctx.font = worldFont(26, '700');
+      ctx.shadowColor = rgba(cc, 0.9); ctx.shadowBlur = 10;
+      ctx.fillStyle = '#e9e4ff';
+      ctx.fillText(word.toUpperCase(), n.x, n.y + R + 12 + 14 / cam.scale);
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  /* spark particles */
+  sparks = sparks.filter((s) => s.life > 0);
+  for (const s of sparks) {
+    s.x += s.vx; s.y += s.vy; s.vx *= 0.97; s.vy *= 0.97; s.life -= 0.02;
+    ctx.globalAlpha = Math.max(0, s.life);
+    ctx.fillStyle = rgba(s.c, 1);
+    ctx.beginPath(); ctx.arc(s.x, s.y, 2.2, 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  /* win flash — screen space, over everything */
+  if (winFlash > 0.01) {
+    ctx.save(); ctx.scale(dpr, dpr);
+    const g = ctx.createRadialGradient(vw() / 2, vh() / 2, 0, vw() / 2, vh() / 2, Math.max(vw(), vh()) * 0.75);
+    g.addColorStop(0, 'rgba(255,250,230,' + winFlash * 0.55 + ')');
+    g.addColorStop(1, 'rgba(255,250,230,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, vw(), vh());
+    winFlash *= 0.94;
+    ctx.restore();
+  }
+}
+
+function resize() {
+  // Math.round MUST match the guard in frame(): assigning a fractional
+  // canvas width truncates, so an unrounded value here makes the guard
+  // fail every frame → resize/buildStars loop → stars visibly thrash.
+  const dpr = window.devicePixelRatio || 1;
+  for (const c of [cv, starsCv]) {
+    c.width = Math.round(innerWidth * dpr); c.height = Math.round(innerHeight * dpr);
+    c.style.width = innerWidth + 'px'; c.style.height = innerHeight + 'px';
+  }
+  buildStars();
+}
+addEventListener('resize', resize);
+resize();
+
+function frame(t) {
+  // dpr can change without a resize event (browser zoom, monitor swap) —
+  // re-fit the canvas buffers whenever it drifts or draw() crops/blurs.
+  const dpr = window.devicePixelRatio || 1;
+  if (cv.width !== Math.round(innerWidth * dpr) || cv.height !== Math.round(innerHeight * dpr)) resize();
+  physicsTick();
+  autoFitTick();
+  drawStars(t);
+  draw(t);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ════════════════════════ CAMERA INPUT (drag / wheel / pinch) ════════════════════════ */
+const pointers = new Map();
+cv.addEventListener('pointerdown', (e) => {
+  try { cv.setPointerCapture(e.pointerId); } catch (err) { /* capture is best-effort */ }
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+});
+cv.addEventListener('pointermove', (e) => {
+  if (!pointers.has(e.pointerId)) return;
+  const prev = pointers.get(e.pointerId);
+  if (pointers.size === 1) {
+    const dx = e.clientX - prev.x, dy = e.clientY - prev.y;
+    if (dx || dy) {
+      manualCam();
+      cam.x -= dx / cam.scale;
+      cam.y -= dy / cam.scale;
+    }
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  } else if (pointers.size === 2) {
+    const otherEntry = [...pointers.entries()].find(([id]) => id !== e.pointerId);
+    if (!otherEntry) return;
+    const other = otherEntry[1];
+    const oldDist = Math.hypot(prev.x - other.x, prev.y - other.y);
+    const oldMid = { x: (prev.x + other.x) / 2, y: (prev.y + other.y) / 2 };
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const newDist = Math.hypot(e.clientX - other.x, e.clientY - other.y);
+    const newMid = { x: (e.clientX + other.x) / 2, y: (e.clientY + other.y) / 2 };
+    if (oldDist > 8) {
+      manualCam();
+      zoomAround(oldMid.x, oldMid.y, newDist / oldDist);
+      cam.x -= (newMid.x - oldMid.x) / cam.scale;
+      cam.y -= (newMid.y - oldMid.y) / cam.scale;
+    }
+  }
+});
+const releasePointer = (e) => pointers.delete(e.pointerId);
+cv.addEventListener('pointerup', releasePointer);
+cv.addEventListener('pointercancel', releasePointer);
+cv.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  manualCam();
+  zoomAround(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0013));
+}, { passive: false });
+$('recenterBtn').addEventListener('click', () => {
+  cam.auto = true;
+  $('recenterBtn').style.display = 'none';
+});
+
+/* ════════════════════════ UI HELPERS ════════════════════════ */
+let toastTimer = null;
+function toast(msg, good) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.toggle('good', !!good);
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+document.querySelectorAll('[data-close]').forEach((b) =>
+  b.addEventListener('click', () => $(b.dataset.close).classList.remove('open')));
+function openModal(id) { $(id).classList.add('open'); }
+
+$('helpBtn').addEventListener('click', () => openModal('helpModal'));
+$('linksBtn').addEventListener('click', () => $('drawer').classList.toggle('open'));
+$('drawerX').addEventListener('click', () => $('drawer').classList.remove('open'));
+
+function renderDock() {
+  $('wordCount').innerHTML = '<b>' + state.words.length + '</b> / ' + CFG.cap + ' words';
+  $('linkCount').textContent = '(' + state.edges.length + ')';
+  $('thrPct').textContent = Math.round(CFG.threshold * 100) + '%';
+  const f = frontierGap();
+  const goalPct = CFG.threshold * 100;
+  $('gapGoal').style.left = 'calc(' + Math.min(99, goalPct) + '% )';
+  if (state.bridge) {
+    $('gapLabel').innerHTML = '⚡ <b>' + state.corners[0].toUpperCase() + '</b> ↔ <b>' + state.corners[1].toUpperCase() + '</b> CONNECTED';
+    $('gapPct').textContent = pct(state.bridge.bottleneck);
+    $('gapFill').style.width = '100%';
+  } else if (f) {
+    $('gapLabel').innerHTML = 'weakest stretch: <b>' + f.path[0] + '</b>…<b>' + f.path[f.path.length - 1] + '</b> — bridge it past ' + Math.round(goalPct) + '%';
+    // find the actual weakest edge pair for display
+    let weak = null;
+    for (let i = 0; i < f.path.length - 1; i++) {
+      const s = simFor(f.path[i], f.path[i + 1]);
+      if (weak === null || s < weak.s) weak = { a: f.path[i], b: f.path[i + 1], s };
+    }
+    if (weak) $('gapLabel').innerHTML = 'weakest stretch: <b>' + weak.a.toUpperCase() + '</b> ↔ <b>' + weak.b.toUpperCase() + '</b>';
+    $('gapPct').textContent = pct(f.bottleneck);
+    $('gapFill').style.width = Math.min(100, (f.bottleneck / CFG.threshold) * goalPct) + '%';
+  } else {
+    $('gapLabel').textContent = 'Add a word to light the first link…';
+    $('gapPct').textContent = '';
+    $('gapFill').style.width = '0%';
+  }
+}
+
+function renderDrawer() {
+  const list = $('linkList');
+  list.innerHTML = '';
+  const onPath = pathEdgeSet();
+  const sorted = [...state.edges].sort((a, b) => b.score - a.score);
+  $('linkEmpty').style.display = sorted.length ? 'none' : 'block';
+  for (const e of sorted) {
+    const row = document.createElement('div');
+    row.className = 'linkrow' + (onPath.has(simKey(e.a, e.b)) ? ' onpath' : '');
+    const c = rampColor(e.score);
+    const f01 = Math.min(1, (e.score - CFG.threshold) / (1 - CFG.threshold));
+    row.innerHTML = '<span class="pair"></span>' +
+      '<span class="bar"><i style="width:' + Math.round(20 + f01 * 80) + '%;background:' + rgba(c, 1) + ';box-shadow:0 0 6px ' + rgba(c, .8) + '"></i></span>' +
+      '<span class="pct" style="color:' + rgba(c, 1) + '">' + pct(e.score) + '</span>';
+    const pair = row.querySelector('.pair');
+    pair.append(e.a); const sep = document.createElement('span'); sep.className = 'sep'; sep.textContent = '↔'; pair.append(sep); pair.append(e.b);
+    list.appendChild(row);
+  }
+}
+
+/* ════════════════════════ PERSISTENCE (daily runs survive reload) ════════════════════════ */
+function saveRun() {
+  if (state.mode !== 'daily' || !state.day) return;
+  try {
+    localStorage.setItem('synapse_run_v1', JSON.stringify({
+      day: state.day, words: state.words, sims: [...state.sims], over: state.over,
+    }));
+  } catch (e) {}
+}
+function loadRun() {
+  try {
+    const raw = localStorage.getItem('synapse_run_v1');
+    if (!raw) return null;
+    const j = JSON.parse(raw);
+    if (j.day !== state.day) return null;
+    return j;
+  } catch (e) { return null; }
+}
+
+/* ════════════════════════ GAME FLOW ════════════════════════ */
+function recompute() {
+  const board = [state.corners[0], state.corners[1], ...state.words];
+  state.edges = buildLinks(board);
+  state.bridge = bestBridge(state.corners[0], state.corners[1], state.edges);
+  renderDock();
+  renderDrawer();
+}
+
+function setupBoard(pair) {
+  nodes.clear(); ghosts = []; sparks = []; pulses = [];
+  state.corners = pair; state.words = []; state.sims = new Map();
+  state.edges = []; state.bridge = null; state.over = false;
+  addNode(pair[0], 0); addNode(pair[1], 1);
+  cam.auto = true;
+  $('recenterBtn').style.display = 'none';
+  snapFit();
+  recompute();
+}
+
+async function initDaily() {
+  const r = await fetch('/api/synapse/daily');
+  const j = await r.json();
+  if (!j.ok) { toast('The constellation is offline — try again shortly.'); return; }
+  CFG = j.config;
+  state.mode = 'daily'; state.day = j.day; state.gameNo = j.gameNo; state.seed = null;
+  $('modePill').textContent = 'DAILY #' + j.gameNo;
+  setupBoard(j.pair);
+  // restore an in-progress run from earlier today
+  const saved = loadRun();
+  if (saved && Array.isArray(saved.words) && saved.words.length) {
+    state.sims = new Map(saved.sims);
+    for (const w of saved.words) { state.words.push(w); addNode(w); }
+    state.over = !!saved.over;
+    recompute();
+    if (state.bridge && !state.over) { state.over = true; }
+  }
+}
+
+async function initPractice(seed) {
+  const r = await fetch('/api/synapse/practice' + (seed ? '?seed=' + seed : ''));
+  const j = await r.json();
+  if (!j.ok) { toast('Practice pairs unavailable right now.'); return; }
+  CFG = j.config;
+  state.mode = 'practice'; state.seed = j.seed; state.day = null;
+  $('modePill').textContent = 'PRACTICE';
+  setupBoard(j.pair);
+}
+
+async function addWord() {
+  if (state.over || state.submitting) return;
+  const input = $('wordInput');
+  const raw = input.value.trim().toLowerCase();
+  if (!raw) return;
+  const batch = raw.split(/[\s,]+/).filter(Boolean); // space/comma separated (Searchle-style)
+  if (batch.length > 1) return addWords(batch);
+  const word = batch[0];
+  if (!/^[a-z]{3,15}$/.test(word)) { toast('Letters only, 3–15 long.'); return; }
+  const board = [state.corners[0], state.corners[1], ...state.words];
+  if (board.includes(word)) { toast('“' + word + '” is already in the sky.'); return; }
+  if (state.words.length >= CFG.cap) return;
+
+  $('addBtn').disabled = true;
+  try {
+    const r = await fetch('/api/synapse/guess', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ word, board }),
+    });
+    const j = await r.json();
+    if (!j.ok) {
+      const msgs = {
+        'not-a-word': '“' + word + '” isn’t in the dictionary.',
+        'unknown-word': 'The models don’t know “' + word + '” — try another.',
+        'duplicate': 'Already up there.',
+        'rate-limited': 'Whoa — slow down a beat.',
+        'similarity-unavailable': 'The synapse network blinked. Try again.',
+      };
+      toast(msgs[j.error] || 'That word didn’t take.');
+      return;
+    }
+    input.value = '';
+    // record sims + add to board
+    let bestLink = null;
+    for (const s of j.sims) {
+      state.sims.set(simKey(word, s.word), s.score);
+      if (!bestLink || s.score > bestLink.score) bestLink = s;
+    }
+    state.words.push(word);
+    addNode(word);
+    const before = state.bridge;
+    recompute();
+    saveRun();
+
+    if (bestLink && bestLink.score < CFG.threshold) {
+      // near-miss ghost to the closest word
+      ghosts.push({ a: word, b: bestLink.word, score: bestLink.score, until: performance.now() + 2600 });
+      toast('No link — closest was ' + bestLink.word.toUpperCase() + ' at ' + pct(bestLink.score), false);
+    }
+
+    if (!before && state.bridge) {
+      onWin();
+    } else if (state.words.length >= CFG.cap && !state.bridge) {
+      state.over = true; saveRun();
+      openModal('failModal');
+    }
+  } catch (e) {
+    toast('Connection hiccup — try again.');
+  } finally {
+    $('addBtn').disabled = false;
+    input.focus();
+  }
+}
+
+/* batch: one server round-trip scores every word (in order) against the
+   board-so-far; each accepted word's sims include earlier batch words */
+async function addWords(words) {
+  const input = $('wordInput');
+  const board = [state.corners[0], state.corners[1], ...state.words];
+  $('addBtn').disabled = true;
+  try {
+    const r = await fetch('/api/synapse/guess-batch', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ words: words.slice(0, 200), board }),
+    });
+    const j = await r.json();
+    if (!j.ok) {
+      const msgs = {
+        'rate-limited': 'Whoa — slow down a beat.',
+        'similarity-unavailable': 'The synapse network blinked. Try again.',
+      };
+      toast(msgs[j.error] || 'That batch didn’t take.');
+      return;
+    }
+    input.value = '';
+    const before = state.bridge;
+    for (const a of j.accepted) {
+      for (const s of a.sims) state.sims.set(simKey(a.word, s.word), s.score);
+      state.words.push(a.word);
+      addNode(a.word);
+    }
+    recompute();
+    saveRun();
+    const n = j.accepted.length, sk = (j.rejected || []).length;
+    toast(n + (n === 1 ? ' word added' : ' words added') + (sk ? ' · ' + sk + ' skipped' : ''), n > 0);
+    if (!before && state.bridge) {
+      onWin();
+    } else if (state.words.length >= CFG.cap && !state.bridge) {
+      state.over = true; saveRun();
+      openModal('failModal');
+    }
+  } catch (e) {
+    toast('Connection hiccup — try again.');
+  } finally {
+    $('addBtn').disabled = false;
+    input.focus();
+  }
+}
+$('addBtn').addEventListener('click', addWord);
+$('wordInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') addWord(); });
+
+/* ════════════════════════ WIN ════════════════════════ */
+let lastWin = null;
+async function onWin() {
+  state.over = true;
+  saveRun();
+  winFlash = 1; shake = 9;
+  // ignite the chain: pulses sweep A→B repeatedly
+  const p = state.bridge.path;
+  for (let k = 0; k < 3; k++) {
+    for (let i = 0; i < p.length - 1; i++) {
+      setTimeout(() => pulses.push({ a: p[i], b: p[i + 1], f: 0, speed: 0.03 }), (i + k * p.length) * 120);
+    }
+  }
+  // starburst at every path node
+  p.forEach((w, i) => setTimeout(() => {
+    const n = nodes.get(w);
+    if (!n) return;
+    for (let s = 0; s < 22; s++) {
+      const a = Math.random() * Math.PI * 2, v = 1 + Math.random() * 3;
+      sparks.push({ x: n.x, y: n.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1.2, c: [253, 230, 138] });
+    }
+  }, i * 120));
+
+  // server verification + score submit
+  lastWin = { wordsUsed: state.words.length, avgLink: state.bridge.avgLink, bottleneck: state.bridge.bottleneck, path: p, xpAwarded: 0, streak: null, rank: null };
+  if (auth.user) {
+    state.submitting = true;
+    try {
+      const r = await fetch('/api/synapse/complete', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: state.mode, day: state.day, seed: state.seed, words: state.words,
+        }),
+      });
+      const j = await r.json();
+      if (j.ok) {
+        lastWin = j;
+        if (j.streak) { $('streakChip').style.display = 'flex'; $('streakN').textContent = j.streak; }
+      }
+    } catch (e) { /* offline — local stats still shown */ }
+    state.submitting = false;
+  }
+  setTimeout(() => showWinModal(), 1700);
+}
+
+function showWinModal() {
+  const w = lastWin || {};
+  $('winSub').textContent = state.mode === 'daily' ? 'SYNAPSE #' + state.gameNo + ' — ' + state.day : 'PRACTICE PAIR';
+  const viz = $('chainViz');
+  viz.innerHTML = '';
+  const p = w.path || state.bridge.path;
+  p.forEach((word, i) => {
+    const el = document.createElement('span');
+    el.className = 'chainword' + (i === 0 || i === p.length - 1 ? ' corner' : '');
+    el.textContent = word.toUpperCase();
+    viz.appendChild(el);
+    if (i < p.length - 1) {
+      const lk = document.createElement('span');
+      lk.className = 'chainlink';
+      const s = simFor(p[i], p[i + 1]);
+      lk.textContent = '—' + (s ? Math.round(s * 100) + '%' : '') + '→';
+      viz.appendChild(lk);
+    }
+  });
+  $('stWords').textContent = w.wordsUsed ?? state.words.length;
+  $('stAvg').textContent = Math.round((w.avgLink ?? 0) * 100) + '%';
+  $('stBottle').textContent = Math.round((w.bottleneck ?? 0) * 100) + '%';
+  $('stStreak').textContent = w.streak ? '🔥' + w.streak : '–';
+  const xl = $('xpLine');
+  if (w.xpAwarded) xl.textContent = '+' + w.xpAwarded + ' XP earned';
+  else if (!auth.user) xl.textContent = '';
+  else xl.textContent = '';
+  if (!auth.user) {
+    xl.innerHTML = '<button class="btn-ghost" style="font-size:11px;padding:8px 14px" onclick="login()">Sign in to save your bridge + earn XP</button>';
+  }
+  openModal('winModal');
+}
+
+$('shareBtn').addEventListener('click', async () => {
+  const w = lastWin || {};
+  const n = w.wordsUsed ?? state.words.length;
+  const chain = '🌟' + '🔗'.repeat(Math.max(1, (w.path || []).length - 1)) + '🌟';
+  const txt = 'Synapse #' + (state.gameNo || '?') + ' — bridged ' +
+    state.corners[0].toUpperCase() + ' → ' + state.corners[1].toUpperCase() +
+    ' in ' + n + ' word' + (n === 1 ? '' : 's') + '\n' + chain +
+    ' avg link ' + Math.round((w.avgLink ?? 0) * 100) + '%\nhttps://wordtycoon.live/synapse';
+  try {
+    if (navigator.share) await navigator.share({ text: txt });
+    else { await navigator.clipboard.writeText(txt); toast('Copied to clipboard!', true); }
+  } catch (e) {}
+});
+$('winLbBtn').addEventListener('click', () => { $('winModal').classList.remove('open'); openLb(); });
+$('winPracticeBtn').addEventListener('click', () => { $('winModal').classList.remove('open'); initPractice(); });
+$('failPracticeBtn').addEventListener('click', () => { $('failModal').classList.remove('open'); initPractice(); });
+
+/* ════════════════════════ LEADERBOARD ════════════════════════ */
+async function openLb() {
+  openModal('lbModal');
+  const list = $('lbList');
+  list.innerHTML = '<div id="lbEmpty">Loading…</div>';
+  try {
+    const r = await fetch('/api/synapse/leaderboard', { credentials: 'include' });
+    const j = await r.json();
+    list.innerHTML = '';
+    if (!j.ok || !j.top.length) { $('lbEmpty').style.display = 'block'; return; }
+    $('lbEmpty').style.display = 'none';
+    const myRank = j.me ? j.me.rank : null;
+    j.top.forEach((row) => {
+      const el = document.createElement('div');
+      el.className = 'lbrow' + (myRank === row.rank && auth.user && (auth.user.displayName || auth.user.username) === row.name ? ' me' : '');
+      const img = row.avatar ? '<img src="' + row.avatar.replace(/"/g, '') + '" onerror="this.remove()">' : '';
+      el.innerHTML = '<span class="rk">' + row.rank + '</span>' + img +
+        '<span class="nm"></span><span class="sc">' + row.wordsUsed + 'w</span>' +
+        '<span class="avg">' + Math.round((row.avgLink || 0) * 100) + '%</span>';
+      el.querySelector('.nm').textContent = row.name;
+      list.appendChild(el);
+    });
+  } catch (e) {
+    list.innerHTML = ''; $('lbEmpty').style.display = 'block';
+  }
+}
+
+/* ════════════════════════ AUTH (Chat Relay session + SSO bridge) ════════════════════════ */
+function login() {
+  location.href = '/auth/discord?returnTo=' + encodeURIComponent(location.origin + location.pathname);
+}
+async function initAuth() {
+  try {
+    const params = new URLSearchParams(location.search);
+    const tok = params.get('auth_token');
+    if (tok) {
+      await fetch('/api/auth/exchange?token=' + encodeURIComponent(tok), { credentials: 'include' });
+      params.delete('auth_token');
+      history.replaceState({}, '', location.pathname + (params.toString() ? '?' + params.toString() : ''));
+    }
+    const r = await fetch('/api/me/session', { credentials: 'include' });
+    const j = await r.json();
+    if (j && j.ok) auth.user = j.user;
+  } catch (e) { /* signed-out is fine — game stays playable */ }
+  renderAuthBtn();
+  if (auth.user) {
+    try {
+      const r = await fetch('/api/synapse/me', { credentials: 'include' });
+      const j = await r.json();
+      if (j.ok && j.profile && j.profile.streak > 0) {
+        $('streakChip').style.display = 'flex';
+        $('streakN').textContent = j.profile.streak;
+      }
+    } catch (e) {}
+  }
+}
+function renderAuthBtn() {
+  const btn = $('authBtn');
+  btn.innerHTML = '';
+  if (auth.user) {
+    if (auth.user.avatar) {
+      const img = document.createElement('img');
+      img.src = auth.user.avatar; img.alt = '';
+      img.onerror = function () { this.remove(); };
+      btn.appendChild(img);
+    }
+    const s = document.createElement('span');
+    s.textContent = String(auth.user.displayName || auth.user.username || 'PLAYER').slice(0, 14).toUpperCase();
+    btn.appendChild(s);
+  } else {
+    const s = document.createElement('span'); s.textContent = 'SIGN IN';
+    btn.appendChild(s);
+  }
+}
+$('authBtn').addEventListener('click', () => { if (auth.user) openLb(); else login(); });
+
+/* ════════════════════════ BOOT ════════════════════════ */
+(async function boot() {
+  await initAuth();
+  await initDaily();
+  if (!localStorage.getItem('synapse_seen_help')) {
+    localStorage.setItem('synapse_seen_help', '1');
+    openModal('helpModal');
+  }
+})();
+</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

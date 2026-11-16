@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Cloud Quarry — A Cozy 2D Destruction Game</title>
+<meta name="description" content="Break a floating quarry, collect skyglass shards, recycle them into upgrades, and race the daily Cloud Quarry.">
+<link rel="canonical" href="https://wordtycoon.live/cloudquarry">
+<meta name="theme-color" content="#55c9f5">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Cloud Quarry — A Cozy 2D Destruction Game">
+<meta property="og:description" content="Aim, ricochet, recycle, upgrade. Clear today's floating quarry and climb the leaderboard.">
+<meta property="og:url" content="https://wordtycoon.live/cloudquarry">
+<meta property="og:image" content="https://wordtycoon.live/portal/img/game-cloudquarry.svg">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"Cloud Quarry","url":"https://wordtycoon.live/cloudquarry","description":"A cozy 2D destruction and incremental game about clearing a floating quarry and recycling skyglass shards.","genre":["Casual","Incremental","Arcade"],"gamePlatform":["Web browser"],"applicationCategory":"Game","operatingSystem":"Any","publisher":{"@type":"Organization","name":"Word Tycoon","url":"https://wordtycoon.live/"},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<style>
+  :root {
+    --ink:#123c55; --deep:#092d47; --sky:#61d5fa; --blue:#1597d3;
+    --green:#70d96c; --lime:#c7ed75; --sun:#ffe06b; --glass:rgba(255,255,255,.72);
+    --panel:rgba(245,253,255,.86); --line:rgba(18,60,85,.18); --shadow:rgba(6,55,84,.22);
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html { min-height:100%; background:#75d9f6; }
+  body {
+    margin:0; min-height:100%; color:var(--ink); font-family:Inter,ui-rounded,"Segoe UI",system-ui,sans-serif;
+    background:
+      radial-gradient(circle at 83% 8%, rgba(255,255,255,.95) 0 5%, transparent 13%),
+      linear-gradient(180deg,#56cafa 0%,#a5eaf8 54%,#eafbd6 100%);
+    overflow-x:hidden;
+  }
+  body::before, body::after {
+    content:""; position:fixed; z-index:-1; border-radius:50%; filter:blur(2px); opacity:.6;
+    background:rgba(255,255,255,.64); box-shadow:90px 12px 0 24px rgba(255,255,255,.55),180px -4px 0 8px rgba(255,255,255,.48);
+    animation:cloudDrift 38s linear infinite;
+  }
+  body::before { width:140px; height:44px; left:-260px; top:15vh; }
+  body::after { width:110px; height:35px; left:-180px; top:66vh; animation-duration:52s; animation-delay:-17s; }
+  @keyframes cloudDrift { to { transform:translateX(calc(100vw + 520px)); } }
+  button, a { font:inherit; }
+  button { color:inherit; }
+  .topbar {
+    width:min(1180px,calc(100% - 24px)); margin:12px auto 0; min-height:54px; padding:8px 10px;
+    display:flex; align-items:center; gap:8px; border:1px solid rgba(255,255,255,.7); border-radius:20px;
+    background:rgba(255,255,255,.58); box-shadow:0 10px 28px var(--shadow),inset 0 1px 0 #fff;
+    backdrop-filter:blur(16px); position:relative; z-index:20;
+  }
+  .home-link { display:flex; align-items:center; gap:8px; color:var(--deep); text-decoration:none; font-weight:950; letter-spacing:-.02em; }
+  .home-mark { width:34px; height:34px; display:grid; place-items:center; border-radius:12px; color:#fff; background:linear-gradient(145deg,#1597d3,#55d47c); box-shadow:0 4px 0 #0d729f; }
+  .top-spacer { flex:1; }
+  .icon-btn {
+    min-height:36px; padding:7px 12px; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.72);
+    box-shadow:0 3px 0 rgba(18,60,85,.12); cursor:pointer; font-weight:850;
+  }
+  .icon-btn:hover { transform:translateY(-1px); }
+  #authBtn { display:flex; align-items:center; gap:7px; max-width:170px; }
+  #authBtn img { width:23px; height:23px; border-radius:50%; object-fit:cover; }
+  .brand { text-align:center; margin:17px auto 12px; padding:0 12px; }
+  .brand h1 { margin:0; color:#fff; font-size:clamp(2rem,7vw,4.4rem); line-height:.9; letter-spacing:-.065em; text-shadow:0 4px 0 #167da8,0 8px 28px rgba(13,94,132,.28); }
+  .brand h1 span { color:var(--lime); text-shadow:0 4px 0 #3f9a50,0 8px 28px rgba(13,94,132,.22); }
+  .brand p { margin:10px 0 0; color:#15516f; font-weight:800; letter-spacing:.05em; font-size:.84rem; text-transform:uppercase; }
+  .modebar { display:flex; justify-content:center; gap:8px; margin:0 auto 12px; }
+  .mode-btn {
+    border:1px solid rgba(255,255,255,.72); border-radius:999px; padding:9px 18px; cursor:pointer; font-weight:950;
+    background:rgba(255,255,255,.55); box-shadow:0 4px 0 rgba(17,87,119,.13); color:#195b78;
+  }
+  .mode-btn.on { color:#fff; border-color:#087dad; background:linear-gradient(180deg,#39bff2,#118dc9); box-shadow:0 4px 0 #0874a3; }
+  .game-layout { width:min(1110px,calc(100% - 20px)); margin:0 auto 30px; display:grid; grid-template-columns:minmax(0,720px) minmax(260px,330px); gap:14px; align-items:start; justify-content:center; }
+  .stage-card, .side-card {
+    border:1px solid rgba(255,255,255,.76); border-radius:24px; background:var(--panel); box-shadow:0 18px 45px var(--shadow),inset 0 1px 0 #fff; backdrop-filter:blur(18px);
+  }
+  .stage-card { padding:9px; min-width:0; }
+  .hud { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:8px; }
+  .hud-cell { padding:7px 8px; border:1px solid var(--line); border-radius:13px; background:rgba(255,255,255,.65); text-align:center; min-width:0; }
+  .hud-label { display:block; color:#4b7c91; font-size:.61rem; font-weight:950; letter-spacing:.13em; text-transform:uppercase; }
+  .hud-value { display:block; font-size:clamp(.88rem,2.5vw,1.18rem); line-height:1.2; font-weight:1000; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #timerValue.danger { color:#e13e4d; animation:pulse .7s ease-in-out infinite alternate; }
+  @keyframes pulse { to { transform:scale(1.08); } }
+  .canvas-wrap { position:relative; border-radius:18px; overflow:hidden; background:#66d2f4; border:2px solid rgba(18,60,85,.28); box-shadow:inset 0 0 0 2px rgba(255,255,255,.42); touch-action:none; }
+  #game { width:100%; height:auto; display:block; aspect-ratio:4/5; cursor:crosshair; user-select:none; }
+  .canvas-chip { position:absolute; z-index:4; top:10px; padding:6px 10px; border-radius:999px; color:#fff; background:rgba(9,45,71,.68); backdrop-filter:blur(9px); font-size:.67rem; font-weight:900; pointer-events:none; }
+  #statusChip { left:10px; }
+  #comboChip { right:10px; opacity:0; transform:translateY(-8px); transition:.18s; background:rgba(10,126,159,.78); }
+  #comboChip.show { opacity:1; transform:none; }
+  .aim-help { position:absolute; left:50%; bottom:9px; transform:translateX(-50%); white-space:nowrap; padding:5px 10px; border-radius:999px; color:#164d66; background:rgba(255,255,255,.78); font-size:.66rem; font-weight:850; pointer-events:none; transition:opacity .3s; }
+  .side-card { padding:14px; position:sticky; top:10px; }
+  .recycler {
+    padding:14px; border:1px solid rgba(20,123,140,.24); border-radius:18px;
+    background:linear-gradient(145deg,rgba(209,255,232,.86),rgba(225,249,255,.82)); position:relative; overflow:hidden;
+  }
+  .recycler::after { content:"♻"; position:absolute; right:10px; top:-9px; color:rgba(18,125,113,.12); font-size:74px; transform:rotate(-9deg); }
+  .recycler small { display:block; color:#4d7d83; font-weight:900; letter-spacing:.13em; text-transform:uppercase; }
+  .credit-line { font-size:2rem; line-height:1.05; font-weight:1000; color:#087f76; }
+  .credit-line i { font-style:normal; color:#44bd76; }
+  .recycler p { margin:5px 0 0; max-width:220px; color:#44717d; font-size:.75rem; line-height:1.35; font-weight:700; }
+  .strata-card { margin-top:10px; padding:11px 12px; border:1px solid rgba(46,111,148,.2); border-radius:16px; background:rgba(237,249,255,.72); }
+  .strata-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:7px; }
+  .strata-head strong { font-size:.78rem; text-transform:uppercase; letter-spacing:.08em; }
+  .strata-head span { color:#36768f; font-size:.68rem; font-weight:900; }
+  .strata-track { display:grid; gap:4px; }
+  .stratum-row { position:relative; height:22px; overflow:hidden; border:1px solid rgba(18,60,85,.13); border-radius:8px; background:rgba(255,255,255,.62); }
+  .stratum-fill { position:absolute; inset:0 auto 0 0; opacity:.24; transition:width .22s ease; }
+  .stratum-copy { position:relative; height:100%; display:flex; align-items:center; justify-content:space-between; padding:0 7px; font-size:.63rem; font-weight:900; }
+  .stratum-row.cleared { opacity:.48; }
+  .stratum-row.active { border-color:#168eb6; box-shadow:0 0 0 1px rgba(22,142,182,.16); }
+  .vault-key { margin-top:7px; color:#5d7884; font-size:.63rem; line-height:1.35; font-weight:750; }
+  .vault-key b { color:#b97800; }
+  .up-title { display:flex; justify-content:space-between; align-items:end; margin:15px 2px 8px; }
+  .up-title strong { font-size:1rem; }
+  .up-title span { font-size:.68rem; color:#5c8294; font-weight:800; }
+  .upgrade-grid { display:grid; gap:7px; }
+  .upgrade {
+    width:100%; min-height:55px; display:grid; grid-template-columns:38px 1fr auto; gap:8px; align-items:center; text-align:left;
+    border:1px solid var(--line); border-radius:14px; padding:7px 9px; background:rgba(255,255,255,.66); cursor:pointer; box-shadow:0 3px 0 rgba(19,70,91,.1);
+  }
+  .upgrade:hover:not(:disabled) { transform:translateY(-1px); border-color:rgba(21,151,211,.48); }
+  .upgrade:disabled { opacity:.48; cursor:not-allowed; }
+  .up-icon { width:36px; height:36px; display:grid; place-items:center; border-radius:12px; color:#fff; background:linear-gradient(145deg,#55c9f5,#48c379); font-size:1.1rem; box-shadow:inset 0 1px 0 rgba(255,255,255,.55); }
+  .up-copy { min-width:0; }
+  .up-name { display:block; font-size:.8rem; font-weight:950; }
+  .up-desc { display:block; margin-top:2px; color:#5b7f8f; font-size:.65rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .up-price { min-width:54px; text-align:right; font-size:.72rem; font-weight:950; color:#087f76; }
+  .tipline { margin:12px 2px 0; color:#517889; font-size:.7rem; line-height:1.45; font-weight:720; }
+  .action-row { display:flex; gap:7px; margin-top:11px; }
+  .action-row button { flex:1; }
+  .primary, .secondary, .danger-btn {
+    border:0; border-radius:13px; padding:10px 14px; cursor:pointer; font-weight:950; box-shadow:0 4px 0 rgba(10,78,107,.22);
+  }
+  .primary { color:#fff; background:linear-gradient(180deg,#44c9f6,#118fc9); }
+  .secondary { color:#17566f; background:rgba(255,255,255,.74); border:1px solid var(--line); }
+  .danger-btn { color:#fff; background:#ef6070; }
+  .overlay { position:fixed; inset:0; z-index:100; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(5,38,58,.5); backdrop-filter:blur(13px); }
+  .overlay.show { display:flex; }
+  .modal { width:min(520px,100%); max-height:min(780px,92vh); overflow:auto; padding:24px; border:1px solid rgba(255,255,255,.8); border-radius:28px; background:rgba(247,254,255,.95); box-shadow:0 30px 90px rgba(5,37,57,.38),inset 0 1px 0 #fff; }
+  .modal h2 { margin:0; font-size:clamp(1.7rem,7vw,2.7rem); letter-spacing:-.05em; }
+  .modal p { color:#50788b; line-height:1.55; font-weight:700; }
+  .modal-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:17px; }
+  .modal-actions button { flex:1 1 150px; }
+  .feature-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:18px 0; }
+  .feature { padding:12px 8px; text-align:center; border:1px solid var(--line); border-radius:16px; background:rgba(230,250,255,.7); }
+  .feature b { display:block; font-size:1.25rem; }
+  .feature span { display:block; margin-top:3px; font-size:.66rem; color:#587f90; font-weight:850; }
+  .result-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:18px 0; }
+  .result-cell { padding:12px 7px; text-align:center; border-radius:15px; background:#e9f9fc; border:1px solid var(--line); }
+  .result-cell small { display:block; color:#648596; font-size:.63rem; font-weight:950; letter-spacing:.09em; }
+  .result-cell b { display:block; margin-top:3px; font-size:1.05rem; }
+  #resultExtra { min-height:22px; color:#078c78; font-weight:900; text-align:center; }
+  .lb-head { display:flex; align-items:center; gap:10px; }
+  .lb-head h2 { flex:1; }
+  .close-btn { width:38px; height:38px; border:1px solid var(--line); border-radius:12px; background:#fff; cursor:pointer; font-weight:950; }
+  .lb-date { margin:5px 0 13px; color:#608598; font-size:.75rem; font-weight:800; }
+  .lb-list { display:grid; gap:6px; }
+  .lb-row { display:grid; grid-template-columns:42px 32px 1fr auto; gap:8px; align-items:center; min-height:45px; padding:6px 9px; border:1px solid var(--line); border-radius:13px; background:#fff; }
+  .lb-row.me { border-color:#20aa96; background:#e7fff7; }
+  .lb-row img, .lb-avatar { width:30px; height:30px; border-radius:50%; object-fit:cover; background:#dff4f8; }
+  .lb-rank { font-weight:1000; }
+  .lb-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:850; }
+  .lb-time { text-align:right; font-weight:1000; color:#087f76; }
+  .lb-time small { display:block; color:#78929e; font-size:.59rem; }
+  .empty { padding:28px 10px; color:#668a99; text-align:center; font-weight:800; }
+  .help-list { padding-left:20px; color:#50788b; font-weight:700; line-height:1.55; }
+  .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+  @media (max-width:820px) {
+    .topbar { width:calc(100% - 14px); margin-top:7px; border-radius:16px; }
+    .topbar .home-word { display:none; }
+    .brand { margin-top:13px; }
+    .game-layout { width:min(610px,calc(100% - 10px)); grid-template-columns:1fr; gap:9px; }
+    .side-card { position:static; padding:10px; }
+    .recycler { padding:10px 12px; }
+    .strata-card { margin-top:7px; padding:8px 10px; }
+    .strata-track { grid-template-columns:repeat(5,minmax(0,1fr)); }
+    .stratum-row { height:29px; }
+    .stratum-copy { justify-content:center; padding:0 2px; font-size:.56rem; text-align:center; }
+    .stratum-copy span { display:none; }
+    .vault-key { text-align:center; }
+    .credit-line { font-size:1.45rem; }
+    .recycler p { display:none; }
+    .up-title { margin-top:10px; }
+    .upgrade-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+    .upgrade { min-height:51px; grid-template-columns:31px 1fr; padding:6px; }
+    .up-icon { width:31px; height:31px; border-radius:10px; }
+    .up-price { grid-column:2; text-align:left; margin-top:-11px; }
+    .up-desc { display:none; }
+    .tipline { display:none; }
+  }
+  @media (max-width:460px) {
+    .brand h1 { font-size:2.45rem; }
+    .brand p { font-size:.65rem; }
+    .modebar { margin-bottom:7px; }
+    .mode-btn { padding:7px 13px; font-size:.76rem; }
+    .stage-card { padding:6px; border-radius:18px; }
+    .hud { gap:4px; margin-bottom:5px; }
+    .hud-cell { padding:5px 3px; border-radius:10px; }
+    .hud-label { font-size:.5rem; letter-spacing:.08em; }
+    .hud-value { font-size:.8rem; }
+    .canvas-wrap { border-radius:14px; }
+    .icon-btn { padding:6px 9px; font-size:.73rem; }
+    #soundBtn { display:none; }
+    .feature-row { grid-template-columns:1fr; }
+    .feature { display:flex; align-items:center; gap:9px; text-align:left; }
+    .feature span { margin:0; }
+    .modal { padding:20px; border-radius:22px; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    *,*::before,*::after { animation-duration:.01ms!important; animation-iteration-count:1!important; scroll-behavior:auto!important; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="home-link" href="/" aria-label="Back to Word Tycoon"><span class="home-mark">WT</span><span class="home-word">Word Tycoon</span></a>
+  <span class="top-spacer"></span>
+  <button class="icon-btn" id="soundBtn" type="button" aria-label="Toggle sound">🔊 Sound</button>
+  <button class="icon-btn" id="helpBtn" type="button">? Help</button>
+  <button class="icon-btn" id="lbBtn" type="button">🏆 Daily</button>
+  <button class="icon-btn" id="authBtn" type="button"><span>Sign in</span></button>
+</header>
+
+<section class="brand" aria-labelledby="gameTitle">
+  <h1 id="gameTitle">Cloud <span>Quarry</span></h1>
+  <p>Aim · ricochet · recycle · upgrade</p>
+</section>
+
+<nav class="modebar" aria-label="Game mode">
+  <button class="mode-btn on" data-mode="campaign" type="button">Open Quarry</button>
+  <button class="mode-btn" data-mode="daily" type="button">Daily Sprint</button>
+</nav>
+
+<main class="game-layout">
+  <section class="stage-card" aria-label="Cloud Quarry game">
+    <div class="hud" aria-live="polite">
+      <div class="hud-cell"><span class="hud-label">Blocks</span><span class="hud-value" id="blocksValue">—</span></div>
+      <div class="hud-cell"><span class="hud-label">Shards</span><span class="hud-value" id="shardsValue">0</span></div>
+      <div class="hud-cell"><span class="hud-label">Shots</span><span class="hud-value" id="shotsValue">0</span></div>
+      <div class="hud-cell"><span class="hud-label" id="timerLabel">Session</span><span class="hud-value" id="timerValue">Untimed</span></div>
+    </div>
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="game" width="720" height="900" aria-label="Floating quarry playfield"></canvas>
+      <div class="canvas-chip" id="statusChip">READY</div>
+      <div class="canvas-chip" id="comboChip">CHAIN ×1</div>
+      <div class="aim-help" id="aimHelp">Hold or tap anywhere to fire</div>
+    </div>
+  </section>
+
+  <aside class="side-card" aria-label="Recycler and upgrades">
+    <div class="recycler">
+      <small>Skyglass recycler</small>
+      <div class="credit-line"><i>◆</i> <span id="creditValue">0</span></div>
+      <p>Every shattered block releases shards. The recycler pulls them in and turns them into run credits.</p>
+    </div>
+    <div class="strata-card" aria-label="Quarry depth tracker">
+      <div class="strata-head"><strong>Quarry strata</strong><span id="strataValue">Surveying…</span></div>
+      <div class="strata-track" id="strataTrack"></div>
+      <div class="vault-key"><b>◆ Vault bricks</b> have reinforced shells and release richer shard caches.</div>
+    </div>
+    <div class="up-title"><strong>Workshop</strong><span>Keys 1–6</span></div>
+    <div class="upgrade-grid" id="upgradeGrid"></div>
+    <div class="tipline">Workshop upgrades and credits last for one quarry. Open Quarry block and shell progress is saved on this device.</div>
+    <div class="action-row">
+      <button class="secondary" id="pauseBtn" type="button">Pause</button>
+      <button class="secondary" id="restartBtn" type="button">Restart</button>
+    </div>
+  </aside>
+</main>
+
+<div class="overlay show" id="introOverlay" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+  <div class="modal">
+    <h2 id="introTitle">A quarry in the clouds.</h2>
+    <p>Drill through a deep, shifting formation with bright ricochet balls. Every brick is wrapped in up to 24 numbered durability shells.</p>
+    <div class="feature-row">
+      <div class="feature"><b>☄</b><span>Hold to fire and drag to aim</span></div>
+      <div class="feature"><b>◆</b><span>Collect shards automatically</span></div>
+      <div class="feature"><b>⚡</b><span>Upgrade during the run</span></div>
+    </div>
+    <div class="modal-actions">
+      <button class="primary" id="introCampaign" type="button">Enter Open Quarry</button>
+      <button class="secondary" id="introDaily" type="button">Race Today’s Sprint</button>
+    </div>
+    <p style="font-size:.72rem;margin-bottom:0">Original browser game by Word Tycoon · No enemies, no lives, no pressure in Open Quarry.</p>
+  </div>
+</div>
+
+<div class="overlay" id="resultOverlay" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+  <div class="modal">
+    <h2 id="resultTitle">Quarry cleared!</h2>
+    <p id="resultCopy">The last block is skyglass dust.</p>
+    <div class="result-grid">
+      <div class="result-cell"><small>TIME</small><b id="resultTime">—</b></div>
+      <div class="result-cell"><small>SHOTS</small><b id="resultShots">—</b></div>
+      <div class="result-cell"><small>BEST CHAIN</small><b id="resultCombo">—</b></div>
+    </div>
+    <div id="resultExtra" aria-live="polite"></div>
+    <div class="modal-actions">
+      <button class="primary" id="playAgainBtn" type="button">Play again</button>
+      <button class="secondary" id="resultLbBtn" type="button">Leaderboard</button>
+      <button class="secondary" id="shareBtn" type="button">Share</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="lbOverlay" role="dialog" aria-modal="true" aria-labelledby="lbTitle">
+  <div class="modal">
+    <div class="lb-head"><h2 id="lbTitle">Daily Sprint</h2><button class="close-btn" id="lbClose" type="button" aria-label="Close">×</button></div>
+    <div class="lb-date" id="lbDate">Today’s fastest clear times</div>
+    <div class="lb-list" id="lbList"><div class="empty">Loading…</div></div>
+    <div id="lbMe" style="margin-top:9px"></div>
+  </div>
+</div>
+
+<div class="overlay" id="helpOverlay" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="modal">
+    <div class="lb-head"><h2 id="helpTitle">How to quarry</h2><button class="close-btn" id="helpClose" type="button" aria-label="Close">×</button></div>
+    <ul class="help-list">
+      <li>Hold the mouse or a finger on the quarry to aim and continuously fire.</li>
+      <li>Balls ricochet off blocks and the energy walls until their hit charge runs out.</li>
+      <li>Each hit or explosion can peel only one numbered durability shell. Deeper bricks carry many more shells.</li>
+      <li>Golden vault bricks are reinforced but release richer shard caches. The five-strata tracker shows your progress toward the core.</li>
+      <li>Destroying blocks in quick succession builds a chain and releases more valuable shards.</li>
+      <li>Spend recycled shards on workshop upgrades. Number keys 1–6 buy them quickly.</li>
+      <li>Your workshop and remaining credits reset whenever you begin a fresh quarry.</li>
+      <li>Open Quarry is untimed and saved locally. Each clear reveals a new layout with 32 layers and 420 blocks.</li>
+      <li>Daily Sprint is a fresh six-minute, 320-block layout shared by everyone for that Edmonton day.</li>
+      <li>Sign in before a daily run to save your time and earn Word Tycoon XP on your first clear.</li>
+    </ul>
+    <button class="primary" id="helpDone" type="button" style="width:100%">Got it</button>
+  </div>
+</div>
+
+<div class="sr-only" id="announcer" aria-live="polite"></div>
+
+<script src="/js/cloudquarry-core.js?v=20261001-replay"></script>
+<script>
+(() => {
+  'use strict';
+
+  const W = 720, H = 900;
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const wrap = document.getElementById('canvasWrap');
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = (id) => document.getElementById(id);
+  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const CAMPAIGN_KEY = 'cloudquarry_campaign_v1';
+  const PREF_KEY = 'cloudquarry_prefs_v1';
+  const LAYOUT_VERSION = 2;
+  const OPEN_BLOCKS = 420;
+  const DAILY_BLOCKS = 320;
+  const DAILY_LIMIT_MS = 360000;
+
+  function fnv1a(str) {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function mulberry32(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function edmontonDay(date = new Date()) {
+    return new Intl.DateTimeFormat('en-CA', { timeZone:'America/Edmonton' }).format(date);
+  }
+  function formatTime(ms) {
+    ms = Math.max(0, Math.round(ms));
+    const min = Math.floor(ms / 60000);
+    const sec = Math.floor((ms % 60000) / 1000);
+    const tenth = Math.floor((ms % 1000) / 100);
+    return min + ':' + String(sec).padStart(2,'0') + '.' + tenth;
+  }
+
+  let prefs = { sound:true };
+  try { prefs = Object.assign(prefs, JSON.parse(localStorage.getItem(PREF_KEY) || '{}')); } catch (_) {}
+  let audioCtx = null;
+  function tone(freq, duration=.06, gain=.025, type='sine', delay=0) {
+    if (!prefs.sound) return;
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator(), g = audioCtx.createGain();
+      osc.type = type; osc.frequency.value = freq;
+      const now = audioCtx.currentTime + delay;
+      g.gain.setValueAtTime(gain, now); g.gain.exponentialRampToValueAtTime(.0001, now + duration);
+      osc.connect(g); g.connect(audioCtx.destination); osc.start(now); osc.stop(now + duration);
+    } catch (_) {}
+  }
+  function setSoundLabel() { $('soundBtn').textContent = prefs.sound ? '🔊 Sound' : '🔇 Muted'; }
+  setSoundLabel();
+
+  const upgradeDefs = [
+    { id:'impact', icon:'✹', name:'Impact', desc:'+1 damage per hit', base:110, growth:1.9, max:6 },
+    { id:'ricochet', icon:'↗', name:'Ricochet', desc:'+2 block hits per ball', base:150, growth:1.92, max:5 },
+    { id:'multishot', icon:'⋰', name:'Multishot', desc:'+1 ball per launch', base:320, growth:2.15, max:4 },
+    { id:'rapid', icon:'»', name:'Rapid launch', desc:'Shorter firing cooldown', base:180, growth:1.95, max:5 },
+    { id:'magnet', icon:'∪', name:'Shard magnet', desc:'Faster, richer recycling', base:130, growth:1.85, max:5 },
+    { id:'overcharge', icon:'⚡', name:'Overcharge', desc:'Explosive shots more often', base:340, growth:2.05, max:4 },
+  ];
+  const freshUpgrades = () => Object.fromEntries(upgradeDefs.map(d => [d.id,0]));
+  function upgradeCost(def) { return Math.round(def.base * Math.pow(def.growth, state.upgrades[def.id])); }
+
+  const state = {
+    mode:'campaign', playing:false, paused:false, ended:false,
+    blocks:[], balls:[], shards:[], particles:[], floaters:[],
+    credits:0, upgrades:freshUpgrades(), destroyed:0, total:0, shots:0,
+    combo:0, maxCombo:0, comboUntil:0, aimX:W/2, aimY:250, pointerDown:false,
+    nextFireAt:0, startedAt:0, pausedAt:0, pausedTotal:0, elapsedMs:0,
+    dailyDay:edmontonDay(), dailyToken:null, dailyLimitMs:DAILY_LIMIT_MS,
+    campaignCompleted:0, destroyedIds:new Set(), strataTotals:[0,0,0,0,0], layoutName:'', lastResult:null,
+  };
+  const auth = { user:null };
+  let dailySimulation=null, dailyEvents=[], dailyPending=[], dailyAim=null, startGeneration=0;
+  function syncDaily() {
+    for(const key of ['blocks','balls','shards','credits','upgrades','destroyed','shots','combo','maxCombo','comboUntil','total','aimX','aimY']) state[key]=dailySimulation.state[key];
+  }
+  function stepDaily() {
+    const tick=dailySimulation.state.tick+1, actions=[];
+    if(dailyAim && (tick%3===0 || state.pointerDown!==dailySimulation.state.pointerDown || dailyPending.length)) {
+      actions.push([tick,'a',dailyAim[0],dailyAim[1]]);dailyAim=null;
+    }
+    if(state.pointerDown!==dailySimulation.state.pointerDown)actions.push([tick,'h',state.pointerDown?1:0]);
+    for(const action of dailyPending.splice(0))actions.push([tick,...action]);
+    dailyEvents.push(...actions);dailySimulation.step(actions);syncDaily();
+  }
+
+  const STRATA = [
+    { name:'Cloudglass', color:'#61d8f2' },
+    { name:'Rainstone', color:'#56b8df' },
+    { name:'Stormglass', color:'#6f92dc' },
+    { name:'Aurora seam', color:'#9c78d7' },
+    { name:'Star core', color:'#e7a84a' },
+  ];
+
+  const LAYOUTS = [
+    { id:'terraces', name:'Sunstep Terraces' },
+    { id:'hourglass', name:'Hourglass Hollow' },
+    { id:'spires', name:'Twin Skyspires' },
+    { id:'prism', name:'Prism Vault' },
+    { id:'cascade', name:'Cloudfall Cascade' },
+    { id:'crown', name:'Nimbus Crown' },
+  ];
+
+  function layoutForSeed(seed) {
+    const value=String(seed);
+    const openMatch=value.match(/^cloudquarry:open:v2:(\d+)$/);
+    if(openMatch) return LAYOUTS[(Number(openMatch[1])+2)%LAYOUTS.length];
+    const dailyMatch=value.match(/^cloudquarry:(\d{4}-\d{2}-\d{2})$/);
+    if(dailyMatch) return LAYOUTS[Math.floor(Date.parse(`${dailyMatch[1]}T12:00:00Z`)/86400000)%LAYOUTS.length];
+    return LAYOUTS[fnv1a(`${value}:layout:v${LAYOUT_VERSION}`) % LAYOUTS.length];
+  }
+
+  function layoutScore(layoutId, x, y, row) {
+    if(layoutId==='terraces') {
+      const widths=[.54,.72,.9,.98,.82,.64], band=Math.min(widths.length-1,Math.floor(y*widths.length));
+      return widths[band]-Math.abs(x)+(row%4===0 ? .11 : 0);
+    }
+    if(layoutId==='hourglass') return .44+Math.abs(y-.5)*1.08-Math.abs(x);
+    if(layoutId==='spires') {
+      const towers=Math.max(.5-Math.abs(x-.52),.5-Math.abs(x+.52));
+      const bridge=row%10>=7 ? .34-Math.abs(x) : -0.16;
+      return Math.max(towers,bridge)+(y>.72?.1:0);
+    }
+    if(layoutId==='prism') return .28+(1-Math.abs(y*2-1))*.82-Math.abs(x);
+    if(layoutId==='cascade') {
+      const center=Math.sin(y*Math.PI*2.7)*.25, width=.7+Math.sin(y*Math.PI*5.2)*.11;
+      return width-Math.abs(x-center);
+    }
+    const crownBand=.48-Math.abs(Math.abs(x)-(.48+.1*Math.sin(y*Math.PI*2)));
+    const crownBridge=row%11>=8 ? .34-Math.abs(x) : -0.2;
+    return Math.max(crownBand,crownBridge)+(y>.78?.12:0);
+  }
+
+  function makeFormation(seed, mode, targetCount) {
+    const rng = mulberry32(fnv1a(seed));
+    const layout=layoutForSeed(seed);
+    const cols = 17, rows = mode === 'daily' ? 26 : 32;
+    const gap = 3, bw = 35, bh = mode === 'daily' ? 18 : 15;
+    const width = cols * bw + (cols - 1) * gap;
+    const sx = (W - width) / 2, sy = mode === 'daily' ? 78 : 82;
+    const candidates = [];
+    for (let row=0; row<rows; row++) {
+      for (let col=0; col<cols; col++) {
+        const x=(col-(cols-1)/2)/((cols-1)/2), y=row/Math.max(1,rows-1);
+        candidates.push({
+          row, col, keep:layoutScore(layout.id,x,y,row)+rng()*.34, tint:rng(), hpRoll:rng(),
+          vaultRoll:fnv1a(`${seed}:vault:${row}:${col}`)/4294967296,
+        });
+      }
+    }
+    candidates.sort((a,b) => b.keep - a.keep);
+    const kept = candidates.slice(0,clamp(Math.floor(targetCount),1,candidates.length)).sort((a,b) => a.row-b.row || a.col-b.col);
+    return kept.map((c,index) => {
+      const depth = c.row / Math.max(1,rows-1);
+      const layerCap = mode === 'daily' ? 18 : 24;
+      const vault = c.vaultRoll>.96 && c.row>1;
+      const baseLayers = 3 + Math.floor(depth*(layerCap-4)) + (c.hpRoll>.72 ? 1 : 0);
+      const layers = clamp(baseLayers+(vault?4:0),3,layerCap);
+      const hp = clamp(1 + Math.floor(depth*2.6),1,3);
+      return {
+        id:`${c.row}-${c.col}`, index, x:sx+c.col*(bw+gap), y:sy+c.row*(bh+gap), w:bw, h:bh,
+        hp, maxHp:hp, layers, maxLayers:layers, stratum:Math.min(4,Math.floor(depth*5)), vault,
+        hue:vault?42+c.tint*9:178+c.tint*54+depth*14, flash:0, dead:false,
+      };
+    });
+  }
+
+  function countStrata(blocks) {
+    const counts=STRATA.map(()=>0);
+    for(const b of blocks) counts[b.stratum]++;
+    return counts;
+  }
+
+  function readCampaign() {
+    const base = { credits:0, upgrades:freshUpgrades(), destroyed:[], damaged:{}, completed:0, layoutVersion:LAYOUT_VERSION };
+    try {
+      const saved = JSON.parse(localStorage.getItem(CAMPAIGN_KEY) || 'null');
+      if (!saved || typeof saved !== 'object') return base;
+      base.credits = clamp(Math.floor(Number(saved.credits)||0),0,99999999);
+      for (const d of upgradeDefs) base.upgrades[d.id] = clamp(Math.floor(Number(saved.upgrades?.[d.id])||0),0,d.max);
+      base.destroyed = saved.layoutVersion===LAYOUT_VERSION && Array.isArray(saved.destroyed) ? saved.destroyed.filter(x => /^\d{1,2}-\d{1,2}$/.test(x)).slice(0,OPEN_BLOCKS) : [];
+      base.damaged = saved.layoutVersion===LAYOUT_VERSION && saved.damaged && typeof saved.damaged==='object' ? saved.damaged : {};
+      base.completed = clamp(Math.floor(Number(saved.completed)||0),0,9999);
+    } catch (_) {}
+    return base;
+  }
+  function saveCampaign() {
+    if (state.mode !== 'campaign') return;
+    try {
+      const damaged={};
+      for(const b of state.blocks) {
+        if(b.dead || (b.layers===b.maxLayers && b.hp===b.maxHp)) continue;
+        damaged[b.id]={layers:b.layers,hp:b.hp};
+      }
+      localStorage.setItem(CAMPAIGN_KEY, JSON.stringify({
+        credits:Math.floor(state.credits), upgrades:state.upgrades,
+        destroyed:[...state.destroyedIds], damaged, completed:state.campaignCompleted, layoutVersion:LAYOUT_VERSION,
+      }));
+    } catch (_) {}
+  }
+  let campaignSaveTimer=0;
+  function queueCampaignSave() {
+    if(state.mode!=='campaign' || campaignSaveTimer) return;
+    campaignSaveTimer=setTimeout(()=>{campaignSaveTimer=0;saveCampaign();},300);
+  }
+
+  function resetWorkshop() {
+    state.credits=0;
+    state.upgrades=freshUpgrades();
+  }
+
+  function renderUpgrades() {
+    const grid = $('upgradeGrid'); grid.innerHTML='';
+    upgradeDefs.forEach((def,index) => {
+      const level = state.upgrades[def.id], cost = upgradeCost(def), maxed = level >= def.max;
+      const btn = document.createElement('button'); btn.className='upgrade'; btn.type='button'; btn.dataset.id=def.id;
+      btn.disabled = !state.playing || maxed || state.credits < cost;
+      const icon=document.createElement('span'); icon.className='up-icon'; icon.textContent=def.icon;
+      const copy=document.createElement('span'); copy.className='up-copy';
+      const name=document.createElement('span'); name.className='up-name'; name.textContent=`${index+1}. ${def.name} · ${level}/${def.max}`;
+      const desc=document.createElement('span'); desc.className='up-desc'; desc.textContent=def.desc;
+      copy.append(name,desc);
+      const price=document.createElement('span'); price.className='up-price'; price.textContent=maxed?'MAX':`◆ ${cost}`;
+      btn.append(icon,copy,price); btn.addEventListener('click',()=>buyUpgrade(def.id)); grid.appendChild(btn);
+    });
+  }
+  let strataSignature='';
+  function renderStrata() {
+    const remaining=STRATA.map(()=>0);
+    for(const b of state.blocks) if(!b.dead) remaining[b.stratum]++;
+    const signature=`${state.strataTotals.join(',')}|${remaining.join(',')}`;
+    if(signature===strataSignature) return;
+    strataSignature=signature;
+    const active=remaining.findIndex(count=>count>0);
+    $('strataValue').textContent=active<0?'Core cleared':STRATA[active].name;
+    const track=$('strataTrack'); track.textContent='';
+    STRATA.forEach((stratum,index)=>{
+      const total=state.strataTotals[index]||0, left=remaining[index];
+      const row=document.createElement('div'); row.className='stratum-row'+(left===0?' cleared':'')+(index===active?' active':'');
+      const fill=document.createElement('div'); fill.className='stratum-fill'; fill.style.background=stratum.color; fill.style.width=`${total?left/total*100:0}%`;
+      const copy=document.createElement('div'); copy.className='stratum-copy';
+      const name=document.createElement('span'); name.textContent=stratum.name;
+      const count=document.createElement('b'); count.textContent=`${left}/${total}`;
+      copy.append(name,count); row.append(fill,copy); track.appendChild(row);
+    });
+  }
+  function buyUpgrade(id) {
+    if(state.mode==='daily' && state.playing && !state.ended) {
+      if(dailyPending.length<6) dailyPending.push(['u',id]); return;
+    }
+    const def=upgradeDefs.find(d=>d.id===id); if(!def || !state.playing) return;
+    const level=state.upgrades[id], cost=upgradeCost(def);
+    if(level>=def.max || state.credits<cost) { tone(155,.08,.018,'square'); return; }
+    state.credits-=cost; state.upgrades[id]++;
+    tone(420,.07,.032,'sine'); tone(620,.12,.025,'sine',.05);
+    announce(`${def.name} level ${state.upgrades[id]}`); burst(610,824,def.id==='overcharge'?'#ffe36b':'#65e5b0',16,160);
+    saveCampaign(); updateHud(); renderUpgrades();
+  }
+
+  function setModeButtons() {
+    document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('on',b.dataset.mode===state.mode));
+    $('timerLabel').textContent=state.mode==='daily'?'Time left':'Session';
+  }
+  async function startGame(mode) {
+    const opening=++startGeneration; dailySimulation=null;dailyEvents=[];dailyPending=[];dailyAim=null;
+    state.mode=mode; setModeButtons();
+    $('introOverlay').classList.remove('show'); $('resultOverlay').classList.remove('show');
+    state.playing=false; state.paused=false; state.ended=false; state.balls=[]; state.shards=[]; state.particles=[]; state.floaters=[];
+    state.combo=0; state.maxCombo=0; state.comboUntil=0; state.shots=0; state.destroyed=0; state.pointerDown=false; state.elapsedMs=0; state.pausedTotal=0;
+    state.dailyToken=null; state.dailyDay=edmontonDay(); state.dailyLimitMs=DAILY_LIMIT_MS;
+    $('statusChip').textContent='BUILDING';
+    if(mode==='daily') {
+      state.credits=0; state.upgrades=freshUpgrades();
+      let cfg={ day:state.dailyDay, seed:`cloudquarry:${state.dailyDay}`, blocks:DAILY_BLOCKS, limitMs:DAILY_LIMIT_MS };
+      try {
+        const r=await fetch('/api/cloudquarry/run/start',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:'{}'});
+        const j=await r.json(); if(j&&j.ok) cfg=Object.assign(cfg,j);
+      } catch (_) {}
+      if(opening!==startGeneration) return;
+      state.dailyDay=cfg.day; state.dailyToken=cfg.token||null; state.dailyLimitMs=cfg.limitMs||DAILY_LIMIT_MS;
+      state.layoutName=layoutForSeed(cfg.seed).name;
+      dailySimulation=CloudQuarryCore.create(cfg.seed,{tone,burst,floater});
+      syncDaily();state.strataTotals=countStrata(state.blocks);
+      if(cfg.version!==CloudQuarryCore.VERSION) state.dailyToken=null;
+    } else {
+      const campaign=readCampaign();
+      state.credits=campaign.credits; state.upgrades=campaign.upgrades; state.campaignCompleted=campaign.completed;
+      state.destroyedIds=new Set(campaign.destroyed);
+      let campaignSeed=`cloudquarry:open:v${LAYOUT_VERSION}:${campaign.completed}`;
+      state.layoutName=layoutForSeed(campaignSeed).name;
+      let all=makeFormation(campaignSeed,'campaign',OPEN_BLOCKS); state.total=all.length; state.strataTotals=countStrata(all);
+      for(const b of all) {
+        const saved=campaign.damaged[b.id];
+        if(!saved) continue;
+        b.layers=clamp(Math.floor(Number(saved.layers)||b.maxLayers),1,b.maxLayers);
+        b.hp=clamp(Math.floor(Number(saved.hp)||b.maxHp),1,b.maxHp);
+      }
+      state.blocks=all.filter(b=>!state.destroyedIds.has(b.id)); state.destroyed=state.total-state.blocks.length;
+      if(!state.blocks.length) {
+        state.destroyedIds.clear(); state.destroyed=0; state.campaignCompleted++; resetWorkshop();
+        campaignSeed=`cloudquarry:open:v${LAYOUT_VERSION}:${state.campaignCompleted}`;
+        state.layoutName=layoutForSeed(campaignSeed).name; all=makeFormation(campaignSeed,'campaign',OPEN_BLOCKS);
+        state.total=all.length; state.strataTotals=countStrata(all); state.blocks=all; saveCampaign();
+      }
+    }
+    state.startedAt=performance.now(); state.nextFireAt=state.startedAt+250; state.playing=true;
+    $('statusChip').textContent=`${mode==='daily'?'DAILY':'OPEN'} · ${state.layoutName.toUpperCase()}`;
+    $('aimHelp').style.opacity='1'; setTimeout(()=>{$('aimHelp').style.opacity='.12';},4500);
+    updateHud(); renderUpgrades(); tone(260,.08,.02); tone(390,.13,.018,'sine',.06);
+  }
+
+  function restartGame() {
+    if(state.mode==='campaign' && state.playing) {
+      if(!confirm('Restart this quarry? Cleared blocks, shell damage, credits, and upgrades from this run will reset.')) return;
+      resetWorkshop(); state.destroyedIds.clear(); state.blocks=[]; saveCampaign();
+    }
+    startGame(state.mode);
+  }
+  function togglePause() {
+    if(!state.playing || state.ended) return;
+    if(state.mode==='daily') { announce('Daily Sprint cannot be paused'); $('statusChip').textContent='NO PAUSES IN DAILY'; setTimeout(()=>{if(state.playing)$('statusChip').textContent=`DAILY · ${state.layoutName.toUpperCase()}`;},1200); return; }
+    state.paused=!state.paused;
+    if(state.paused) { state.pausedAt=performance.now(); $('statusChip').textContent='PAUSED'; }
+    else { state.pausedTotal+=performance.now()-state.pausedAt; $('statusChip').textContent=`OPEN · ${state.layoutName.toUpperCase()}`; }
+    $('pauseBtn').textContent=state.paused?'Resume':'Pause';
+  }
+
+  function pointerWorld(e) {
+    const r=canvas.getBoundingClientRect();
+    return { x:(e.clientX-r.left)*W/r.width, y:(e.clientY-r.top)*H/r.height };
+  }
+  function setAim(p) {
+    state.aimX=clamp(p.x,35,W-35); state.aimY=clamp(p.y,70,790);
+    if(state.mode==='daily') dailyAim=[Math.round(state.aimX),Math.round(state.aimY)];
+  }
+  wrap.addEventListener('pointerdown',e=>{ e.preventDefault(); wrap.setPointerCapture?.(e.pointerId); setAim(pointerWorld(e)); state.pointerDown=true; fire(performance.now()); });
+  wrap.addEventListener('pointermove',e=>{ if(state.pointerDown) setAim(pointerWorld(e)); });
+  wrap.addEventListener('pointerup',e=>{ state.pointerDown=false; wrap.releasePointerCapture?.(e.pointerId); });
+  wrap.addEventListener('pointercancel',()=>{state.pointerDown=false;});
+
+  function fire(now) {
+    if(state.mode==='daily') {
+      if(state.playing && !state.ended && dailySimulation && dailySimulation.state.tick*CloudQuarryCore.STEP_MS>=dailySimulation.state.nextFireAt && !dailyPending.some(a=>a[0]==='f') && dailyPending.length<6) dailyPending.push(['f']);
+      return;
+    }
+    if(!state.playing || state.paused || state.ended || now<state.nextFireAt) return;
+    const cooldown=Math.max(135,420-state.upgrades.rapid*52);
+    state.nextFireAt=now+cooldown; state.shots++;
+    let angle=Math.atan2(state.aimY-828,state.aimX-W/2);
+    angle=clamp(angle,-Math.PI+.22,-.22);
+    const count=1+state.upgrades.multishot, spread=.115;
+    const chargedEvery=Math.max(7,12-state.upgrades.overcharge);
+    const charged=state.upgrades.overcharge>0 && state.shots%chargedEvery===0;
+    for(let i=0;i<count;i++) {
+      const a=angle+(i-(count-1)/2)*spread;
+      state.balls.push({ x:W/2,y:812,px:W/2,py:812,vx:Math.cos(a)*610,vy:Math.sin(a)*610,r:charged?10:7,damage:1+state.upgrades.impact,maxHits:4+state.upgrades.ricochet*2,hits:0,life:0,lastBlock:'',blockLock:0,charged });
+    }
+    tone(charged?320:210,.045,charged ? .045 : .022,charged?'sawtooth':'sine');
+    updateHud();
+  }
+
+  function burst(x,y,color,count=10,speed=120) {
+    if(reducedMotion) count=Math.min(count,4);
+    for(let i=0;i<count;i++) {
+      const a=Math.random()*Math.PI*2,s=speed*(.35+Math.random()*.75);
+      state.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.35+Math.random()*.45,max:.8,color,size:2+Math.random()*4});
+    }
+  }
+  function floater(x,y,text,color='#fff') { if(!reducedMotion) state.floaters.push({x,y,text,color,life:1}); }
+  function spawnShards(block) {
+    const n=2+Math.min(3,Math.floor(block.maxLayers/5));
+    const chainBonus=1+Math.min(.75,Math.max(0,state.combo-1)*.05);
+    const value=Math.max(1,Math.round((1+Math.floor(block.maxLayers/6))*(block.vault?1.8:1)*chainBonus));
+    for(let i=0;i<n;i++) state.shards.push({ x:block.x+block.w/2,y:block.y+block.h/2,vx:(Math.random()-.5)*150,vy:-50-Math.random()*130,age:0,value,hue:block.hue,collected:false });
+  }
+  function damageBlock(block,damage,ball,explosion=false) {
+    if(block.dead) return;
+    block.hp-=damage; block.flash=1;
+    burst(ball.x,ball.y,`hsl(${block.hue} 88% 69%)`,explosion?10:5,explosion?190:110);
+    if(block.hp>0) { tone(300+block.hp*32,.035,.012,'triangle'); queueCampaignSave(); return; }
+    if(block.layers>1) {
+      block.layers--; block.hp=block.maxHp; block.flash=1.35;
+      if(block.layers<=3 || block.layers%5===0) floater(block.x+block.w/2,block.y,`${block.layers} shells`,'#dffcff');
+      tone(380+Math.min(block.layers,16)*11,.045,.016,'triangle'); queueCampaignSave(); return;
+    }
+    block.layers=0;
+    block.dead=true; state.destroyed++;
+    if(state.mode==='campaign') state.destroyedIds.add(block.id);
+    const now=performance.now(); state.combo=now<state.comboUntil?state.combo+1:1; state.comboUntil=now+900;
+    state.maxCombo=Math.max(state.maxCombo,state.combo);
+    spawnShards(block); floater(block.x+block.w/2,block.y,block.vault?`◆ VAULT ×${state.combo}`:`+${state.combo}`,block.vault?'#ffe07a':'#ffffff');
+    tone(470+Math.min(state.combo,12)*24,.055,.022,'sine');
+    if(state.combo>=4) tone(700+Math.min(state.combo,10)*18,.08,.012,'sine',.035);
+    if(ball.charged && !explosion) explode(ball.x,ball.y,78+state.upgrades.overcharge*13,Math.max(1,Math.ceil(ball.damage*.65)),block.id);
+    if(state.mode==='campaign') saveCampaign();
+  }
+  function explode(x,y,radius,damage,skipId) {
+    burst(x,y,'#fff07a',26,260); tone(88,.18,.055,'sawtooth');
+    for(const b of state.blocks) {
+      if(b.dead||b.id===skipId) continue;
+      const bx=b.x+b.w/2,by=b.y+b.h/2;
+      if(Math.hypot(bx-x,by-y)<radius) damageBlock(b,damage,{x:bx,y:by,charged:false},true);
+    }
+  }
+
+  function collideBallBlock(ball,b) {
+    if(b.dead || (ball.lastBlock===b.id && ball.blockLock>0)) return false;
+    const nx=clamp(ball.x,b.x,b.x+b.w), ny=clamp(ball.y,b.y,b.y+b.h);
+    const dx=ball.x-nx,dy=ball.y-ny;
+    if(dx*dx+dy*dy>ball.r*ball.r) return false;
+    const wasLeft=ball.px < b.x-ball.r, wasRight=ball.px > b.x+b.w+ball.r;
+    if(wasLeft||wasRight) ball.vx*=-1; else ball.vy*=-1;
+    ball.x=ball.px; ball.y=ball.py; ball.hits++; ball.lastBlock=b.id; ball.blockLock=.055;
+    damageBlock(b,ball.damage,ball);
+    return true;
+  }
+  function updatePhysics(dt,now) {
+    if(state.pointerDown) fire(now);
+    for(let i=state.balls.length-1;i>=0;i--) {
+      const b=state.balls[i]; b.life+=dt; b.blockLock=Math.max(0,b.blockLock-dt); b.px=b.x; b.py=b.y; b.x+=b.vx*dt; b.y+=b.vy*dt;
+      if(b.x<b.r+4){b.x=b.r+4;b.vx=Math.abs(b.vx);} if(b.x>W-b.r-4){b.x=W-b.r-4;b.vx=-Math.abs(b.vx);}
+      if(b.y<b.r+4){b.y=b.r+4;b.vy=Math.abs(b.vy);} if(b.y>836-b.r){b.y=836-b.r;b.vy=-Math.abs(b.vy);}
+      for(const block of state.blocks) { if(collideBallBlock(b,block)) break; }
+      if(b.hits>=b.maxHits||b.life>9) state.balls.splice(i,1);
+    }
+    state.blocks=state.blocks.filter(b=>!b.dead);
+    const magnet=state.upgrades.magnet;
+    for(let i=state.shards.length-1;i>=0;i--) {
+      const s=state.shards[i]; s.age+=dt;
+      if(s.age<Math.max(.18,.65-magnet*.085)) { s.vy+=260*dt;s.x+=s.vx*dt;s.y+=s.vy*dt; }
+      else {
+        const tx=650,ty=810, pull=clamp(dt*(3.2+magnet*.85),0,1); s.x=lerp(s.x,tx,pull);s.y=lerp(s.y,ty,pull);
+        if(Math.hypot(s.x-tx,s.y-ty)<18) {
+          const earned=Math.max(1,Math.round(s.value*(1+magnet*.18))); state.credits+=earned; state.shards.splice(i,1);
+          if(Math.random()<.45) tone(540+earned*15,.035,.009,'sine'); saveCampaign();
+        }
+      }
+    }
+    for(let i=state.particles.length-1;i>=0;i--){const p=state.particles[i];p.life-=dt;p.vy+=95*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.life<=0)state.particles.splice(i,1);}
+    for(let i=state.floaters.length-1;i>=0;i--){const f=state.floaters[i];f.life-=dt;f.y-=30*dt;if(f.life<=0)state.floaters.splice(i,1);}
+    if(now>state.comboUntil) state.combo=0;
+    if(!state.blocks.length) finishRun(true);
+  }
+
+  function roundRect(x,y,w,h,r) {
+    const rr=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+rr,y);ctx.arcTo(x+w,y,x+w,y+h,rr);ctx.arcTo(x+w,y+h,x,y+h,rr);ctx.arcTo(x,y+h,x,y,rr);ctx.arcTo(x,y,x+w,y,rr);ctx.closePath();
+  }
+  function drawBackground(now) {
+    const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#48c5f5');g.addColorStop(.55,'#b8eff8');g.addColorStop(1,'#dff3a9');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='rgba(255,255,255,.48)';
+    for(let i=0;i<6;i++){const x=((i*173+now*.008*(i%2?1:-1))%(W+220))-110,y=65+i*112;ctx.beginPath();ctx.ellipse(x,y,70,18,0,0,Math.PI*2);ctx.ellipse(x+48,y-10,52,25,0,0,Math.PI*2);ctx.ellipse(x-42,y-7,42,21,0,0,Math.PI*2);ctx.fill();}
+    ctx.fillStyle='#7bcf62';ctx.beginPath();ctx.moveTo(0,705);ctx.quadraticCurveTo(140,635,286,710);ctx.quadraticCurveTo(470,610,720,700);ctx.lineTo(720,900);ctx.lineTo(0,900);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#4ab65e';ctx.beginPath();ctx.moveTo(0,760);ctx.quadraticCurveTo(210,680,380,758);ctx.quadraticCurveTo(570,690,720,746);ctx.lineTo(720,900);ctx.lineTo(0,900);ctx.fill();
+    const island=ctx.createLinearGradient(0,625,0,750);island.addColorStop(0,'#e8f7c2');island.addColorStop(.18,'#80d764');island.addColorStop(1,'#4f9f6a');ctx.fillStyle=island;ctx.beginPath();ctx.ellipse(W/2,682,260,48,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.25)';ctx.beginPath();ctx.ellipse(W/2-40,668,185,21,0,0,Math.PI*2);ctx.fill();
+  }
+  function drawBlocks() {
+    for(const b of state.blocks) {
+      b.flash=Math.max(0,b.flash-.08);
+      const durability=((b.layers-1)+(b.hp/b.maxHp))/b.maxLayers;
+      const light=58+durability*15+b.flash*12;
+      const grad=ctx.createLinearGradient(b.x,b.y,b.x,b.y+b.h);grad.addColorStop(0,`hsl(${b.hue} 88% ${Math.min(92,light+13)}%)`);grad.addColorStop(1,`hsl(${b.hue} 72% ${light-10}%)`);
+      ctx.save();ctx.shadowColor=b.vault?'rgba(255,186,38,.44)':'rgba(5,78,105,.18)';ctx.shadowBlur=b.vault?11:7;ctx.shadowOffsetY=3;roundRect(b.x,b.y,b.w,b.h,6);ctx.fillStyle=grad;ctx.fill();ctx.shadowColor='transparent';ctx.strokeStyle=b.vault?'rgba(255,244,169,.98)':'rgba(255,255,255,.68)';ctx.lineWidth=b.vault?2.2:1.4;ctx.stroke();
+      ctx.fillStyle='rgba(255,255,255,.32)';roundRect(b.x+4,b.y+3,b.w-8,Math.max(3,b.h*.22),3);ctx.fill();
+      if(b.hp<b.maxHp){ctx.strokeStyle='rgba(18,60,85,.45)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(b.x+b.w*.3,b.y+2);ctx.lineTo(b.x+b.w*.22,b.y+b.h*.45);ctx.lineTo(b.x+b.w*.4,b.y+b.h*.72);ctx.stroke();}
+      ctx.fillStyle='rgba(5,50,72,.78)';ctx.font=`900 ${b.h>=18?12:11}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(b.layers),b.x+b.w/2,b.y+b.h*.58);
+      ctx.restore();
+    }
+  }
+  function drawActors(now) {
+    for(const s of state.shards){ctx.save();ctx.translate(s.x,s.y);ctx.rotate(s.age*5);ctx.fillStyle=`hsl(${s.hue} 88% 62%)`;ctx.beginPath();ctx.moveTo(0,-6);ctx.lineTo(5,0);ctx.lineTo(0,7);ctx.lineTo(-5,0);ctx.closePath();ctx.fill();ctx.strokeStyle='rgba(255,255,255,.8)';ctx.stroke();ctx.restore();}
+    for(const b of state.balls){ctx.save();ctx.shadowColor=b.charged?'#ffe862':'#ffffff';ctx.shadowBlur=b.charged?22:13;const g=ctx.createRadialGradient(b.x-3,b.y-4,1,b.x,b.y,b.r);g.addColorStop(0,'#fff');g.addColorStop(.35,b.charged?'#fff49a':'#bffcff');g.addColorStop(1,b.charged?'#ffb20d':'#159bd1');ctx.fillStyle=g;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();ctx.restore();}
+    for(const p of state.particles){ctx.globalAlpha=clamp(p.life/p.max,0,1);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;
+    for(const f of state.floaters){ctx.globalAlpha=clamp(f.life,0,1);ctx.fillStyle=f.color;ctx.font='900 18px system-ui';ctx.textAlign='center';ctx.fillText(f.text,f.x,f.y);}ctx.globalAlpha=1;
+    // recycler
+    ctx.save();ctx.translate(650,812);ctx.fillStyle='#087f76';roundRect(-35,-24,70,48,10);ctx.fill();ctx.fillStyle='#dfffe4';roundRect(-28,-17,56,30,7);ctx.fill();ctx.fillStyle='#149f88';ctx.font='900 23px system-ui';ctx.textAlign='center';ctx.fillText('♻',0,7);ctx.restore();
+    // cannon and aim guide
+    const a=Math.atan2(state.aimY-828,state.aimX-W/2);
+    ctx.save();ctx.setLineDash([8,10]);ctx.strokeStyle='rgba(255,255,255,.48)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(W/2,812);ctx.lineTo(W/2+Math.cos(a)*155,812+Math.sin(a)*155);ctx.stroke();ctx.setLineDash([]);ctx.translate(W/2,824);ctx.rotate(a);const cg=ctx.createLinearGradient(0,-12,74,12);cg.addColorStop(0,'#176b8e');cg.addColorStop(1,'#5be0ee');ctx.fillStyle=cg;roundRect(0,-12,72,24,10);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.65)';ctx.lineWidth=2;ctx.stroke();ctx.restore();
+    ctx.fillStyle='#0d668b';ctx.beginPath();ctx.arc(W/2,828,31,0,Math.PI*2);ctx.fill();ctx.fillStyle='#d5fbff';ctx.beginPath();ctx.arc(W/2-8,819,8,0,Math.PI*2);ctx.fill();
+    if(!state.playing||state.paused){ctx.fillStyle='rgba(8,43,63,.44)';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='1000 38px system-ui';ctx.fillText(state.paused?'PAUSED':'CLOUD QUARRY',W/2,H/2);}
+  }
+  function render(now) { drawBackground(now);drawBlocks();drawActors(now); }
+
+  let lastFrame=performance.now(), hudClock=0;
+  function frame(now) {
+    const dt=Math.min(.033,(now-lastFrame)/1000);lastFrame=now;
+    if(state.playing&&!state.paused&&!state.ended){
+      state.elapsedMs=now-state.startedAt-state.pausedTotal;
+      if(state.mode==='daily'&&state.elapsedMs>=state.dailyLimitMs) finishRun(false);
+      else if(state.mode==='daily' && dailySimulation) {
+        // Fixed simulation steps have identical collision order on client and server.
+        const target=Math.min(CloudQuarryCore.MAX_TICKS,Math.floor(state.elapsedMs/CloudQuarryCore.STEP_MS));
+        let budget=120;
+        while(dailySimulation.state.tick<target && !dailySimulation.state.ended && budget-->0) stepDaily();
+        if(dailySimulation.state.cleared) finishRun(true);
+        for(const p of state.particles){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;}
+        state.particles=state.particles.filter(p=>p.life>0);
+        for(const f of state.floaters){f.life-=dt;f.y-=30*dt;}state.floaters=state.floaters.filter(f=>f.life>0);
+      } else updatePhysics(dt,now);
+    } else {
+      for(const p of state.particles){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;}
+      state.particles=state.particles.filter(p=>p.life>0);
+    }
+    if(now-hudClock>100){hudClock=now;updateHud();}
+    render(now);requestAnimationFrame(frame);
+  }
+
+  function updateHud() {
+    const remaining=state.blocks.length;
+    $('blocksValue').textContent=state.total?`${remaining} / ${state.total}`:'—';
+    $('shardsValue').textContent=Math.floor(state.credits).toLocaleString();$('creditValue').textContent=Math.floor(state.credits).toLocaleString();$('shotsValue').textContent=state.shots.toLocaleString();
+    if(state.mode==='daily'){
+      const left=Math.max(0,state.dailyLimitMs-state.elapsedMs);$('timerValue').textContent=formatTime(left);$('timerValue').classList.toggle('danger',left<20000&&state.playing);
+    }else{$('timerValue').textContent=state.playing?formatTime(state.elapsedMs):'Untimed';$('timerValue').classList.remove('danger');}
+    $('comboChip').textContent=`CHAIN ×${state.combo}`;$('comboChip').classList.toggle('show',state.combo>1);
+    renderStrata();
+    for(const btn of document.querySelectorAll('.upgrade')){const def=upgradeDefs.find(d=>d.id===btn.dataset.id);if(def)btn.disabled=!state.playing||state.upgrades[def.id]>=def.max||state.credits<upgradeCost(def);}
+  }
+
+  async function finishRun(cleared) {
+    if(state.ended) return;const opening=startGeneration;state.ended=true;state.playing=false;state.pointerDown=false;state.elapsedMs=performance.now()-state.startedAt-state.pausedTotal;
+    $('timerValue').classList.remove('danger');
+    const title=$('resultTitle'),copy=$('resultCopy'),extra=$('resultExtra');extra.textContent='';
+    if(cleared){title.textContent='Quarry cleared!';copy.textContent=state.mode==='daily'?'The last block is skyglass dust. Saving your official time…':'The floating formation is clear. A fresh quarry is ready whenever you are.';tone(392,.12,.04);tone(523,.16,.04,'sine',.1);tone(784,.3,.035,'sine',.22);burst(W/2,420,'#ffffff',55,300);}
+    else{title.textContent='Time’s up';copy.textContent=`${state.blocks.length} blocks survived today’s sprint. Your upgrades are reset on the next attempt.`;tone(180,.22,.03,'triangle');}
+    $('resultTime').textContent=formatTime(state.elapsedMs);$('resultShots').textContent=state.shots.toLocaleString();$('resultCombo').textContent='×'+state.maxCombo;
+    $('resultLbBtn').style.display=state.mode==='daily'?'block':'none';$('shareBtn').style.display=state.mode==='daily'&&cleared?'block':'none';
+    if(state.mode==='campaign'&&cleared){const clearedLayout=state.layoutName;state.campaignCompleted++;state.destroyedIds.clear();resetWorkshop();saveCampaign();renderUpgrades();extra.textContent=`${clearedLayout} cleared. The next layout starts with a fresh workshop.`;}
+    $('resultOverlay').classList.add('show');
+    if(state.mode==='daily'&&cleared){
+      if(!auth.user){extra.textContent='Sign in before a run to save a time and earn XP.';return;}
+      if(!state.dailyToken){extra.textContent='This offline run could not be added to the leaderboard.';return;}
+      if(dailyEvents.length>CloudQuarryCore.MAX_EVENTS){extra.textContent='This run exceeded the official input limit.';return;}
+      const transcript={version:CloudQuarryCore.VERSION,ticks:dailySimulation.state.tick,events:dailyEvents};
+      try{
+        const r=await fetch('/api/cloudquarry/score',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:state.dailyToken,day:state.dailyDay,transcript})});
+        const j=await r.json();
+        if(opening!==startGeneration) return;
+        if(j&&j.ok){state.elapsedMs=j.durationMs;state.lastResult=j;$('resultTime').textContent=formatTime(j.durationMs);extra.textContent=`#${j.rank} today${j.xpAwarded?` · +${j.xpAwarded} Word Tycoon XP`:j.rewardPending?' · XP delivery pending':''}`;}
+        else extra.textContent='The server could not verify this run.';
+      }catch(_){if(opening===startGeneration)extra.textContent='Score saving is temporarily unavailable.';}
+    }
+  }
+
+  function announce(text){$('announcer').textContent=text;}
+  function login(){location.href='/auth/discord?returnTo='+encodeURIComponent(location.origin+location.pathname);}
+  async function initAuth(){
+    try{const params=new URLSearchParams(location.search),tok=params.get('auth_token');if(tok){await fetch('/api/auth/exchange?token='+encodeURIComponent(tok),{credentials:'include'});params.delete('auth_token');history.replaceState({},'',location.pathname+(params.toString()?'?'+params:''));}const r=await fetch('/api/me/session',{credentials:'include'}),j=await r.json();if(j&&j.ok)auth.user=j.user;}catch(_){}renderAuth();
+  }
+  function renderAuth(){const btn=$('authBtn');btn.innerHTML='';if(auth.user){if(auth.user.avatar){const img=document.createElement('img');img.src=auth.user.avatar;img.alt='';img.onerror=function(){this.remove()};btn.appendChild(img);}const span=document.createElement('span');span.textContent=String(auth.user.displayName||auth.user.username||'Player').slice(0,14);btn.appendChild(span);}else{const span=document.createElement('span');span.textContent='Sign in';btn.appendChild(span);}}
+
+  function lbRow(entry,isMe=false){const row=document.createElement('div');row.className='lb-row'+(isMe?' me':'');const rank=document.createElement('span');rank.className='lb-rank';rank.textContent=entry.rank<=3?['🥇','🥈','🥉'][entry.rank-1]:'#'+entry.rank;row.appendChild(rank);if(entry.avatar){const img=document.createElement('img');img.src=entry.avatar;img.alt='';img.onerror=function(){this.replaceWith(Object.assign(document.createElement('span'),{className:'lb-avatar'}));};row.appendChild(img);}else{const ava=document.createElement('span');ava.className='lb-avatar';row.appendChild(ava);}const name=document.createElement('span');name.className='lb-name';name.textContent=entry.name||'Player';row.appendChild(name);const time=document.createElement('span');time.className='lb-time';time.textContent=formatTime(entry.durationMs);const small=document.createElement('small');small.textContent=`${entry.shots} shots · ×${entry.maxCombo}`;time.appendChild(small);row.appendChild(time);return row;}
+  async function openLeaderboard(){
+    $('lbOverlay').classList.add('show');
+    const list=$('lbList'),me=$('lbMe');
+    list.innerHTML='<div class="empty">Loading…</div>';me.innerHTML='';
+    try{
+      const r=await fetch('/api/cloudquarry/leaderboard',{credentials:'include'}),j=await r.json();
+      $('lbDate').textContent=`${j.day||'Today'} · fastest verified clears`;list.innerHTML='';
+      if(!j.ok||!j.top?.length) list.innerHTML='<div class="empty">No verified clears yet today. Be the first.</div>';
+      else j.top.forEach(e=>list.appendChild(lbRow(e,!!(j.me&&j.me.rank===e.rank))));
+      if(j.ok&&j.me&&j.me.rank>(j.top?.length||0)) me.appendChild(lbRow(Object.assign({name:'You',avatar:auth.user?.avatar},j.me),true));
+    }catch(_){list.innerHTML='<div class="empty">Leaderboard unavailable.</div>';}
+  }
+
+  function closeOverlay(id){$(id).classList.remove('show');}
+  $('introCampaign').addEventListener('click',()=>startGame('campaign'));$('introDaily').addEventListener('click',()=>startGame('daily'));
+  document.querySelectorAll('.mode-btn').forEach(b=>b.addEventListener('click',()=>startGame(b.dataset.mode)));
+  $('pauseBtn').addEventListener('click',togglePause);$('restartBtn').addEventListener('click',restartGame);$('playAgainBtn').addEventListener('click',()=>startGame(state.mode));
+  $('soundBtn').addEventListener('click',()=>{prefs.sound=!prefs.sound;localStorage.setItem(PREF_KEY,JSON.stringify(prefs));setSoundLabel();if(prefs.sound)tone(440);});
+  $('authBtn').addEventListener('click',()=>auth.user?openLeaderboard():login());$('lbBtn').addEventListener('click',openLeaderboard);$('resultLbBtn').addEventListener('click',()=>{closeOverlay('resultOverlay');openLeaderboard();});
+  $('lbClose').addEventListener('click',()=>closeOverlay('lbOverlay'));$('helpBtn').addEventListener('click',()=>$('helpOverlay').classList.add('show'));$('helpClose').addEventListener('click',()=>closeOverlay('helpOverlay'));$('helpDone').addEventListener('click',()=>closeOverlay('helpOverlay'));
+  for(const id of ['lbOverlay','helpOverlay'])$(id).addEventListener('click',e=>{if(e.target===e.currentTarget)closeOverlay(id);});
+  $('shareBtn').addEventListener('click',async()=>{const text=`☁️ Cloud Quarry Daily ${state.dailyDay}\n⏱ ${formatTime(state.elapsedMs)} · ${state.shots} shots · best chain ×${state.maxCombo}\nhttps://wordtycoon.live/cloudquarry`;try{await navigator.clipboard.writeText(text);$('shareBtn').textContent='Copied!';}catch(_){prompt('Copy your result:',text);}setTimeout(()=>$('shareBtn').textContent='Share',1400);});
+  addEventListener('keydown',e=>{if(e.key===' '){e.preventDefault();fire(performance.now());}if(e.key==='ArrowLeft')state.aimX=clamp(state.aimX-30,30,W-30);if(e.key==='ArrowRight')state.aimX=clamp(state.aimX+30,30,W-30);if(state.mode==='daily' && (e.key==='ArrowLeft'||e.key==='ArrowRight'))dailyAim=[Math.round(clamp(state.aimX,35,685)),Math.round(clamp(state.aimY,70,790))];const n=Number(e.key);if(n>=1&&n<=upgradeDefs.length)buyUpgrade(upgradeDefs[n-1].id);if(e.key.toLowerCase()==='p')togglePause();});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.playing&&state.mode==='campaign'&&!state.paused)togglePause();});
+
+  const preview=makeFormation('cloudquarry:preview','daily',DAILY_BLOCKS);state.blocks=preview;state.total=preview.length;state.strataTotals=countStrata(preview);state.layoutName=layoutForSeed('cloudquarry:preview').name;state.upgrades=freshUpgrades();renderUpgrades();setModeButtons();updateHud();requestAnimationFrame(frame);initAuth();
+  window.__cloudQuarryDebug={state,startGame,makeFormation,layoutForSeed,buyUpgrade,finishRun,upgradeDefs,constants:{OPEN_BLOCKS,DAILY_BLOCKS,DAILY_LIMIT_MS,LAYOUT_VERSION}};
+})();
+</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440">
+<title>Spotify Overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  /* Palette extracted from album art at runtime — animated on song change. */
+  --c-dom: #1b1e28;
+  --c-accent: #ffd166;
+  --c-text: #ffffff;
+  --c-muted: rgba(255,255,255,0.58);
+  --c-bg-start: rgba(20,20,28,0.85);
+  --c-bg-end:   rgba(8,8,14,0.92);
+  --ease-fluent: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+html, body {
+  width: 1440px; height: 1080px;
+  background: transparent;
+  overflow: hidden;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--c-text);
+  transition: color 900ms var(--ease-fluent);
+}
+
+/* ───────── Background (full-bleed blurred album art) ───────── */
+.bg-layer { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
+.bg-img {
+  position: absolute; inset: -8%;
+  background-size: cover; background-position: center;
+  filter: blur(28px) saturate(1.25) brightness(0.55);
+  transform: scale(1.18);
+  opacity: 0;
+  transition: opacity 900ms var(--ease-fluent), background-image 0ms;
+}
+.bg-img.active { opacity: 1; }
+.bg-vignette {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at center,
+      transparent 0%,
+      rgba(0,0,0,0.35) 60%,
+      rgba(0,0,0,0.72) 100%),
+    linear-gradient(160deg, var(--c-bg-start) 0%, var(--c-bg-end) 100%);
+  transition: background 900ms var(--ease-fluent);
+}
+.bokeh-layer { position: absolute; inset: 0; pointer-events: none; }
+.bokeh {
+  position: absolute; border-radius: 50%;
+  background: radial-gradient(circle, var(--c-accent) 0%, transparent 70%);
+  filter: blur(8px);
+  opacity: 0.22;
+  animation: float 18s ease-in-out infinite;
+}
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(20px, -30px) scale(1.08); }
+}
+
+/* ───────── Stage + card ───────── */
+.stage {
+  position: relative; z-index: 2;
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  padding: 72px;
+}
+.card {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto auto;
+  align-items: center; justify-items: center;
+  gap: 34px;
+  width: 100%; max-width: 1160px;
+  padding: 48px 56px 44px;
+  border-radius: 36px;
+  background: linear-gradient(
+    160deg,
+    rgba(255,255,255,0.055) 0%,
+    rgba(255,255,255,0.018) 100%);
+  border: 1px solid rgba(255,255,255,0.10);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  box-shadow:
+    0 40px 120px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(255,255,255,0.03),
+    inset 0 1px 0 rgba(255,255,255,0.10);
+  transition:
+    box-shadow 900ms var(--ease-fluent),
+    border-color 900ms var(--ease-fluent);
+}
+.card.tinted {
+  /* accent-tinted edge when palette resolves. */
+  box-shadow:
+    0 40px 120px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(255,255,255,0.03),
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    0 0 80px var(--c-accent-glow, transparent);
+}
+
+/* ───────── Album art hero ───────── */
+.art-wrap {
+  position: relative;
+  width: 784px; height: 784px;
+  display: flex; align-items: center; justify-content: center;
+}
+/* Static halo glow behind the art, colored by accent. */
+.art-glow {
+  position: absolute; inset: -30px;
+  background: radial-gradient(circle, var(--c-accent) 0%, transparent 60%);
+  opacity: 0.3;
+  filter: blur(28px);
+  transition: background 900ms var(--ease-fluent);
+}
+.art {
+  position: relative; z-index: 2;
+  width: 784px; height: 784px;
+  border-radius: 20px;
+  object-fit: cover;
+  box-shadow:
+    0 30px 80px rgba(0,0,0,0.65),
+    0 0 0 1px rgba(255,255,255,0.06);
+  transition: opacity 600ms var(--ease-fluent), transform 900ms var(--ease-fluent);
+}
+/* Concentric rings outside the art — vinyl grooves, barely visible. */
+.vinyl-ring {
+  position: absolute; inset: -34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.07);
+  pointer-events: none;
+}
+.vinyl-ring::before, .vinyl-ring::after {
+  content: ''; position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.vinyl-ring::before { inset: 14px; }
+.vinyl-ring::after  { inset: 30px; }
+
+/* ───────── Info ───────── */
+.info { width: 100%; text-align: center; }
+.title {
+  font-family: 'Bebas Neue', 'Inter', sans-serif;
+  font-size: 92px;
+  line-height: 0.95;
+  letter-spacing: 2px;
+  font-weight: 400;
+  text-transform: uppercase;
+  color: var(--c-text);
+  text-shadow: 0 4px 24px rgba(0,0,0,0.55);
+  transition: color 900ms var(--ease-fluent), text-shadow 900ms var(--ease-fluent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.artist {
+  font-weight: 600;
+  font-size: 28px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--c-text);
+  opacity: 0.82;
+  margin-top: 14px;
+  transition: color 900ms var(--ease-fluent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.album {
+  font-weight: 500;
+  font-size: 15px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  margin-top: 10px;
+  transition: color 900ms var(--ease-fluent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ───────── Progress block ───────── */
+.progress-block {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 80px 1fr 80px;
+  align-items: center;
+  gap: 18px;
+}
+.time {
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: 1px;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-muted);
+  transition: color 900ms var(--ease-fluent);
+}
+.time.elapsed { text-align: right; }
+.time.total   { text-align: left; }
+.progress-bar {
+  position: relative;
+  height: 5px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 999px;
+  overflow: visible;
+}
+.progress-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 0%;
+  background: linear-gradient(90deg, var(--c-accent) 0%, var(--c-text) 100%);
+  border-radius: 999px;
+  transition: width 900ms linear, background 900ms var(--ease-fluent);
+  box-shadow: 0 0 16px var(--c-accent-glow, transparent);
+}
+.progress-tip {
+  position: absolute; top: 50%;
+  left: 0%;
+  width: 16px; height: 16px;
+  background: var(--c-text);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 20px var(--c-accent-glow, rgba(255,255,255,0.4));
+  transition: left 900ms linear, background 900ms var(--ease-fluent);
+}
+
+/* ───────── Entrance animation (staggered) ───────── */
+.stage.enter .art-wrap { animation: rise 700ms var(--ease-fluent) both; animation-delay: 0ms; }
+.stage.enter .title    { animation: rise 700ms var(--ease-fluent) both; animation-delay: 180ms; }
+.stage.enter .artist   { animation: rise 700ms var(--ease-fluent) both; animation-delay: 280ms; }
+.stage.enter .album    { animation: rise 700ms var(--ease-fluent) both; animation-delay: 360ms; }
+.stage.enter .progress-block { animation: rise 700ms var(--ease-fluent) both; animation-delay: 440ms; }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(26px); filter: blur(6px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+}
+
+/* ───────── Exit (song-change out) ───────── */
+.stage.leave .card {
+  animation: leaveCard 380ms ease-in forwards;
+}
+@keyframes leaveCard {
+  to { opacity: 0; transform: translateY(-14px) scale(0.985); filter: blur(8px); }
+}
+
+/* ───────── Idle state ───────── */
+.idle {
+  position: fixed; z-index: 4; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: opacity 500ms var(--ease-fluent);
+  pointer-events: none;
+}
+.idle.visible { opacity: 1; }
+.idle-text {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 58px;
+  letter-spacing: 8px;
+  color: rgba(255,255,255,0.28);
+  text-transform: uppercase;
+  animation: idle-pulse 2.4s ease-in-out infinite;
+}
+@keyframes idle-pulse {
+  0%, 100% { opacity: 0.28; }
+  50%      { opacity: 0.55; }
+}
+
+.stage.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="bg-layer">
+  <div class="bg-img" id="bg-img"></div>
+  <div class="bg-vignette"></div>
+  <div class="bokeh-layer" id="bokeh-layer"></div>
+</div>
+
+<div class="idle visible" id="idle"><div class="idle-text">Waiting for Spotify</div></div>
+
+<div class="stage hidden" id="stage">
+  <div class="card" id="card">
+    <div class="art-wrap">
+      <div class="art-glow"></div>
+      <div class="vinyl-ring"></div>
+      <img class="art" id="art" alt="" crossorigin="anonymous">
+    </div>
+    <div class="info">
+      <div class="title" id="title"></div>
+      <div class="artist" id="artist"></div>
+      <div class="album" id="album"></div>
+    </div>
+    <div class="progress-block">
+      <div class="time elapsed" id="time-elapsed">0:00</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+        <div class="progress-tip" id="progress-tip"></div>
+      </div>
+      <div class="time total" id="time-total">0:00</div>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function () {
+'use strict';
+
+// ─── DOM refs ──────────────────────────────────────────────────────────────
+var root       = document.documentElement;
+var stage      = document.getElementById('stage');
+var card       = document.getElementById('card');
+var idle       = document.getElementById('idle');
+var bgImg      = document.getElementById('bg-img');
+var bokehLayer = document.getElementById('bokeh-layer');
+var artEl      = document.getElementById('art');
+var titleEl    = document.getElementById('title');
+var artistEl   = document.getElementById('artist');
+var albumEl    = document.getElementById('album');
+var fillEl     = document.getElementById('progress-fill');
+var tipEl      = document.getElementById('progress-tip');
+var elapsedEl  = document.getElementById('time-elapsed');
+var totalEl    = document.getElementById('time-total');
+
+// ─── Bokeh particles (palette-tinted) ─────────────────────────────────────
+(function spawnBokeh() {
+  var N = 6;
+  for (var i = 0; i < N; i++) {
+    var b = document.createElement('div');
+    b.className = 'bokeh';
+    var sz = 60 + Math.random() * 180;
+    b.style.width  = sz + 'px';
+    b.style.height = sz + 'px';
+    b.style.left = (Math.random() * 100) + '%';
+    b.style.top  = (Math.random() * 100) + '%';
+    b.style.animationDelay    = (-Math.random() * 18) + 's';
+    b.style.animationDuration = (12 + Math.random() * 14) + 's';
+    b.style.opacity = (0.10 + Math.random() * 0.18);
+    bokehLayer.appendChild(b);
+  }
+})();
+
+// ─── Track state ──────────────────────────────────────────────────────────
+var currentTrackSig = '';      // track+artist signature so we only animate on real changes
+var currentDuration = 0;       // ms
+var currentProgress = 0;       // ms (last server snapshot)
+var currentProgressAt = 0;     // Date.now() when snapshot received
+var currentIsPlaying = false;
+var progressTimer = null;
+
+function fmtTime(ms) {
+  if (!isFinite(ms) || ms < 0) ms = 0;
+  var s = Math.floor(ms / 1000);
+  var m = Math.floor(s / 60);
+  s = s - m * 60;
+  return m + ':' + (s < 10 ? '0' + s : s);
+}
+
+function updateProgressFrame() {
+  if (!currentDuration || !currentIsPlaying) {
+    // freeze UI using last snapshot
+    var frozen = currentProgress;
+    var pct = currentDuration ? Math.min(100, 100 * frozen / currentDuration) : 0;
+    fillEl.style.width = pct + '%';
+    tipEl.style.left   = pct + '%';
+    elapsedEl.textContent = fmtTime(frozen);
+    totalEl.textContent   = fmtTime(currentDuration);
+    return;
+  }
+  var now = Date.now();
+  var elapsed = currentProgress + (now - currentProgressAt);
+  if (elapsed > currentDuration) elapsed = currentDuration;
+  var pct = Math.min(100, 100 * elapsed / currentDuration);
+  fillEl.style.width = pct + '%';
+  tipEl.style.left   = pct + '%';
+  elapsedEl.textContent = fmtTime(elapsed);
+  totalEl.textContent   = fmtTime(currentDuration);
+}
+
+function startProgressTimer() {
+  if (progressTimer) clearInterval(progressTimer);
+  progressTimer = setInterval(updateProgressFrame, 250);
+}
+
+// ─── Palette extraction ───────────────────────────────────────────────────
+// Samples the album art on a hidden 60x60 canvas and produces 3 colors:
+//   dom    — averaged mid-brightness pixel (used for edge/background tint)
+//   accent — the most saturated mid-brightness pixel (used for glow/fill)
+//   text   — #fff or #000 based on dom luminance
+// All palette vars animate (transition) over 900ms when set.
+function rgb(r, g, b) { return 'rgb(' + r + ',' + g + ',' + b + ')'; }
+function rgba(r, g, b, a) { return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')'; }
+
+function extractPalette(url) {
+  return new Promise(function (resolve) {
+    if (!url) { resolve(null); return; }
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function () {
+      try {
+        var c = document.createElement('canvas');
+        c.width = 60; c.height = 60;
+        var ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0, 60, 60);
+        var data = ctx.getImageData(0, 0, 60, 60).data;
+        var domR = 0, domG = 0, domB = 0, count = 0;
+        var maxSat = -1, accentR = 255, accentG = 255, accentB = 255;
+        for (var i = 0; i < data.length; i += 4) {
+          var r = data[i], g = data[i+1], b = data[i+2];
+          var brightness = (r + g + b) / 3;
+          if (brightness < 18 || brightness > 238) continue;
+          var maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
+          var sat = maxC === 0 ? 0 : (maxC - minC) / maxC;
+          domR += r; domG += g; domB += b; count++;
+          if (sat > maxSat) { maxSat = sat; accentR = r; accentG = g; accentB = b; }
+        }
+        if (count === 0) { resolve(null); return; }
+        var dR = Math.round(domR / count);
+        var dG = Math.round(domG / count);
+        var dB = Math.round(domB / count);
+        var lum = 0.299 * dR + 0.587 * dG + 0.114 * dB;
+        // Nudge the dominant darker for the background gradient.
+        var bgR = Math.round(dR * 0.35), bgG = Math.round(dG * 0.35), bgB = Math.round(dB * 0.35);
+        resolve({
+          dom:    rgb(dR, dG, dB),
+          accent: rgb(accentR, accentG, accentB),
+          accentGlow: rgba(accentR, accentG, accentB, 0.55),
+          text:   lum > 165 ? '#101010' : '#ffffff',
+          muted:  lum > 165 ? 'rgba(20,20,20,0.58)' : 'rgba(255,255,255,0.58)',
+          bgStart: rgba(bgR + 20, bgG + 20, bgB + 28, 0.78),
+          bgEnd:   rgba(Math.max(0, bgR - 6), Math.max(0, bgG - 6), Math.max(0, bgB - 2), 0.94),
+        });
+      } catch (e) {
+        // Canvas tainted or other error — resolve null so caller keeps defaults.
+        resolve(null);
+      }
+    };
+    img.onerror = function () { resolve(null); };
+    img.src = url;
+  });
+}
+
+function applyPalette(pal) {
+  if (!pal) return;
+  root.style.setProperty('--c-dom', pal.dom);
+  root.style.setProperty('--c-accent', pal.accent);
+  root.style.setProperty('--c-accent-glow', pal.accentGlow);
+  root.style.setProperty('--c-text', pal.text);
+  root.style.setProperty('--c-muted', pal.muted);
+  root.style.setProperty('--c-bg-start', pal.bgStart);
+  root.style.setProperty('--c-bg-end',   pal.bgEnd);
+  card.classList.add('tinted');
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────
+function sig(data) { return (data.track || '') + '|' + (data.artist || ''); }
+
+function render(data) {
+  if (!data || !data.isPlaying) {
+    // Park in idle — keep last-known palette so the waiting text is tinted.
+    idle.classList.add('visible');
+    stage.classList.add('hidden');
+    currentIsPlaying = false;
+    return;
+  }
+
+  idle.classList.remove('visible');
+
+  var nextSig = sig(data);
+  var changed = nextSig !== currentTrackSig;
+  currentTrackSig = nextSig;
+  currentDuration = data.duration || 0;
+  currentProgress = data.progress || 0;
+  currentProgressAt = Date.now();
+  currentIsPlaying = true;
+
+  function commitTextAndArt() {
+    titleEl.textContent  = data.track  || '';
+    artistEl.textContent = data.artist || '';
+    albumEl.textContent  = data.album  || '';
+    var url = data.albumArtLarge || data.albumArt || '';
+    if (url) artEl.src = url;
+
+    // Extract palette from the same URL (in parallel with the art setting itself).
+    extractPalette(url).then(applyPalette);
+
+    // Background image — same URL but heavily blurred via CSS filter.
+    if (url) {
+      bgImg.style.backgroundImage = "url('" + url.replace(/'/g, "\\'") + "')";
+      bgImg.classList.add('active');
+    }
+  }
+
+  if (stage.classList.contains('hidden') || !changed) {
+    // First reveal, or same-song update (play/pause toggle, progress refresh).
+    if (stage.classList.contains('hidden')) {
+      commitTextAndArt();
+      stage.classList.remove('hidden');
+      stage.classList.remove('leave');
+      stage.classList.add('enter');
+      // Remove enter class after animation so re-adding later replays it.
+      setTimeout(function () { stage.classList.remove('enter'); }, 1200);
+    } else if (changed) {
+      // shouldn't hit — handled below — but commit just in case
+      commitTextAndArt();
+    }
+    // Progress timer keeps running.
+    updateProgressFrame();
+    startProgressTimer();
+    return;
+  }
+
+  // Song change — cross-fade: leave → swap content → enter.
+  stage.classList.add('leave');
+  setTimeout(function () {
+    commitTextAndArt();
+    stage.classList.remove('leave');
+    stage.classList.remove('enter'); void stage.offsetWidth; stage.classList.add('enter');
+    updateProgressFrame();
+    startProgressTimer();
+    setTimeout(function () { stage.classList.remove('enter'); }, 1200);
+  }, 400);
+}
+
+// ─── Socket.IO ────────────────────────────────────────────────────────────
+var socket = io('/');
+socket.on('spotify-now-playing', function (data) {
+  if (data) render(data);
+});
+
+// Prime via REST on load so a refreshed overlay shows current state instantly
+// (the socket event only fires on poll change). /api/spotify/now-playing
+// returns the last emitted payload.
+fetch('/api/spotify/now-playing').then(function (r) { return r.json(); }).then(function (s) {
+  if (s) render(s);
+}).catch(function () { /* no-op, socket will catch up within 5s */ });
+
+})();
+</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

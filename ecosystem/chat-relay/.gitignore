@@ -1,0 +1,57 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
+*.db
+*.db-journal
+cloudflare-tycoonio-phase1/package-lock.json
+tools/streamer-bridge/package-lock.json
+NUL
+nul
+tools/afk-screenshots/*.bmp
+tools/afk-screenshots/*.png
+data/streamers.json
+
+# Local development artifacts
+.claude/
+*.bak
+*.bak-*
+src/discord-searchle.js.bak-pre-embed-fix
+
+# Runtime / sensitive data (never commit)
+data/spotify-tokens.json
+data/sp-daily-completions.json
+data/sp-game-state.json
+data/streamer-goals.json
+data/avatars/
+data/word-bank/
+data/relaybroadcast.db.cleanup-bak
+data/relaybroadcast.db.post-cleanup
+temp-winoverlay.json
+thumb*.png
+tt-roominfo-probe.js
+.codex-backups/
+backups/
+*.preport
+public/ad-vertical-bak-*/
+# Root-level dead copies
+/streamers.js
+/index.html
+/landing.html
+tools/streamer-bridge/dist/
+
+# Private per-service issuer registry
+data/service-keys.json
+data/service-keys.json.*
+
+# Private persistent device-session revocations
+data/remember-revocations.json
+data/remember-revocations.json.*
+
+# Runtime streamer state (per-deployment)
+data/streamer-rules.json
+data/streamer-setups.json
+data/streamer-tts.json
+data/streamer-win-tallies.json
+data/win-overlay-settings.json

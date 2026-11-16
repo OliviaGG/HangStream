@@ -1,0 +1,30 @@
+<svg width="1600" height="500" viewBox="0 0 1600 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="500">
+      <stop stop-color="#101010"/>
+      <stop offset="0.52" stop-color="#1A2618"/>
+      <stop offset="1" stop-color="#141414"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="500" rx="34" fill="url(#bg)"/>
+  <rect x="24" y="24" width="1552" height="452" rx="28" stroke="#6AAA64" stroke-opacity="0.24" stroke-width="2"/>
+  <g opacity="0.9">
+    <rect x="1064" y="102" width="72" height="72" rx="10" fill="#6AAA64"/>
+    <rect x="1148" y="102" width="72" height="72" rx="10" fill="#3A3A3C"/>
+    <rect x="1232" y="102" width="72" height="72" rx="10" fill="#C9B458"/>
+    <rect x="1316" y="102" width="72" height="72" rx="10" fill="#3A3A3C"/>
+    <rect x="1064" y="188" width="72" height="72" rx="10" fill="#3A3A3C"/>
+    <rect x="1148" y="188" width="72" height="72" rx="10" fill="#6AAA64"/>
+    <rect x="1232" y="188" width="72" height="72" rx="10" fill="#3A3A3C"/>
+    <rect x="1316" y="188" width="72" height="72" rx="10" fill="#6AAA64"/>
+    <rect x="1064" y="274" width="72" height="72" rx="10" fill="#C9B458"/>
+    <rect x="1148" y="274" width="72" height="72" rx="10" fill="#3A3A3C"/>
+    <rect x="1232" y="274" width="72" height="72" rx="10" fill="#6AAA64"/>
+    <rect x="1316" y="274" width="72" height="72" rx="10" fill="#3A3A3C"/>
+  </g>
+  <text x="92" y="122" fill="#A7F3A0" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="7">WORDLE</text>
+  <text x="92" y="228" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="98" font-weight="800">Classic pressure. Cleaner than ever.</text>
+  <text x="92" y="292" fill="#DCFCE7" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="500">Five letters. Sharp choices. One of the easiest hooks in the lineup.</text>
+  <rect x="92" y="338" width="198" height="62" rx="31" fill="#6AAA64"/>
+  <text x="143" y="380" fill="#0D160C" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="800">DAILY HIT</text>
+</svg>

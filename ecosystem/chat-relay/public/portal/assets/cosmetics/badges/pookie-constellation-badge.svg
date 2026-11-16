@@ -1,0 +1,29 @@
+<svg width="1200" height="480" viewBox="0 0 1200 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="constellationBg" x1="0" y1="0" x2="1200" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#171126"/>
+      <stop offset="0.48" stop-color="#2B1B40"/>
+      <stop offset="1" stop-color="#221432"/>
+    </linearGradient>
+    <radialGradient id="constellationGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(876 150) rotate(90) scale(220 380)">
+      <stop stop-color="#FFD96B" stop-opacity="0.26"/>
+      <stop offset="0.58" stop-color="#A76BFF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#A76BFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="480" rx="36" fill="url(#constellationBg)"/>
+  <rect width="1200" height="480" rx="36" fill="url(#constellationGlow)"/>
+  <path d="M138 324C286 248 392 214 582 214C766 214 868 246 1006 324" stroke="#FFD96B" stroke-opacity="0.22" stroke-width="16" stroke-linecap="round"/>
+  <path d="M170 366C322 292 422 258 596 258C760 258 852 292 988 366" stroke="#A76BFF" stroke-opacity="0.2" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="784" cy="124" r="7" fill="#FFF2B6"/>
+  <circle cx="842" cy="96" r="8" fill="#FFD96B"/>
+  <circle cx="904" cy="130" r="7" fill="#FFF8DD"/>
+  <circle cx="962" cy="104" r="7" fill="#A76BFF"/>
+  <circle cx="998" cy="166" r="6" fill="#FFD96B"/>
+  <circle cx="934" cy="206" r="7" fill="#FFF2B6"/>
+  <circle cx="862" cy="192" r="7" fill="#A76BFF"/>
+  <circle cx="808" cy="228" r="6" fill="#FFD96B"/>
+  <path d="M784 124L842 96L904 130L962 104L998 166L934 206L862 192L808 228" stroke="rgba(255,255,255,0.46)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M842 96L862 192" stroke="rgba(255,217,107,0.28)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M904 130L934 206" stroke="rgba(167,107,255,0.24)" stroke-width="3.5" stroke-linecap="round"/>
+</svg>

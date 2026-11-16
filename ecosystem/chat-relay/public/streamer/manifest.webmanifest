@@ -1,0 +1,32 @@
+{
+  "name": "Word Tycoon Streamer",
+  "short_name": "WT Streamer",
+  "description": "Streamer dashboard for TikTok chat relay, private game sessions, and chat TTS.",
+  "id": "/streamer/?source=pwa",
+  "start_url": "/streamer/?source=pwa",
+  "scope": "/streamer/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0d1320",
+  "theme_color": "#0d1320",
+  "icons": [
+    {
+      "src": "/streamer/icons/icon-512.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/streamer/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/streamer/icons/icon-1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

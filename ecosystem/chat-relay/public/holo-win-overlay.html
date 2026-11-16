@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Holo Win Overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Glass minimalism palette — high opacity so content snaps forward ── */
+:root {
+  /* Near-opaque dark glass: keeps the frosted backdrop-blur shine but
+     content behind is barely visible, so text reads cleanly on any
+     stream background. */
+  --glass-bg: rgba(14, 18, 28, 0.97);
+  --glass-bg-stronger: rgba(255, 255, 255, 0.12);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-border-soft: rgba(255, 255, 255, 0.10);
+  --text: rgba(255, 255, 255, 0.98);
+  --text-muted: rgba(255, 255, 255, 0.65);
+  --text-faint: rgba(255, 255, 255, 0.45);
+  --accent-jackpot: #FFD66B;
+}
+
+@keyframes glass-fade-in {
+  0%   { opacity: 0; transform: translate(-50%, -2%) translateY(8px); }
+  100% { opacity: 1; transform: translate(-50%, -2%) translateY(0); }
+}
+@keyframes glass-fade-out {
+  to { opacity: 0; transform: translate(-50%, -2%) translateY(-6px); }
+}
+
+/* Big-mode materialize — card "draws downward" from the beam endpoint
+   over ~300ms after the beam has fully grown (animation-delay: 400ms). */
+@keyframes glass-materialize {
+  0%   { opacity: 0; transform: translate(-50%, -2%) scaleY(0); filter: brightness(2.2); }
+  60%  { opacity: 1; transform: translate(-50%, -2%) scaleY(1.02); filter: brightness(1.5); }
+  100% { opacity: 1; transform: translate(-50%, -2%) scaleY(1);    filter: brightness(1); }
+}
+
+/* ── Scan beam (big mode only) ─────────────────────────────
+   Vertical cyan beam projected from above the anchor down to the card top.
+   Grows downward over 400ms (transform-origin: bottom -> top), then fades
+   out 400-700ms while the card materializes from its endpoint. */
+.beam {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  width: 14px;
+  height: 320px;
+  margin-left: -7px;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 229, 255, 0) 8%,
+    rgba(0, 229, 255, 0.5) 38%,
+    rgba(0, 229, 255, 0.95) 78%,
+    rgba(255, 255, 255, 1) 100%
+  );
+  transform-origin: top center;
+  transform: scaleY(0);
+  opacity: 0.95;
+  animation:
+    beam-grow 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards,
+    beam-fade 0.3s 0.45s ease-out forwards;
+  filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.7));
+  z-index: 0;
+}
+@keyframes beam-grow {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+@keyframes beam-fade {
+  to { opacity: 0; }
+}
+
+/* Particle FX canvas — full-stage overlay, drawn ABOVE everything so
+   sparks fly past card edges. */
+#fx-particles {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* ── Card placement ───────────────────────────────────────── */
+#stage {
+  position: relative;
+  width: 1080px;
+  height: 1920px;
+  transform-origin: top center;
+}
+
+.holo-anchor {
+  position: absolute;
+  pointer-events: none;
+}
+
+.holo {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -2%);
+  opacity: 0;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.35),
+    0 4px 16px rgba(0, 0, 0, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.20);
+  /* Backdrop blur kept — provides the frosted edge cue at the card border
+     while the near-opaque background hides what's behind the card body. */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  overflow: hidden;
+  color: var(--text);
+  animation: glass-fade-in 0.5s cubic-bezier(0.24, 1, 0.32, 1) forwards;
+  z-index: 1;
+}
+/* Big-mode card uses the materialize-from-beam entrance, delayed 400ms so
+   the beam has fully grown first. transform-origin top so it draws downward. */
+.holo.big {
+  transform-origin: top center;
+  animation: glass-materialize 0.4s 0.4s cubic-bezier(0.24, 1, 0.32, 1) forwards;
+}
+.holo.fading {
+  animation: glass-fade-out 0.5s ease-in forwards !important;
+}
+
+/* Subtle top highlight — the only "shine" allowed */
+.holo::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%);
+}
+
+/* ── Card content ─────────────────────────────────────────── */
+.holo-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 18px;
+  gap: 14px;
+}
+
+.holo-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--glass-border-soft);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+}
+.holo-header .game-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.holo-header .game-icon {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  background: var(--glass-bg-stronger);
+  position: relative;
+  overflow: hidden;
+}
+.holo-header .game-icon img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.holo-header .label-status,
+.holo-header .blink-dot { display: none; }
+
+/* Winner block — big mode uses the full hero treatment; small mode keeps the
+   compact horizontal layout (handled by .holo.small overrides further down). */
+.winner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.holo.big .winner {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+}
+
+.winner-pfp-wrap {
+  position: relative;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.winner-pfp-wrap.has-fan-club-badge::after,
+.lb-pfp.has-fan-club-badge::after,
+.winner-pfp-wrap.has-superfan-badge::after,
+.lb-pfp.has-superfan-badge::after,
+.winner-pfp-wrap.has-super-donor-badge::after,
+.lb-pfp.has-super-donor-badge::after {
+  content: '';
+  position: absolute;
+  top: -10%;
+  right: -10%;
+  width: 40%;
+  height: 40%;
+  background-image: url('https://wordtycoon.live/portal/assets/badges/tiktok-fanclub.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+  z-index: 4;
+}
+.winner-pfp-wrap.has-superfan-badge::after,
+.lb-pfp.has-superfan-badge::after {
+  background-image: url('https://wordtycoon.live/cosmetics/superfan-heart.png');
+  width: 44%;
+  height: 44%;
+}
+/* Super Donor — top tier, bigger again and the only one carrying a halo. */
+.winner-pfp-wrap.has-super-donor-badge::after,
+.lb-pfp.has-super-donor-badge::after {
+  background-image: url('https://wordtycoon.live/cosmetics/superdonor-heart.png');
+  width: 50%;
+  height: 50%;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55))
+          drop-shadow(0 0 6px rgba(110, 227, 74, 0.55))
+          drop-shadow(0 0 12px rgba(255, 215, 0, 0.35));
+}
+.lb-pfp.has-fan-club-badge,
+.lb-pfp.has-superfan-badge,
+.lb-pfp.has-super-donor-badge { position: relative; overflow: visible; }
+/* Winner pfp gets a soft radial glow halo. Tinted to cosmetic name_color
+   if equipped (set inline by JS), otherwise neutral white. */
+.holo.big .winner-pfp-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -28px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--winner-glow, rgba(255,255,255,0.22)) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+  animation: winner-glow-pulse 3.5s ease-in-out infinite;
+}
+@keyframes winner-glow-pulse {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.06); }
+}
+.winner-pfp {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--glass-bg-stronger);
+  border: 1px solid var(--glass-border);
+  z-index: 1;
+}
+.winner-pfp img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* WT-logo pfp: scale up + let the Scrabble tile that sticks out the top
+   overflow the circular boundary instead of getting clipped. Border +
+   shadow stripped because both scale with transform, producing a halo
+   around the logo when the wrap's overflow is visible. Mirrors the
+   portal's .avatar-is-logo / .shell-has-logo treatment. */
+.winner-pfp.has-logo,
+.winner-pfp-wrap.has-logo { background: transparent !important; overflow: visible; border-color: transparent !important; box-shadow: none !important; }
+.winner-pfp .is-logo { object-fit: contain !important; transform: scale(1.18); background: transparent !important; border: none !important; box-shadow: none !important; }
+.winner-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+.holo.big .winner-info {
+  flex: 0 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.winner-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+.winner-name {
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.winner-name .trophy {
+  font-size: 0.75em;
+  filter: drop-shadow(0 0 6px rgba(255, 214, 107, 0.55));
+}
+.winner-title {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Per-game ELO pill — sits between winner name and title. Suppressed
+   entirely when the game has no ELO (no .winner-elo element rendered). */
+.winner-elo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border-soft);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  align-self: flex-start;
+}
+.holo.big .winner-elo { font-size: 26px; padding: 8px 18px; gap: 10px; align-self: center; }
+.winner-elo .elo-num { color: var(--text); }
+.winner-elo .elo-delta { font-weight: 700; }
+.winner-elo .elo-delta.up   { color: #6BCB77; text-shadow: 0 0 6px rgba(107, 203, 119, 0.45); }
+.winner-elo .elo-delta.down { color: #E07B7B; text-shadow: 0 0 6px rgba(224, 123, 123, 0.35); }
+.winner-elo .elo-delta.flat { color: var(--text-faint); }
+/* Leaderboard ELO column — narrow, between name and points. */
+.lb-elo {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.lb-elo .lb-elo-delta { font-weight: 700; }
+.lb-elo .lb-elo-delta.up   { color: #6BCB77; }
+.lb-elo .lb-elo-delta.down { color: #E07B7B; }
+.lb-elo .lb-elo-delta.flat { color: var(--text-faint); }
+.winner-stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.holo.big .winner-stats { justify-content: center; }
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.holo.big .stat { align-items: center; }
+.stat-val {
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.stat.jackpot .stat-val { color: var(--accent-jackpot); }
+.stat-label {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-top: 4px;
+}
+
+/* Word / answer */
+.target-word {
+  font-weight: 500;
+  color: var(--text);
+  text-align: center;
+  letter-spacing: 1px;
+  padding: 10px;
+  border: 1px solid var(--glass-border-soft);
+  border-radius: 10px;
+  background: var(--glass-bg);
+}
+
+/* ── Leaderboard (top 5, compact rows, sequential entrance) ─────────── */
+.leaderboard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lb-header {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding-left: 4px;
+  margin-bottom: 2px;
+}
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border-soft);
+  border-radius: 10px;
+  /* Sequential slide-in: per-row delay set inline via --d. */
+  opacity: 0;
+  transform: translateY(8px);
+  animation: lb-row-in 0.4s cubic-bezier(0.24, 1, 0.32, 1) forwards;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes lb-row-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+.lb-row.is-winner {
+  background: rgba(255, 214, 107, 0.08);
+  border-color: rgba(255, 214, 107, 0.32);
+}
+.lb-rank {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.lb-rank.gold   { background: linear-gradient(135deg, #FFE9A0 0%, #C8932B 100%); color: #2a1a04; border-color: rgba(255,214,107,0.55); }
+.lb-rank.silver { background: linear-gradient(135deg, #F0F2F6 0%, #8C95A6 100%); color: #1a1d24; border-color: rgba(220,225,235,0.45); }
+.lb-rank.bronze { background: linear-gradient(135deg, #E9B783 0%, #8C5A2C 100%); color: #2a1404; border-color: rgba(224,176,124,0.45); }
+.lb-pfp {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--glass-bg-stronger);
+  position: relative;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.lb-pfp img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* WT-logo pfp in leaderboard rows — same scale-up + overflow trick.
+   Border + shadow stripped same as winner-pfp above. */
+.lb-pfp.has-logo { background: transparent !important; overflow: visible; border-color: transparent !important; box-shadow: none !important; }
+.lb-pfp .is-logo { object-fit: contain !important; transform: scale(1.18); background: transparent !important; border: none !important; box-shadow: none !important; }
+.lb-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lb-pts {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.lb-row.is-winner .lb-pts { color: var(--accent-jackpot); }
+
+/* Searchle uses a 10-row leaderboard (point-based scoring rewards the
+   whole podium). Tighten row metrics so the list still fits the card. */
+.holo[data-game="searchle"] .leaderboard { gap: 4px; }
+.holo[data-game="searchle"] .lb-row     { padding: 5px 10px; gap: 8px; }
+.holo[data-game="searchle"] .lb-rank    { width: 22px; height: 22px; font-size: 11px; }
+.holo[data-game="searchle"] .lb-pfp     { width: 26px; height: 26px; font-size: 12px; }
+.holo[data-game="searchle"] .lb-name    { font-size: 12px; }
+.holo[data-game="wikisearchle"] .leaderboard { gap: 4px; }
+.holo[data-game="wikisearchle"] .lb-row     { padding: 5px 10px; gap: 8px; }
+.holo[data-game="wikisearchle"] .lb-rank    { width: 22px; height: 22px; font-size: 11px; }
+.holo[data-game="wikisearchle"] .lb-pfp     { width: 26px; height: 26px; font-size: 12px; }
+.holo[data-game="wikisearchle"] .lb-name    { font-size: 12px; }
+.holo[data-game="searchle"] .lb-pts     { font-size: 12px; }
+.holo[data-game="searchle"] .lb-elo     { font-size: 18px; gap: 5px; }
+.holo[data-game="wikisearchle"] .lb-elo     { font-size: 18px; gap: 5px; }
+
+/* ── Mode = small ─────────────────────────────────────────── */
+.holo.small { width: 300px; min-height: 160px; padding: 0; border-radius: 14px; }
+.holo.small .holo-content { padding: 14px; gap: 10px; }
+.holo.small .holo-header { font-size: 11px; padding-bottom: 8px; }
+.holo.small .holo-header .game-icon { width: 18px; height: 18px; }
+.holo.small .winner-label { font-size: 9px; }
+.holo.small .winner-pfp-wrap { width: 44px; height: 44px; }
+.holo.small .winner-pfp { font-size: 18px; }
+.holo.small .winner-name { font-size: 16px; }
+.holo.small .winner-title { font-size: 10px; }
+.holo.small .stat-val { font-size: 14px; }
+.holo.small .stat-label { font-size: 9px; }
+.holo.small .target-word { font-size: 16px; padding: 8px; letter-spacing: 0.5px; font-weight: 600; }
+.holo.small .leaderboard { display: none; }
+
+/* ── Mode = big ───────────────────────────────────────────── */
+.holo.big { width: 920px; min-height: 1000px; padding: 0; border-radius: 24px; }
+.holo.big .holo-content { padding: 28px 32px; gap: 18px; }
+.holo.big .holo-header { font-size: 16px; padding-bottom: 14px; gap: 12px; justify-content: center; }
+.holo.big .holo-header .game-icon { width: 28px; height: 28px; border-radius: 8px; }
+
+.holo.big .winner-pfp-wrap { width: 144px; height: 144px; }
+.holo.big .winner-pfp { font-size: 52px; border-width: 2px; }
+.holo.big .winner-name { font-size: 44px; }
+.holo.big .winner-label { font-size: 12px; letter-spacing: 2px; margin-bottom: 2px; }
+.holo.big .winner-title { font-size: 13px; margin-top: 4px; }
+.holo.big .stat-val { font-size: 38px; }
+.holo.big .stat-label { font-size: 11px; }
+.holo.big .winner-stats { gap: 36px; margin-top: 8px; }
+.holo.big .target-word { font-size: 42px; padding: 18px; letter-spacing: 3px; font-weight: 700; }
+.holo.big .lb-header { font-size: 12px; letter-spacing: 2px; }
+.holo.big .lb-rank { width: 32px; height: 32px; font-size: 14px; }
+.holo.big .lb-pfp { width: 38px; height: 38px; font-size: 15px; }
+.holo.big .lb-name { font-size: 18px; }
+.holo.big .lb-pts { font-size: 18px; }
+.holo.big .lb-elo { font-size: 22px; }
+.holo.big .lb-row { padding: 10px 14px; gap: 12px; }
+
+/* Big mode follows Sassie too (she moves to top of canvas on active-game
+   wins; card casts down from beneath her chin). Anchor positioning is
+   driven by JS — no special CSS override here. */
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <!-- holo-anchor inserted dynamically per win -->
+  <canvas id="fx-particles" width="1080" height="1920"></canvas>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function () {
+  // ── Stage scaling: fit 1080x1920 design to OBS canvas ───────
+  const DESIGN_W = 1080;
+  const DESIGN_H = 1920;
+  const stage = document.getElementById('stage');
+  function applyScale() {
+    const sx = window.innerWidth / DESIGN_W;
+    const sy = window.innerHeight / DESIGN_H;
+    const s = Math.min(sx, sy);
+    stage.style.transform = `scale(${s})`;
+    // Center horizontally if leftover width
+    const offX = (window.innerWidth - DESIGN_W * s) / 2;
+    stage.style.marginLeft = `${offX}px`;
+  }
+  applyScale();
+  window.addEventListener('resize', applyScale);
+
+  // ── Sassie position tracker (live via SSE from sassie-runtime) ─
+  // The runtime broadcasts `sassie-scene` events with her base x/y/scale.
+  // We mirror them so the small-mode anchor can re-position every frame.
+  let sassieScene = { x: 0.18, y: 0.78, scale: 0.22 };
+  function connectSassieSSE() {
+    // nginx proxies /api/runtime/* to sassie-runtime port 3036.
+    // (Was /sassie/api/runtime/events before — that path doesn't exist.)
+    let url = '/api/runtime/events';
+    try {
+      const sse = new EventSource(url);
+      sse.addEventListener('sassie-scene', (e) => {
+        try {
+          const s = JSON.parse(e.data);
+          if (s && s.base) sassieScene = { x: s.base.x, y: s.base.y, scale: s.base.scale };
+        } catch (_) {}
+      });
+      sse.onerror = () => { setTimeout(() => { sse.close(); connectSassieSSE(); }, 5000); };
+    } catch (_) {
+      setTimeout(connectSassieSSE, 5000);
+    }
+  }
+  connectSassieSSE();
+  // Also fetch initial scene on load so the first card has a real anchor
+  // even before the first SSE tick arrives.
+  fetch('/api/runtime/scene').then(r => r.json()).then(j => {
+    if (j && j.scene && j.scene.base) sassieScene = { x: j.scene.base.x, y: j.scene.base.y, scale: j.scene.base.scale };
+  }).catch(() => {});
+
+  // ── Active-game tracker (matches event-overlay's mechanism) ────
+  let activeGame = null;
+  async function refreshActiveGame() {
+    try {
+      const r = await fetch('/api/event-overlay/state');
+      const j = await r.json();
+      if (j && j.ok && j.state) activeGame = (j.state.activeGame || '').toLowerCase() || null;
+    } catch (_) {}
+  }
+  refreshActiveGame();
+  setInterval(refreshActiveGame, 10000);
+
+  // ── Game labels + icons ─────────────────────────────────────
+  const GAME_LABELS = {
+    wikisearchle: 'WikiContexto', searchle: 'Subtextle', wordle: 'Wordle',
+    word500: 'Word5000', word5000: 'Word5000', sproutle: 'eRecTangled',
+    erectangled: 'eRecTangled', rectangled: 'RecTangled', spellingbee: 'Spelling Bee',
+    betweenly: 'Betwixt', betwixt: 'Betwixt', figural: 'Figural',
+    pixeletters: 'PixeLetters', wordmine: 'WordMine', unwordle: 'Unwordle',
+    wikiword: 'WikiWord', triangled: 'Triangled', wikirectangled: 'WiKirecTangled',
+    synapse: 'Synapse', junkdrawer: 'Junk Drawer',
+  };
+  const GAME_ICONS = {
+    searchle: '/game/searchle/icon.png', wordle: '/game/wordle/icon.png',
+    word500: '/game/word500/icon.png', word5000: '/game/word5000/icon.png',
+    sproutle: '/game/sproutle/icon.png', erectangled: '/game/sproutle/icon.png',
+    rectangled: '/game/rectangled/icon.png', spellingbee: '/game/spellingbee/icon.png',
+    betweenly: '/game/betweenly/icon.png', betwixt: '/game/betwixt/icon.png',
+    figural: '/game/figural/icon.png', pixeletters: '/game/pixeletters/icon.png',
+    wordmine: '/game/wordmine/icon.png', unwordle: '/game/unwordle/icon.png',
+    wikiword: '/game/wikiword/icon.png', wikisearchle: '/game/wikisearchle/icon.png',
+    triangled: '/game/triangled/icon.png', wikirectangled: '/game/wikirectangled/icon.png',
+    synapse: '/portal/img/game-synapse.png', junkdrawer: '/portal/img/game-junkdrawer.png',
+  };
+  const PLATFORM_COLORS = { tiktok: '#FF0050', youtube: '#FF0000', discord: '#5865F2', web: '#666' };
+
+  // ── Card lifecycle ──────────────────────────────────────────
+  let activeAnchor = null;          // currently-mounted .holo-anchor
+  let positionTimer = null;          // requestAnimationFrame loop for small-mode follow
+
+  // WT-logo URL detector — mirrors portal.js / Searchle's AvatarLogo.js so
+  // the holo overlay scales the logo correctly when it's used as a pfp.
+  function isLogoUrl(url) {
+    if (!url) return false;
+    return url.indexOf('logo.png') !== -1 || url.indexOf('/profile-logos/') !== -1;
+  }
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+  function fmtNumber(n) {
+    if (n == null) return '';
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (n >= 10_000)   return Math.round(n / 1000) + 'K';
+    if (n >= 1000)     return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    return String(n);
+  }
+
+  function buildCard(payload, mode) {
+    // Cosmetic resolution defensively wrapped — a malformed `cosmetics`
+    // value (string instead of object, unexpected schema) would otherwise
+    // throw inside the template literal and abort the whole card render.
+    let titleText = '';
+    let cosmeticGlow = '';
+    try {
+      titleText = (payload.winner && payload.winner.cosmetics && payload.winner.cosmetics.title && payload.winner.cosmetics.title.text) || '';
+      cosmeticGlow = (payload.winner && payload.winner.cosmetics && payload.winner.cosmetics.name_color && payload.winner.cosmetics.name_color.color) || '';
+    } catch (err) {
+      console.warn('[holo-win-overlay] cosmetic resolution threw, defaulting:', err, payload && payload.winner && payload.winner.cosmetics);
+    }
+    const winner = payload.winner || {};
+    const game = (payload.game || '').toLowerCase();
+    const gameLabel = GAME_LABELS[game] || (payload.gameName || game).toString();
+    const iconUrl = GAME_ICONS[game] || '';
+    const initial = (winner.displayName || '?').charAt(0).toUpperCase();
+    const platformColor = PLATFORM_COLORS[(winner.platform || '').toLowerCase()] || '#444';
+    const winnerHasLogo = isLogoUrl(winner.profilePic);
+    const pfpInner = winner.profilePic
+      ? `<img class="${winnerHasLogo ? 'is-logo' : ''}" src="${escapeHtml(winner.profilePic)}" alt="" onerror="this.remove()">`
+      : '';
+    // Glow tint: cosmetic name_color if equipped (with alpha), else gold for
+    // the winner halo. Set via CSS var on the pfp wrap.
+    const glowVar = cosmeticGlow
+      ? hexToRgba(cosmeticGlow, 0.32)
+      : 'rgba(255, 214, 107, 0.32)';
+
+    // Stats — primary value (points or jackpot) gets the data-counter so JS
+    // can animate the count-up after mount.
+    const stats = [];
+    if (typeof payload.jackpot === 'number' && payload.jackpot > 0) {
+      stats.push(`<div class="stat jackpot"><div class="stat-val" data-counter="${payload.jackpot}">0</div><div class="stat-label">Jackpot</div></div>`);
+    } else if (typeof payload.points === 'number') {
+      stats.push(`<div class="stat"><div class="stat-val" data-counter="${payload.points}">0</div><div class="stat-label">Points</div></div>`);
+    }
+    if (typeof payload.guessCount === 'number' && payload.guessCount > 0) {
+      stats.push(`<div class="stat"><div class="stat-val">${escapeHtml(payload.guessCount)}</div><div class="stat-label">Guesses</div></div>`);
+    }
+    if (typeof payload.totalWins === 'number' && payload.totalWins > 0) {
+      stats.push(`<div class="stat"><div class="stat-val">${escapeHtml(fmtNumber(payload.totalWins))}</div><div class="stat-label">Total Wins</div></div>`);
+    }
+
+    const wordHtml = (payload.word && payload.winType !== 'word')
+      ? `<div class="target-word">${escapeHtml(payload.word)}</div>`
+      : '';
+
+    // Winner ELO pill — only when chat-relay enrichment attached an ELO row
+    // for this game's identity. Non-ELO games (Wordle, SpellingBee, …) skip
+    // the pill entirely.
+    const winnerEloHtml = (typeof winner.elo === 'number')
+      ? renderEloPill(winner.elo, winner.eloDelta)
+      : '';
+
+    // Leaderboard — winner pinned at #1, then top players in score order.
+    // Searchle uses a 10-row list (point-based scoring rewards the whole
+    // podium); other games keep the original 5. Big mode only.
+    let leaderboardHtml = '';
+    if (mode === 'big' && Array.isArray(payload.topPlayers) && payload.topPlayers.length > 0) {
+      const lbCap = (game === 'searchle' || game === 'wikisearchle') ? 10 : 5;
+      // Build a normalized list with the winner pinned at #1 (use winner data
+      // if topPlayers has them, else inject a synthesized winner entry).
+      const seen = new Set();
+      const top = [];
+      const winnerInTopPlayers = payload.topPlayers.find(p => p && p.displayName === winner.displayName);
+      const winnerEntry = winnerInTopPlayers || {
+        displayName: winner.displayName,
+        profilePic: winner.profilePic,
+        // Carry the whole perk set, not just isFanClub — the synthesized row
+        // is the winner, so its heart must match the big pfp above it.
+        isFanClub: winner.isFanClub,
+        isSuperfan: winner.isSuperfan,
+        isDonor: winner.isDonor,
+        isSuperDonor: winner.isSuperDonor,
+        points: typeof payload.points === 'number' ? payload.points : (typeof payload.jackpot === 'number' ? payload.jackpot : null),
+      };
+      top.push({ ...winnerEntry, isWinner: true });
+      seen.add(winner.displayName);
+      for (const p of payload.topPlayers) {
+        if (!p || !p.displayName || seen.has(p.displayName)) continue;
+        top.push(p);
+        seen.add(p.displayName);
+        if (top.length >= lbCap) break;
+      }
+
+      const rankClass = ['gold', 'silver', 'bronze'];
+      const rows = top.slice(0, lbCap).map((p, i) => {
+        const rk = i + 1;
+        const cls = (rankClass[i] || '');
+        const rowHasLogo = isLogoUrl(p.profilePic);
+        const pfpHtml = p.profilePic
+          ? `<img class="${rowHasLogo ? 'is-logo' : ''}" src="${escapeHtml(p.profilePic)}" alt="" onerror="this.remove()">`
+          : escapeHtml((p.displayName || '?').charAt(0).toUpperCase());
+        const pts = (typeof p.points === 'number') ? fmtNumber(p.points) : '—';
+        const eloHtml = (typeof p.elo === 'number') ? renderLbElo(p.elo, p.eloDelta) : '';
+        const winnerCls = p.isWinner ? ' is-winner' : '';
+        // Stagger: each row delays 50ms (was 70) so a 10-row list stays
+        // under 500ms total entrance.
+        const delay = `--d:${i * 50}ms`;
+        return `<div class="lb-row${winnerCls}" style="${delay}"><div class="lb-rank ${cls}">${rk}</div><div class="lb-pfp${rowHasLogo ? ' has-logo' : ''}${(p.isSuperDonor || (p.isSuperfan && p.isDonor)) ? ' has-super-donor-badge' : (p.isSuperfan ? ' has-superfan-badge' : (p.isFanClub ? ' has-fan-club-badge' : ''))}">${pfpHtml}</div><div class="lb-name">${escapeHtml(p.displayName || '')}</div>${eloHtml}<div class="lb-pts">${escapeHtml(pts)}</div></div>`;
+      }).join('');
+      const headerLabel = (game === 'searchle' || game === 'wikisearchle') ? 'Top 10' : 'Top 5';
+      leaderboardHtml = `<div class="leaderboard"><div class="lb-header">${headerLabel}</div>${rows}</div>`;
+    }
+
+    const iconImg = iconUrl ? `<img src="${iconUrl}" onerror="this.remove()">` : '';
+    // Trophy icon next to winner name in big mode only.
+    const trophy = (mode === 'big') ? `<span class="trophy">🏆</span>` : '';
+
+    // Big mode prepends the cyan scan beam — drawn behind the card,
+    // fades out as card materializes. Small mode skips it (stays quiet).
+    const beamHtml = (mode === 'big') ? '<div class="beam"></div>' : '';
+
+    return `
+      ${beamHtml}
+      <div class="holo ${mode}" data-game="${escapeHtml(game)}">
+        <div class="holo-content">
+          <div class="holo-header">
+            <div class="game-tag">
+              <div class="game-icon">${iconImg}</div>
+              <span>${escapeHtml(gameLabel)}</span>
+            </div>
+          </div>
+          <div class="winner">
+            <div class="winner-pfp-wrap${winnerHasLogo ? ' has-logo' : ''}${(winner.isSuperDonor || (winner.isSuperfan && winner.isDonor)) ? ' has-super-donor-badge' : (winner.isSuperfan ? ' has-superfan-badge' : (winner.isFanClub ? ' has-fan-club-badge' : ''))}" style="--winner-glow:${glowVar};"><div class="winner-pfp${winnerHasLogo ? ' has-logo' : ''}" style="${winner.profilePic?'':`background:${platformColor};`}">${pfpInner || escapeHtml(initial)}</div></div>
+            <div class="winner-info">
+              <div class="winner-label">Winner</div>
+              <div class="winner-name">${trophy}${escapeHtml(winner.displayName || 'Someone')}</div>
+              ${winnerEloHtml}
+              ${titleText ? `<div class="winner-title">${escapeHtml(titleText)}</div>` : ''}
+              <div class="winner-stats">${stats.join('')}</div>
+            </div>
+          </div>
+          ${wordHtml}
+          ${leaderboardHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  // Helpers ---------------------------------------------------
+  // Big winner pill: glass capsule with current ELO + delta arrow.
+  // delta == 0 renders as a flat dash; null/undefined ⇒ no delta segment.
+  function renderEloPill(elo, delta) {
+    const dNum = (typeof delta === 'number') ? delta : null;
+    const dCls = (dNum > 0) ? 'up' : (dNum < 0 ? 'down' : 'flat');
+    const dSym = (dNum > 0) ? '▲' : (dNum < 0 ? '▼' : '–');
+    const dTxt = (dNum != null && dNum !== 0) ? Math.abs(dNum) : '';
+    const deltaSpan = (dNum == null) ? '' : `<span class="elo-delta ${dCls}">${dSym}${dTxt ? ' ' + escapeHtml(dTxt) : ''}</span>`;
+    return `<div class="winner-elo"><span class="elo-num">${escapeHtml(elo)}</span>${deltaSpan}</div>`;
+  }
+  // Compact leaderboard ELO column: same logic, smaller glyphs.
+  function renderLbElo(elo, delta) {
+    const dNum = (typeof delta === 'number') ? delta : null;
+    const dCls = (dNum > 0) ? 'up' : (dNum < 0 ? 'down' : 'flat');
+    const dSym = (dNum > 0) ? '▲' : (dNum < 0 ? '▼' : '–');
+    const dTxt = (dNum != null && dNum !== 0) ? Math.abs(dNum) : '';
+    const deltaSpan = (dNum == null) ? '' : `<span class="lb-elo-delta ${dCls}">${dSym}${dTxt ? escapeHtml(dTxt) : ''}</span>`;
+    return `<div class="lb-elo"><span>${escapeHtml(elo)}</span>${deltaSpan}</div>`;
+  }
+  function hexToRgba(hex, alpha) {
+    const m = String(hex || '').match(/^#?([0-9a-f]{6}|[0-9a-f]{3})$/i);
+    if (!m) return `rgba(255, 214, 107, ${alpha})`;
+    let h = m[1];
+    if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    const r = parseInt(h.substr(0,2),16);
+    const g = parseInt(h.substr(2,2),16);
+    const b = parseInt(h.substr(4,2),16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  function animateCounters(rootEl, durationMs) {
+    const els = rootEl.querySelectorAll('[data-counter]');
+    const start = performance.now();
+    const targets = Array.from(els).map(el => ({ el, end: parseFloat(el.getAttribute('data-counter')) || 0 }));
+    function tick(now) {
+      const t = Math.min(1, (now - start) / durationMs);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - t, 3);
+      for (const { el, end } of targets) {
+        const v = Math.round(end * eased);
+        el.textContent = fmtNumber(v);
+      }
+      if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // ── Particle FX ──────────────────────────────────────────
+  // Per-game palettes. Colors hex; engine handles speed/gravity/life.
+  const GAME_PARTICLES = {
+    wikisearchle: { count: 60,  colors: ['#00E5FF', '#7DF9FF', '#FFFFFF'],          speed: 5, life: 1500 },
+    searchle:     { count: 80,  colors: ['#9D4EDD', '#FF5DA2', '#E0AAFF'],          speed: 6, life: 1500 },
+    wordle:       { count: 60,  colors: ['#6BCB77', '#FFD93D', '#FFFFFF'],          speed: 5, life: 1500, square: true },
+    sproutle:     { count: 70,  colors: ['#FF6600', '#FFB066', '#FFD66B'],          speed: 5, life: 1500 },
+    erectangled:  { count: 70,  colors: ['#FF6600', '#FFB066', '#FFD66B'],          speed: 5, life: 1500 },
+    rectangled:   { count: 60,  colors: ['#FF6600', '#FFB066', '#FFFFFF'],          speed: 5, life: 1500 },
+    spellingbee:  { count: 70,  colors: ['#FFD66B', '#FFB347', '#FFFFFF'],          speed: 5, life: 1600 },
+    wordmine:     { count: 60,  colors: ['#FFD66B', '#9D7B3F', '#FFFFFF'],          speed: 5, life: 1500 },
+    wikiword:     { count: 60,  colors: ['#00E5FF', '#7DF9FF', '#FFFFFF'],          speed: 5, life: 1500 },
+    _default:     { count: 50,  colors: ['#FFFFFF', '#7DF9FF'],                     speed: 5, life: 1500 },
+    _jackpot:     { count: 150, colors: ['#FFD66B', '#FFE9A0', '#FFB347', '#FFFFFF'], speed: 7, life: 2000, large: true },
+  };
+
+  const fxCanvas = document.getElementById('fx-particles');
+  const fxCtx = fxCanvas ? fxCanvas.getContext('2d') : null;
+  let fxParticles = [];
+  let fxRafId = null;
+
+  function fxLoop(now) {
+    if (!fxCtx) return;
+    fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+    const dt = 16; // assume ~60fps; small enough for our visual purposes
+    fxParticles = fxParticles.filter(p => {
+      p.life -= dt;
+      if (p.life <= 0) return false;
+      p.vy += p.gravity;
+      p.x += p.vx;
+      p.y += p.vy;
+      const alpha = Math.min(1, p.life / 500); // fade out in last 500ms
+      fxCtx.globalAlpha = alpha;
+      fxCtx.fillStyle = p.color;
+      if (p.square) {
+        fxCtx.save();
+        fxCtx.translate(p.x, p.y);
+        fxCtx.rotate(p.rot);
+        fxCtx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+        fxCtx.restore();
+        p.rot += p.rotSpeed;
+      } else {
+        fxCtx.beginPath();
+        fxCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        fxCtx.fill();
+      }
+      return true;
+    });
+    fxCtx.globalAlpha = 1;
+    if (fxParticles.length > 0) {
+      fxRafId = requestAnimationFrame(fxLoop);
+    } else {
+      fxRafId = null;
+    }
+  }
+
+  /**
+   * Burst particles from a horizontal line (the card's top edge in big mode).
+   * @param {number} cx     center x
+   * @param {number} cy     center y (the line is centered on this)
+   * @param {number} width  spread width along the line
+   * @param {string} game   game id for palette lookup
+   * @param {boolean} jackpot use the jackpot palette
+   */
+  function burstParticles(cx, cy, width, game, jackpot) {
+    if (!fxCtx) return;
+    const palette = jackpot
+      ? GAME_PARTICLES._jackpot
+      : (GAME_PARTICLES[(game || '').toLowerCase()] || GAME_PARTICLES._default);
+    const half = width / 2;
+    const isLarge = !!palette.large;
+    const isSquare = !!palette.square;
+    for (let i = 0; i < palette.count; i++) {
+      const x = cx + (Math.random() * width - half);
+      const y = cy + (Math.random() - 0.5) * 8;
+      // Fan upward + outward from the line, biased upward (-1.4 .. -0.2)
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.4;
+      const speed = palette.speed * (0.55 + Math.random() * 0.9);
+      const color = palette.colors[Math.floor(Math.random() * palette.colors.length)];
+      fxParticles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        gravity: 0.18,
+        size: isLarge ? (3 + Math.random() * 5) : (2 + Math.random() * 4),
+        color,
+        life: palette.life * (0.85 + Math.random() * 0.4),
+        square: isSquare,
+        rot: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.2,
+      });
+    }
+    if (!fxRafId) fxRafId = requestAnimationFrame(fxLoop);
+  }
+
+  function clearActive() {
+    if (activeAnchor) { activeAnchor.remove(); activeAnchor = null; }
+    if (positionTimer) { cancelAnimationFrame(positionTimer); positionTimer = null; }
+  }
+
+  function showWin(payload) {
+    if (!payload || !payload.game) return;
+    // Top-level try/catch: any thrown render (malformed cosmetic, bad
+    // hexToRgba input, missing field) used to abort silently and the OBS
+    // source would never display. We now log and bail cleanly so a
+    // single broken payload can't break the next one.
+    try {
+    clearActive();
+    const game = (payload.game || '').toLowerCase();
+    const isActiveGame = activeGame && game === activeGame;
+    const mode = isActiveGame ? 'big' : 'small';
+
+    const anchor = document.createElement('div');
+    anchor.className = 'holo-anchor';
+    anchor.innerHTML = buildCard(payload, mode);
+    stage.appendChild(anchor);
+    activeAnchor = anchor;
+
+    // Big-mode cinematic: card materialize is delayed 400ms in CSS (so the
+    // scan beam can grow first). Counter + leaderboard stagger need the
+    // same offset so they land AFTER the card is visible. Particle burst
+    // fires at t=600ms — right when the card finishes materializing.
+    if (mode === 'big') {
+      // Push every leaderboard row's --d delay forward by 400ms.
+      anchor.querySelectorAll('.lb-row').forEach((row) => {
+        const cur = parseFloat((row.style.getPropertyValue('--d') || '0ms').replace('ms','')) || 0;
+        row.style.setProperty('--d', `${cur + 400}ms`);
+      });
+      // Counter animation: start 700ms after mount (after card visible).
+      setTimeout(() => animateCounters(anchor, 1200), 700);
+      // Particle burst: 600ms after mount, from the card's top edge.
+      setTimeout(() => {
+        if (!activeAnchor || activeAnchor !== anchor) return;
+        const card = anchor.querySelector('.holo');
+        if (!card) return;
+        const rect = card.getBoundingClientRect();
+        const stageRect = stage.getBoundingClientRect();
+        // Convert from viewport coords to stage's design coord system.
+        // (Stage uses transform: scale; bounding rects already account for it,
+        //  so we need to undo the scale to get design pixels.)
+        const stageScale = stageRect.width / DESIGN_W;
+        const cx = (rect.left + rect.width / 2 - stageRect.left) / stageScale;
+        const cy = (rect.top - stageRect.top) / stageScale + 8;  // a few px below top edge
+        const width = rect.width / stageScale * 0.9;
+        const isJackpot = (typeof payload.jackpot === 'number' && payload.jackpot > 0);
+        burstParticles(cx, cy, width, payload.game, isJackpot);
+      }, 600);
+    } else {
+      // Small mode: simple counter, no beam, no particles.
+      animateCounters(anchor, 1200);
+    }
+
+    // Card dimensions (matches CSS .holo.small/.big sizes). Used to clamp
+    // anchor inside canvas (small mode) and to center the card (big mode).
+    const cardW = (mode === 'big') ? 920 : 300;
+    const cardH = (mode === 'big') ? 880 : 160;
+    const halfW = cardW / 2;
+
+    if (mode === 'big') {
+      // Big mode (active/selected game) — pin card CENTER to screen center,
+      // no Sassie tracking. Card .holo has CSS transform translate(-50%, -2%):
+      //   card top    = anchor.top  - 0.02 * actualH
+      //   card center = anchor.top  + 0.48 * actualH
+      // The hardcoded cardH (880) doesn't match every game's actual rendered
+      // height — searchle's 10-row leaderboard makes its card noticeably
+      // taller than wikisearchle's 5-row one. Without measuring, identical
+      // anchor.top values produce different visible centers. Fix: place a
+      // provisional anchor first, then on the next frame measure the card's
+      // actual offsetHeight (CSS transforms don't change layout dimensions)
+      // and reposition vertically so card center hits DESIGN_H/2 exactly.
+      anchor.style.left = `${DESIGN_W / 2}px`;
+      anchor.style.top  = `${(DESIGN_H - cardH) / 2}px`;
+      requestAnimationFrame(() => {
+        if (!activeAnchor || activeAnchor !== anchor) return;
+        const card = anchor.querySelector('.holo');
+        if (!card) return;
+        const actualH = card.offsetHeight || cardH;
+        anchor.style.top = `${(DESIGN_H / 2) - (0.48 * actualH)}px`;
+      });
+    } else {
+      // Small mode (non-active games) — follow Sassie with a tight chin
+      // offset, clamped to canvas edges.
+      const chinOffsetFactor = 0.5;
+      function followSassie() {
+        if (!activeAnchor) return;
+        let x = sassieScene.x * DESIGN_W;
+        let y = sassieScene.y * DESIGN_H + (sassieScene.scale * DESIGN_H * chinOffsetFactor);
+        if (x - halfW < 8)            x = halfW + 8;
+        if (x + halfW > DESIGN_W - 8) x = DESIGN_W - halfW - 8;
+        if (y < 8)                    y = 8;
+        if (y + cardH > DESIGN_H - 8) y = DESIGN_H - cardH - 8;
+        anchor.style.left = `${x}px`;
+        anchor.style.top  = `${y}px`;
+        positionTimer = requestAnimationFrame(followSassie);
+      }
+      followSassie();
+    }
+
+    // Auto-fade out: big (active/selected game) holds for 10s in the
+    // center; small (non-active games) keeps the legacy 7s near Sassie.
+    const lifetime = mode === 'big' ? 10000 : 7000;
+    setTimeout(() => {
+      if (!activeAnchor || activeAnchor !== anchor) return;
+      const card = anchor.querySelector('.holo');
+      if (card) card.classList.add('fading');
+      setTimeout(() => { if (activeAnchor === anchor) clearActive(); }, 700);
+    }, lifetime);
+    } catch (err) {
+      console.warn('[holo-win-overlay] showWin threw, payload skipped:', err, payload);
+      try { clearActive(); } catch (_) {}
+    }
+  }
+
+  // ── Socket wiring ───────────────────────────────────────────
+  // Streamer-private mode: ?streamer=<handle> joins the per-streamer room
+  // so private-session wins (which are suppressed from the public rooms)
+  // still reach this overlay. Public mode (no query param) keeps the
+  // legacy behavior of joining the global rooms.
+  const STREAMER_HANDLE = (function() {
+    try {
+      let h = new URLSearchParams(location.search).get('streamer');
+      if (!h) return null;
+      h = String(h).toLowerCase();
+      return /^[a-z0-9_-]{1,32}$/.test(h) ? h : null;
+    } catch (_) { return null; }
+  })();
+  if (typeof io === 'function') {
+    const socket = io({ transports: ['websocket'] });
+    socket.on('connect', () => {
+      if (STREAMER_HANDLE) {
+        socket.emit('join-streamer-win-overlay', STREAMER_HANDLE); // private session feed
+      } else {
+        socket.emit('join-win-overlay');     // backwards compat — chat-relay sends game-win to this room
+        socket.emit('join-holo-win-overlay'); // new dedicated room (also gets game-win mirrored)
+      }
+    });
+    // Refresh activeGame just-in-time before each win. Browsers throttle
+    // setInterval to 60s+ on background/OBS-CEF tabs, so the 10s poll
+    // alone isn't enough — a win that arrives within seconds of the
+    // streamer changing the active game would otherwise pick the wrong
+    // mode (small vs big) and end up parked under Sassie instead of
+    // centered. The fetch is fire-and-forget if it fails; we still call
+    // showWin either way.
+    socket.on('game-win', async (data) => {
+      try { await refreshActiveGame(); } catch (_) {}
+      showWin(data);
+    });
+  }
+
+  // ── Smoke test (URL-only) ───────────────────────────────────
+  window.__holoTest = function (mode) {
+    const isBig = mode === 'big';
+    if (isBig) activeGame = 'wikisearchle';
+    showWin({
+      game: 'wikisearchle', gameName: 'WikiContexto', word: 'serendipity', guessCount: 47, jackpot: 0, points: 1240, totalWins: 12,
+      winner: { displayName: 'PixelQueen', platform: 'tiktok', profilePic: 'https://cdn.discordapp.com/embed/avatars/0.png', cosmetics: { title: { text: 'Word Sleuth' } } },
+      topPlayers: [
+        { displayName: 'PixelQueen', points: 1240 },
+        { displayName: 'StreamSurfer42', points: 980, profilePic: 'https://cdn.discordapp.com/embed/avatars/1.png' },
+        { displayName: 'AlphaTester', points: 720 },
+        { displayName: 'NewbieJoe', points: 410 },
+      ],
+    });
+  };
+})();
+</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

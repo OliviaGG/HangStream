@@ -1,0 +1,28 @@
+<svg width="1600" height="500" viewBox="0 0 1600 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="500">
+      <stop stop-color="#1C0D12"/>
+      <stop offset="0.48" stop-color="#54212B"/>
+      <stop offset="1" stop-color="#14111D"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="500" rx="34" fill="url(#bg)"/>
+  <rect x="24" y="24" width="1552" height="452" rx="28" stroke="#FF6B6B" stroke-opacity="0.24" stroke-width="2"/>
+  <g opacity="0.94">
+    <rect x="1042" y="96" width="408" height="312" rx="30" fill="#231823"/>
+    <rect x="1112" y="144" width="58" height="58" rx="10" fill="#FF6B6B"/>
+    <rect x="1182" y="144" width="58" height="58" rx="10" fill="#2B2D42"/>
+    <rect x="1252" y="144" width="58" height="58" rx="10" fill="#98C379"/>
+    <rect x="1322" y="144" width="58" height="58" rx="10" fill="#2B2D42"/>
+    <rect x="1112" y="214" width="58" height="58" rx="10" fill="#2B2D42"/>
+    <rect x="1182" y="214" width="58" height="58" rx="10" fill="#FF6B6B"/>
+    <rect x="1252" y="214" width="58" height="58" rx="10" fill="#2B2D42"/>
+    <rect x="1322" y="214" width="58" height="58" rx="10" fill="#98C379"/>
+    <path d="M1104 344L1388 132" stroke="#FFF1F2" stroke-opacity="0.18" stroke-width="18" stroke-linecap="round"/>
+  </g>
+  <text x="92" y="122" fill="#FFB4B4" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="7">UNWORDLE</text>
+  <text x="92" y="228" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="98" font-weight="800">The anti-Wordle twist.</text>
+  <text x="92" y="292" fill="#FFD5D5" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="500">Flip the logic, dodge the obvious, and make the puzzle work backwards.</text>
+  <rect x="92" y="338" width="224" height="62" rx="31" fill="#FF6B6B"/>
+  <text x="143" y="380" fill="#2B1014" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="800">REVERSE MINDSET</text>
+</svg>

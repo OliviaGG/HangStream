@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your Suite — Word Tycoon</title>
+<meta name="description" content="Your Word Tycoon suite — nameplate, stats, cosmetics and career record.">
+<link rel="canonical" href="https://wordtycoon.live/profile">
+<meta name="robots" content="noindex, follow">
+<meta name="theme-color" content="#fdf6e9">
+<link rel="manifest" href="/portal/manifest.webmanifest?v=4">
+<link rel="icon" href="/portal/img/logo-favicon.png?v=2">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link rel="stylesheet" href="/portal/css/toon.css?v=6">
+  <link rel="stylesheet" href="/portal/css/hangstream-skin.css">
+<!-- cfx-* keyframes (spin/sweep/pulse/breath) that the cosmetic payloads
+     reference by name. Without this the animated cosmetics render static. -->
+<link rel="stylesheet" href="/css/cosmetics-fx.css?v=2">
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   YOUR SUITE — /profile
+   Floor S of the tower: the one room that belongs to the player.
+   Tokens, primitives, topbar, elevator, footer and toasts come from
+   /portal/css/toon.css. Below is only this page's own furniture.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ══ PAGE FRAME ══════════════════════════════════════════════════════ */
+main { position: relative; z-index: 2; }
+.suite-plate {
+  position: relative; margin: 18px 0 0;
+  background: var(--landing-bg);
+  background-image: repeating-linear-gradient(90deg, transparent 0 42px, rgba(27,20,48,.043) 42px 84px);
+  border-top: 2.5px solid var(--ink); border-bottom: 2.5px solid var(--ink);
+  box-shadow: inset 0 4px 0 rgba(255,255,255,.3), inset 0 -8px 14px rgba(27,20,48,.06);
+  height: 74px; overflow: hidden;
+  transition: background 1s ease;
+}
+.suite-plate .fp {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%) rotate(-2deg);
+  display: flex; align-items: center; gap: 10px;
+  border: 2.5px solid var(--ink); border-radius: 12px;
+  padding: 8px 20px; font-weight: 900; font-size: .88rem;
+  letter-spacing: 1px; text-transform: uppercase; color: #fff;
+  text-shadow: 0 1.5px 0 rgba(0,0,0,.25);
+  background: linear-gradient(180deg, #ffa8c4 0 45%, var(--pink) 45%);
+  box-shadow: 0 4px 0 var(--ink); white-space: nowrap;
+}
+.suite-plate .fp b {
+  display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid var(--ink); background: var(--card); color: var(--ink);
+  text-shadow: none; font-size: .82rem;
+}
+
+/* ══ THE NAMEPLATE ═══════════════════════════════════════════════════
+   A brass door plate: the avatar hangs off the left like a peephole,
+   the engraved name sits on the plate itself. */
+.plate-wrap { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center; }
+
+.peephole {
+  position: relative; width: 132px; height: 132px; flex: none;
+  border-radius: 50%; border: 2.5px solid var(--ink);
+  background: var(--card);
+  box-shadow: 0 6px 0 var(--ink), inset 0 4px 0 rgba(255,255,255,.4);
+  display: grid; place-items: center;
+  transition: background 1s ease;
+}
+.peephole img {
+  width: 108px; height: 108px; border-radius: 50%; object-fit: cover;
+  display: block; background: var(--paper-2);
+}
+.peephole img.avatar-is-logo { object-fit: contain; padding: 12px; }
+
+.nameplate {
+  position: relative;
+  border: 2.5px solid var(--ink); border-radius: 16px;
+  padding: 20px 22px 18px;
+  background: linear-gradient(180deg, #ffe9a3 0 42%, #f0c96a 42%);
+  box-shadow: 0 6px 0 var(--ink), inset 0 4px 0 rgba(255,255,255,.45);
+  color: #4a3600;
+}
+body.night .nameplate {
+  background: linear-gradient(180deg, #6a5a2e 0 42%, #4e421f 42%);
+  color: #ffeec2;
+}
+/* the four brass screws */
+.nameplate::before, .nameplate::after,
+.plate-screws span {
+  content: ''; position: absolute; width: 9px; height: 9px; border-radius: 50%;
+  border: 2px solid var(--ink); background: var(--paper-2);
+}
+.nameplate::before { left: 9px; top: 9px; }
+.nameplate::after  { right: 9px; top: 9px; }
+.plate-screws span:first-child { left: 9px; bottom: 9px; }
+.plate-screws span:last-child  { right: 9px; bottom: 9px; }
+
+.plate-title {
+  display: inline-block; margin-bottom: 7px;
+  border: 2.5px solid var(--ink); border-radius: 9px; padding: 3px 12px;
+  font-size: .7rem; font-weight: 900; letter-spacing: 1.4px; text-transform: uppercase;
+  color: #fff; text-shadow: 0 1.5px 0 rgba(0,0,0,.25);
+  background: linear-gradient(180deg, #b3a6f6 0 45%, var(--purple) 45%);
+  box-shadow: 0 3px 0 var(--ink); transform: rotate(-1.5deg);
+}
+.plate-name {
+  font-size: clamp(1.5rem, 3.4vw, 2.1rem); font-weight: 900; letter-spacing: -.5px;
+  line-height: 1.15; word-break: break-word;
+}
+.plate-sub { font-size: .8rem; font-weight: 800; opacity: .72; margin-top: 2px; }
+
+.plate-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; }
+.plate-chips .chip { font-size: .82rem; padding: 5px 13px; }
+.plate-chips .chip b { font-weight: 900; }
+
+/* edit affordances — small round toon buttons */
+.plate-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.mini-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 2.5px solid var(--ink); border-radius: 999px;
+  padding: 6px 14px; font-size: .78rem; font-weight: 800; cursor: pointer;
+  background: var(--card); color: var(--text);
+  box-shadow: 0 4px 0 var(--ink);
+  transition: transform .12s, box-shadow .12s, background 1s ease;
+}
+.mini-btn:hover  { transform: translateY(-2px); box-shadow: 0 6px 0 var(--ink); }
+.mini-btn:active { transform: translateY(2px);  box-shadow: 0 2px 0 var(--ink); }
+.mini-btn svg { width: 13px; height: 13px; }
+
+/* the rename drawer, revealed by "Rename" */
+.rename {
+  margin-top: 14px; padding: 14px 16px;
+  border: 2.5px solid var(--ink); border-radius: 14px;
+  background: var(--paper-2); box-shadow: inset 0 3px 0 rgba(255,255,255,.35);
+  transition: background 1s ease;
+}
+.rename[hidden] { display: none; }
+.rename label {
+  display: block; font-size: .68rem; font-weight: 900; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 7px;
+}
+.rename-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.rename input {
+  flex: 1 1 200px; min-width: 0;
+  border: 2.5px solid var(--ink); border-radius: 999px;
+  padding: 9px 16px; font: inherit; font-weight: 700; font-size: .9rem;
+  background: var(--card); color: var(--text);
+  box-shadow: inset 0 2px 4px rgba(27,20,48,.14);
+}
+.rename input:focus { outline: none; box-shadow: inset 0 2px 4px rgba(27,20,48,.14), 0 0 0 3px rgba(255,216,77,.55); }
+
+/* inline + chip recharge button */
+.chip-recharge {
+  display: inline-grid; place-items: center;
+  width: 18px; height: 18px; margin-left: 6px;
+  border: 2px solid var(--ink); border-radius: 50%;
+  background: linear-gradient(180deg, #ffd84d 0 45%, var(--amber) 45%);
+  color: #3d2c00; font-size: .85rem; font-weight: 900; line-height: 1;
+  cursor: pointer; padding: 0;
+  box-shadow: 0 2px 0 var(--ink);
+  transition: transform .1s, box-shadow .1s;
+}
+.chip-recharge:hover { transform: translateY(-1px); box-shadow: 0 3px 0 var(--ink); }
+.chip-recharge:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--ink); }
+
+/* recharge modal */
+.recharge-modal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.recharge-modal[hidden] { display: none; }
+.recharge-backdrop { position: absolute; inset: 0; background: rgba(27,20,48,.55); }
+.recharge-sheet {
+  position: relative; width: 100%; max-width: 420px;
+  border: 2.5px solid var(--ink); border-radius: 18px;
+  background: var(--card); color: var(--text);
+  box-shadow: 0 8px 0 var(--ink), 0 20px 40px rgba(0,0,0,.25);
+  padding: 22px;
+}
+.recharge-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.recharge-head h3 { margin: 0; font-size: 1.15rem; }
+.recharge-close {
+  width: 32px; height: 32px; border: 2.5px solid var(--ink); border-radius: 50%;
+  background: var(--paper-2); font-size: 1.3rem; font-weight: 900; cursor: pointer;
+  box-shadow: 0 3px 0 var(--ink); line-height: 1;
+}
+.recharge-sub { font-size: .8rem; color: var(--muted); margin: 0 0 16px; }
+.recharge-presets { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+.recharge-presets button {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  border: 2.5px solid var(--ink); border-radius: 14px; padding: 14px 8px;
+  background: var(--paper-2); cursor: pointer;
+  box-shadow: 0 4px 0 var(--ink);
+  transition: transform .1s, box-shadow .1s, background .15s;
+}
+.recharge-presets button:hover { transform: translateY(-2px); box-shadow: 0 6px 0 var(--ink); }
+.recharge-presets button:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--ink); }
+.rp-price { font-size: 1.25rem; font-weight: 900; }
+.rp-hints { font-size: .72rem; font-weight: 800; color: var(--muted); }
+.recharge-custom label { display: block; font-size: .68rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
+.recharge-custom-row { display: flex; align-items: center; gap: 8px; }
+.recharge-dollar { font-weight: 900; font-size: 1.1rem; }
+.recharge-custom-row input {
+  flex: 1; min-width: 0;
+  border: 2.5px solid var(--ink); border-radius: 999px;
+  padding: 9px 14px; font: inherit; font-weight: 800; font-size: 1rem;
+  background: var(--paper-2); color: var(--text);
+  box-shadow: inset 0 2px 4px rgba(27,20,48,.14);
+}
+.recharge-custom-row input:focus { outline: none; box-shadow: inset 0 2px 4px rgba(27,20,48,.14), 0 0 0 3px rgba(255,216,77,.55); }
+.recharge-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
+.recharge-status { margin-top: 12px; font-size: .8rem; font-weight: 800; min-height: 1.2em; }
+.recharge-status.busy { color: var(--muted); }
+.recharge-status.error { color: #c0392b; }
+.recharge-status.success { color: #27ae60; }
+
+/* ══ THE STAT WALL ═══════════════════════════════════════════════════
+   Grid, not flex: six career tiles on a flex row wrap 5+1 and leave an
+   orphan. A fixed column count keeps every row full at each breakpoint. */
+.wall { display: grid; gap: 14px; }
+.wall-quick { grid-template-columns: repeat(4, 1fr); }
+.wall-career { grid-template-columns: repeat(6, 1fr); }
+.wall-trio { grid-template-columns: repeat(3, 1fr); }
+.wall .stat { max-width: none; }   /* the grid track sets the width now */
+.wall-note { text-align: center; color: var(--muted); font-weight: 700; font-size: .84rem; margin-top: 14px; }
+.stat .sub { font-size: .66rem; font-weight: 800; color: var(--muted); margin-top: 2px; line-height: 1.25; }
+
+/* career wall reads quieter than the headline four */
+.wall-career .stat { background: var(--paper-2); box-shadow: 0 4px 0 var(--ink), inset 0 3px 0 rgba(255,255,255,.3); }
+.wall-career .stat .num { font-size: 1.15rem; }
+
+/* ══ DAY / NIGHT BUTTON ══════════════════════════════════════════════
+   Shows whichever face you'd be switching TO, so the button reads as an
+   action rather than a status light. */
+.sky-btn { padding: 9px 14px; font-size: 1rem; line-height: 1; }
+.sky-btn .sky-day { display: none; }
+.sky-btn .sky-night { display: inline; }
+body.night .sky-btn .sky-day { display: inline; }
+body.night .sky-btn .sky-night { display: none; }
+
+/* ══ THE WARDROBE ════════════════════════════════════════════════════
+   Mirror on the left, rack on the right. Equipping something updates the
+   mirror immediately, so you never have to scroll to see what you did. */
+.wardrobe { display: grid; grid-template-columns: 320px 1fr; gap: 22px; align-items: start; }
+
+/* ── the mirror ── */
+.mirror {
+  position: sticky; top: 18px;
+  border: 2.5px solid var(--ink); border-radius: 18px;
+  background: var(--card);
+  box-shadow: 0 6px 0 var(--ink), inset 0 4px 0 rgba(255,255,255,.35);
+  padding: 0; overflow: hidden;
+  transition: background 1s ease;
+}
+.mirror-head {
+  font-size: .7rem; font-weight: 900; letter-spacing: 1.4px; text-transform: uppercase;
+  color: var(--muted); text-align: center; padding: 11px 12px 0;
+}
+.mirror-stage {
+  position: relative; margin: 12px; border-radius: 14px;
+  border: 2.5px solid var(--ink);
+  /* a neutral dark stage so glows and colours read the way they do in chat */
+  background: #241f3d;
+  padding: 22px 16px 18px; text-align: center; overflow: hidden;
+  min-height: 190px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
+}
+.mirror-badge { position: absolute; inset: 0; opacity: .85; }
+.mirror-body { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.mirror-av-shell {
+  position: relative; width: 78px; height: 78px; border-radius: 50%;
+  box-sizing: border-box; flex: none;
+}
+.mirror-av {
+  width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
+  background: #3a3560; display: block;
+}
+.mirror-av.avatar-is-logo { object-fit: contain; padding: 9px; }
+.mirror-title { font-size: .76rem; font-weight: 900; letter-spacing: .6px; color: #fff; min-height: 1em; }
+.mirror-name { font-size: 1.25rem; font-weight: 900; color: #fff; }
+.mirror-word { font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; color: #fff; }
+.mirror-foot {
+  padding: 0 14px 14px; text-align: center;
+  font-size: .72rem; font-weight: 700; color: var(--muted); line-height: 1.4;
+}
+
+/* ── filters ── */
+.rack-filters { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; align-items: center; }
+.cat-chip {
+  border: 2px solid var(--ink); border-radius: 999px;
+  padding: 5px 12px; font-size: .74rem; font-weight: 800; cursor: pointer;
+  background: var(--card); color: var(--text);
+  box-shadow: 0 3px 0 var(--ink);
+  transition: transform .1s, box-shadow .1s, background .15s;
+}
+.cat-chip:hover { transform: translateY(-2px); box-shadow: 0 5px 0 var(--ink); }
+.cat-chip.on {
+  background: linear-gradient(180deg, #ffd84d 0 45%, var(--amber) 45%); color: #3d2c00;
+  box-shadow: 0 3px 0 var(--ink), 0 0 0 2px rgba(255,216,77,.5);
+}
+.cat-chip .n { opacity: .6; font-weight: 900; margin-left: 3px; }
+.rack-sort {
+  margin-left: auto;
+  border: 2px solid var(--ink); border-radius: 999px;
+  padding: 5px 12px; font: inherit; font-size: .74rem; font-weight: 800;
+  background: var(--card); color: var(--text);
+  box-shadow: 0 3px 0 var(--ink); cursor: pointer;
+}
+
+/* ── the rack ── */
+.rack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 12px; }
+.cos {
+  position: relative;
+  border: 2.5px solid var(--ink); border-radius: 14px;
+  background: var(--card);
+  box-shadow: 0 4px 0 var(--ink), inset 0 3px 0 rgba(255,255,255,.32);
+  padding: 30px 9px 9px; text-align: center;
+  transition: transform .12s, box-shadow .12s, background 1s ease;
+}
+.cos:hover { transform: translateY(-3px); box-shadow: 0 7px 0 var(--ink), inset 0 3px 0 rgba(255,255,255,.32); }
+.cos.is-equipped { box-shadow: 0 4px 0 var(--ink), 0 0 0 3px rgba(255,216,77,.75), inset 0 3px 0 rgba(255,255,255,.32); }
+
+/* the swatch sits on a dark chip so light-coloured cosmetics stay visible */
+.cos-swatch {
+  height: 46px; margin: 0 auto 8px; border-radius: 10px;
+  border: 2px solid var(--ink); background: #241f3d;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 1.05rem; color: #fff; overflow: hidden;
+  padding: 0 6px;
+}
+.cos-swatch .ring { width: 26px; height: 26px; border-radius: 50%; background: #4a4470; }
+.cos-swatch .badge { width: 38px; height: 21px; border-radius: 4px; background: #4a4470; }
+.cos-swatch .dots { display: flex; gap: 4px; }
+.cos-swatch .dot { width: 9px; height: 9px; border-radius: 50%; }
+.cos-swatch .ttl { font-size: .74rem; font-weight: 900; letter-spacing: .4px; }
+.cos-name { font-size: .76rem; font-weight: 900; line-height: 1.2; word-break: break-word; }
+.cos-cat { font-size: .6rem; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-top: 2px; }
+.cos-rar {
+  display: inline-block; margin-top: 6px; padding: 2px 9px; border-radius: 999px;
+  border: 2px solid var(--ink); font-size: .58rem; font-weight: 900;
+  text-transform: uppercase; letter-spacing: .6px; color: #fff;
+  text-shadow: 0 1px 0 rgba(0,0,0,.35);
+}
+.cos-buff { font-size: .58rem; font-weight: 800; color: var(--muted); margin-top: 5px; line-height: 1.25; }
+.cos-btn {
+  position: absolute; top: 7px; left: 7px; right: 7px;
+  border: 2px solid var(--ink); border-radius: 999px;
+  padding: 3px 0; font-size: .62rem; font-weight: 900; cursor: pointer;
+  text-transform: uppercase; letter-spacing: .5px;
+  background: var(--paper-2); color: var(--text);
+  transition: background .15s, opacity .15s;
+}
+.cos-btn:hover:not(:disabled) { background: linear-gradient(180deg, #b7f3cf 0 45%, var(--mint) 45%); color: #123c24; }
+.cos-btn:disabled { opacity: .55; cursor: default; }
+.cos.is-equipped .cos-btn { background: linear-gradient(180deg, #ffd84d 0 45%, var(--amber) 45%); color: #3d2c00; }
+.cos-new {
+  position: absolute; top: 26px; right: -3px;
+  background: linear-gradient(180deg, #ffa8c4 0 45%, var(--pink) 45%); color: #fff;
+  border: 2px solid var(--ink); border-radius: 6px;
+  font-size: .52rem; font-weight: 900; letter-spacing: .5px; padding: 1px 5px;
+  text-transform: uppercase; transform: rotate(6deg); text-shadow: 0 1px 0 rgba(0,0,0,.3);
+}
+.rack-empty { grid-column: 1 / -1; text-align: center; color: var(--muted); font-weight: 700; padding: 26px 0; }
+
+@media (max-width: 900px) {
+  .wardrobe { grid-template-columns: 1fr; }
+  .mirror { position: static; }
+}
+
+/* ══ GUEST STATE ═════════════════════════════════════════════════════ */
+.guest { text-align: center; max-width: 620px; margin: 0 auto; }
+.guest .keycards { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 22px; }
+.guest .keycard {
+  border: 2.5px solid var(--ink); border-radius: 16px; padding: 16px 18px 15px;
+  background: var(--card); box-shadow: 0 6px 0 var(--ink), inset 0 4px 0 rgba(255,255,255,.4);
+  width: 200px; text-align: center; font-weight: 800;
+  transition: transform .12s, box-shadow .12s, background 1s ease;
+}
+.guest .keycard:hover { transform: translateY(-3px); box-shadow: 0 9px 0 var(--ink), inset 0 4px 0 rgba(255,255,255,.4); }
+.guest .keycard .kc-dot {
+  width: 34px; height: 34px; border-radius: 50%; margin: 0 auto 9px;
+  border: 2.5px solid var(--ink); background: var(--kc, var(--amber));
+  box-shadow: 0 3px 0 var(--ink);
+}
+
+/* ══ SKELETON / EMPTY ════════════════════════════════════════════════ */
+.loading-note { text-align: center; color: var(--muted); font-weight: 700; padding: 26px 0; }
+
+/* ══ RESPONSIVE ══════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .wall-career { grid-template-columns: repeat(3, 1fr); }
+  .wall-trio { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 720px) {
+  .plate-wrap { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .plate-chips, .plate-actions { justify-content: center; }
+  .peephole { width: 112px; height: 112px; }
+  .peephole img { width: 90px; height: 90px; }
+  .wall-quick { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 460px) {
+  .wall-career { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ══ REDUCED MOTION ══════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .stat, .mini-btn, .guest .keycard { transition: none; }
+}
+</style>
+</head>
+<body>
+<!-- Restore the visitor's time of day before anything paints. Inline and
+     first-thing-in-body on purpose: an external or deferred script would
+     let the page flash daylight before flipping to night. -->
+<script>try{var t=localStorage.getItem('wt-night');var p=(localStorage.getItem('wordtycoon_theme')||localStorage.getItem('portal-theme'));var n=t===null?p!=='light':t==='1';if(n)document.body.classList.add('night')}catch(e){}</script>
+<noscript><p style="padding:24px;text-align:center;font-weight:700">Your suite needs JavaScript. <a href="/">Back to the tower</a>.</p></noscript>
+
+<!-- ═══ ELEVATOR ═══ -->
+<aside class="elevator" id="elevator" aria-label="Floor navigation">
+  <div class="elev-label">Floor</div>
+  <div class="elev-btns">
+    <a class="elev-btn eb-r" href="/#rooftop" title="Rooftop" aria-label="Ride to the Rooftop">R</a>
+    <a class="elev-btn eb-p" href="/#penthouse" title="Penthouse" aria-label="Ride to the Penthouse">P</a>
+    <a class="elev-btn eb-v" href="/#vault" title="The Vault" aria-label="Ride to the Vault">V</a>
+    <a class="elev-btn eb-2" href="/#empire" title="The Empire" aria-label="Ride to the Empire">2</a>
+    <a class="elev-btn eb-1" href="/#games" title="The Game Floor" aria-label="Ride to the Game Floor">1</a>
+    <a class="elev-btn eb-l lit" href="/" title="Lobby" aria-label="Ride to the Lobby">L</a>
+  </div>
+  <div class="elev-floorname">Your Suite</div>
+</aside>
+
+<div class="shell">
+  <!-- ═══ TOPBAR ═══ -->
+  <header class="topbar">
+    <a class="brand" href="/">
+      <span class="brand-mark"><img src="/portal/img/wt-logo.svg?v=1" alt="" width="46" height="46"></span>
+      <span>Word<b>Tycoon</b></span>
+    </a>
+    <nav>
+      <a class="btn btn-ghost btn-nav-sec" href="/goat">🐐 GOAT</a>
+      <!-- The Tower has a sun/moon in its sky; this floor has no sky, so the
+           toggle lives in the topbar or night mode could never be undone here. -->
+      <button class="btn btn-ghost sky-btn" id="skyToggle" type="button" aria-pressed="false" title="Toggle day / night">
+        <span class="sky-day">☀️</span><span class="sky-night">🌙</span>
+      </button>
+      <a class="btn" href="/" id="navHome">🏢 The Tower</a>
+    </nav>
+  </header>
+</div>
+
+<div class="suite-plate"><span class="fp"><b>S</b>Your Suite</span></div>
+
+<main>
+  <!-- ═══ SIGNED OUT ═══ -->
+  <section class="floor" id="guest" hidden>
+    <div class="shell">
+      <div class="sec-head">
+        <span class="sec-kicker" style="background:linear-gradient(180deg,#ffa8c4 0 45%,var(--pink) 45%)">Floor S</span>
+        <h2 class="sec-title">This suite is <span class="cd">unoccupied</span></h2>
+        <p class="sec-sub">Sign in and it's yours — your nameplate on the door, your stats on the wall, and every coin you've ever won waiting inside.</p>
+      </div>
+      <div class="guest">
+        <div class="keycards">
+          <a class="keycard" href="/auth/google?returnTo=%2Fprofile" style="--kc:#ea4335"><div class="kc-dot"></div>Continue with Google</a>
+          <a class="keycard" href="/auth/discord?returnTo=%2Fprofile" style="--kc:#5865f2"><div class="kc-dot"></div>Continue with Discord</a>
+          <a class="keycard" href="/auth/github?returnTo=%2Fprofile" style="--kc:#24292f"><div class="kc-dot"></div>Continue with GitHub</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ LOADING ═══ -->
+  <section class="floor" id="booting">
+    <div class="shell"><p class="loading-note">Unlocking your suite…</p></div>
+  </section>
+
+  <!-- ═══ SIGNED IN ═══ -->
+  <section class="floor" id="suite" hidden>
+    <div class="shell">
+      <div class="sec-head">
+        <span class="sec-kicker" style="background:linear-gradient(180deg,#ffa8c4 0 45%,var(--pink) 45%)">Floor S</span>
+        <h2 class="sec-title">The <span class="cd">Nameplate</span></h2>
+        <p class="sec-sub">The plate on your door. Everything on it follows you into every game and every stream chat.</p>
+      </div>
+
+      <div class="plate-wrap">
+        <div class="peephole">
+          <img id="av" src="/portal/img/logo.png" alt="Your avatar">
+        </div>
+        <div class="nameplate">
+          <span class="plate-screws"><span></span><span></span></span>
+          <div class="plate-title" id="plTitle" hidden></div>
+          <div class="plate-name" id="plName">Player</div>
+          <div class="plate-sub" id="plSub"></div>
+          <div class="plate-chips">
+            <span class="chip">⚡ <b id="chCoins">–</b> XP</span>
+            <span class="chip">📖 <b id="chWords">–</b> words</span>
+            <span class="chip">🏆 <b id="chWins">–</b> wins</span>
+            <span class="chip">💡 <b id="chHints">–</b> hints <button class="chip-recharge" id="btnRechargeHints" type="button" title="Buy more hints" aria-label="Recharge hints" aria-haspopup="dialog">+</button></span>
+          </div>
+          <div class="plate-actions">
+            <button class="mini-btn" id="btnRename" type="button">✏️ Rename</button>
+            <a class="mini-btn" href="/#vault">🎨 Cosmetics</a>
+          </div>
+          <div class="rename" id="renameBox" hidden>
+            <label for="nameInput">Username</label>
+            <div class="rename-row">
+              <input id="nameInput" type="text" maxlength="32" placeholder="Set your username">
+              <button class="mini-btn" id="btnSave" type="button">Save</button>
+              <button class="mini-btn" id="btnReset" type="button">Reset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="shell" style="margin-top:32px">
+      <h2 class="sec-title">Linked <span class="cd">Accounts</span></h2>
+      <p class="sec-sub" id="accountLinkHelp">Your sign-in providers and stream identities.</p>
+      <div class="plate-actions" id="accountLinks" aria-label="Linked accounts"></div>
+    </div>
+
+    <div class="shell" style="margin-top:52px">
+      <div class="sec-head">
+        <span class="sec-kicker" style="background:linear-gradient(180deg,#7cc0ff 0 45%,var(--blue) 45%)">Floor S</span>
+        <h2 class="sec-title">The <span class="cd">Stat Wall</span></h2>
+        <p class="sec-sub">Framed and hung. Every number here is account-wide, across the game collection.</p>
+      </div>
+
+      <div class="wall wall-quick">
+        <div class="stat" style="--rr:-1.5deg"><div class="num" id="sCoins">–</div><div class="lbl">XP</div></div>
+        <div class="stat" style="--rr:1deg"><div class="num" id="sTaps">–</div><div class="lbl">Total Taps</div></div>
+        <div class="stat" style="--rr:-1deg"><div class="num" id="sWins">–</div><div class="lbl">Total Wins</div></div>
+        <div class="stat" style="--rr:1.5deg"><div class="num" id="sElo">–</div><div class="lbl">Global ELO</div></div>
+      </div>
+
+      <div class="wall wall-career" style="margin-top:16px">
+        <div class="stat" style="--rr:1deg"><div class="num" id="cWins">–</div><div class="lbl">Career Wins</div></div>
+        <div class="stat" style="--rr:-1deg"><div class="num" id="cStreak">–</div><div class="lbl">Longest Streak</div></div>
+        <div class="stat" style="--rr:1.5deg"><div class="num" id="cClaims">–</div><div class="lbl">Daily Claims</div></div>
+        <div class="stat" style="--rr:-1.5deg"><div class="num" id="cGift">–</div><div class="lbl">Gift Coins</div></div>
+        <div class="stat" style="--rr:1deg"><div class="num" id="cFav">–</div><div class="lbl">Favourite Game</div><div class="sub" id="cFavSub">No wins yet</div></div>
+        <div class="stat" style="--rr:-1deg"><div class="num" id="cCos">–</div><div class="lbl">Cosmetics Owned</div><div class="sub" id="cCosSub">0 equipped</div></div>
+      </div>
+
+    </div>
+
+    <div class="shell" style="margin-top:52px">
+      <div class="sec-head">
+        <span class="sec-kicker" style="background:linear-gradient(180deg,#b3a6f6 0 45%,var(--purple) 45%)">Floor S</span>
+        <h2 class="sec-title">The <span class="cd">Wardrobe</span></h2>
+        <p class="sec-sub">Everything you own, and what it looks like on. Equip once — it follows you into every game and every stream chat.</p>
+      </div>
+
+      <div class="wardrobe">
+        <div class="mirror">
+          <div class="mirror-head">The Mirror</div>
+          <div class="mirror-stage">
+            <div class="mirror-badge" id="mirBadge"></div>
+            <div class="mirror-body">
+              <!-- PfpCosmetics renders the ring as a disc behind the avatar and
+                   pads this shell, so the img needs its own wrapper. -->
+              <div class="mirror-av-shell" id="mirAvShell">
+                <img class="mirror-av" id="mirAv" src="/portal/img/logo.png" alt="">
+              </div>
+              <div class="mirror-title" id="mirTitle"></div>
+              <div class="mirror-name" id="mirName">Player</div>
+              <div class="mirror-word" id="mirWord">WORDY</div>
+            </div>
+          </div>
+          <div class="mirror-foot" id="mirFoot">—</div>
+        </div>
+
+        <div class="rack">
+          <div class="rack-filters" id="rackFilters">
+            <select class="rack-sort" id="rackSort" aria-label="Sort cosmetics">
+              <option value="default">Sort: Default</option>
+              <option value="rarity-desc">Sort: Rarity ↓</option>
+              <option value="rarity-asc">Sort: Rarity ↑</option>
+              <option value="name">Sort: Name</option>
+            </select>
+          </div>
+          <div class="rack-grid" id="rackGrid">
+            <div class="rack-empty">Opening the wardrobe…</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wall wall-career" style="margin-top:26px">
+        <div class="stat" style="--rr:-1deg"><div class="num" id="kOwned">–</div><div class="lbl">Owned</div></div>
+        <div class="stat" style="--rr:1deg"><div class="num" id="kGenerated">–</div><div class="lbl">Rewards</div></div>
+        <div class="stat" style="--rr:-1.5deg"><div class="num" id="kLegendary">–</div><div class="lbl">Legendary+</div></div>
+        <div class="stat" style="--rr:1.5deg"><div class="num" id="kBadges">–</div><div class="lbl">Hero Badges</div></div>
+        <div class="stat" style="--rr:-1deg"><div class="num" id="kWinFx">–</div><div class="lbl">Win Effects</div></div>
+        <div class="stat" style="--rr:1deg"><div class="num" id="kTitles">–</div><div class="lbl">Titles</div><div class="sub" id="kEquippedSub">0 equipped</div></div>
+      </div>
+
+      <div class="wall wall-career wall-trio" style="margin-top:14px">
+        <div class="stat" style="--rr:1deg"><div class="num" id="kCatalog">–</div><div class="lbl">Catalog</div><div class="sub" id="kCatalogSub">of 0</div></div>
+        <div class="stat" style="--rr:-1deg"><div class="num" id="kCompletion">–</div><div class="lbl">Completion</div></div>
+        <div class="stat" style="--rr:1.5deg"><div class="num" id="kCatsDone">–</div><div class="lbl">Categories Done</div><div class="sub" id="kCatsSub">of 0</div></div>
+      </div>
+
+      <p class="wall-note">The guest book and the ledger are still being furnished.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="foot-walk">🚶‍♀️ 🚶 🐈‍⬛</div>
+  <a href="/">The Tower</a> · <a href="/goat">GOAT</a> · <a href="/how-to-play">How to Play</a> · <a href="/library">Library</a>
+  <div style="margin-top:8px">
+    <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="https://discord.gg/C8Nm2jEZFC" target="_blank" rel="noopener">Discord</a> · <span>&copy; 2026 Word Tycoon</span>
+  </div>
+</footer>
+
+<div class="recharge-modal" id="rechargeModal" hidden>
+  <div class="recharge-backdrop" id="rechargeBackdrop"></div>
+  <div class="recharge-sheet" role="dialog" aria-modal="true" aria-labelledby="rechargeTitle" tabindex="-1">
+    <div class="recharge-head">
+      <h3 id="rechargeTitle">Recharge Hints</h3>
+      <button class="recharge-close" id="rechargeClose" type="button" aria-label="Close">×</button>
+    </div>
+    <p class="recharge-sub">$1 = 10 hints. Hints never expire — they roll over forever and you earn 1 free hint each day you log in.</p>
+    <div class="recharge-presets" id="rechargePresets">
+      <button type="button" data-dollars="1"><span class="rp-price">$1</span><span class="rp-hints">10 hints</span></button>
+      <button type="button" data-dollars="5"><span class="rp-price">$5</span><span class="rp-hints">50 hints</span></button>
+      <button type="button" data-dollars="10"><span class="rp-price">$10</span><span class="rp-hints">100 hints</span></button>
+      <button type="button" data-dollars="20"><span class="rp-price">$20</span><span class="rp-hints">200 hints</span></button>
+    </div>
+    <div class="recharge-custom">
+      <label for="rechargeCustom">Custom amount</label>
+      <div class="recharge-custom-row">
+        <span class="recharge-dollar">$</span>
+        <input id="rechargeCustom" type="number" min="1" max="100" step="1" placeholder="1-100">
+        <button class="mini-btn" id="rechargeCustomGo" type="button">Buy <b id="rechargeCustomHints">0</b> hints</button>
+      </div>
+    </div>
+    <div class="recharge-actions">
+      <button class="mini-btn" id="rechargeCancel" type="button">Cancel</button>
+    </div>
+    <div class="recharge-status" id="rechargeStatus"></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<script src="/portal/js/toon.js?v=5"></script>
+<!-- The Switchboard: Lobby chat (site-only) + Live Feed (stream relay). -->
+<script src="/chat-widget.js?v=21" defer></script>
+<!-- The canonical cosmetic appliers, same ones the portal SPA uses:
+     ambient-fx.js exports CosmeticsFx (+ AmbientFx), pfp-cosmetics.js exports
+     PfpCosmetics. Reusing them is what makes the mirror match how a cosmetic
+     actually renders in game and in stream chat. -->
+<script src="/js/ambient-fx.js?v=3"></script>
+<script src="/js/pfp-cosmetics.js?v=15"></script>
+<script src="/portal/js/profile.js?v=8"></script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

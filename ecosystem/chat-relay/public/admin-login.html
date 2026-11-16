@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relay Broadcast - Admin Login</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f14;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-card {
+      background: #1a1a24;
+      border: 1px solid #2a2a3a;
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 380px;
+      max-width: 90vw;
+      text-align: center;
+    }
+    .login-card h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #a78bfa;
+      margin-bottom: 8px;
+    }
+    .login-card p {
+      color: #888;
+      margin-bottom: 32px;
+      font-size: 14px;
+    }
+    .login-input {
+      width: 100%;
+      padding: 14px 16px;
+      background: #12121a;
+      border: 1px solid #333;
+      border-radius: 10px;
+      color: #e0e0e0;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .login-input:focus {
+      border-color: #a78bfa;
+    }
+    .login-btn {
+      width: 100%;
+      padding: 14px;
+      background: #7c3aed;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 16px;
+      transition: background 0.2s;
+    }
+    .login-btn:hover { background: #6d28d9; }
+    .login-btn:active { background: #5b21b6; }
+    .login-btn:disabled { background: #4a1a9e; cursor: default; }
+    .login-error {
+      color: #f87171;
+      font-size: 14px;
+      margin-top: 16px;
+      display: none;
+    }
+    .login-error.show { display: block; }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <h1>Relay Broadcast</h1>
+    <p>Admin access required</p>
+    <form id="login-form" action="/admin/login" method="POST">
+      <input type="password" id="login-password" name="password" class="login-input" placeholder="Password" autofocus autocomplete="current-password">
+      <button type="submit" class="login-btn">Login</button>
+      <div id="login-error" class="login-error"></div>
+    </form>
+  </div>
+  <script>
+    // Show server-side error from query param (plain form POST fallback)
+    var params = new URLSearchParams(location.search);
+    var err = params.get('error');
+    var errEl = document.getElementById('login-error');
+    if (err === 'invalid') { errEl.textContent = 'Invalid password'; errEl.classList.add('show'); }
+    else if (err === 'ratelimit') { errEl.textContent = 'Too many attempts — please wait a few minutes'; errEl.classList.add('show'); }
+    else if (err === 'session') { errEl.textContent = 'Session error — please try again'; errEl.classList.add('show'); }
+
+    // Progressive enhancement: use fetch if available (faster UX)
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+      var btn = this.querySelector('button[type=submit]');
+      btn.disabled = true;
+      btn.textContent = 'Logging in\u2026';
+      // Let the native form POST proceed — most reliable across all browsers
+    });
+  </script>
+  <footer class="wt-legal-footer">
+    <a href="/privacy">Privacy</a> &middot; <a href="/terms">Terms</a> &middot; <a href="https://discord.gg/C8Nm2jEZFC" target="_blank" rel="noopener">Discord</a> &middot; <span>&copy; 2026 Word Tycoon</span>
+  </footer>
+  <style>
+    .wt-legal-footer{padding:14px 16px 18px;text-align:center;font:12px/1.4 "Segoe UI",Tahoma,sans-serif;color:#7a8a9b;opacity:.75}
+    .wt-legal-footer a{color:inherit;text-decoration:none;margin:0 2px}
+    .wt-legal-footer a:hover{text-decoration:underline;opacity:1}
+  </style>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

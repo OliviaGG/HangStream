@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<title>Win Overlay</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 1080px; height: 1920px;
+  background: transparent;
+  overflow: hidden;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+@keyframes ov-gradient-flow {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Win card ── */
+#win-card {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1.23);
+  opacity: 0;
+  transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+  z-index: 100;
+
+  width: 460px;
+  background: linear-gradient(160deg, rgba(18,18,26,0.97) 0%, rgba(12,12,18,0.97) 100%);
+  border: 1px solid rgba(255,255,255,0.13);
+  border-radius: 28px;
+  padding: 36px 36px 30px;
+  text-align: center;
+  box-shadow:
+    0 24px 80px rgba(0,0,0,0.85),
+    0 0 0 1px rgba(255,255,255,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+#win-card.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.5);
+}
+
+#win-card.hide {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(1.38);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* ── Game label ── */
+#win-game-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 3.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.38);
+  margin-bottom: 24px;
+}
+
+/* ── Profile pic ── */
+#win-pic {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  position: relative;
+  overflow: visible;
+  flex-shrink: 0;
+}
+
+#win-pic-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+#win-pic img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.placeholder-letter {
+  font-size: 52px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.75);
+  line-height: 1;
+  text-align: center;
+}
+
+.win-badge {
+  position: absolute;
+  bottom: 2px; right: 2px;
+  background: #FFD700;
+  color: #000;
+  font-size: 14px;
+  font-weight: 800;
+  border-radius: 50%;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border: 3px solid rgba(12,12,18,0.97);
+  z-index: 2;
+}
+
+/* ── Winner label ── */
+#win-won-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 6px;
+}
+
+/* ── Winner name ── */
+#win-name-wrap {
+  margin-bottom: 24px;
+  line-height: 1.2;
+}
+
+#win-name {
+  font-size: 32px;
+  font-weight: 800;
+  color: #fff;
+  display: inline;
+}
+
+.cosmetic-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-left: 6px;
+  vertical-align: middle;
+  opacity: 0.85;
+}
+
+/* ── Divider ── */
+.win-divider {
+  width: 48px;
+  height: 2px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 2px;
+  margin: 0 auto 20px;
+}
+
+/* ── Word ── */
+#win-word {
+  font-size: 56px;
+  font-weight: 900;
+  letter-spacing: 6px;
+  color: #fff;
+  text-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  margin-bottom: 18px;
+  line-height: 1;
+}
+
+/* ── Guess count row ── */
+#win-guess-row {
+  font-size: 16px;
+  color: rgba(255,255,255,0.45);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  margin-bottom: 20px;
+  min-height: 1.2em;
+}
+
+/* ── XP reward section ── */
+#win-xp-section {
+  display: none;
+  margin-top: 4px;
+}
+
+#win-xp-section.visible {
+  display: block;
+}
+
+.xp-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin-bottom: 18px;
+}
+
+#win-xp-amount {
+  font-size: 42px;
+  font-weight: 900;
+  color: #FFD700;
+  text-shadow: 0 0 20px rgba(255,215,0,0.4);
+  line-height: 1;
+  margin-bottom: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+#win-xp-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255,215,0,0.55);
+  margin-bottom: 16px;
+}
+
+/* ── XP bar ── */
+#win-xp-bar-wrap {
+  width: 100%;
+  height: 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+#win-xp-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #FFD700, #FFA500);
+  border-radius: 4px;
+  transition: width 1.8s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 0 10px rgba(255,215,0,0.5);
+  position: relative;
+}
+
+#win-xp-bar-fill::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 8px #FFD700, 0 0 16px rgba(255,215,0,0.5);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#win-xp-bar-fill.animating::after {
+  opacity: 1;
+}
+
+/* ── Floating XP coins ── */
+.xp-coin {
+  position: absolute;
+  font-size: 18px;
+  font-weight: 800;
+  color: #FFD700;
+  text-shadow: 0 0 8px rgba(255,215,0,0.6);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 101;
+}
+
+@keyframes xpCoinFloat {
+  0%   { opacity: 0; transform: translateY(0) scale(0.7); }
+  15%  { opacity: 1; transform: translateY(-10px) scale(1); }
+  85%  { opacity: 1; transform: translateY(-40px) scale(1); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0.5); }
+}
+
+/* ── Word-found variant (SpellingBee per-word) ── */
+#win-card.word-found {
+  width: 380px;
+  padding: 28px 32px 24px;
+}
+
+#win-card.word-found #win-pic { display: none; }
+#win-card.word-found #win-won-label { display: none; }
+#win-card.word-found .win-divider { display: none; }
+#win-card.word-found #win-word { font-size: 48px; margin-bottom: 10px; }
+#win-card.word-found #win-name { font-size: 24px; }
+#win-card.word-found #win-name-wrap { margin-bottom: 12px; }
+#win-card.word-found #win-game-label { margin-bottom: 16px; }
+#win-card.word-found #win-guess-row { font-size: 14px; margin-bottom: 14px; }
+#win-card.word-found #win-xp-amount { font-size: 32px; }
+#win-card.word-found #win-xp-label { font-size: 11px; }
+
+/* ─── Streamer-mode top-10 card ─────────────────────────────────────── */
+#sw-card {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.96);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  width: 880px;
+  background: linear-gradient(160deg, rgba(18,12,28,0.97) 0%, rgba(10,8,16,0.98) 100%);
+  border: 1px solid rgba(177,107,255,0.22);
+  border-radius: 32px;
+  padding: 56px 48px 48px;
+  box-shadow:
+    0 30px 80px rgba(0,0,0,0.6),
+    0 0 60px rgba(177,107,255,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+  z-index: 100;
+  display: none;
+}
+
+#sw-card.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+#sw-card.hide {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.96);
+}
+
+#sw-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 14%; right: 14%;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%, rgba(177,107,255,0.5) 25%, #B16BFF 45%,
+    #5BFF9E 55%, rgba(91,255,158,0.5) 75%, transparent 100%);
+  filter: drop-shadow(0 0 6px #B16BFF);
+}
+
+.sw-eyebrow {
+  font-family: 'Roboto Mono', 'Segoe UI', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #B16BFF;
+  text-align: center;
+  text-shadow: 0 0 12px rgba(177,107,255,0.6);
+  margin-bottom: 12px;
+}
+
+.sw-game {
+  font-size: 36px;
+  font-weight: 900;
+  color: #fff;
+  text-align: center;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.sw-word {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: #5BFF9E;
+  text-align: center;
+  text-shadow: 0 0 16px rgba(91,255,158,0.4);
+  text-transform: uppercase;
+  margin-bottom: 28px;
+  min-height: 1.2em;
+}
+
+.sw-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.sw-row {
+  display: grid;
+  grid-template-columns: 56px 80px 1fr 110px 110px;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: sw-row-in 0.4s ease forwards;
+}
+
+@keyframes sw-row-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.sw-row.rank-1 {
+  background: linear-gradient(90deg, rgba(255,215,0,0.10), rgba(177,107,255,0.10));
+  border-color: rgba(255,215,0,0.40);
+  box-shadow: 0 0 24px rgba(255,215,0,0.15);
+  padding: 14px 16px;
+}
+
+.sw-rank {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 22px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.45);
+  text-align: center;
+}
+
+.sw-row.rank-1 .sw-rank { color: #FFD700; font-size: 26px; text-shadow: 0 0 8px rgba(255,215,0,0.6); }
+.sw-row.rank-2 .sw-rank { color: #C0C0C0; }
+.sw-row.rank-3 .sw-rank { color: #CD7F32; }
+
+.sw-avatar {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: visible;
+}
+
+.sw-avatar.has-fan-club-badge,
+#win-pic.has-fan-club-badge,
+.sw-avatar.has-superfan-badge,
+#win-pic.has-superfan-badge,
+.sw-avatar.has-super-donor-badge,
+#win-pic.has-super-donor-badge { position: relative; overflow: visible; }
+.sw-avatar.has-fan-club-badge::after,
+#win-pic.has-fan-club-badge::after,
+.sw-avatar.has-superfan-badge::after,
+#win-pic.has-superfan-badge::after,
+.sw-avatar.has-super-donor-badge::after,
+#win-pic.has-super-donor-badge::after {
+  content: '';
+  position: absolute;
+  top: -10%;
+  right: -10%;
+  width: 38%;
+  height: 38%;
+  background-image: url('https://wordtycoon.live/portal/assets/badges/tiktok-fanclub.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+  z-index: 3;
+}
+/* Super Fan gold heart replaces the FC heart (wins when both classes present) */
+.sw-avatar.has-superfan-badge::after,
+#win-pic.has-superfan-badge::after {
+  background-image: url('https://wordtycoon.live/cosmetics/superfan-heart.png');
+  top: -12%;
+  right: -12%;
+  width: 42%;
+  height: 42%;
+}
+/* Super Donor beats both — bigger again, and the only one that glows. Kept to
+   drop-shadow (not box-shadow) so the halo follows the heart's alpha; a
+   box-shadow here would frame the ::after's square box on stream. */
+.sw-avatar.has-super-donor-badge::after,
+#win-pic.has-super-donor-badge::after {
+  background-image: url('https://wordtycoon.live/cosmetics/superdonor-heart.png');
+  top: -14%;
+  right: -14%;
+  width: 48%;
+  height: 48%;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5))
+          drop-shadow(0 0 6px rgba(110, 227, 74, 0.55))
+          drop-shadow(0 0 12px rgba(255, 215, 0, 0.35));
+}
+
+.sw-avatar-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sw-avatar img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sw-avatar .sw-letter {
+  font-size: 26px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.75);
+  line-height: 1;
+}
+
+.sw-hero-badge {
+  position: absolute;
+  bottom: -4px; right: -4px;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(10,8,16,0.95);
+  border: 2px solid rgba(177,107,255,0.6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  z-index: 2;
+  box-shadow: 0 0 8px rgba(177,107,255,0.4);
+}
+
+.sw-name-cell {
+  min-width: 0;
+}
+
+.sw-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sw-row.rank-1 .sw-name { font-size: 26px; }
+
+.sw-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-left: 6px;
+  vertical-align: middle;
+  opacity: 0.85;
+}
+
+.sw-xp {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 22px;
+  font-weight: 800;
+  color: #FFD700;
+  text-align: right;
+  text-shadow: 0 0 8px rgba(255,215,0,0.4);
+  font-variant-numeric: tabular-nums;
+}
+
+.sw-row.rank-1 .sw-xp { font-size: 26px; }
+
+.sw-elo {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.40);
+  text-align: right;
+  letter-spacing: 0.05em;
+}
+
+.sw-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  font-family: 'Roboto Mono', monospace;
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+}
+
+.sw-footer .sw-jackpot {
+  color: #FFD700;
+  font-weight: 800;
+  text-shadow: 0 0 8px rgba(255,215,0,0.4);
+}
+
+.sw-footer .sw-jackpot.zero { display: none; }
+</style>
+</head>
+<body>
+
+<div id="win-card">
+  <div id="win-game-label"></div>
+  <div id="win-pic">
+    <div id="win-pic-inner"></div>
+  </div>
+  <div id="win-won-label">Winner</div>
+  <div id="win-name-wrap">
+    <span id="win-name"></span>
+  </div>
+  <div class="win-divider"></div>
+  <div id="win-word"></div>
+  <div id="win-guess-row"></div>
+  <div id="win-xp-section">
+    <div class="xp-divider"></div>
+    <div id="win-xp-amount">+0</div>
+    <div id="win-xp-label">XP Earned</div>
+    <div id="win-xp-bar-wrap">
+      <div id="win-xp-bar-fill"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Streamer-mode top-10 card (only shown when ?streamer=<handle>) -->
+<div id="sw-card">
+  <div class="sw-eyebrow">// Round Complete</div>
+  <div class="sw-game" id="sw-game"></div>
+  <div class="sw-word" id="sw-word"></div>
+  <div class="sw-list" id="sw-list"></div>
+  <div class="sw-footer">
+    <span class="sw-jackpot" id="sw-jackpot">+0 jackpot</span>
+    <span id="sw-next">Next round in 8s</span>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/win-effects.js?v=3"></script>
+<script src="/js/ambient-fx.js?v=3"></script>
+<script src="/js/pfp-cosmetics.js?v=15"></script>
+<link rel="stylesheet" href="/css/cosmetics-fx.css?v=2">
+<!-- WebGL engine override — only activates when URL has ?fx=gl.
+     Falls back to the canvas2d engine above for any effect it doesn't
+     implement, or when WebGL2 is unavailable. -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module" src="/win-effects-gl.js?v=1"></script>
+<script>
+(function () {
+'use strict';
+
+// ─── DOM refs ──────────────────────────────────────────────────────────────
+var card        = document.getElementById('win-card');
+var gameLabel   = document.getElementById('win-game-label');
+var picEl       = document.getElementById('win-pic');
+var picInner    = document.getElementById('win-pic-inner');
+var nameEl      = document.getElementById('win-name');
+var nameWrap    = document.getElementById('win-name-wrap');
+var wordEl      = document.getElementById('win-word');
+var guessRow    = document.getElementById('win-guess-row');
+var xpSection   = document.getElementById('win-xp-section');
+var xpAmountEl  = document.getElementById('win-xp-amount');
+var xpBarFill   = document.getElementById('win-xp-bar-fill');
+
+// ─── Win queue ─────────────────────────────────────────────────────────────
+var queue       = [];
+var showing     = false;
+var hideTimer   = null;
+var SHOW_MS     = 7000;
+var countUpTimer = null;
+
+function queueWin(data) {
+  queue.push(data);
+  if (!showing) processQueue();
+}
+
+function processQueue() {
+  if (!queue.length) { showing = false; return; }
+  showing = true;
+  showWin(queue.shift());
+}
+
+// ─── Cosmetics (OBS rules: suppress word_color/word_glow) ─────────────────
+// Defensive try/catch: a malformed cosmetic value (string instead of object,
+// missing nested field, unexpected schema) used to throw and silently abort
+// the whole popup render — the card never reached display:block. We now log
+// and continue so the overlay still shows even if one cosmetic is broken.
+function applyCosmetics(cos) {
+  if (!cos) return;
+  try {
+  var FX = window.CosmeticsFx;
+  // name_color
+  if (cos.name_color) {
+    if (FX) FX.applyText(nameEl, cos.name_color, { shadow: false });
+    else {
+      if (cos.name_color.color) nameEl.style.color = cos.name_color.color;
+      if (cos.name_color.animation) nameEl.style.animation = cos.name_color.animation;
+    }
+  }
+  // name_glow
+  if (cos.name_glow) {
+    if (cos.name_glow.textShadow) nameEl.style.textShadow = cos.name_glow.textShadow;
+    if (cos.name_glow.animation && !nameEl.style.animation) nameEl.style.animation = cos.name_glow.animation;
+  }
+  // profile_border + profile_glow — shared applier, shadows always stacked
+  if (window.PfpCosmetics) window.PfpCosmetics.apply(picInner, picEl, cos);
+  // title
+  if (cos.title && cos.title.title) {
+    var ts = document.createElement('span');
+    ts.className = 'cosmetic-title';
+    ts.textContent = '[' + cos.title.title + ']';
+    if (FX) FX.applyTitle(ts, cos.title);
+    else {
+      if (cos.title.titleColor) ts.style.color = cos.title.titleColor;
+      if (cos.title.titleGlow) ts.style.textShadow = cos.title.titleGlow;
+      if (cos.title.animation) ts.style.animation = cos.title.animation;
+    }
+    nameWrap.appendChild(ts);
+  }
+  // ambient particle auras (legendary/ultra) on name + avatar
+  if (window.AmbientFx) {
+    var nAmb = (cos.name_color && cos.name_color.__ambient) || (cos.name_glow && cos.name_glow.__ambient);
+    if (nAmb) AmbientFx.attach(nameEl, nAmb); else AmbientFx.detach(nameEl);
+    var pAmb = (cos.profile_border && cos.profile_border.__ambient) || (cos.profile_glow && cos.profile_glow.__ambient);
+    if (pAmb) AmbientFx.attach(picInner, pAmb); else AmbientFx.detach(picInner);
+  }
+  } catch (err) {
+    console.warn('[win-overlay] applyCosmetics threw, continuing render:', err, cos);
+  }
+}
+
+// ─── Animated count-up ────────────────────────────────────────────────────
+function animateCountUp(el, target, durationMs) {
+  if (countUpTimer) { clearInterval(countUpTimer); countUpTimer = null; }
+  if (target <= 0) { el.textContent = '+0'; return; }
+
+  var start = 0;
+  var steps = Math.min(60, target);
+  var interval = Math.max(16, Math.floor(durationMs / steps));
+  var increment = Math.max(1, Math.floor(target / steps));
+
+  countUpTimer = setInterval(function() {
+    start += increment;
+    if (start >= target) {
+      start = target;
+      clearInterval(countUpTimer);
+      countUpTimer = null;
+    }
+    el.textContent = '+' + start.toLocaleString();
+  }, interval);
+}
+
+// ─── Floating XP coins ───────────────────────────────────────────────────
+function spawnXPCoins(amount) {
+  var count = Math.min(8, Math.max(3, Math.floor(amount / 500)));
+  for (var i = 0; i < count; i++) {
+    (function(idx) {
+      setTimeout(function() {
+        var coin = document.createElement('div');
+        coin.className = 'xp-coin';
+        coin.textContent = '+' + Math.floor(amount / count).toLocaleString();
+        // Position around the XP amount area
+        var cardRect = card.getBoundingClientRect();
+        coin.style.left = (cardRect.left + cardRect.width / 2 + (Math.random() - 0.5) * 160) + 'px';
+        coin.style.top = (cardRect.top + cardRect.height - 100) + 'px';
+        coin.style.animation = 'xpCoinFloat 1.2s ease-out forwards';
+        document.body.appendChild(coin);
+        setTimeout(function() { if (coin.parentNode) coin.parentNode.removeChild(coin); }, 1300);
+      }, idx * 200 + 400);
+    })(i);
+  }
+}
+
+// ─── Render win card ───────────────────────────────────────────────────────
+var PLATFORM_COLORS = {
+  tiktok: '#69C9D0', youtube: '#FF0000', twitch: '#9146FF',
+  discord: '#5865F2', web: '#5865F2', unknown: '#aaa'
+};
+
+function showWin(data) {
+  var winner   = data.winner || {};
+  var isWord   = data.winType === 'word';
+
+  // Reset styles
+  nameEl.style.cssText = '';
+  wordEl.style.cssText = '';
+  picInner.style.cssText = '';
+  picEl.dataset.bs = '';
+  if (window.AmbientFx) { AmbientFx.detach(nameEl); AmbientFx.detach(picInner); }
+  picEl.style.display = '';
+  card.style.display = '';       // restore from display:none set by hideWin
+  card.style.background = '';
+  card.style.backgroundSize = '';
+  card.style.animation = '';
+  nameWrap.querySelectorAll('.cosmetic-title').forEach(function(el){ el.remove(); });
+  card.classList.remove('word-found');
+  xpSection.classList.remove('visible');
+  xpBarFill.classList.remove('animating');
+  xpBarFill.style.width = '0%';
+  if (countUpTimer) { clearInterval(countUpTimer); countUpTimer = null; }
+
+  // Game label
+  gameLabel.textContent = data.gameName || data.game || '';
+
+  // Profile pic — one heart only, highest tier first:
+  // Super Donor > Super Fan > Fan Club. isSuperDonor is stamped by the relay
+  // (server.js perk enrichment); the isSuperfan && isDonor fallback covers a
+  // payload that reached us from a game that predates that field.
+  var _isSD = !!winner.isSuperDonor || (!!winner.isSuperfan && !!winner.isDonor);
+  picEl.classList.toggle('has-super-donor-badge', _isSD);
+  picEl.classList.toggle('has-superfan-badge', !_isSD && !!winner.isSuperfan);
+  picEl.classList.toggle('has-fan-club-badge', !_isSD && !winner.isSuperfan && !!winner.isFanClub);
+  if (isWord) {
+    card.classList.add('word-found');
+  } else {
+    var letter = ((winner.displayName || '?')[0]).toUpperCase()
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    var color  = PLATFORM_COLORS[winner.platform] || PLATFORM_COLORS.unknown;
+    if (winner.profilePic) {
+      picInner.innerHTML = '<img src="' + winner.profilePic.replace(/"/g, '&quot;')
+        + '" alt="" referrerpolicy="no-referrer" crossorigin="anonymous"'
+        + ' onerror="this.outerHTML=\'<span class=placeholder-letter style=color:' + color + '>' + letter + '</span>\'">';
+    } else {
+      picInner.innerHTML = '<span class="placeholder-letter" style="color:' + color + '">' + letter + '</span>';
+    }
+    // Win badge
+    var existingBadge = picEl.querySelector('.win-badge');
+    if (existingBadge) existingBadge.remove();
+    if (data.totalWins > 0) {
+      var badge = document.createElement('div');
+      badge.className = 'win-badge';
+      badge.textContent = data.totalWins;
+      picEl.appendChild(badge);
+    }
+  }
+
+  // Name
+  nameEl.textContent = winner.displayName || 'Player';
+
+  // Word
+  wordEl.textContent = data.word ? data.word.toUpperCase() : '';
+  wordEl.style.display = data.word ? '' : 'none';
+
+  // Guess count (separate row, no XP here)
+  var guessCount = data.guessCount || 0;
+  guessRow.textContent = guessCount > 0 ? guessCount + ' guess' + (guessCount !== 1 ? 'es' : '') : '';
+  guessRow.style.display = guessCount > 0 ? '' : 'none';
+
+  // Cosmetics
+  applyCosmetics(winner.cosmetics);
+
+  // Show card first
+  requestAnimationFrame(function() {
+    card.classList.remove('hide');
+    requestAnimationFrame(function() {
+      card.classList.add('show');
+    });
+  });
+
+  // XP section — animate in after card appears
+  var jackpot = data.jackpot || 0;
+  if (jackpot > 0) {
+    setTimeout(function() {
+      xpSection.classList.add('visible');
+      xpAmountEl.textContent = '+0';
+
+      // Start count-up after a beat
+      setTimeout(function() {
+        animateCountUp(xpAmountEl, jackpot, 1400);
+        // Animate the XP bar filling
+        xpBarFill.classList.add('animating');
+        // Bar fills to a percentage (cap at 100%, scale by jackpot vs 5000 as reference)
+        var fillPct = Math.min(100, Math.max(8, (jackpot / 5000) * 100));
+        xpBarFill.style.width = fillPct + '%';
+        // Spawn floating coins
+        spawnXPCoins(jackpot);
+      }, 200);
+    }, 600);
+  }
+
+  // Auto-hide — set before particle effect so a crash there can't block the timer
+  if (hideTimer) clearTimeout(hideTimer);
+  hideTimer = setTimeout(function() { hideWin(); }, SHOW_MS);
+
+  // Particle effect — pass the full cosmetic config so colors/duration/particleCount
+  // flow through to the renderer. Bare { effect } crashes pick(undefined) in 11 of 12
+  // renderers; only lightning (no colors) survived. See win-effects.js.
+  var fxCfg = (winner.cosmetics && winner.cosmetics.win_effect && winner.cosmetics.win_effect.effect)
+    ? winner.cosmetics.win_effect
+    : { effect: data.winEffect || (isWord ? 'sparkles' : 'confetti') };
+  // Spawn particles from the win card's perimeter instead of the screen
+  // edges — gives the win effect a clear visual anchor on the card and
+  // looks much more intentional. Clone fxCfg so we don't mutate the
+  // shared cosmetic object that the dashboard cached.
+  try {
+    var _card = document.getElementById('win-card');
+    if (_card) {
+      var _r = _card.getBoundingClientRect();
+      if (_r.width > 0 && _r.height > 0) {
+        fxCfg = Object.assign({}, fxCfg, { spawnRect: { left: _r.left, top: _r.top, width: _r.width, height: _r.height } });
+      }
+    }
+  } catch (_) { /* fall back to screen-edge spawn */ }
+  try {
+    if (window.playWinEffect) window.playWinEffect(fxCfg);
+  } catch (e) { /* particles are cosmetic — never block the hide timer */ }
+}
+
+function hideWin() {
+  if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+  if (countUpTimer) { clearInterval(countUpTimer); countUpTimer = null; }
+  card.classList.remove('show');
+  card.classList.add('hide');
+  setTimeout(function() {
+    card.classList.remove('hide');
+    card.style.display = 'none';   // remove from OBS render tree entirely
+    xpSection.classList.remove('visible');
+    xpBarFill.classList.remove('animating');
+    xpBarFill.style.width = '0%';
+    processQueue();
+  }, 500);
+}
+
+// ─── Streamer-mode renderer ────────────────────────────────────────────────
+// Renders top-10 leaderboard with cosmetics per row; replaces the
+// single-winner public card when ?streamer=<handle> is set.
+var swCard      = document.getElementById('sw-card');
+var swGameEl    = document.getElementById('sw-game');
+var swWordEl    = document.getElementById('sw-word');
+var swListEl    = document.getElementById('sw-list');
+var swJackpotEl = document.getElementById('sw-jackpot');
+var swNextEl    = document.getElementById('sw-next');
+var swHideTimer = null;
+var SW_SHOW_MS  = 12000;
+
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+
+function buildAvatar(p) {
+  var letter = ((p.displayName || '?')[0] || '?').toUpperCase();
+  var color = PLATFORM_COLORS[p.platform] || PLATFORM_COLORS.unknown;
+  var pic = p.profilePic || p.profileImage || null;
+  var inner;
+  if (pic) {
+    inner = '<img src="' + escHtml(pic).replace(/&amp;/g, '&')
+      + '" alt="" referrerpolicy="no-referrer" crossorigin="anonymous"'
+      + ' onerror="this.outerHTML=\'<span class=sw-letter style=color:' + color + '>' + escHtml(letter) + '</span>\'">';
+  } else {
+    inner = '<span class="sw-letter" style="color:' + color + '">' + escHtml(letter) + '</span>';
+  }
+  return inner;
+}
+
+function applyRowCosmetics(rowEl, cos) {
+  if (!cos) return;
+  try {
+  var nameEl = rowEl.querySelector('.sw-name');
+  var avInner = rowEl.querySelector('.sw-avatar-inner');
+  var avWrap = rowEl.querySelector('.sw-avatar');
+  if (!nameEl || !avInner || !avWrap) return;
+  var FX = window.CosmeticsFx;
+  if (cos.name_color) {
+    if (FX) FX.applyText(nameEl, cos.name_color, { shadow: false });
+    else {
+      if (cos.name_color.color) nameEl.style.color = cos.name_color.color;
+      if (cos.name_color.animation) nameEl.style.animation = cos.name_color.animation;
+    }
+  }
+  if (cos.name_glow) {
+    if (cos.name_glow.textShadow) nameEl.style.textShadow = cos.name_glow.textShadow;
+    if (cos.name_glow.animation && !nameEl.style.animation) nameEl.style.animation = cos.name_glow.animation;
+  }
+  // Shared applier — the glow used to overwrite the border's own halo here.
+  if (window.PfpCosmetics) window.PfpCosmetics.apply(avInner, avWrap, cos);
+  if (cos.title && cos.title.title) {
+    var ts = document.createElement('span');
+    ts.className = 'sw-title';
+    ts.textContent = '[' + cos.title.title + ']';
+    if (FX) FX.applyTitle(ts, cos.title);
+    else {
+      if (cos.title.titleColor) ts.style.color = cos.title.titleColor;
+      if (cos.title.titleGlow) ts.style.textShadow = cos.title.titleGlow;
+      if (cos.title.animation) ts.style.animation = cos.title.animation;
+    }
+    nameEl.appendChild(ts);
+  }
+  // ambient aura on standout names (rows are pruned automatically on removal)
+  if (window.AmbientFx) {
+    var rAmb = (cos.name_color && cos.name_color.__ambient) || (cos.name_glow && cos.name_glow.__ambient);
+    if (rAmb) AmbientFx.attach(nameEl, rAmb);
+  }
+  // Hero badge — emoji/icon, or image-overlay (e.g. fan club heart)
+  if (cos.hero_badge && cos.hero_badge.backgroundImage) {
+    var badge = document.createElement('div');
+    badge.className = 'sw-hero-badge sw-hero-badge--image';
+    if (cos.hero_badge.background) badge.style.background = cos.hero_badge.background;
+    badge.style.backgroundImage = 'url("' + cos.hero_badge.backgroundImage + '")';
+    badge.style.backgroundSize = cos.hero_badge.backgroundImageSize || '80%';
+    badge.style.backgroundPosition = 'center';
+    badge.style.backgroundRepeat = 'no-repeat';
+    if (cos.hero_badge.borderColor) badge.style.borderColor = cos.hero_badge.borderColor;
+    if (cos.hero_badge.animation) badge.style.animation = cos.hero_badge.animation;
+    avWrap.appendChild(badge);
+  } else if (cos.hero_badge && (cos.hero_badge.icon || cos.hero_badge.emoji)) {
+    var badge = document.createElement('div');
+    badge.className = 'sw-hero-badge';
+    badge.textContent = cos.hero_badge.icon || cos.hero_badge.emoji;
+    if (cos.hero_badge.borderColor) badge.style.borderColor = cos.hero_badge.borderColor;
+    if (cos.hero_badge.background) badge.style.background = cos.hero_badge.background;
+    avWrap.appendChild(badge);
+  }
+  } catch (err) {
+    console.warn('[win-overlay] applyRowCosmetics threw, skipping this row\'s cosmetics:', err, cos);
+  }
+}
+
+function showStreamerWin(data) {
+  if (swHideTimer) { clearTimeout(swHideTimer); swHideTimer = null; }
+
+  swGameEl.textContent = data.gameName || data.game || '';
+  swWordEl.textContent = data.word ? String(data.word).toUpperCase() : '';
+  swWordEl.style.display = data.word ? '' : 'none';
+
+  // Jackpot footer
+  var jackpot = Number(data.jackpot) || 0;
+  if (jackpot > 0) {
+    swJackpotEl.classList.remove('zero');
+    swJackpotEl.textContent = '+' + jackpot.toLocaleString() + ' jackpot';
+  } else {
+    swJackpotEl.classList.add('zero');
+  }
+  swNextEl.textContent = 'Next round soon';
+
+  // Top-10 list
+  var list = Array.isArray(data.topPlayers) ? data.topPlayers.slice(0, 10) : [];
+  // If we got nothing, fall back to a single-winner row using data.winner
+  if (!list.length && data.winner) {
+    list = [{
+      displayName: data.winner.displayName,
+      profilePic: data.winner.profilePic,
+      platform: data.winner.platform,
+      platformUserId: data.winner.platformUserId,
+      cosmetics: data.winner.cosmetics,
+      points: data.jackpot || 0,
+    }];
+  }
+
+  swListEl.innerHTML = '';
+  list.forEach(function(p, i) {
+    // Wrap each row in try/catch so a single malformed player payload (bad
+    // displayName, broken cosmetic, etc.) can't blank the entire overlay.
+    try {
+      var rank = i + 1;
+      var points = Number(p.points || p.xp || p.score || 0);
+      var row = document.createElement('div');
+      row.className = 'sw-row rank-' + rank;
+      row.style.animationDelay = (i * 60) + 'ms';
+      var fcClass = (p.isSuperDonor || (p.isSuperfan && p.isDonor)) ? ' has-super-donor-badge'
+        : (p.isSuperfan ? ' has-superfan-badge' : (p.isFanClub ? ' has-fan-club-badge' : ''));
+      row.innerHTML =
+        '<div class="sw-rank">#' + rank + '</div>' +
+        '<div class="sw-avatar' + fcClass + '"><div class="sw-avatar-inner">' + buildAvatar(p) + '</div></div>' +
+        '<div class="sw-name-cell"><span class="sw-name">' + escHtml(p.displayName || 'Player') + '</span></div>' +
+        '<div class="sw-xp">+' + points.toLocaleString() + ' XP</div>' +
+        '<div class="sw-elo">ELO —</div>';
+      swListEl.appendChild(row);
+      applyRowCosmetics(row, p.cosmetics);
+    } catch (err) {
+      console.warn('[win-overlay] row render threw, skipping rank ' + (i + 1) + ':', err, p);
+    }
+  });
+
+  swCard.style.display = 'block';
+  // Use setTimeout instead of rAF — OBS / hidden-tab browsers throttle rAF
+  // so the .show class never gets added and the card stays at opacity:0.
+  swCard.classList.remove('hide');
+  setTimeout(function() { swCard.classList.add('show'); }, 16);
+
+  // Particle effect for visual polish (winner cosmetic if present, else confetti).
+  // Pass the full cosmetic so colors/duration/particleCount survive.
+  var winnerCos = data.winner && data.winner.cosmetics;
+  var fxCfg = (winnerCos && winnerCos.win_effect && winnerCos.win_effect.effect)
+    ? winnerCos.win_effect
+    : { effect: data.winEffect || 'confetti' };
+  // Anchor particles to the streamer-win card perimeter (see /win-card
+  // call site above for the same pattern).
+  try {
+    if (swCard) {
+      var _r = swCard.getBoundingClientRect();
+      if (_r.width > 0 && _r.height > 0) {
+        fxCfg = Object.assign({}, fxCfg, { spawnRect: { left: _r.left, top: _r.top, width: _r.width, height: _r.height } });
+      }
+    }
+  } catch (_) {}
+  try { if (window.playWinEffect) window.playWinEffect(fxCfg); } catch (_) {}
+
+  swHideTimer = setTimeout(hideStreamerWin, SW_SHOW_MS);
+}
+
+function hideStreamerWin() {
+  if (swHideTimer) { clearTimeout(swHideTimer); swHideTimer = null; }
+  swCard.classList.remove('show');
+  swCard.classList.add('hide');
+  setTimeout(function() {
+    swCard.classList.remove('hide');
+    swCard.style.display = 'none';
+    showing = false;
+    processQueue();
+  }, 500);
+}
+
+// ─── Socket.IO ─────────────────────────────────────────────────────────────
+// Defensive: in static preview environments the /socket.io/ script may 404;
+// stub `io` so the rest of the IIFE (and the ?demo=1 path) still runs.
+if (typeof window.io === 'undefined') {
+  window.io = function() { return { on: function(){}, emit: function(){} }; };
+}
+var socket = io('/');
+// If ?streamer=<handle> is present we're an OBS source for a private
+// streamer session — only listen to that streamer's wins, not the public feed.
+var STREAMER_HANDLE = (function() {
+  try {
+    var h = new URLSearchParams(location.search).get('streamer');
+    if (!h) return null;
+    h = String(h).toLowerCase();
+    return /^[a-z0-9_-]{1,32}$/.test(h) ? h : null;
+  } catch (_) { return null; }
+})();
+
+// In streamer mode, hide the public single-winner card entirely and route
+// all wins through the new top-10 layout.
+if (STREAMER_HANDLE) {
+  card.style.display = 'none';
+  // Override the queue's render fn to use the streamer card.
+  processQueue = function() {
+    if (!queue.length) { showing = false; return; }
+    showing = true;
+    showStreamerWin(queue.shift());
+  };
+}
+
+socket.on('connect', function() {
+  if (STREAMER_HANDLE) socket.emit('join-streamer-win-overlay', STREAMER_HANDLE);
+  else socket.emit('join-win-overlay');
+});
+socket.on('game-win', function(data) {
+  if (data) queueWin(data);
+});
+
+// ─── Demo mode (?demo=1) ───────────────────────────────────────────────────
+// Lets the OBS overlay be previewed without a live game-win event.
+if (STREAMER_HANDLE && new URLSearchParams(location.search).get('demo')) {
+  setTimeout(function() {
+    queueWin({
+      game: 'searchle', gameName: 'Searchle',
+      word: 'mountain', jackpot: 1250, streamerHandle: STREAMER_HANDLE,
+      winner: { displayName: 'jorrybeaufart', platform: 'tiktok', profilePic: null },
+      topPlayers: [
+        { displayName: 'jorrybeaufart', platform: 'tiktok', points: 4200, cosmetics: { name_color: { color: '#5BFF9E' } } },
+        { displayName: 'wordwizard',    platform: 'tiktok', points: 3100 },
+        { displayName: 'speedguesser',  platform: 'youtube', points: 2700 },
+        { displayName: 'lexilooper',    platform: 'tiktok', points: 1900 },
+        { displayName: 'guesserjr',     platform: 'tiktok', points: 1400 },
+        { displayName: 'rng_man',       platform: 'twitch', points: 980 },
+        { displayName: 'bigbrainmoves', platform: 'tiktok', points: 720 },
+        { displayName: 'lateguesser',   platform: 'youtube', points: 410 },
+        { displayName: 'try_hard',      platform: 'tiktok', points: 300 },
+        { displayName: 'just_chatting', platform: 'twitch', points: 120 }
+      ]
+    });
+  }, 600);
+}
+
+})();
+</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

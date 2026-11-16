@@ -1,0 +1,4 @@
+src/letterworks-core/*.js text eol=lf
+data/wikipedia-coverage.json -text
+data/content-expansions/subtextle-targets-2026-10-06.json -text
+data/content-expansions/subtextle-easy-targets-2026-10-06.json -text

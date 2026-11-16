@@ -1,0 +1,18 @@
+[Unit]
+Description=voice-tts (Piper TTS for chat-relay)
+After=network.target
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/opt/voice-tts
+Environment=PORT=3032
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+# Piper synthesis is CPU-bound; cap memory well below the cgroup default
+MemoryMax=1200M
+
+[Install]
+WantedBy=multi-user.target

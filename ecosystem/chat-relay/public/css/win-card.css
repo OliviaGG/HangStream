@@ -1,0 +1,349 @@
+/* ============================================================
+   win-card.css — THE shared win card for every Word Tycoon game
+   page (solo + multiplayer). Ported from the streamer dashboard
+   win-card widget (public/streamer/goals-overlay.html) so the
+   card looks identical everywhere it appears.
+
+   Loaded by win-card.js, which also injects cosmetics-fx.css,
+   pfp-cosmetics.js, ambient-fx.js, perk-badges.js/.css and
+   win-effects.js from the same origin.
+
+   Every selector is scoped under #wt-win-card so host game pages
+   (which have their own .win-card / .wc-* history) never leak
+   styles in or out.
+   ============================================================ */
+
+#wt-win-card {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.96);
+  opacity: 0;
+  transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 99999;
+  pointer-events: none;
+  display: none;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+
+  /* Theme vars the widget CSS reads. Defaults = the dashboard's purple. */
+  --accent: #b07bff;
+  --glow: rgba(176, 123, 255, 0.55);
+  --text-c: #fff;
+  --text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+  --radius: 18px;
+  --tm: 1;   /* text multiplier (dashboard slider; fixed 1 on game pages) */
+  --ws: 1;   /* widget scale    (dashboard slider; fixed 1 on game pages) */
+}
+
+#wt-win-card.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+#wt-win-card.hide { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+
+/* ── Outer frame — wraps .win-card so the winner's pfp_border +
+   pfp_glow decorates the entire popup, not just the avatar. Inert
+   (no border, no padding) until win-card.js writes --wc-frame-border /
+   --wc-frame-glow. ── */
+#wt-win-card .wc-frame {
+  display: inline-block;
+  border-radius: var(--radius, 18px);
+  padding: 0;
+  border: var(--wc-frame-border, 0 solid transparent);
+  box-shadow: var(--wc-frame-glow, none);
+  transition: box-shadow 220ms ease, border-color 220ms ease;
+}
+/* Cosmetic frame active → suppress the inner card's own border, and nest
+   the card's corner radius inside the frame stroke (--wc-frame-bw). */
+#wt-win-card .wc-frame.wc-frame-decorated > .win-card {
+  border-color: transparent !important;
+  border-radius: max(0px, calc(var(--radius, 18px) - var(--wc-frame-bw, 0px)));
+}
+
+/* Hero badge background layer — absolute behind .win-card content;
+   opacity via --wc-hero-opacity keeps text legible over busy badges. */
+#wt-win-card .wc-hero-bg {
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: var(--wc-hero-opacity, 0);
+  background: var(--wc-hero-bg, transparent);
+  background-size: cover;
+  background-position: center;
+  transition: opacity 220ms ease;
+  z-index: 0;
+}
+#wt-win-card .win-card > .wc-row,
+#wt-win-card .win-card > .wc-lb,
+#wt-win-card .win-card > .wc-actions { position: relative; z-index: 1; }
+
+#wt-win-card .win-card {
+  position: relative;
+  min-width: 420px; max-width: 720px;
+  border-radius: var(--radius, 18px);
+  color: var(--text-c, #fff);
+  box-shadow: 0 12px 48px rgba(0,0,0,0.55), 0 0 60px var(--glow);
+  display: flex; flex-direction: column; gap: 10px;
+  /* NO overflow:hidden — it would clip the avatar's deliberate corner
+     spill and the perk-badge hearts. .wc-hero-bg clips itself via
+     border-radius:inherit. */
+  /* Avatar geometry, consumed by .wc-avatar's negative margins. */
+  --wc-av-size: 180px; --wc-av-padx: 22px; --wc-av-pady: 18px;
+  padding: 18px 22px; /* pad-regular */
+  /* style-glass (the dashboard default look) */
+  background:
+    linear-gradient(rgba(10, 12, 20, 0.88), rgba(10, 12, 20, 0.88)) padding-box,
+    linear-gradient(135deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.06) 40%, rgba(255,255,255,0.22) 75%, rgba(255,255,255,0.05) 100%) border-box;
+  border: 1px solid transparent;
+}
+
+#wt-win-card .wc-row { display: flex; align-items: center; gap: 16px; }
+
+/* Winner pfp shell — pinned to the card's top-left corner and spilling
+   past the card's left and top borders (40% off the left, 30% off the
+   top). NEGATIVE MARGINS, not position:absolute, so the row still sizes
+   itself correctly and collapses when the avatar is hidden. */
+#wt-win-card .wc-avatar {
+  width: var(--wc-av-size, 180px); height: var(--wc-av-size, 180px);
+  border-radius: 50%;
+  align-self: flex-start;
+  margin-left: calc(var(--wc-av-size, 180px) * -0.4 - var(--wc-av-padx, 22px));
+  margin-top:  calc(var(--wc-av-size, 180px) * -0.3 - var(--wc-av-pady, 18px));
+  border: var(--wc-pfp-border, 5px solid var(--accent));
+  outline: var(--wc-pfp-outline, none);
+  box-shadow: var(--wc-pfp-glow, 0 0 20px var(--glow));
+  flex-shrink: 0;
+  position: relative; /* perk-badge hearts anchor here */
+}
+/* When PfpCosmetics owns the ring (disc-behind-avatar model), the CSS
+   fallback ring must step aside or the two halos double up. */
+#wt-win-card .wc-avatar.wcx-pfp-cosmetic {
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+#wt-win-card .wc-avatar-inner {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  /* OPAQUE — PfpCosmetics paints the ring as a disc behind the avatar; a
+     translucent face lets that paint bleed across the whole circle. */
+  background: #171c26;
+  display: flex; align-items: center; justify-content: center;
+}
+#wt-win-card .wc-avatar-inner img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+#wt-win-card .wc-avatar-letter {
+  font-size: calc(var(--wc-av-size, 180px) * 0.42);
+  font-weight: 700; color: rgba(255,255,255,0.75); line-height: 1;
+}
+/* Leaderboard-row avatars are 30px — the hero letter size would clip to a
+   shapeless blob inside the row's overflow:hidden disc. */
+#wt-win-card .wc-lb-avatar .wc-avatar-letter { font-size: 14px; }
+
+/* Perk hearts on the BIG hero avatar: perk-badges.css's bottom-anchored
+   ladder is tuned for ≤96px portal avatars and floats a 78%-wide heart
+   clean off a 180px disc. Re-anchor to the widget's top-right geometry
+   (matches win-overlay's ::after badges). Row avatars keep the default
+   ladder — it reads correctly at 30px. */
+/* Anchored on a shared CENTRE, not a shared corner. With `right`/`top` pinned
+   the tiers only agree on one corner, so each size in the ladder puts its
+   centre somewhere different — Fan Club (the only tier with no size bump) hugs
+   the corner at ~(91%, 9%) while Super Donor sits at ~(81%, 19%), which reads
+   as Fan Club being misplaced rather than smaller. Centring every tier on one
+   point makes a bigger tier grow outward evenly instead of sliding down-left.
+   87%/13% is the midpoint of the old spread, so no tier moves far. */
+#wt-win-card .wc-avatar .perk-badge {
+  top: 13%; left: 87%; right: auto; bottom: auto;
+  transform: translate(-50%, -50%);
+  width: 38%; height: 38%;
+}
+#wt-win-card .wc-avatar .perk-badge-dc { width: 44%; height: 44%; }
+#wt-win-card .wc-avatar .perk-badge-sf { width: 50%; height: 50%; }
+#wt-win-card .wc-avatar .perk-badge-sd { width: 58%; height: 58%; }
+
+/* Small hero-badge chip (icon/emoji badges) pinned to the avatar. */
+#wt-win-card .wc-hero-chip {
+  position: absolute;
+  bottom: 2px; right: 2px;
+  width: 22%; height: 22%;
+  min-width: 26px; min-height: 26px;
+  border-radius: 50%;
+  background: rgba(10,8,16,0.95);
+  border: 2px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  z-index: 3;
+  box-shadow: 0 0 8px var(--glow);
+  background-size: 80%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+#wt-win-card .wc-text { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+#wt-win-card .wc-headline {
+  font-weight: 900; font-size: calc(1.05rem * var(--tm, 1) / var(--ws, 1)); color: var(--accent);
+  letter-spacing: 0.05em; text-transform: uppercase;
+  text-shadow: var(--text-shadow);
+}
+/* Name + winning-word chip share one FLEX row: the name shrinks to an
+   ellipsis, the word chip can never be clipped. */
+#wt-win-card .wc-nameline { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; min-width: 0; }
+#wt-win-card .wc-name {
+  font-weight: 800; font-size: calc(1.6rem * var(--tm, 1) / var(--ws, 1));
+  text-shadow: var(--text-shadow);
+  display: flex; align-items: center; min-width: 0; overflow: hidden;
+}
+#wt-win-card .wc-name-text {
+  flex: 0 1 auto; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#wt-win-card .wc-title {
+  font-size: calc(0.85rem * var(--tm, 1) / var(--ws, 1));
+  font-weight: 600; margin-left: 8px; opacity: 0.85; flex: 0 0 auto;
+}
+#wt-win-card .wc-game-pill {
+  display: inline-block;
+  font-size: calc(0.78rem * var(--tm, 1) / var(--ws, 1)); font-weight: 700;
+  padding: 4px 10px; border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent);
+  width: fit-content;
+}
+#wt-win-card .wc-meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: calc(0.92rem * var(--tm, 1) / var(--ws, 1)); opacity: 0.95; margin-top: 2px; }
+#wt-win-card .wc-chip { padding: 3px 10px; border-radius: 8px; background: rgba(255,255,255,0.08); font-variant-numeric: tabular-nums; font-weight: 600; }
+#wt-win-card .wc-chip.wins { color: #FFD700; text-shadow: 0 0 8px rgba(255,215,0,0.35); }
+#wt-win-card .wc-chip.jackpot { color: #FFD700; text-shadow: 0 0 8px rgba(255,215,0,0.35); }
+
+/* Free-text stats line — used by games whose numbers don't map onto the
+   chips above (Spelling Bee: words found / score / bonus words). Wraps, unlike
+   the single-line title-finder note below. */
+#wt-win-card .wc-stats {
+  font-size: calc(0.86rem * var(--tm, 1) / var(--ws, 1));
+  opacity: 0.85; margin-top: 4px; line-height: 1.35; min-width: 0;
+}
+
+#wt-win-card .wc-title-finder {
+  font-size: calc(0.82rem * var(--tm, 1) / var(--ws, 1)); opacity: 0.7; font-style: italic; margin-top: 2px;
+  display: flex; align-items: baseline; min-width: 0; overflow: hidden;
+  /* Wraps rather than clips — this line carries the article title on
+     wikirectangled, where the finder isn't the round winner. Capped for the
+     same reason as .is-block: uncapped, THIS line becomes the card's widest
+     child and stretches it right back out. */
+  flex-wrap: wrap; white-space: normal; max-width: 26em;
+}
+#wt-win-card .wc-tf-fixed { flex: 0 0 auto; white-space: nowrap; }
+/* The quoted title is the one part allowed to break mid-line. */
+#wt-win-card .wc-tf-word { flex: 0 1 auto; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+
+/* ── Leaderboard (MP top 10) ── */
+#wt-win-card .wc-lb { display: flex; flex-direction: column; gap: 4px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px; }
+#wt-win-card .wc-lb-title {
+  font-size: calc(0.68rem * var(--tm, 1) / var(--ws, 1));
+  letter-spacing: 0.14em; text-transform: uppercase;
+  opacity: 0.62; font-weight: 800; padding-bottom: 2px;
+}
+#wt-win-card .wc-lb-row { display: flex; align-items: center; gap: 10px; padding: 4px 0; font-size: calc(0.92rem * var(--tm, 1) / var(--ws, 1)); }
+#wt-win-card .wc-lb-rank { width: 26px; text-align: center; font-weight: 800; color: rgba(255,255,255,0.7); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+#wt-win-card .wc-lb-row.rank-1 .wc-lb-rank { color: #FFD700; text-shadow: 0 0 8px rgba(255,215,0,0.6); }
+#wt-win-card .wc-lb-row.rank-2 .wc-lb-rank { color: #C0C0C0; }
+#wt-win-card .wc-lb-row.rank-3 .wc-lb-rank { color: #CD7F32; }
+#wt-win-card .wc-lb-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: calc(0.85rem * var(--tm, 1) / var(--ws, 1));
+  flex-shrink: 0;
+  position: relative; /* perk-badge hearts anchor here */
+}
+#wt-win-card .wc-lb-avatar > .wc-lb-avatar-inner {
+  width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
+  background: #171c26; /* opaque — see .wc-avatar-inner note */
+  display: flex; align-items: center; justify-content: center;
+}
+#wt-win-card .wc-lb-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+#wt-win-card .wc-lb-name { flex: 1; min-width: 0; display: flex; align-items: center; overflow: hidden; }
+#wt-win-card .wc-lb-points { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+/* The round's winner also sits somewhere in the standings — mark the row. */
+#wt-win-card .wc-lb-row.wc-lb-winner { background: rgba(255,255,255,0.07); border-radius: 8px; padding-left: 4px; padding-right: 4px; }
+#wt-win-card .wc-lb-trophy { font-size: 0.82em; opacity: 0.85; margin-left: 1px; }
+
+/* Word chip — next to the name of whoever found the target word. */
+#wt-win-card .wc-found-word {
+  display: inline-block;
+  padding: 1px 10px;
+  margin-left: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.55);
+  border-radius: 8px;
+  font-size: 0.78em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  vertical-align: middle;
+  white-space: nowrap;
+  flex: 0 0 auto; max-width: 100%;
+}
+/* Wiki games (wikicontexto / wikirectangled) send a multi-word ARTICLE TITLE,
+   not a single guessable word. Inline it can neither shrink nor wrap, so it
+   pushed the card to its max width and then clipped. Past the threshold the
+   chip becomes its own wrapping row under the name (see WinCard's
+   _isLongTitle) — the card grows in height, not width. */
+#wt-win-card .wc-found-word.is-block {
+  display: -webkit-box;
+  -webkit-line-clamp: 3; line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-left: 0; margin-top: 4px;
+  padding: 4px 12px;
+  white-space: normal;
+  /* An un-spaced title longer than the card must break too. */
+  overflow-wrap: anywhere;
+  text-align: center;
+  line-height: 1.22;
+  font-size: calc(1.05rem * var(--tm, 1) / var(--ws, 1));
+  align-self: stretch;
+  /* The card is elastic (420–720px) and sizes to its widest child, so an
+     uncapped block just moves the stretching from one line to one long row.
+     Capping in `em` wraps the title at roughly the width the rest of the card
+     already needs, and scales with the --tm/--ws sliders for free. */
+  max-width: 20em;
+}
+/* Standings rows stay one line — a long title ellipsizes there instead of
+   pushing the name and points out of the row. */
+#wt-win-card .wc-lb .wc-found-word { max-width: 58%; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Action buttons (Share / Play Again / etc. supplied by the game) ── */
+#wt-win-card .wc-actions {
+  display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+  margin-top: 6px; pointer-events: auto;
+}
+#wt-win-card .wc-actions:empty { display: none; }
+#wt-win-card .wc-action {
+  font: inherit;
+  font-size: calc(0.92rem * var(--tm, 1) / var(--ws, 1));
+  font-weight: 700;
+  color: #fff;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 10px;
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: background 120ms ease, transform 120ms ease;
+}
+#wt-win-card .wc-action:hover { background: rgba(255,255,255,0.18); transform: translateY(-1px); }
+#wt-win-card .wc-action.primary { background: var(--accent); border-color: transparent; color: #0d0a16; }
+#wt-win-card .wc-action.primary:hover { filter: brightness(1.12); }
+
+/* ── Mobile portrait — tighten everything ── */
+@media (max-width: 560px) {
+  #wt-win-card .win-card {
+    min-width: 0; width: 92vw; max-width: 92vw;
+    padding: 14px 16px; gap: 8px;
+    --wc-av-size: 120px; --wc-av-padx: 16px; --wc-av-pady: 14px;
+  }
+  #wt-win-card .wc-name { font-size: calc(1.2rem * var(--tm, 1)); }
+  #wt-win-card .wc-headline { font-size: calc(0.9rem * var(--tm, 1)); }
+  #wt-win-card .wc-lb { max-height: 42vh; overflow-y: auto; }
+}

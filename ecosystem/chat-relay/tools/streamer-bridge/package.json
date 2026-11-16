@@ -1,0 +1,33 @@
+{
+  "name": "tycoon-stream-bridge",
+  "version": "0.2.1",
+  "private": true,
+  "description": "Local chat bridge for Word Tycoon streamer-mode game pages. Pulls events from TikFinity and/or the wordgame.live /streamer cloud feed.",
+  "main": "server.js",
+  "type": "commonjs",
+  "bin": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "package:win": "pkg . --targets node18-win-x64 --output dist/TycoonStreamBridge.exe",
+    "package:folder": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-folder.ps1"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "socket.io": "^4.8.0",
+    "socket.io-client": "^4.8.3",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
+  },
+  "pkg": {
+    "assets": [
+      "public/**/*"
+    ],
+    "scripts": [
+      "src/**/*.js",
+      "server.js"
+    ]
+  }
+}

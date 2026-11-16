@@ -1,0 +1,331 @@
+<html>
+<head>
+  <title>Tycoon Stream Bridge</title>
+  <hta:application
+    applicationname="TycoonStreamBridge"
+    border="thin"
+    caption="yes"
+    contextmenu="no"
+    maximizebutton="no"
+    minimizebutton="yes"
+    navigable="yes"
+    scroll="no"
+    selection="no"
+    showintaskbar="yes"
+    singleinstance="yes"
+    sysmenu="yes"
+    windowstate="normal"
+  />
+  <meta http-equiv="x-ua-compatible" content="IE=9" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #0b0f18;
+      color: #eef4ff;
+    }
+    body {
+      background:
+        radial-gradient(circle at 18% 0%, rgba(90,182,255,0.18), transparent 40%),
+        radial-gradient(circle at 82% 0%, rgba(158,123,255,0.16), transparent 36%),
+        #0b0f18;
+    }
+    .shell {
+      padding: 16px 16px 14px;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 19px;
+    }
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(90,182,255,0.24), rgba(158,123,255,0.2));
+      box-shadow: 0 8px 24px rgba(90,182,255,0.18);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .brand-mark img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .brand-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .brand-sub {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #96a8c6;
+    }
+    .status-pill {
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .status-pill.good {
+      color: #43d17c;
+      border-color: rgba(67,209,124,0.35);
+      background: rgba(67,209,124,0.08);
+    }
+    .status-pill.bad {
+      color: #ff667a;
+      border-color: rgba(255,102,122,0.3);
+      background: rgba(255,102,122,0.08);
+    }
+    .hero {
+      border-radius: 14px;
+      padding: 18px 16px 16px;
+      margin-bottom: 12px;
+      background: linear-gradient(180deg, rgba(19,28,45,0.98), rgba(24,36,58,0.98));
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .hero-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 5px;
+    }
+    .hero-sub {
+      color: #96a8c6;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .hero-note {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #b9c9e3;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #5ab6ff;
+      background: rgba(90,182,255,0.1);
+      border: 1px solid rgba(90,182,255,0.18);
+    }
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+      margin-bottom: 12px;
+    }
+    .btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #eef4ff;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      text-align: center;
+    }
+    .btn-wide {
+      grid-column: 1 / -1;
+    }
+    .btn.primary {
+      background: linear-gradient(135deg, #5ab6ff, #9e7bff);
+      border-color: transparent;
+      box-shadow: 0 8px 24px rgba(90,182,255,0.22);
+    }
+    .btn.secondary:hover {
+      border-color: rgba(90,182,255,0.55);
+    }
+    .btn-sub {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #96a8c6;
+    }
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+      color: #96a8c6;
+    }
+    .bridge-url {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 72%;
+    }
+    .footer a {
+      color: #5ab6ff;
+      text-decoration: none;
+    }
+    .footer-links {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      white-space: nowrap;
+    }
+  </style>
+  <script>
+    var bridgeBase = 'http://127.0.0.1:21420';
+    var WORD_TYCOON_LOGO = 'https://wordtycoon.live/portal/img/logo.png';
+
+    function setStatus(primary, primaryConnected, subtitle) {
+      var pill = document.getElementById('status-pill');
+      var title = document.getElementById('hero-title');
+      var sub = document.getElementById('hero-sub');
+      pill.className = 'status-pill ' + (primaryConnected ? 'good' : 'bad');
+      pill.innerHTML = primaryConnected ? 'Connected' : 'Disconnected';
+      var label = primary === 'cloud' ? 'Cloud (wordgame.live)' : 'TikFinity';
+      title.innerHTML = primaryConnected ? (label + ' connected') : ('Waiting for ' + label);
+      sub.innerHTML = subtitle || (primaryConnected
+        ? 'Stream chat is live. Open a game below and your local bridge will feed it automatically.'
+        : (primary === 'cloud'
+          ? 'Check your cloud Bridge Token and toggle in the dashboard.'
+          : 'Open TikFinity on this computer, then leave this window running while you stream.'));
+    }
+
+    function refreshStatus() {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', bridgeBase + '/health?_=' + new Date().getTime(), true);
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState !== 4) return;
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            var data = JSON.parse(xhr.responseText || '{}');
+            var primary = data.primary || 'tikfinity';
+            var src = (data.sources && data.sources[primary]) || {};
+            var connected = !!src.connected;
+            var sub = connected
+              ? 'Receiving live events from ' + (src.url || '?')
+              : (src.lastError || 'Trying ' + (src.url || '?') + '.');
+            setStatus(primary, connected, sub);
+          } catch (e) {
+            setStatus('tikfinity', false, 'The bridge is running, but the status response was not valid JSON.');
+          }
+        } else {
+          setStatus('tikfinity', false, 'The local bridge is still starting. Wait a moment and it should connect.');
+        }
+      };
+      xhr.send();
+    }
+
+    function openUrl(url) {
+      try {
+        var shell = new ActiveXObject('WScript.Shell');
+        shell.Run('"' + url + '"', 1, false);
+      } catch (e) {
+        window.open(url);
+      }
+    }
+
+    function quoteArg(value) {
+      return '"' + String(value).replace(/"/g, '""') + '"';
+    }
+
+    function openGameWindow(url) {
+      try {
+        var shell = new ActiveXObject('WScript.Shell');
+        var fso = new ActiveXObject('Scripting.FileSystemObject');
+        var candidates = [
+          shell.ExpandEnvironmentStrings('%ProgramFiles(x86)%\\Microsoft\\Edge\\Application\\msedge.exe'),
+          shell.ExpandEnvironmentStrings('%ProgramFiles%\\Microsoft\\Edge\\Application\\msedge.exe'),
+          shell.ExpandEnvironmentStrings('%LocalAppData%\\Microsoft\\Edge\\Application\\msedge.exe'),
+          shell.ExpandEnvironmentStrings('%ProgramFiles%\\Google\\Chrome\\Application\\chrome.exe'),
+          shell.ExpandEnvironmentStrings('%ProgramFiles(x86)%\\Google\\Chrome\\Application\\chrome.exe'),
+          shell.ExpandEnvironmentStrings('%LocalAppData%\\Google\\Chrome\\Application\\chrome.exe')
+        ];
+
+        for (var i = 0; i < candidates.length; i++) {
+          var exe = candidates[i];
+          if (exe && fso.FileExists(exe)) {
+            shell.Run(quoteArg(exe) + ' --app=' + quoteArg(url), 1, false);
+            return;
+          }
+        }
+      } catch (e) {}
+
+      openUrl(url);
+    }
+
+    function init() {
+      try {
+        window.resizeTo(560, 560);
+      } catch (e) {}
+      var logo = document.getElementById('brand-logo');
+      if (logo) logo.src = WORD_TYCOON_LOGO;
+      refreshStatus();
+      window.setInterval(refreshStatus, 2500);
+    }
+  </script>
+</head>
+<body onload="init()">
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark"><img id="brand-logo" alt="Word Tycoon"></div>
+        <div class="brand-copy">
+          <div>Tycoon Stream Bridge</div>
+          <div class="brand-sub">Word Tycoon Stream Tools</div>
+        </div>
+      </div>
+      <div class="status-pill bad" id="status-pill">Starting</div>
+    </div>
+
+    <div class="hero">
+      <div class="hero-badge">Desktop Stream Tools</div>
+      <div class="hero-title" id="hero-title">Starting bridge</div>
+      <div class="hero-sub" id="hero-sub">Launching the local dashboard now.</div>
+      <div class="hero-note">Leave this app open while you stream.</div>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary btn-wide" onclick="openUrl('http://127.0.0.1:21420/')">Open Dashboard</button>
+      <button class="btn secondary" onclick="openGameWindow('https://rectangled.live/stream')">Open RecTangled<span class="btn-sub">App-style window when possible</span></button>
+      <button class="btn secondary" onclick="openGameWindow('https://erectangled.com/stream')">Open eRecTangled<span class="btn-sub">App-style window when possible</span></button>
+      <button class="btn secondary btn-wide" onclick="openGameWindow('https://searchle.live/stream')">Open Searchle<span class="btn-sub">App-style window when possible</span></button>
+    </div>
+
+    <div class="footer">
+      <span class="bridge-url">Bridge URL: 127.0.0.1:21420</span>
+      <span class="footer-links">
+        <a href="#" onclick="openUrl('https://wordgame.live'); return false;">Help</a>
+        <a href="#" onclick="openUrl('https://wordgame.live/source'); return false;">Source</a>
+      </span>
+    </div>
+  </div>
+</body>
+</html>

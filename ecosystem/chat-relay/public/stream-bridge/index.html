@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>wordgame.live — 16 Free Word Games, Solo or Live on TikTok</title>
+  <meta name="description" content="Play 16 free word games — Subtextle, recTangled, Word5000, Spelling Bee and more — solo or multiplayer, or stream them on TikTok Live and let your chat play in real time.">
+  <link rel="canonical" href="https://wordgame.live/">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta property="og:site_name" content="wordgame.live">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://wordgame.live/">
+  <meta property="og:title" content="wordgame.live — 16 Free Word Games, Solo or Live on TikTok">
+  <meta property="og:description" content="Play 16 free word games solo or multiplayer, or stream them on TikTok Live — your chat plays a private session in real time. No app required.">
+  <meta property="og:image" content="https://wordgame.live/portal/img/wordgame-og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="wordgame.live — 16 word games, play solo or live with your TikTok chat">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="wordgame.live — 16 Free Word Games, Solo or Live on TikTok">
+  <meta name="twitter:description" content="Play 16 free word games solo or multiplayer, or stream them live and let your TikTok chat play in real time.">
+  <meta name="twitter:image" content="https://wordgame.live/portal/img/wordgame-og.png">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebSite","name":"wordgame.live","url":"https://wordgame.live/","description":"16 free word games — play solo or multiplayer, or stream them on TikTok Live and your chat plays a private session in real time.","publisher":{"@type":"Organization","name":"Word Tycoon","url":"https://wordtycoon.live/"}}
+  </script>
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"ItemList","name":"Word games on wordgame.live","numberOfItems":16,"itemListElement":[
+    {"@type":"ListItem","position":1,"name":"Subtextle","url":"https://subtextle.com"},
+    {"@type":"ListItem","position":2,"name":"recTangled","url":"https://rectangled.live"},
+    {"@type":"ListItem","position":3,"name":"erecTangled","url":"https://erectangled.com"},
+    {"@type":"ListItem","position":4,"name":"Word5000","url":"https://word5000.com"},
+    {"@type":"ListItem","position":5,"name":"Color 500","url":"https://wordtycoon.live/game/colour500/"},
+    {"@type":"ListItem","position":6,"name":"Wordle","url":"https://wordtycoon.live/wordle/online/"},
+    {"@type":"ListItem","position":7,"name":"Betwixt","url":"https://wordtycoon.live/betwixt/online/"},
+    {"@type":"ListItem","position":8,"name":"PixeLetters","url":"https://wordtycoon.live/pixeletters/online/"},
+    {"@type":"ListItem","position":9,"name":"Spelling Bee","url":"https://wordtycoon.live/spellingbee/online/"},
+    {"@type":"ListItem","position":10,"name":"Figural","url":"https://wordtycoon.live/figural/online/"},
+    {"@type":"ListItem","position":11,"name":"UnWordle","url":"https://wordtycoon.live/game/unwordle/sp.html"},
+    {"@type":"ListItem","position":12,"name":"Triangled","url":"https://wordtycoon.live/game/triangled/"},
+    {"@type":"ListItem","position":13,"name":"WikiContexto","url":"https://wikicontexto.com"},
+    {"@type":"ListItem","position":14,"name":"WiKirecTangled","url":"https://wordtycoon.live/game/wikirectangled/"},
+    {"@type":"ListItem","position":15,"name":"Junk Drawer","url":"https://junkdrawer.live"},
+    {"@type":"ListItem","position":16,"name":"Synapse","url":"https://wordtycoon.live/synapse"}
+  ]}
+  </script>
+  <style>
+    :root {
+      --ink: #1b1430;
+      --paper: #fdf6e9;
+      --paper-2: #f7ecd6;
+      --text: #1b1430;
+      --muted: #6f6486;
+      --blue: #4a9eff;
+      --cyan: #22d3ee;
+      --green: #44bb88;
+      --lime: #4fc34f;
+      --mint: #4ade80;
+      --olive: #6aaa64;
+      --purple: #7b68ee;
+      --pink: #ff6b9d;
+      --amber: #ffab00;
+      --aqua: #00d5ee;
+      --red: #ff6b6b;
+      --slate: #3a3a4a;
+      --violet: #8a5cf7;
+      --orange: #ee7a2c;
+      --gold: #f5a623;
+      --brain: #8b5cf6;
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(74,158,255,.10), transparent 30%),
+        radial-gradient(circle at 88% 4%, rgba(255,107,157,.10), transparent 28%),
+        radial-gradient(circle at 50% 90%, rgba(255,171,0,.08), transparent 35%),
+        repeating-radial-gradient(circle at 0 0, transparent 0 9px, rgba(27,20,48,.028) 9px 10px),
+        var(--paper);
+      color: var(--text);
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+    a { text-decoration: none; color: inherit; }
+    .shell { max-width: 1060px; margin: 0 auto; padding: 0 20px; }
+
+    /* ─── toon primitives ─── */
+    .toon {
+      border: 2.5px solid var(--ink);
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 6px 0 var(--ink), inset 0 4px 0 rgba(255,255,255,.55);
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 13px 24px;
+      border: 2.5px solid var(--ink);
+      border-radius: 999px;
+      font-weight: 800; font-size: 1rem;
+      background: #fff;
+      box-shadow: 0 5px 0 var(--ink);
+      transition: transform .12s, box-shadow .12s;
+      cursor: pointer;
+    }
+    .btn:hover { transform: translateY(-3px); box-shadow: 0 8px 0 var(--ink); }
+    .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
+    .btn-hero { background: linear-gradient(180deg, #ffd84d 0 45%, var(--amber) 45%); font-size: 1.12rem; padding: 15px 30px; }
+    .btn-blue { background: linear-gradient(180deg, #7cc0ff 0 45%, var(--blue) 45%); color: #fff; text-shadow: 0 1.5px 0 rgba(0,0,0,.25); }
+    .btn-ghost { background: var(--paper-2); }
+
+    /* ─── topbar ─── */
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 20px 0 8px; }
+    .brand {
+      font-size: 1.35rem; font-weight: 900; letter-spacing: -.5px;
+      display: inline-flex; align-items: center; gap: 10px;
+    }
+    .brand-mark {
+      width: 40px; height: 40px; border-radius: 12px;
+      border: 2.5px solid var(--ink);
+      background: linear-gradient(180deg, #7cc0ff 0 45%, var(--blue) 45%);
+      box-shadow: 0 4px 0 var(--ink);
+      display: grid; place-items: center;
+      color: #fff; font-size: 1.2rem; transform: rotate(-6deg);
+    }
+    .brand b { color: var(--blue); }
+    .topbar nav { display: flex; gap: 10px; }
+    .topbar nav .btn { padding: 9px 16px; font-size: .88rem; box-shadow: 0 4px 0 var(--ink); }
+
+    /* ─── hero ─── */
+    .hero { text-align: center; padding: 54px 0 30px; position: relative; }
+    .hero-badge {
+      display: inline-flex; gap: 8px; align-items: center;
+      border: 2.5px solid var(--ink); border-radius: 999px;
+      background: linear-gradient(180deg,#b7f3cf 0 45%, var(--mint) 45%);
+      box-shadow: 0 4px 0 var(--ink);
+      padding: 7px 18px; font-weight: 800; font-size: .85rem;
+      transform: rotate(-2deg); margin-bottom: 22px;
+    }
+    h1 {
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 900; line-height: 1.02; letter-spacing: -1.5px;
+      margin-bottom: 18px;
+    }
+    h1 .tile-word { display: inline-flex; gap: 5px; transform: rotate(-1.5deg); }
+    h1 .t {
+      display: inline-grid; place-items: center;
+      width: .95em; height: .95em; border-radius: .18em;
+      border: 2.5px solid var(--ink);
+      color: #fff; font-size: .82em;
+      box-shadow: 0 .09em 0 var(--ink), inset 0 .09em 0 rgba(255,255,255,.4);
+      text-shadow: 0 1.5px 0 rgba(0,0,0,.3);
+    }
+    .hero-sub { max-width: 640px; margin: 0 auto 30px; color: var(--muted); font-size: 1.12rem; font-weight: 600; }
+    .hero-ctas { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .hero-meta { margin-top: 18px; font-size: .85rem; font-weight: 700; color: var(--muted); }
+
+    .float-sticker {
+      position: absolute; border: 2.5px solid var(--ink); border-radius: 14px;
+      padding: 8px 14px; font-weight: 900; box-shadow: 0 5px 0 var(--ink);
+      animation: bob 3.4s ease-in-out infinite;
+    }
+    @keyframes bob { 0%,100%{ transform: translateY(0) rotate(var(--rot)); } 50%{ transform: translateY(-9px) rotate(var(--rot)); } }
+    .fs1 { left: 2%; top: 22%; --rot: -8deg; background: linear-gradient(180deg,#ffb7cd 0 45%, var(--pink) 45%); color:#fff; }
+    .fs2 { right: 3%; top: 18%; --rot: 7deg; background: linear-gradient(180deg,#9be8f5 0 45%, var(--cyan) 45%); animation-delay: -1.4s; }
+    .fs3 { right: 8%; bottom: 6%; --rot: -5deg; background: linear-gradient(180deg,#ffd84d 0 45%, var(--amber) 45%); animation-delay: -2.2s; }
+    .fs4 { left: 7%; bottom: 10%; --rot: 6deg; background: linear-gradient(180deg,#c9baff 0 45%, var(--purple) 45%); color:#fff; animation-delay: -.7s; }
+    @media (prefers-reduced-motion: reduce) { .float-sticker { animation: none; } }
+
+    /* ─── section headers ─── */
+    section { padding: 34px 0; }
+    .sec-head { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; flex-wrap: wrap; }
+    .sec-tag {
+      border: 2.5px solid var(--ink); border-radius: 10px;
+      padding: 5px 14px; font-weight: 900; font-size: .8rem; letter-spacing: 1px; text-transform: uppercase;
+      box-shadow: 0 4px 0 var(--ink); transform: rotate(-2deg);
+      color: #fff;
+    }
+    .sec-title { font-size: 1.75rem; font-weight: 900; letter-spacing: -.5px; }
+
+    /* ─── bento ─── */
+    .bento {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      grid-auto-rows: 108px;
+      gap: 14px;
+    }
+    .cell {
+      position: relative;
+      border: 2.5px solid var(--ink);
+      border-radius: 18px;
+      padding: 16px;
+      display: flex; flex-direction: column; justify-content: flex-end; gap: 3px;
+      overflow: hidden;
+      transition: transform .13s, box-shadow .13s;
+      color: #fff;
+      text-shadow: 0 1.5px 0 rgba(0,0,0,.28);
+      box-shadow: 0 6px 0 var(--slab, var(--ink)), inset 0 5px 0 rgba(255,255,255,.32);
+    }
+    .cell:hover { transform: translateY(-4px) rotate(-.5deg); box-shadow: 0 10px 0 var(--slab, var(--ink)), inset 0 5px 0 rgba(255,255,255,.32); }
+    .cell:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--slab, var(--ink)), inset 0 5px 0 rgba(255,255,255,.32); }
+    .cell h3 { font-size: 1.12rem; font-weight: 900; letter-spacing: -.3px; }
+    .cell p { font-size: .78rem; font-weight: 700; opacity: .92; }
+    .cell .ico { font-size: 1.35rem; line-height: 1; margin-bottom: 4px; filter: drop-shadow(0 2px 0 rgba(0,0,0,.25)); }
+    .h2 .ico { position: absolute; top: 14px; left: 16px; font-size: 2.1rem; margin: 0; }
+    .cell .play {
+      position: absolute; top: 10px; right: 10px;
+      border: 2px solid var(--ink); border-radius: 999px;
+      background: #fff; color: var(--ink); text-shadow: none;
+      font-size: .68rem; font-weight: 900; padding: 3px 10px;
+      box-shadow: 0 2.5px 0 var(--ink);
+    }
+    .cell .modes { display: flex; gap: 5px; margin-top: 5px; }
+    .cell .mode {
+      font-size: .62rem; font-weight: 900; letter-spacing: .5px;
+      border: 1.5px solid rgba(0,0,0,.35); border-radius: 6px;
+      background: rgba(0,0,0,.22); padding: 2px 7px; text-shadow: none;
+    }
+    .w2 { grid-column: span 2; } .h2 { grid-row: span 2; }
+
+    .cell-searchle    { background: linear-gradient(180deg,#7cc0ff 0 38%, var(--blue) 38%);   --slab:#1e5aa8; }
+    .cell-rectangled  { background: linear-gradient(180deg,#8ce8f8 0 38%, var(--cyan) 38%);   --slab:#0d7d92; }
+    .cell-erect       { background: linear-gradient(180deg,#8fdfbe 0 38%, var(--green) 38%);  --slab:#1e6e4c; }
+    .cell-word5000    { background: linear-gradient(180deg,#9fe59f 0 38%, var(--lime) 38%);   --slab:#237a23; }
+    .cell-colour500   { background: linear-gradient(180deg,#a3f2c4 0 38%, var(--mint) 38%);   --slab:#1c7a46; }
+    .cell-wordle      { background: linear-gradient(180deg,#a9d4a4 0 38%, var(--olive) 38%);  --slab:#3c6b38; }
+    .cell-betwixt     { background: linear-gradient(180deg,#b3a6f6 0 38%, var(--purple) 38%); --slab:#41309e; }
+    .cell-pixel       { background: linear-gradient(180deg,#ffa8c4 0 38%, var(--pink) 38%);   --slab:#b52e5e; }
+    .cell-bee         { background: linear-gradient(180deg,#ffd066 0 38%, var(--amber) 38%);  --slab:#a86e00; }
+    .cell-figural     { background: linear-gradient(180deg,#7fe9f7 0 38%, var(--aqua) 38%);   --slab:#00808f; }
+    .cell-unwordle    { background: linear-gradient(180deg,#ffa3a3 0 38%, var(--red) 38%);    --slab:#b03a3a; }
+    .cell-triangled   { background: linear-gradient(180deg,#6a6a7e 0 38%, var(--slate) 38%);  --slab:#15151f; }
+    .cell-wiki        { background: linear-gradient(180deg,#b79bfa 0 38%, var(--violet) 38%); --slab:#5527b8; }
+    .cell-wikirect    { background: linear-gradient(180deg,#f5a86e 0 38%, var(--orange) 38%); --slab:#9c4712; }
+    .cell-junk        { background: linear-gradient(180deg,#f8c765 0 38%, var(--gold) 38%);   --slab:#a86b0a; }
+    .cell-synapse     { background: linear-gradient(180deg,#b79dfa 0 38%, var(--brain) 38%);  --slab:#5a2fc4; }
+
+    /* ─── tycoon banner ─── */
+    .tycoon {
+      display: grid; grid-template-columns: 1.3fr .9fr; gap: 24px; align-items: center;
+      border: 2.5px solid var(--ink); border-radius: 22px;
+      background: linear-gradient(180deg, #ffe28a 0 42%, #ffc94d 42%);
+      box-shadow: 0 8px 0 #a86e00, inset 0 6px 0 rgba(255,255,255,.5);
+      padding: 30px 32px;
+    }
+    .tycoon h2 { font-size: 1.9rem; font-weight: 900; letter-spacing: -.6px; margin-bottom: 8px; }
+    .tycoon p { font-weight: 600; color: #5c4400; margin-bottom: 16px; }
+    .perk-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+    .perk { border: 2px solid var(--ink); border-radius: 999px; padding: 4px 12px; font-size: .76rem; font-weight: 900; background: #fff7e0; box-shadow: 0 3px 0 var(--ink); }
+    .tycoon-art { display: grid; grid-template-columns: repeat(3, 64px); gap: 8px; justify-content: center; }
+    .coin {
+      width: 64px; height: 64px; border-radius: 14px;
+      border: 2.5px solid var(--ink);
+      display: grid; place-items: center; font-size: 1.6rem;
+      box-shadow: 0 5px 0 var(--ink), inset 0 4px 0 rgba(255,255,255,.45);
+      animation: bob 3s ease-in-out infinite; --rot: 0deg;
+    }
+    @media (prefers-reduced-motion: reduce) { .coin { animation: none; } }
+    .coin:nth-child(1){ background:#7cc0ff; --rot:-6deg; }
+    .coin:nth-child(2){ background:#ff9db9; --rot:4deg; animation-delay:-.5s; }
+    .coin:nth-child(3){ background:#8fdfbe; --rot:-3deg; animation-delay:-1s; }
+    .coin:nth-child(4){ background:#ffd066; --rot:5deg; animation-delay:-1.5s; }
+    .coin:nth-child(5){ background:#c9baff; --rot:-5deg; animation-delay:-2s; }
+    .coin:nth-child(6){ background:#8ce8f8; --rot:3deg; animation-delay:-2.5s; }
+
+    /* ─── streamer steps ─── */
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .step { padding: 22px; position: relative; }
+    .step-num {
+      width: 42px; height: 42px; border-radius: 12px;
+      border: 2.5px solid var(--ink);
+      display: grid; place-items: center;
+      font-weight: 900; font-size: 1.2rem; color: #fff; text-shadow: 0 1.5px 0 rgba(0,0,0,.3);
+      box-shadow: 0 4px 0 var(--ink), inset 0 3px 0 rgba(255,255,255,.4);
+      margin-bottom: 12px; transform: rotate(-4deg);
+    }
+    .step:nth-child(1) .step-num { background: var(--pink); }
+    .step:nth-child(2) .step-num { background: var(--amber); color:#5c4400; text-shadow: none; }
+    .step:nth-child(3) .step-num { background: var(--mint); }
+    .step h3 { font-weight: 900; margin-bottom: 6px; }
+    .step p { color: var(--muted); font-weight: 600; font-size: .9rem; }
+    .step a { color: var(--blue); font-weight: 800; }
+    .streamer-cta { text-align: center; margin-top: 24px; }
+    .streamer-perks { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+    .streamer-perks .perk { background: #fff; }
+
+    /* ─── faq ─── */
+    .faq-item { margin-bottom: 12px; overflow: hidden; }
+    .faq-item summary { cursor: pointer; padding: 15px 20px; font-weight: 800; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item summary::after { content: '+'; font-weight: 900; font-size: 1.3rem; color: var(--blue); flex-shrink: 0; }
+    .faq-item[open] summary::after { content: '−'; }
+    .faq-item p { padding: 0 20px 16px; color: var(--muted); font-weight: 600; font-size: .92rem; }
+    .faq-item code { background: var(--paper-2); border-radius: 6px; padding: 1px 6px; font-size: .85em; }
+
+    footer { padding: 30px 0 44px; text-align: center; font-weight: 700; color: var(--muted); font-size: .86rem; }
+    footer a { color: var(--blue); margin: 0 8px; }
+
+    @media (max-width: 860px) {
+      .bento { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 114px; }
+      .tycoon { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr; }
+      .float-sticker { display: none; }
+      .topbar nav { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+
+    <div class="topbar">
+      <a class="brand" href="/"><span class="brand-mark">W</span>word<b>game</b>.live</a>
+      <nav>
+        <a class="btn" href="#games">🎮 Games</a>
+        <a class="btn" href="#streamers">📺 Streamers</a>
+        <a class="btn btn-blue" href="https://wordtycoon.live/me" target="_blank" rel="noreferrer">🏆 Word Tycoon</a>
+      </nav>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="float-sticker fs1">SEARCHLE</div>
+      <div class="float-sticker fs2">recTangled</div>
+      <div class="float-sticker fs3">🐝 BEE</div>
+      <div class="float-sticker fs4">SYNAPSE</div>
+      <div class="hero-badge">✨ 16 games · free · no download</div>
+      <h1>
+        <span class="tile-word">
+          <span class="t" style="background:var(--blue)">P</span><span class="t" style="background:var(--pink)">L</span><span class="t" style="background:var(--amber);color:#5c4400;text-shadow:none">A</span><span class="t" style="background:var(--mint)">Y</span>
+        </span>
+        word games<br>with your whole chat
+      </h1>
+      <p class="hero-sub">Jump into 16 word games solo or multiplayer — or stream them on TikTok Live and let your chat play in real time. Everything runs in the browser.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-hero" href="#games">🎮 Play a game</a>
+        <a class="btn btn-blue" href="/streamer">📺 Stream on TikTok</a>
+        <a class="btn btn-ghost" href="https://wordtycoon.live/me" target="_blank" rel="noreferrer">🏆 Word Tycoon hub</a>
+      </div>
+      <div class="hero-meta">Free forever · works on any phone · OBS-ready overlays for streamers</div>
+    </section>
+
+    <!-- Games bento -->
+    <section id="games">
+      <div class="sec-head">
+        <span class="sec-tag" style="background:var(--blue)">Pick a game</span>
+        <span class="sec-title">16 games, one tap to join</span>
+      </div>
+      <div class="bento">
+        <a class="cell cell-searchle w2 h2" href="https://subtextle.com" target="_blank" rel="noreferrer">
+          <span class="ico">🔎</span><span class="play">PLAY ▸</span>
+          <h3>Subtextle</h3>
+          <p>Guess your way up the semantic ranking — closer words score higher.</p>
+          <div class="modes"><span class="mode">DAILY</span><span class="mode">WEEKLY</span><span class="mode">ONLINE</span></div>
+        </a>
+        <a class="cell cell-rectangled w2 h2" href="https://rectangled.live" target="_blank" rel="noreferrer">
+          <span class="ico">🧩</span><span class="play">PLAY ▸</span>
+          <h3><span style="color:#d6f7ff">r</span><span style="color:#ffd9a8">e</span><span style="color:#fff3b0">c</span><span style="color:#cfe0ff">T</span><span style="color:#ffc4bd">a</span><span style="color:#c9f0c4">n</span><span style="color:#dbe6ff">g</span><span style="color:#f7c9f2">l</span><span style="color:#ffd9a8">e</span><span style="color:#c4f2ea">d</span></h3>
+          <p>Race the grid — find the words before your rivals do.</p>
+          <div class="modes"><span class="mode">DAILY</span><span class="mode">ONLINE</span></div>
+        </a>
+        <a class="cell cell-bee w2" href="https://wordtycoon.live/spellingbee/online/" target="_blank" rel="noreferrer">
+          <span class="ico">🐝</span><span class="play">PLAY ▸</span>
+          <h3>Spelling Bee</h3>
+          <p>How many words in the hex pool?</p>
+        </a>
+        <a class="cell cell-word5000" href="https://word5000.com" target="_blank" rel="noreferrer">
+          <span class="ico">🟩</span><span class="play">▸</span>
+          <h3>Word5000</h3>
+          <p>5 letters, 5000 words</p>
+        </a>
+        <a class="cell cell-colour500" href="https://wordtycoon.live/game/colour500/" target="_blank" rel="noreferrer">
+          <span class="ico">🎨</span><span class="play">▸</span>
+          <h3>Color 500</h3>
+          <p>Guess the shade</p>
+        </a>
+        <a class="cell cell-wordle" href="https://wordtycoon.live/wordle/online/" target="_blank" rel="noreferrer">
+          <span class="ico">🟨</span><span class="play">▸</span>
+          <h3>Wordle</h3>
+          <p>Any word length</p>
+        </a>
+        <a class="cell cell-betwixt" href="https://wordtycoon.live/betwixt/online/" target="_blank" rel="noreferrer">
+          <span class="ico">🔤</span><span class="play">▸</span>
+          <h3>Betwixt</h3>
+          <p>Narrow it down A→Z</p>
+        </a>
+        <a class="cell cell-synapse w2" href="https://wordtycoon.live/synapse" target="_blank" rel="noreferrer">
+          <span class="ico">🧠</span><span class="play">PLAY ▸</span>
+          <h3>Synapse</h3>
+          <p>Word-association chains, multiplayer chaos.</p>
+        </a>
+        <a class="cell cell-erect w2" href="https://erectangled.com" target="_blank" rel="noreferrer">
+          <span class="ico">🌱</span><span class="play">PLAY ▸</span>
+          <h3>erecTangled</h3>
+          <p>Grow the hex ring outward.</p>
+        </a>
+        <a class="cell cell-pixel" href="https://wordtycoon.live/pixeletters/online/" target="_blank" rel="noreferrer">
+          <span class="ico">👾</span><span class="play">▸</span>
+          <h3>PixeLetters</h3>
+          <p>Pixel-by-pixel reveal</p>
+        </a>
+        <a class="cell cell-figural" href="https://wordtycoon.live/figural/online/" target="_blank" rel="noreferrer">
+          <span class="ico">🔣</span><span class="play">▸</span>
+          <h3>Figural</h3>
+          <p>Crack the symbol cipher</p>
+        </a>
+        <a class="cell cell-unwordle" href="https://wordtycoon.live/game/unwordle/sp.html" target="_blank" rel="noreferrer">
+          <span class="ico">🔄</span><span class="play">▸</span>
+          <h3>UnWordle</h3>
+          <p>Wordle, backwards</p>
+        </a>
+        <a class="cell cell-triangled" href="https://wordtycoon.live/game/triangled/" target="_blank" rel="noreferrer">
+          <span class="ico">🔺</span><span class="play">▸</span>
+          <h3>Triangled</h3>
+          <p>Three-sided wordplay</p>
+        </a>
+        <a class="cell cell-wiki w2" href="https://wikicontexto.com" target="_blank" rel="noreferrer">
+          <span class="ico">📚</span><span class="play">PLAY ▸</span>
+          <h3>WikiContexto</h3>
+          <p>Uncover the hidden Wikipedia article.</p>
+        </a>
+        <a class="cell cell-wikirect" href="https://wordtycoon.live/game/wikirectangled/" target="_blank" rel="noreferrer">
+          <span class="ico">🌐</span><span class="play">▸</span>
+          <h3>WiKirecTangled</h3>
+          <p>Wiki words, grid rules</p>
+        </a>
+        <a class="cell cell-junk" href="https://junkdrawer.live" target="_blank" rel="noreferrer">
+          <span class="ico">🗄️</span><span class="play">▸</span>
+          <h3>Junk Drawer</h3>
+          <p>Rummage for words</p>
+        </a>
+      </div>
+    </section>
+
+    <!-- Word Tycoon banner -->
+    <section id="tycoon">
+      <div class="tycoon">
+        <div>
+          <h2>🏆 One account. Every game.</h2>
+          <p>Word Tycoon ties it all together — earn XP and coins in any game, build your tycoon empire, unlock cosmetics, and climb the global leaderboards.</p>
+          <div class="perk-row">
+            <span class="perk">⭐ XP &amp; levels</span>
+            <span class="perk">🪙 Coins</span>
+            <span class="perk">🎩 Cosmetics</span>
+            <span class="perk">🏢 Businesses</span>
+            <span class="perk">🥇 Leaderboards</span>
+            <span class="perk">📅 Dailies</span>
+          </div>
+          <a class="btn btn-hero" href="https://wordtycoon.live/me" target="_blank" rel="noreferrer">Open Word Tycoon ▸</a>
+          <a class="btn btn-ghost" href="https://wordtycoon.live/hub" target="_blank" rel="noreferrer" style="margin-left:8px">All games</a>
+        </div>
+        <div class="tycoon-art">
+          <div class="coin">⭐</div><div class="coin">🎩</div><div class="coin">🪙</div>
+          <div class="coin">🏢</div><div class="coin">🥇</div><div class="coin">📅</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Streamers -->
+    <section id="streamers">
+      <div class="sec-head">
+        <span class="sec-tag" style="background:var(--pink)">For streamers</span>
+        <span class="sec-title">Your TikTok chat becomes the players</span>
+      </div>
+      <div class="streamer-perks">
+        <span class="perk">🔒 Private session per streamer</span>
+        <span class="perk">🖥️ OBS overlays included</span>
+        <span class="perk">🎮 Run two games at once</span>
+        <span class="perk">💬 Chat batching</span>
+        <span class="perk">🛡️ Block bad-faith chatters</span>
+        <span class="perk">☁️ No desktop app</span>
+      </div>
+      <div class="steps">
+        <div class="step toon">
+          <div class="step-num">1</div>
+          <h3>Apply</h3>
+          <p>Sign in with Discord on the <a href="/streamer">streamer dashboard</a> and submit your TikTok username. Takes one minute.</p>
+        </div>
+        <div class="step toon">
+          <div class="step-num">2</div>
+          <h3>Get approved</h3>
+          <p>Applications ping us instantly on Discord — most are approved within a day. Then your connect button unlocks.</p>
+        </div>
+        <div class="step toon">
+          <div class="step-num">3</div>
+          <h3>Go live</h3>
+          <p>Pick a game, hit <strong>Connect</strong>, and your chat drives a private session only your stream sees. OBS overlays included.</p>
+        </div>
+      </div>
+      <div class="streamer-cta">
+        <a class="btn btn-blue" href="/streamer">📺 Apply to stream</a>
+        <a class="btn btn-ghost" href="/streamer" style="margin-left:8px">Already approved? Dashboard ▸</a>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section>
+      <div class="sec-head">
+        <span class="sec-tag" style="background:var(--mint)">FAQ</span>
+        <span class="sec-title">Common questions</span>
+      </div>
+
+      <details class="faq-item toon">
+        <summary>Do I need to install anything?</summary>
+        <p>No. The old <em>Tycoon Stream Bridge</em> desktop app is no longer needed — chat-relay connects to your TikTok stream directly from the cloud. You sign in on the dashboard, click connect, and you're live. Players just open a game in the browser.</p>
+      </details>
+
+      <details class="faq-item toon">
+        <summary>How long does streamer approval take?</summary>
+        <p>Usually within a day. Each application pings an admin Discord channel — we approve as soon as someone sees it. Re-applying after a denial is fine; you'll see the reason on your dashboard.</p>
+      </details>
+
+      <details class="faq-item toon">
+        <summary>Do my viewers need to do anything?</summary>
+        <p>Nope. They type guesses in your TikTok Live chat as normal. If they want to play directly on the website too, you can share <code>&lt;game&gt;.live/&lt;your-handle&gt;</code> and they'll join your private session.</p>
+      </details>
+
+      <details class="faq-item toon">
+        <summary>Can I run more than one game at once?</summary>
+        <p>Yes. Pick a primary and a secondary on the dashboard — your TikTok chat fans out to both. Each game's session room scores independently. Most streamers stick with one game at a time, but the option's there.</p>
+      </details>
+
+      <details class="faq-item toon">
+        <summary>What about the OBS overlays?</summary>
+        <p>Once you're connected, the dashboard shows three OBS browser-source URLs unique to your handle — the live game board, a cross-game winner popup (1080×1920 portrait), and a rotating ad banner that auto-themes to whichever game you're streaming.</p>
+      </details>
+
+      <details class="faq-item toon">
+        <summary>I had the old Stream Bridge installed. Can I delete it?</summary>
+        <p>Yes — it's deprecated. The new flow doesn't use it at all. The download links from the old page have been retired; if you have an EXE on disk, just remove it.</p>
+      </details>
+    </section>
+
+    <footer>
+      <a href="/streamer">Streamer dashboard</a> ·
+      <a href="https://wordtycoon.live/me" target="_blank" rel="noreferrer">Word Tycoon portal</a> ·
+      <a href="https://wordtycoon.live/hub" target="_blank" rel="noreferrer">All games</a>
+      <div style="margin-top:8px;">© Word Tycoon</div>
+    </footer>
+
+  </div>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

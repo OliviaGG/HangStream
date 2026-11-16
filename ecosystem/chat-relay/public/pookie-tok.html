@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Pookie Tok — send a message to the stream</title>
+<style>
+  :root {
+    --pink: #ff4d97;
+    --pink-deep: #e0348a;
+    --purple: #a24bff;
+    --ink: #3a2a00;
+    --card: #fff;
+    --bg1: #ffe6f2;
+    --bg2: #f3e8ff;
+    --muted: #7a6a75;
+    --ok: #2fb170;
+    --err: #d84a4a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: linear-gradient(160deg, var(--bg1), var(--bg2));
+    min-height: 100vh;
+    padding: 20px 16px 48px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 520px; margin: 0 auto; }
+  header { text-align: center; margin: 8px 0 22px; }
+  .logo { font-size: 40px; line-height: 1; }
+  h1 { font-size: 26px; margin: 10px 0 6px; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); font-size: 15px; margin: 0; }
+  .handle { color: var(--pink-deep); font-weight: 700; }
+
+  .card {
+    background: var(--card);
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: 0 10px 30px rgba(160, 75, 255, 0.12);
+    margin-bottom: 16px;
+  }
+  label { display: block; font-weight: 700; font-size: 14px; margin: 0 0 8px; }
+  textarea, input[type=text] {
+    width: 100%; border: 2px solid #efe3ee; border-radius: 12px;
+    padding: 12px 14px; font-size: 16px; font-family: inherit; color: var(--ink);
+    resize: none; outline: none; transition: border-color .15s;
+    background: #fffafe;
+  }
+  textarea:focus, input[type=text]:focus { border-color: var(--pink); }
+  textarea { min-height: 92px; }
+  .row-between { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .counter { font-size: 12px; color: var(--muted); }
+  .counter.over { color: var(--err); font-weight: 700; }
+  .hint { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+  .field-err { color: var(--err); font-size: 13px; font-weight: 600; margin: 8px 0 0; min-height: 0; }
+
+  .tiers { display: grid; gap: 10px; }
+  .tier {
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
+    border: 2px solid #efe3ee; border-radius: 14px; padding: 12px 14px;
+    transition: border-color .15s, background .15s, transform .05s;
+    background: #fffafe;
+  }
+  .tier:active { transform: scale(0.995); }
+  .tier.sel { border-color: var(--pink); background: linear-gradient(100deg, #fff2f8, #f7effe); }
+  .tier .emoji { font-size: 26px; line-height: 1; }
+  .tier .meta { flex: 1; min-width: 0; }
+  .tier .name { font-weight: 800; font-size: 15px; }
+  .tier .blurb { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .tier .right { text-align: right; white-space: nowrap; }
+  .tier .price { font-weight: 800; font-size: 16px; color: var(--pink-deep); }
+  .tier .dur { font-size: 11px; color: var(--muted); }
+
+  button.send {
+    width: 100%; border: 0; border-radius: 14px; padding: 16px;
+    font-size: 17px; font-weight: 800; color: #fff; cursor: pointer;
+    background: linear-gradient(100deg, var(--pink), var(--purple));
+    box-shadow: 0 8px 20px rgba(224, 52, 138, 0.35);
+    transition: transform .05s, opacity .15s;
+  }
+  button.send:active { transform: translateY(1px); }
+  button.send:disabled { opacity: .55; cursor: default; box-shadow: none; }
+  .form-err { color: var(--err); font-weight: 700; text-align: center; margin: 12px 0 0; min-height: 20px; }
+  .fine { text-align: center; color: var(--muted); font-size: 12px; margin: 14px auto 0; max-width: 440px; line-height: 1.5; }
+
+  .banner { border-radius: 14px; padding: 16px; text-align: center; font-weight: 700; margin-bottom: 16px; }
+  .banner.ok { background: #e6f8ef; color: var(--ok); }
+  .banner.cancel { background: #fdeaea; color: var(--err); }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">💌</div>
+    <h1>Pookie Tok</h1>
+    <p class="sub">Your message pops up live on <span class="handle" id="handle">@museumcomesalive</span>'s stream.</p>
+  </header>
+
+  <div id="banner" class="banner hidden"></div>
+
+  <div id="form">
+    <div class="card">
+      <div class="row-between">
+        <label for="msg">Your message</label>
+        <span class="counter" id="counter">0 / 120</span>
+      </div>
+      <textarea id="msg" maxlength="240" placeholder="Say something sweet, funny, or hype…"></textarea>
+      <p class="field-err" id="msgErr"></p>
+      <p class="hint">No links, phone numbers, or emails — keep it friendly. 💕</p>
+    </div>
+
+    <div class="card">
+      <label for="name">Your name <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <input type="text" id="name" maxlength="24" placeholder="Shown with your message">
+    </div>
+
+    <div class="card">
+      <label>Pick your Pookie</label>
+      <div class="tiers" id="tiers"><!-- filled by JS --></div>
+    </div>
+
+    <button class="send" id="send" disabled>Loading tiers…</button>
+    <p class="form-err" id="formErr"></p>
+    <p class="fine">You'll be taken to a secure Stripe checkout. Messages are shown at the streamer's discretion and may be removed. One-time payment; no account needed.</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  var TIERS = [];
+  var selected = null;
+  var handleEl = document.getElementById('handle');
+  var tiersEl = document.getElementById('tiers');
+  var msgEl = document.getElementById('msg');
+  var nameEl = document.getElementById('name');
+  var counterEl = document.getElementById('counter');
+  var sendEl = document.getElementById('send');
+  var formErr = document.getElementById('formErr');
+  var msgErr = document.getElementById('msgErr');
+
+  function money(cents) { return '$' + (cents / 100).toFixed(2); }
+  function currentCap() { return selected ? selected.maxChars : 120; }
+
+  function renderBannerFromQuery() {
+    var params = new URLSearchParams(location.search);
+    var status = params.get('status');
+    if (!status) return;
+    var b = document.getElementById('banner');
+    var form = document.getElementById('form');
+    if (status === 'success') {
+      b.className = 'banner ok';
+      b.textContent = '💖 Sent! Watch the stream — your Pookie Tok is on its way.';
+      b.classList.remove('hidden');
+      form.classList.add('hidden');
+    } else if (status === 'cancel') {
+      b.className = 'banner cancel';
+      b.textContent = 'Checkout cancelled — no charge. Want to try again?';
+      b.classList.remove('hidden');
+    }
+  }
+
+  function updateCounter() {
+    var len = msgEl.value.length;
+    var cap = currentCap();
+    counterEl.textContent = len + ' / ' + cap;
+    counterEl.className = 'counter' + (len > cap ? ' over' : '');
+  }
+
+  function localCheck() {
+    var v = msgEl.value.trim();
+    msgErr.textContent = '';
+    if (!v) return 'empty';
+    if (v.length > currentCap()) { msgErr.textContent = 'A bit too long for this tier.'; return 'long'; }
+    if (/(https?:\/\/|www\.)/i.test(v) || /\b[a-z0-9-]+\.(com|net|org|io|gg|tv|co|me|xyz|shop|store|onlyfans|link)\b/i.test(v)) {
+      msgErr.textContent = "Links aren't allowed."; return 'link';
+    }
+    return 'ok';
+  }
+
+  function refreshSend() {
+    var state = localCheck();
+    var ready = state === 'ok' && selected;
+    sendEl.disabled = !ready;
+    sendEl.textContent = selected ? ('Send ' + selected.emoji + ' for ' + money(selected.amountCents)) : 'Pick a tier';
+  }
+
+  function selectTier(t) {
+    selected = t;
+    Array.prototype.forEach.call(tiersEl.children, function (el) {
+      el.classList.toggle('sel', el.getAttribute('data-id') === t.id);
+    });
+    updateCounter();
+    refreshSend();
+  }
+
+  function renderTiers() {
+    tiersEl.innerHTML = '';
+    TIERS.forEach(function (t) {
+      var el = document.createElement('div');
+      el.className = 'tier';
+      el.setAttribute('data-id', t.id);
+      el.innerHTML =
+        '<div class="emoji">' + t.emoji + '</div>' +
+        '<div class="meta"><div class="name">' + t.label + '</div>' +
+        '<div class="blurb">' + t.blurb + '</div></div>' +
+        '<div class="right"><div class="price">' + money(t.amountCents) + '</div>' +
+        '<div class="dur">' + t.durationSec + 's on screen</div></div>';
+      el.addEventListener('click', function () { selectTier(t); });
+      tiersEl.appendChild(el);
+    });
+  }
+
+  async function submit() {
+    if (sendEl.disabled) return;
+    formErr.textContent = '';
+    sendEl.disabled = true;
+    var original = sendEl.textContent;
+    sendEl.textContent = 'Starting checkout…';
+    try {
+      var res = await fetch('/api/pookie-tok/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tierId: selected.id, message: msgEl.value, displayName: nameEl.value })
+      });
+      var data = await res.json();
+      if (res.ok && data.ok && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      formErr.textContent = (data && data.error) || 'Something went wrong. Please try again.';
+      sendEl.textContent = original;
+      refreshSend();
+    } catch (e) {
+      formErr.textContent = 'Network error — please try again.';
+      sendEl.textContent = original;
+      refreshSend();
+    }
+  }
+
+  async function init() {
+    renderBannerFromQuery();
+    msgEl.addEventListener('input', function () { updateCounter(); refreshSend(); });
+    sendEl.addEventListener('click', submit);
+    try {
+      var res = await fetch('/api/pookie-tok/config');
+      var data = await res.json();
+      if (data && data.handle) handleEl.textContent = '@' + data.handle;
+      TIERS = (data && data.tiers) || [];
+      renderTiers();
+      if (TIERS.length) selectTier(TIERS[0]);
+      updateCounter();
+      refreshSend();
+    } catch (e) {
+      sendEl.textContent = 'Could not load — refresh';
+    }
+  }
+
+  init();
+})();
+</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

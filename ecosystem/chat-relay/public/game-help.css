@@ -1,0 +1,594 @@
+/* ============================================
+   GAME HELP / INSTRUCTIONS MODAL
+   Shared across all 8 SP word games
+   ============================================ */
+
+.game-help-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+  opacity: 1;
+  transition: opacity 0.25s ease;
+}
+.game-help-overlay.gh-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.game-help-modal {
+  background: #1a1a24;
+  border-radius: 18px;
+  border-top: 4px solid var(--gh-accent, #a78bfa);
+  box-shadow: 0 0 60px rgba(0,0,0,0.6), 0 0 30px color-mix(in srgb, var(--gh-accent, #a78bfa) 20%, transparent);
+  max-width: 420px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  animation: ghBounceIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+
+@keyframes ghBounceIn {
+  0% { transform: scale(0.7) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Header */
+.game-help-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 0;
+}
+.game-help-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.game-help-title .gh-icon {
+  font-size: 22px;
+}
+.game-help-close {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+  line-height: 1;
+}
+.game-help-close:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.08);
+}
+
+/* Step dots */
+.game-help-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px 4px;
+}
+.game-help-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #333;
+  transition: background 0.3s, transform 0.3s;
+  cursor: pointer;
+}
+.game-help-dot.active {
+  background: var(--gh-accent, #a78bfa);
+  transform: scale(1.3);
+}
+
+/* Step content */
+.game-help-steps {
+  position: relative;
+  overflow: hidden;
+}
+.game-help-step {
+  display: none;
+  padding: 16px 22px 8px;
+  animation: ghFadeIn 0.3s ease;
+}
+.game-help-step.active {
+  display: block;
+}
+@keyframes ghFadeIn {
+  0% { opacity: 0; transform: translateX(10px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+.game-help-step h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gh-accent, #a78bfa);
+  margin: 0 0 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.game-help-step p {
+  font-size: 14px;
+  color: #bbb;
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+.game-help-step p strong {
+  color: #fff;
+}
+
+/* Visual example box */
+.gh-example {
+  background: #111119;
+  border: 1px solid #2a2a3a;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 10px 0 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.gh-example-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+/* Wordle-style letter tiles */
+.gh-tile-row {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+.gh-tile {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+  border-radius: 6px;
+  color: #fff;
+  border: 2px solid #333;
+  text-transform: uppercase;
+}
+.gh-tile.correct { background: #538d4e; border-color: #538d4e; }
+.gh-tile.present { background: #b59f3b; border-color: #b59f3b; }
+.gh-tile.absent { background: #3a3a3c; border-color: #3a3a3c; }
+.gh-tile.empty { background: transparent; border-color: #444; color: #444; }
+.gh-tile.highlight { border-color: var(--gh-accent, #a78bfa); box-shadow: 0 0 8px color-mix(in srgb, var(--gh-accent, #a78bfa) 30%, transparent); }
+
+/* Arrow annotation */
+.gh-arrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #888;
+  margin: 2px 0;
+}
+.gh-arrow .gh-arrow-icon {
+  font-size: 14px;
+  color: var(--gh-accent, #a78bfa);
+}
+
+/* Inline color legend */
+.gh-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+.gh-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #ccc;
+}
+.gh-legend-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  color: #fff;
+}
+
+/* Boundary display (for Betweenly) */
+.gh-boundary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  width: 100%;
+}
+.gh-boundary.after { background: rgba(255, 107, 107, 0.12); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.25); }
+.gh-boundary.before { background: rgba(78, 205, 196, 0.12); color: #4ecdc4; border: 1px solid rgba(78,205,196,0.25); }
+.gh-boundary.secret { background: rgba(167, 139, 250, 0.12); color: #a78bfa; border: 1px solid rgba(167,139,250,0.25); }
+
+/* Hex grid (for Spelling Bee) */
+.gh-hex-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.gh-hex-row {
+  display: flex;
+  gap: 4px;
+}
+.gh-hex {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  background: #2a2a3a;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+.gh-hex.center { background: var(--gh-accent, #ffab00); }
+
+/* Word grid (for RecTangled) */
+.gh-word-grid {
+  display: grid;
+  gap: 4px;
+  justify-content: center;
+}
+.gh-grid-cell {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  background: #2a2a3a;
+  border-radius: 6px;
+  border: 2px solid transparent;
+}
+.gh-grid-cell.traced { border-color: var(--gh-accent, #e94560); background: rgba(233,69,96,0.2); }
+
+/* Rank list (for Searchle) */
+.gh-rank-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+.gh-rank-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  font-size: 13px;
+  color: #ccc;
+}
+.gh-rank-num {
+  font-weight: 800;
+  min-width: 24px;
+  text-align: center;
+  color: var(--gh-accent, #4a9eff);
+}
+.gh-rank-item.hot { background: rgba(255,171,0,0.1); border: 1px solid rgba(255,171,0,0.3); }
+.gh-rank-item.winner { background: rgba(74,252,74,0.1); border: 1px solid rgba(74,252,74,0.3); }
+
+/* Symbol display (for Figural) */
+.gh-symbol-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.gh-symbol {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  border-radius: 8px;
+  background: #222;
+  border: 2px solid #444;
+}
+.gh-symbol.cyan { color: #00e5ff; border-color: #00e5ff; background: rgba(0,229,255,0.08); }
+.gh-symbol.magenta { color: #ff4dd2; border-color: #ff4dd2; background: rgba(255,77,210,0.08); }
+.gh-symbol.lime { color: #76ff03; border-color: #76ff03; background: rgba(118,255,3,0.08); }
+
+/* Pixel grid (for PixeLetters) */
+.gh-pixel-grid {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.gh-pixel-letter {
+  display: grid;
+  grid-template-columns: repeat(5, 6px);
+  grid-template-rows: repeat(7, 6px);
+  gap: 1px;
+}
+.gh-px {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+}
+.gh-px.on { background: var(--gh-accent, #4d96ff); }
+.gh-px.off { background: #1a1a24; }
+.gh-px.hidden-px { background: #2a2a3a; }
+
+/* Abstract color bar (for Word 500) */
+.gh-color-bar {
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+}
+.gh-color-segment {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+}
+.gh-color-segment.all-absent { background: #c62828; }
+.gh-color-segment.neutral { background: #555; }
+
+/* Tip callout */
+.gh-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(167, 139, 250, 0.08);
+  border: 1px solid rgba(167, 139, 250, 0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  font-size: 13px;
+  color: #bbb;
+  line-height: 1.5;
+}
+.gh-tip-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Navigation */
+.game-help-footer {
+  padding: 10px 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.game-help-nav {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.game-help-nav button {
+  padding: 8px 20px;
+  border-radius: 10px;
+  border: 1px solid #333;
+  background: #222;
+  color: #ccc;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  min-width: 90px;
+}
+.game-help-nav button:hover {
+  background: #2a2a3a;
+  border-color: #444;
+}
+.game-help-nav button.gh-next {
+  background: var(--gh-accent, #a78bfa);
+  border-color: var(--gh-accent, #a78bfa);
+  color: #fff;
+}
+.game-help-nav button.gh-next:hover {
+  filter: brightness(1.15);
+}
+.game-help-dismiss {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: var(--gh-accent, #a78bfa);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.2s, transform 0.1s;
+  letter-spacing: 0.3px;
+}
+.game-help-dismiss:hover {
+  filter: brightness(1.15);
+}
+.game-help-dismiss:active {
+  transform: scale(0.98);
+}
+
+/* Help button (injected into game header) */
+.gh-help-btn {
+  background: none;
+  border: 2px solid #333;
+  color: #888;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+.gh-help-btn:hover {
+  color: var(--gh-accent, #a78bfa);
+  border-color: var(--gh-accent, #a78bfa);
+  background: rgba(167, 139, 250, 0.08);
+}
+
+/* Floating help button fallback (for SPAs without standard headers) */
+.gh-help-btn-floating {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 150;
+  background: rgba(30, 30, 50, 0.85);
+  border: 2px solid var(--gh-accent, #a78bfa);
+  color: var(--gh-accent, #a78bfa);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+}
+.gh-help-btn-floating:hover {
+  background: var(--gh-accent, #a78bfa);
+  color: #fff;
+}
+
+/* ===== Light mode overrides ===== */
+[data-theme="light"] .game-help-overlay {
+  background: rgba(0, 0, 0, 0.45);
+}
+[data-theme="light"] .game-help-modal {
+  background: #fff;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.06);
+}
+[data-theme="light"] .game-help-title {
+  color: #2d2a26;
+}
+[data-theme="light"] .game-help-close {
+  color: #999;
+}
+[data-theme="light"] .game-help-close:hover {
+  color: #333;
+  background: rgba(0,0,0,0.06);
+}
+[data-theme="light"] .game-help-dot {
+  background: #d4d0c8;
+}
+[data-theme="light"] .game-help-step p {
+  color: #4a4640;
+}
+[data-theme="light"] .game-help-step p strong {
+  color: #2d2a26;
+}
+[data-theme="light"] .gh-example {
+  background: #f5f0e8;
+  border-color: #e0d8cc;
+}
+[data-theme="light"] .gh-example-label {
+  color: #8a8279;
+}
+[data-theme="light"] .gh-tile {
+  border-color: #ccc;
+}
+[data-theme="light"] .gh-tile.empty {
+  border-color: #ccc;
+  color: #bbb;
+}
+[data-theme="light"] .gh-tile.absent {
+  background: #787878;
+  border-color: #787878;
+}
+[data-theme="light"] .gh-arrow {
+  color: #6b6560;
+}
+[data-theme="light"] .gh-legend-item {
+  color: #4a4640;
+}
+[data-theme="light"] .gh-rank-item {
+  color: #4a4640;
+  background: rgba(0,0,0,0.03);
+}
+[data-theme="light"] .gh-hex {
+  background: #e0d8cc;
+  color: #2d2a26;
+}
+[data-theme="light"] .gh-grid-cell {
+  background: #e0d8cc;
+  color: #2d2a26;
+}
+[data-theme="light"] .gh-symbol {
+  background: #f5f0e8;
+  border-color: #ccc;
+}
+[data-theme="light"] .gh-px.off {
+  background: #f5f0e8;
+}
+[data-theme="light"] .gh-px.hidden-px {
+  background: #e0d8cc;
+}
+[data-theme="light"] .gh-color-segment.neutral {
+  background: #999;
+}
+[data-theme="light"] .gh-tip {
+  color: #4a4640;
+  background: rgba(124, 92, 191, 0.08);
+  border-color: rgba(124, 92, 191, 0.2);
+}
+[data-theme="light"] .game-help-nav button {
+  border-color: #d4d0c8;
+  background: #f5f0e8;
+  color: #4a4640;
+}
+[data-theme="light"] .game-help-nav button:hover {
+  background: #ebe5da;
+  border-color: #c5bdb0;
+}
+[data-theme="light"] .gh-help-btn {
+  border-color: #d4d0c8;
+  color: #8a8279;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .game-help-modal {
+    max-width: 100%;
+    border-radius: 14px;
+    max-height: 90vh;
+  }
+  .gh-tile {
+    width: 32px;
+    height: 32px;
+    font-size: 15px;
+  }
+  .game-help-step h3 { font-size: 14px; }
+  .game-help-step p { font-size: 13px; }
+  .game-help-title { font-size: 16px; }
+  .gh-hex { width: 34px; height: 34px; font-size: 15px; }
+  .gh-grid-cell { width: 30px; height: 30px; font-size: 14px; }
+}

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Overlay</title>
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: transparent;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      --font-size: 14px;
+      --bg-opacity: 0.65;
+      --animate: 1;
+    }
+
+    #overlay-feed {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 6px;
+      padding: 12px;
+      max-height: 100vh;
+      overflow: hidden;
+    }
+
+    .overlay-msg {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: rgba(0, 0, 0, var(--bg-opacity));
+      border-radius: 6px;
+      animation: fadeIn calc(0.3s * var(--animate)) ease-out;
+      max-width: fit-content;
+    }
+
+    .overlay-msg.fade-out {
+      animation: fadeOut 0.5s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    .overlay-platform {
+      font-size: calc(var(--font-size) * 0.72);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    .overlay-platform.tiktok { background: rgba(105, 201, 208, 0.3); color: #69C9D0; }
+    .overlay-platform.youtube { background: rgba(255, 0, 0, 0.3); color: #FF4444; }
+    .overlay-platform.discord { background: rgba(88, 101, 242, 0.3); color: #7289DA; }
+    .overlay-platform.mobile { background: rgba(0, 200, 83, 0.3); color: #00c853; }
+
+    .overlay-username {
+      font-size: var(--font-size);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .overlay-colon {
+      color: #ccc;
+      font-size: var(--font-size);
+      flex-shrink: 0;
+    }
+
+    .overlay-text {
+      font-size: var(--font-size);
+      color: #fff;
+      word-wrap: break-word;
+    }
+
+    .overlay-msg.join {
+      opacity: 0.75;
+    }
+
+    .overlay-msg.join .overlay-text {
+      font-style: italic;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <div id="overlay-feed"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/audio-reactive.js"></script>
+  <script>
+    (function () {
+      const socket = io();
+      const feed = document.getElementById('overlay-feed');
+      const OVERLAY_TYPE = 'standard';
+
+      // AUX Audio-Reactive cosmetics
+      const auxCache = {};
+      socket.on('cosmetics-updated', function (data) {
+        if (data.platform && data.platformUserId && data.equipped) {
+          auxCache[data.platform + ':' + data.platformUserId] = data.equipped;
+        }
+      });
+      if (window.AuxAudio) AuxAudio.init();
+
+      let settings = {
+        fontSize: 14,
+        bgOpacity: 65,
+        fadeDuration: 0,
+        maxMessages: 30,
+        showBadge: true,
+        showUsername: true,
+        animate: true
+      };
+
+      function applySettings(s) {
+        settings = { ...settings, ...s };
+        document.body.style.setProperty('--font-size', settings.fontSize + 'px');
+        document.body.style.setProperty('--bg-opacity', (settings.bgOpacity / 100).toFixed(2));
+        document.body.style.setProperty('--animate', settings.animate ? '1' : '0');
+
+        while (feed.children.length > settings.maxMessages) {
+          feed.removeChild(feed.firstChild);
+        }
+      }
+
+      fetch('/api/overlay/settings?type=' + OVERLAY_TYPE)
+        .then(r => r.json())
+        .then(s => applySettings(s))
+        .catch(() => {});
+
+      socket.on('overlay-settings', (data) => {
+        if (data.type && data.type !== OVERLAY_TYPE) return;
+        applySettings(data);
+      });
+
+      socket.on('overlay-settings-init', (all) => {
+        if (all[OVERLAY_TYPE]) applySettings(all[OVERLAY_TYPE]);
+      });
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+      }
+
+      // Sanitize CSS values to prevent injection via innerHTML style attributes
+      function sanitizeCSS(value) {
+        if (!value || typeof value !== 'string') return '';
+        // Strip anything that could break out of a CSS value context
+        return value.replace(/[;"'<>&\\{}()]/g, '');
+      }
+
+      function getPlatformColor(platform) {
+        switch (platform) {
+          case 'tiktok': return '#69C9D0';
+          case 'youtube': return '#FF4444';
+          case 'discord': return '#7289DA';
+          case 'mobile': return '#00c853';
+          default: return '#efeff1';
+        }
+      }
+
+      function removeOverlayMsg(el) {
+        if (window.AuxAudio) {
+          el.querySelectorAll('[data-aux-profile]').forEach(function (child) { AuxAudio.unregisterElement(child); });
+        }
+        el.remove();
+      }
+
+      function applyAuxToMessage(el, msg) {
+        if (!window.AuxAudio) return;
+        var key = msg.platform + ':' + msg.user.id;
+        var equipped = auxCache[key];
+        if (!equipped) return;
+        var usernameEl = el.querySelector('.overlay-username');
+        if (usernameEl) {
+          var nc = equipped.name_color, ng = equipped.name_glow;
+          if (nc && nc.auxProfileId) { usernameEl.dataset.auxProfile = nc.auxProfileId; AuxAudio.registerElement(usernameEl, nc.auxProfileId); }
+          else if (ng && ng.auxProfileId) { usernameEl.dataset.auxProfile = ng.auxProfileId; AuxAudio.registerElement(usernameEl, ng.auxProfileId); }
+        }
+        var textEl = el.querySelector('.overlay-text');
+        if (textEl) {
+          var wc = equipped.word_color, wg = equipped.word_glow;
+          if (wc && wc.auxProfileId) { textEl.dataset.auxProfile = wc.auxProfileId; AuxAudio.registerElement(textEl, wc.auxProfileId); }
+          else if (wg && wg.auxProfileId) { textEl.dataset.auxProfile = wg.auxProfileId; AuxAudio.registerElement(textEl, wg.auxProfileId); }
+        }
+      }
+
+      socket.on('chat-message', (msg) => {
+        if (!msg?.message || !msg?.user || !msg?.platform) return;
+
+        const isJoin = msg.isJoin;
+        const isDotMsg = msg.message.startsWith('.');
+
+        // Show join messages and dot-prefixed messages
+        if (!isJoin && !isDotMsg) return;
+
+        const displayText = isJoin ? msg.message : msg.message.slice(1);
+
+        const el = document.createElement('div');
+        el.className = 'overlay-msg' + (isJoin ? ' join' : '');
+
+        const nameColor = sanitizeCSS(msg.user.customColor || getPlatformColor(msg.platform));
+        const displayName = msg.user.customNick || msg.user.displayName || 'Unknown';
+
+        let inner = '';
+        if (settings.showBadge) {
+          inner += `<span class="overlay-platform ${escapeHtml(msg.platform)}">${escapeHtml(msg.platform)}</span>`;
+        }
+        if (settings.showUsername) {
+          inner += `<span class="overlay-username" style="color: ${nameColor}">${escapeHtml(displayName)}</span>`;
+          inner += `<span class="overlay-colon">:</span>`;
+        }
+        inner += `<span class="overlay-text">${escapeHtml(displayText)}</span>`;
+        el.innerHTML = inner;
+
+        feed.appendChild(el);
+        applyAuxToMessage(el, msg);
+
+        // Limit message count
+        while (feed.children.length > settings.maxMessages) {
+          removeOverlayMsg(feed.firstChild);
+        }
+
+        // Fade out after duration (if set)
+        if (settings.fadeDuration > 0) {
+          setTimeout(() => {
+            el.classList.add('fade-out');
+            el.addEventListener('animationend', () => removeOverlayMsg(el));
+            setTimeout(() => { if (el.parentNode) removeOverlayMsg(el); }, 1000);
+          }, settings.fadeDuration * 1000);
+        }
+      });
+    })();
+  </script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice Volumes — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f14;
+    --surface: #1a1a24;
+    --border: #2a2a3a;
+    --text: #e0e0e0;
+    --text-dim: #888;
+    --blue: #4a9eff;
+    --blue-hover: #3a8eef;
+    --green: #4fc34f;
+    --green-hover: #3eb33e;
+    --amber: #f5b942;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 80px; }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(15,15,20,0.95); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .topbar h1 { font-size: 18px; font-weight: 700; }
+  .topbar .grow { flex: 1; }
+  .topbar .status { font-size: 13px; color: var(--text-dim); }
+  .topbar .status.saving { color: var(--amber); }
+  .topbar .status.saved  { color: var(--green); }
+  .topbar .status.error  { color: #e94560; }
+  .btn {
+    background: var(--blue); color: white; border: none; padding: 8px 16px;
+    border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;
+    font-size: 14px; transition: background 0.15s;
+  }
+  .btn:hover { background: var(--blue-hover); }
+  .btn.primary { background: var(--green); }
+  .btn.primary:hover { background: var(--green-hover); }
+  .btn.subtle { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+  .btn.subtle:hover { color: var(--text); border-color: var(--text-dim); }
+  .btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+  main { max-width: 960px; margin: 0 auto; padding: 24px; }
+
+  .group {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-bottom: 16px; overflow: hidden;
+  }
+  .group-header {
+    padding: 12px 16px; background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px; font-weight: 600; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: minmax(160px, 1.4fr) auto 1fr 64px auto;
+    align-items: center; gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .row:last-child { border-bottom: none; }
+  .row:hover { background: rgba(255,255,255,0.015); }
+  .label {
+    display: flex; flex-direction: column; gap: 2px; min-width: 0;
+  }
+  .label .name { font-weight: 600; font-size: 14px; }
+  .label .vibe { font-size: 11px; color: var(--text-dim); }
+  .preview-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--blue); color: white; border: none;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+  }
+  .preview-btn:hover { background: var(--blue-hover); }
+  .preview-btn.playing { background: var(--amber); }
+  .slider-wrap { position: relative; padding: 8px 0; }
+  input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none; appearance: none;
+    background: transparent;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px; background: var(--border); border-radius: 3px;
+  }
+  input[type="range"]::-moz-range-track {
+    height: 6px; background: var(--border); border-radius: 3px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 18px; height: 18px; background: var(--blue);
+    border-radius: 50%; margin-top: -6px; cursor: pointer;
+    border: 2px solid var(--bg);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px; background: var(--blue);
+    border-radius: 50%; cursor: pointer;
+    border: 2px solid var(--bg);
+  }
+  .pct {
+    font-variant-numeric: tabular-nums; font-weight: 600;
+    text-align: right; font-size: 14px;
+  }
+  .pct.boost { color: var(--amber); }
+  .pct.cut { color: var(--text-dim); }
+  .row.dirty .pct { color: var(--green); }
+  .row.dirty { background: rgba(79, 195, 79, 0.04); }
+  .row.overridden::before {
+    content: '●'; color: var(--blue); margin-right: 4px;
+  }
+  .row-reset {
+    background: transparent; border: 1px solid var(--border); color: var(--text-dim);
+    padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;
+  }
+  .row-reset:hover { color: var(--text); border-color: var(--text-dim); }
+
+  .empty { padding: 48px 24px; text-align: center; color: var(--text-dim); }
+
+  @media (max-width: 640px) {
+    .row { grid-template-columns: 1fr; gap: 8px; }
+    .preview-btn { justify-self: start; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Voice Volumes</h1>
+  <span class="status" id="status">Loading…</span>
+  <span class="grow"></span>
+  <button class="btn subtle" id="resetAllBtn">Reset all to 100%</button>
+  <button class="btn primary" id="saveBtn" disabled>Save</button>
+</div>
+
+<main id="main">
+  <div class="empty">Loading catalog…</div>
+</main>
+
+<audio id="previewAudio" style="display:none"></audio>
+
+<script>
+const STEP = 5;          // slider step in percent
+const MIN = 0, MAX = 200; // slider range in percent
+const DEFAULT_PCT = 100;
+
+const state = {
+  voices: [],     // [{ id, label, kind, accent, gender, vibe, gain, catalogGain }]
+  initial: {},    // initial gain map { voiceId: pct }
+  current: {},    // current gain map  { voiceId: pct }
+};
+
+const statusEl = document.getElementById('status');
+const saveBtn  = document.getElementById('saveBtn');
+const main     = document.getElementById('main');
+const audio    = document.getElementById('previewAudio');
+
+function gainToPct(g) { return Math.round(g * 100); }
+function pctToGain(p) { return Math.round(p) / 100; }
+function fmtPct(p) { return p + '%'; }
+function statusSet(text, cls) {
+  statusEl.textContent = text;
+  statusEl.className = 'status' + (cls ? ' ' + cls : '');
+}
+
+function load() {
+  statusSet('Loading…');
+  fetch('/api/admin/voice-gains', { credentials: 'include' })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+    .then(data => {
+      if (!data?.ok) throw new Error(data?.error || 'load_failed');
+      state.voices = data.voices || [];
+      state.initial = {};
+      state.current = {};
+      for (const v of state.voices) {
+        const pct = gainToPct(v.gain);
+        state.initial[v.id] = pct;
+        state.current[v.id] = pct;
+      }
+      render();
+      statusSet('Loaded ' + state.voices.length + ' voices.');
+    })
+    .catch(err => {
+      statusSet('Error: ' + err.message, 'error');
+      main.innerHTML = '<div class="empty">Failed to load. Are you logged in as admin? <a href="/admin/login" style="color:var(--blue)">Sign in</a></div>';
+    });
+}
+
+function groupOrder() {
+  return ['Web', 'US', 'UK', 'AU', 'CA', 'CN', 'ES', 'IN'];
+}
+function groupOf(v) {
+  if (v.kind === 'web') return 'Web';
+  return v.accent || 'Other';
+}
+
+function render() {
+  const groups = {};
+  for (const v of state.voices) {
+    const g = groupOf(v);
+    (groups[g] = groups[g] || []).push(v);
+  }
+  const ordered = groupOrder().filter(g => groups[g]);
+  for (const k of Object.keys(groups)) if (!ordered.includes(k)) ordered.push(k);
+
+  main.innerHTML = '';
+  for (const g of ordered) {
+    const wrap = document.createElement('section');
+    wrap.className = 'group';
+    wrap.innerHTML = '<div class="group-header">' + g + ' (' + groups[g].length + ')</div>';
+    for (const v of groups[g]) wrap.appendChild(renderRow(v));
+    main.appendChild(wrap);
+  }
+  recomputeDirty();
+}
+
+function renderRow(v) {
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.dataset.id = v.id;
+  if (v.overridden) row.classList.add('overridden');
+
+  const pct = state.current[v.id];
+  const cap = v.kind === 'web' ? 100 : MAX;
+
+  row.innerHTML =
+    '<div class="label"><span class="name">' + escapeHtml(v.label || v.id) + '</span><span class="vibe">' + escapeHtml(v.vibe || '') + '</span></div>' +
+    '<button class="preview-btn" data-act="preview">▶</button>' +
+    '<div class="slider-wrap"><input type="range" min="' + MIN + '" max="' + cap + '" step="' + STEP + '" value="' + pct + '"></div>' +
+    '<div class="pct">' + fmtPct(pct) + '</div>' +
+    '<button class="row-reset" data-act="reset">100%</button>';
+
+  const range = row.querySelector('input[type="range"]');
+  const pctEl = row.querySelector('.pct');
+
+  range.addEventListener('input', () => {
+    const p = Math.max(MIN, Math.min(cap, Number(range.value)));
+    state.current[v.id] = p;
+    pctEl.textContent = fmtPct(p);
+    pctEl.classList.toggle('boost', p > 100);
+    pctEl.classList.toggle('cut',   p < 100);
+    // Live volume — if this voice is currently previewing, ramp the
+    // WebAudio gain so the user hears the change without re-clicking play.
+    if (currentVoiceId === v.id && audioGain) {
+      try {
+        const now = audioCtx.currentTime;
+        audioGain.gain.cancelScheduledValues(now);
+        audioGain.gain.setTargetAtTime(pctToGain(p), now, 0.02);
+      } catch (_) { audioGain.gain.value = pctToGain(p); }
+    }
+    recomputeDirty();
+  });
+  row.querySelector('[data-act="reset"]').addEventListener('click', () => {
+    range.value = DEFAULT_PCT;
+    range.dispatchEvent(new Event('input'));
+  });
+  row.querySelector('[data-act="preview"]').addEventListener('click', () => previewVoice(v, row));
+
+  pctEl.classList.toggle('boost', pct > 100);
+  pctEl.classList.toggle('cut',   pct < 100);
+  return row;
+}
+
+function recomputeDirty() {
+  let anyDirty = false;
+  for (const row of main.querySelectorAll('.row')) {
+    const id = row.dataset.id;
+    const cur = state.current[id];
+    const init = state.initial[id];
+    const dirty = cur !== init;
+    row.classList.toggle('dirty', dirty);
+    if (dirty) anyDirty = true;
+  }
+  saveBtn.disabled = !anyDirty;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+document.getElementById('resetAllBtn').addEventListener('click', () => {
+  for (const row of main.querySelectorAll('.row')) {
+    const range = row.querySelector('input[type="range"]');
+    range.value = DEFAULT_PCT;
+    range.dispatchEvent(new Event('input'));
+  }
+});
+
+saveBtn.addEventListener('click', () => {
+  saveBtn.disabled = true;
+  statusSet('Saving…', 'saving');
+  const gains = {};
+  for (const v of state.voices) gains[v.id] = pctToGain(state.current[v.id]);
+  fetch('/api/admin/voice-gains', {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ gains }),
+  })
+    .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
+    .then(({ ok, data }) => {
+      if (!ok || !data?.ok) throw new Error(data?.error || 'save_failed');
+      // Saved values become the new initial.
+      state.initial = { ...state.current };
+      recomputeDirty();
+      statusSet('Saved ' + (data.count ?? Object.keys(gains).length) + ' voices.', 'saved');
+    })
+    .catch(err => {
+      statusSet('Save failed: ' + err.message, 'error');
+      saveBtn.disabled = false;
+    });
+});
+
+// Preview: hits voice-tts's preview endpoint via the chat-relay proxy.
+// Plays through a WebAudio chain so the slider's gain applies to the
+// preview as well — making it easy to A/B levels live.
+let audioCtx = null;
+let audioSrc = null;
+let audioGain = null;
+let currentBtn = null;
+let currentVoiceId = null;
+function ensureAudioGraph() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  audioSrc = audioCtx.createMediaElementSource(audio);
+  audioGain = audioCtx.createGain();
+  audioSrc.connect(audioGain).connect(audioCtx.destination);
+}
+function previewVoice(v, row) {
+  ensureAudioGraph();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  // Toggle off if user clicks the playing voice's button again.
+  if (currentVoiceId === v.id && !audio.paused) {
+    audio.pause();
+    if (currentBtn) currentBtn.classList.remove('playing');
+    currentBtn = null;
+    currentVoiceId = null;
+    return;
+  }
+  const pct = state.current[v.id];
+  audioGain.gain.value = pctToGain(pct);
+  audio.pause();
+  audio.src = '/api/voice/preview?voice_id=' + encodeURIComponent(v.id) + '&_=' + Date.now();
+  if (currentBtn) currentBtn.classList.remove('playing');
+  currentBtn = row.querySelector('[data-act="preview"]');
+  currentBtn.classList.add('playing');
+  currentVoiceId = v.id;
+  audio.play().catch(err => {
+    statusSet('Preview failed: ' + err.message, 'error');
+    if (currentBtn) currentBtn.classList.remove('playing');
+    currentVoiceId = null;
+  });
+}
+function clearPlaying() {
+  if (currentBtn) currentBtn.classList.remove('playing');
+  currentBtn = null;
+  currentVoiceId = null;
+}
+audio.addEventListener('ended', clearPlaying);
+audio.addEventListener('error', clearPlaying);
+
+load();
+</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

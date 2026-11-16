@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<title>Event Overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;500;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 1080px; height: 1920px;
+  background: transparent;
+  overflow: hidden;
+  font-family: 'Roboto Mono', 'Segoe UI', system-ui, sans-serif;
+  color: #fff;
+}
+
+/* ── MAJOR card (center upper-third) ─────────────────────────── */
+#ev-major-slot {
+  position: fixed;
+  top: 280px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 480px;
+  pointer-events: none;
+  z-index: 80;
+}
+
+.ev-major {
+  width: 100%;
+  background: linear-gradient(160deg, rgba(26,26,26,0.97) 0%, rgba(12,12,12,0.97) 100%);
+  border: 1px solid rgba(255,102,0,0.35);
+  border-radius: 22px;
+  padding: 26px 30px 28px;
+  text-align: center;
+  box-shadow:
+    0 24px 80px rgba(0,0,0,0.85),
+    0 0 0 1px rgba(255,102,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    0 0 60px rgba(255,102,0,0.18);
+  opacity: 0;
+  transform: translateY(-30px) scale(0.92);
+  transition: opacity 0.42s ease, transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ev-major.show { opacity: 1; transform: translateY(0) scale(1); }
+.ev-major.hide { opacity: 0; transform: translateY(-12px) scale(0.97); transition: opacity 0.45s ease, transform 0.45s ease; }
+
+.ev-major .ev-event-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: #FF6600;
+  text-shadow: 0 0 14px rgba(255,102,0,0.6);
+  margin-bottom: 18px;
+  text-transform: uppercase;
+}
+
+.ev-major .ev-pic-wrap {
+  width: 88px; height: 88px;
+  margin: 0 auto 14px;
+  position: relative;
+  border-radius: 50%;
+}
+.ev-major .ev-pic {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background: #2A2A2A;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.ev-major .ev-name {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+  line-height: 1.1;
+}
+.ev-major .ev-title {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+
+.ev-major .ev-word {
+  display: inline-block;
+  position: relative;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 38px;
+  letter-spacing: 1px;
+  color: #FF6600;
+  text-shadow: 0 0 20px rgba(255,102,0,0.55);
+  padding: 10px 20px;
+  margin: 6px 0 10px;
+  background: rgba(255,102,0,0.08);
+  border: 1px solid rgba(255,102,0,0.3);
+  border-radius: 10px;
+  text-transform: lowercase;
+}
+
+/* Redaction-reveal animation: black bar slides off the word on entrance */
+.ev-major .ev-word::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #1A1A1A;
+  border-radius: 10px;
+  transform-origin: right center;
+  animation: ev-redact-reveal 0.7s 0.18s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+@keyframes ev-redact-reveal {
+  0%   { transform: scaleX(1); }
+  100% { transform: scaleX(0); }
+}
+
+.ev-major .ev-rank {
+  display: inline-block;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: #666499;
+  background: rgba(102,100,153,0.12);
+  border: 1px solid rgba(102,100,153,0.28);
+  border-radius: 999px;
+  padding: 4px 12px;
+  margin-top: 6px;
+}
+
+/* ── MINOR card (below MAJOR) ───────────────────────────────── */
+#ev-minor-slot {
+  position: fixed;
+  top: 720px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 400px;
+  pointer-events: none;
+  z-index: 70;
+}
+.ev-minor {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(160deg, rgba(26,26,26,0.93) 0%, rgba(16,16,16,0.93) 100%);
+  border: 1px solid rgba(255,102,0,0.22);
+  border-radius: 16px;
+  padding: 14px 18px;
+  box-shadow: 0 16px 50px rgba(0,0,0,0.7), 0 0 30px rgba(255,102,0,0.1);
+  opacity: 0;
+  transform: translateX(-26px);
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ev-minor.show { opacity: 1; transform: translateX(0); }
+.ev-minor.hide { opacity: 0; transform: translateX(26px); transition: opacity 0.35s ease, transform 0.35s ease; }
+
+.ev-minor .ev-pic-wrap {
+  width: 56px; height: 56px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  position: relative;
+}
+.ev-minor .ev-pic {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background: #2A2A2A;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+}
+.ev-minor .ev-text { flex: 1 1 auto; min-width: 0; overflow: hidden; }
+.ev-minor .ev-name {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ev-minor .ev-event-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  letter-spacing: 1.6px;
+  color: #FF6600;
+  text-shadow: 0 0 8px rgba(255,102,0,0.5);
+  margin-bottom: 2px;
+  text-transform: uppercase;
+}
+.ev-minor .ev-word {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 14px;
+  color: #FF6600;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+.ev-minor .ev-rank {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 11px;
+  color: #666499;
+  margin-left: 6px;
+}
+
+/* ── TOAST stack (bottom-right) ─────────────────────────────── */
+#ev-toast-stack {
+  position: fixed;
+  right: 32px;
+  bottom: 380px;   /* leave room for live2d Sassie / lower-third */
+  width: 320px;
+  display: flex;
+  flex-direction: column-reverse;  /* newest on top */
+  gap: 10px;
+  pointer-events: none;
+  z-index: 60;
+}
+.ev-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(26,26,26,0.86);
+  border: 1px solid rgba(102,100,153,0.3);
+  border-left: 3px solid #FF6600;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.6);
+  opacity: 0;
+  transform: translateX(40px);
+  transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ev-toast.show { opacity: 1; transform: translateX(0); }
+.ev-toast.hide { opacity: 0; transform: translateX(40px); transition: opacity 0.3s ease, transform 0.3s ease; }
+.ev-toast.miss { border-left-color: #666499; }
+.ev-toast.miss .ev-action { color: #666499; }
+.ev-toast .ev-pic-wrap {
+  width: 32px; height: 32px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  position: relative;
+}
+.ev-toast .ev-pic {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background: #2A2A2A;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+.ev-toast .ev-name {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
+.ev-toast .ev-action {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 11px;
+  color: #FF6600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.ev-toast .ev-word {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 12px;
+  color: rgba(255,255,255,0.75);
+  text-transform: lowercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* ── Particles canvas ──────────────────────────────────────── */
+#ev-fx-canvas {
+  position: fixed;
+  inset: 0;
+  width: 1080px; height: 1920px;
+  pointer-events: none;
+  z-index: 90;
+}
+
+/* ── Cosmetic helpers (from win-overlay convention) ───────── */
+.ev-pic-wrap[data-glow] .ev-pic { box-shadow: var(--ev-glow); }
+</style>
+</head>
+<body>
+
+<div id="ev-major-slot"></div>
+<div id="ev-minor-slot"></div>
+<div id="ev-toast-stack"></div>
+<canvas id="ev-fx-canvas" width="1080" height="1920"></canvas>
+
+<link rel="stylesheet" href="/css/cosmetics-fx.css?v=3">
+<script src="/js/pfp-cosmetics.js?v=15"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/event-effects.js"></script>
+<script>
+(function () {
+  // Socket.IO is provided by Chat Relay in production. Guard so the page is
+  // still usable when loaded against a static-only server (preview/local test).
+  const socket = (typeof io === 'function') ? io({ transports: ['websocket'] }) : null;
+
+  if (socket) {
+    socket.on('connect', () => {
+      socket.emit('join-event-overlay');
+    });
+
+    socket.on('event-overlay-event', (payload) => {
+      handleEvent(payload);
+    });
+  }
+
+  // ── Cosmetic application helpers ──────────────────────────
+  function applyCosmetics(els, cosmetics) {
+    if (!cosmetics) return;
+    const { picWrap, pic, name } = els;
+    // name_color
+    const nameColor = cosmetics.name_color && cosmetics.name_color.color;
+    if (nameColor && name) name.style.color = nameColor;
+    // name_glow ships a textShadow, never a `color` key.
+    const nameGlow = cosmetics.name_glow && cosmetics.name_glow.textShadow;
+    if (nameGlow && name) name.style.textShadow = nameGlow;
+    // profile_border / profile_glow. This surface read a `color` key the
+    // catalog has never emitted, so rings and glows rendered as nothing.
+    // The three event sizes (88 / 56 / 32px) each scale off their own shell.
+    if (window.PfpCosmetics && picWrap) {
+      window.PfpCosmetics.apply(pic, picWrap, cosmetics);
+    }
+  }
+
+  function setPic(picEl, user) {
+    const url = user && user.profilePic;
+    if (url) {
+      picEl.style.backgroundImage = `url("${url}")`;
+      picEl.textContent = '';
+    } else {
+      picEl.style.backgroundImage = 'none';
+      const initial = (user && user.displayName ? user.displayName.charAt(0) : '?').toUpperCase();
+      picEl.textContent = initial;
+      // Color by platform
+      const platform = (user && user.platform || '').toLowerCase();
+      const colors = { tiktok: '#FF0050', youtube: '#FF0000', discord: '#5865F2' };
+      picEl.style.background = colors[platform] || '#444';
+    }
+  }
+
+  // ── Event-name -> visual classification ───────────────────
+  // Tier: 'major' | 'minor' | 'toast'
+  // Label: short uppercase string for the event card
+  // Particle effect: keyword passed to event-effects.js (or null)
+  function classify(eventName) {
+    switch (eventName) {
+      // hidden_word intentionally not rendered — WikiSearchle emits it alongside
+      // a rarity event (common/rare/ultra_rare) for the same revealed word, so
+      // the rarity event already covers the moment. Drop to avoid duplicates.
+      case 'streak_10':             return { tier: 'major', label: 'STREAK ×10!',      fx: 'burst-rainbow' };
+      case 'pangram_found':         return { tier: 'major', label: 'PANGRAM!',         fx: 'burst-rainbow' };
+      case 'streak_5':              return { tier: 'minor', label: 'STREAK ×5',        fx: 'sparkle' };
+      case 'ultra_rare_word_found': return { tier: 'minor', label: 'ULTRA RARE',       fx: 'sparkle' };
+      case 'rare_word_found':       return { tier: 'minor', label: 'RARE FIND',        fx: 'sparkle' };
+      case 'guess_best_so_far':     return { tier: 'minor', label: 'NEW #1!',          fx: 'sparkle' };
+      case 'streak_3':              return { tier: 'toast', label: 'streak ×3',        fx: null,  toastVerb: 'streak' };
+      case 'streak_broken':         return { tier: 'toast', label: 'streak broken',    fx: null,  toastVerb: 'broken', miss: true };
+      case 'common_word_found':     return { tier: 'toast', label: 'found',            fx: null,  toastVerb: 'found' };
+      case 'three_letter_found':    return { tier: 'toast', label: '3-letter',         fx: null,  toastVerb: 'found' };
+      case 'first_time_player':     return { tier: 'toast', label: 'joined',           fx: null,  toastVerb: 'joined' };
+      case 'wrong_guess':           return { tier: 'toast', label: 'missed',           fx: null,  toastVerb: 'missed', miss: true };
+      default: return null;
+    }
+  }
+
+  // ── Slot management ───────────────────────────────────────
+  let majorTimer = null;
+  let minorTimer = null;
+  function showMajor(html, fx) {
+    const slot = document.getElementById('ev-major-slot');
+    if (majorTimer) { clearTimeout(majorTimer); majorTimer = null; }
+    slot.innerHTML = html;
+    const card = slot.firstElementChild;
+    if (!card) return;
+    requestAnimationFrame(() => card.classList.add('show'));
+    if (fx && window.EventEffects) window.EventEffects.fire(fx, 540, 360);
+    majorTimer = setTimeout(() => {
+      card.classList.remove('show');
+      card.classList.add('hide');
+      setTimeout(() => { if (slot.firstElementChild === card) slot.innerHTML = ''; }, 500);
+    }, 5000);
+  }
+  function showMinor(html, fx) {
+    const slot = document.getElementById('ev-minor-slot');
+    if (minorTimer) { clearTimeout(minorTimer); minorTimer = null; }
+    slot.innerHTML = html;
+    const card = slot.firstElementChild;
+    if (!card) return;
+    requestAnimationFrame(() => card.classList.add('show'));
+    if (fx && window.EventEffects) window.EventEffects.fire(fx, 540, 760);
+    minorTimer = setTimeout(() => {
+      card.classList.remove('show');
+      card.classList.add('hide');
+      setTimeout(() => { if (slot.firstElementChild === card) slot.innerHTML = ''; }, 400);
+    }, 4000);
+  }
+  function showToast(html, durationMs) {
+    const stack = document.getElementById('ev-toast-stack');
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const toast = div.firstElementChild;
+    if (!toast) return;
+    stack.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    // Limit stack to 4 toasts.
+    while (stack.children.length > 4) stack.removeChild(stack.firstChild);
+    setTimeout(() => {
+      toast.classList.remove('show');
+      toast.classList.add('hide');
+      setTimeout(() => { if (toast.parentElement === stack) stack.removeChild(toast); }, 350);
+    }, durationMs || 2500);
+  }
+
+  // ── Card builders ─────────────────────────────────────────
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+  function rankPill(data) {
+    if (typeof data.rank !== 'number') return '';
+    const total = data.totalRankedWords || 1000;
+    return `<div class="ev-rank">#${data.rank} of top ${total}</div>`;
+  }
+  function buildMajor(payload, info) {
+    const data = payload.data || {};
+    const user = data.user || {};
+    const word = data.word || data.guess || '';
+    const isStreak = info.label.includes('STREAK');
+    const wordHtml = isStreak
+      ? `<div class="ev-word" style="font-size:54px;">×${data.count || ''}</div>`
+      : (word ? `<div class="ev-word">${escapeHtml(word)}</div>` : '');
+    const cosmetics = user.cosmetics || {};
+    const title = cosmetics.title && cosmetics.title.text;
+    return `
+      <div class="ev-major">
+        <div class="ev-event-label">${info.label}</div>
+        <div class="ev-pic-wrap" data-pic></div>
+        <div class="ev-name" data-name>${escapeHtml(user.displayName || 'Someone')}</div>
+        ${title ? `<div class="ev-title" data-title>${escapeHtml(title)}</div>` : ''}
+        ${wordHtml}
+        ${rankPill(data)}
+      </div>`;
+  }
+  function buildMinor(payload, info) {
+    const data = payload.data || {};
+    const user = data.user || {};
+    const word = data.word || data.guess || '';
+    const isStreak = info.label.includes('STREAK');
+    const wordHtml = isStreak
+      ? `<span class="ev-word">×${data.count || ''}</span>`
+      : (word ? `<span class="ev-word">${escapeHtml(word)}</span>` : '');
+    const rankHtml = (typeof data.rank === 'number') ? `<span class="ev-rank">#${data.rank}</span>` : '';
+    return `
+      <div class="ev-minor">
+        <div class="ev-pic-wrap" data-pic></div>
+        <div class="ev-text">
+          <div class="ev-event-label">${info.label}</div>
+          <div class="ev-name" data-name>${escapeHtml(user.displayName || 'Someone')}</div>
+          <div>${wordHtml}${rankHtml}</div>
+        </div>
+      </div>`;
+  }
+  function buildToast(payload, info) {
+    const data = payload.data || {};
+    const user = data.user || {};
+    const word = data.word || data.guess || '';
+    const cls = info.miss ? 'ev-toast miss' : 'ev-toast';
+    return `
+      <div class="${cls}">
+        <div class="ev-pic-wrap" data-pic></div>
+        <span class="ev-name" data-name>${escapeHtml(user.displayName || 'Someone')}</span>
+        <span class="ev-action">${escapeHtml(info.toastVerb || info.label)}</span>
+        ${word ? `<span class="ev-word">${escapeHtml(word)}</span>` : ''}
+      </div>`;
+  }
+
+  // ── Hydration: apply pic + cosmetics to data-pic / data-name ──
+  function hydrateCard(rootEl, user) {
+    if (!rootEl) return;
+    const picWrap = rootEl.querySelector('[data-pic]');
+    const nameEl = rootEl.querySelector('[data-name]');
+    if (picWrap) {
+      const picEl = document.createElement('div');
+      picEl.className = 'ev-pic';
+      picWrap.appendChild(picEl);
+      setPic(picEl, user);
+    }
+    applyCosmetics({ picWrap, pic: picWrap && picWrap.querySelector('.ev-pic'), name: nameEl }, user && user.cosmetics);
+  }
+
+  // ── Top-level handler ─────────────────────────────────────
+  function handleEvent(payload) {
+    if (!payload || !payload.eventName) return;
+    const info = classify(payload.eventName);
+    if (!info) return;
+    const user = (payload.data && payload.data.user) || {};
+
+    let html, mountFn, hydrateRoot;
+    if (info.tier === 'major') {
+      html = buildMajor(payload, info);
+      const tmp = document.createElement('div'); tmp.innerHTML = html;
+      hydrateCard(tmp.firstElementChild, user);
+      showMajor(tmp.innerHTML, info.fx);
+      // The hydrated DOM was on the temp node — re-hydrate the live one.
+      hydrateLive('ev-major-slot', user);
+    } else if (info.tier === 'minor') {
+      showMinor(buildMinor(payload, info), info.fx);
+      hydrateLive('ev-minor-slot', user);
+    } else {
+      showToast(buildToast(payload, info), 2500);
+      const stack = document.getElementById('ev-toast-stack');
+      hydrateCard(stack.lastElementChild, user);
+    }
+  }
+  function hydrateLive(slotId, user) {
+    const slot = document.getElementById(slotId);
+    const card = slot && slot.firstElementChild;
+    hydrateCard(card, user);
+  }
+
+  // ── Smoke test (for local preview only) ───────────────────
+  window.__evTest = function (eventName, opts) {
+    opts = opts || {};
+    handleEvent({
+      game: 'wikisearchle',
+      eventName,
+      data: {
+        user: {
+          displayName: opts.name || 'TestPlayer',
+          platform: 'tiktok',
+          profilePic: opts.profilePic || null,
+          cosmetics: opts.cosmetics || null,
+        },
+        word: opts.word || 'serendipity',
+        rank: opts.rank,
+        totalRankedWords: opts.total || 1000,
+        count: opts.count || 5,
+      },
+    });
+  };
+})();
+</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

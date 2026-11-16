@@ -1,0 +1,44 @@
+{
+  "name": "mobile-relay",
+  "version": "1.0.0",
+  "description": "Mobile Relay — Multi-platform live stream chat relay with TTS",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "smoke:prod": "node scripts/smoke-prod.js --ssh-target deploy@wordtycoon.live",
+    "test:relay-client": "node --test test/game-shared-relay-client.test.js"
+  },
+  "dependencies": {
+    "@discordjs/voice": "^0.19.2",
+    "discord.js": "^14.26.4",
+    "dotenv": "^16.4.0",
+    "express": "^4.22.2",
+    "express-session": "^1.19.0",
+    "ffmpeg-static": "^5.3.0",
+    "http-proxy": "^1.18.1",
+    "memorystore": "^1.6.7",
+    "screenshot-desktop": "^1.15.3",
+    "socket.io": "^4.8.0",
+    "socket.io-client": "^4.8.3",
+    "sodium-native": "^5.1.0",
+    "sql.js": "^1.11.0",
+    "subtlex-word-frequencies": "^2.0.0",
+    "tiktok-live-connector": "2.1.1-beta1",
+    "uuid": "^11.1.1",
+    "ws": "^8.21.0"
+  },
+  "overrides": {
+    "@protobufjs/utf8": "^1.1.1",
+    "axios": "^1.16.1",
+    "brace-expansion": "^1.1.15",
+    "lodash": "^4.18.1",
+    "path-to-regexp": "^0.1.13",
+    "qs": "^6.15.2",
+    "socket.io-parser": "^4.2.6",
+    "tiktok-live-connector": {
+      "protobufjs": "^7.6.1"
+    },
+    "ws": "^8.21.0"
+  }
+}

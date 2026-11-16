@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Word Tycoon - My Portal</title>
+  <link rel="stylesheet" href="/portal/css/portal.css?v=15">
+  <script>
+    // Restore theme early to prevent flash
+    (function() {
+      var t = localStorage.getItem('portal-theme');
+      if (t === 'light') document.documentElement.dataset.theme = 'light';
+    })();
+  </script>
+  <link rel="stylesheet" href="/game-help.css?v=2">
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="login-screen" class="screen">
+    <div class="login-card">
+      <img src="/portal/img/logo.png" alt="Word Tycoon" class="login-logo-img-old">
+      <img src="/portal/img/wordtycoon.png" alt="Word Tycoon" class="login-logo-img">
+      <p>Log in to view your game profile, businesses, cosmetics, and more.</p>
+      <a href="/auth/discord" class="discord-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+        Login with Discord
+      </a>
+      <div class="login-divider"><span>or</span></div>
+      <a href="/auth/github" class="github-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        Login with GitHub
+      </a>
+      <div id="login-error" class="login-error"></div>
+    </div>
+  </div>
+
+  <!-- Main Portal -->
+  <div id="portal-screen" class="screen" style="display:none">
+    <!-- Header -->
+    <header class="portal-header">
+      <div class="header-left">
+        <img src="/portal/img/logo.png" alt="Word Tycoon" class="header-logo-img-old">
+        <img src="/portal/img/wordtycoon.png" alt="Word Tycoon" class="header-logo-img">
+        <a href="/goat" class="header-goat-link" target="_blank" title="Hall of Fame">🐐 GOAT</a>
+      </div>
+      <div class="header-right">
+        <div class="user-info">
+          <div class="user-avatar-wrap">
+            <img id="user-avatar" src="" alt="" class="user-avatar">
+          </div>
+          <div class="user-name-group">
+            <span id="user-name" class="user-name"></span>
+            <span id="user-title" class="user-title"></span>
+          </div>
+        </div>
+        <button id="theme-toggle" class="theme-toggle" title="Toggle light/dark mode">Light</button>
+        <button id="logout-btn" class="logout-btn" title="Logout">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="wordgames">Word Games</button>
+      <button class="tab" data-tab="businesses">Businesses</button>
+      <button class="tab" data-tab="store">Store</button>
+      <button class="tab" data-tab="cosmetics">Cosmetics</button>
+      <button class="tab" data-tab="history">History</button>
+      <button class="tab" data-tab="chat">Live Chat</button>
+      <button class="tab" data-tab="howtoplay">How to Play</button>
+    </nav>
+
+    <!-- Not Linked Banner -->
+    <div id="not-linked-banner" class="banner banner-warning" style="display:none">
+      <strong>Account Not Linked</strong>
+      <p id="not-linked-msg">Your Discord account isn't linked to any stream platform yet. Type <code>!link</code> in the stream chat to get started!</p>
+      <div id="not-linked-actions"></div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Tab Content -->
+    <main class="content">
+      <!-- Overview Tab -->
+      <section id="tab-overview" class="tab-content active">
+        <!-- Top Row: Profile Card + Challenges -->
+        <div class="ov-top-row">
+          <!-- Profile Card -->
+          <div class="ov-hero">
+            <div class="ov-hero-bg"></div>
+            <div class="ov-hero-particles" aria-hidden="true"></div>
+            <div class="ov-hero-content">
+              <div class="ov-hero-avatar-wrap">
+                <img id="ov-hero-avatar" class="ov-hero-avatar" src="" alt="">
+              </div>
+              <div class="ov-hero-info">
+                <div id="ov-hero-title" class="ov-hero-title"></div>
+                <div id="ov-hero-name" class="ov-hero-name">Player</div>
+                <div class="ov-hero-coins">
+                  <span class="ov-coin-icon">🟢</span>
+                  <span id="ov-hero-coin-val" class="ov-coin-val">-</span>
+                  <span class="ov-coin-divider">|</span>
+                  <span class="ov-words-icon">&#x1F4DA;</span>
+                  <span id="ov-hero-words-val" class="ov-words-val">-</span>
+                </div>
+                <div class="ov-hero-income" id="ov-hero-income" style="display:none">
+                  <span class="ov-income-icon">&#x1F4B0;</span>
+                  <span id="ov-hero-income-val" class="ov-income-val">0</span>
+                  <span class="ov-income-label">/sec</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Challenges -->
+          <div class="ov-challenges">
+            <!-- Daily Challenge Progress -->
+            <div class="daily-tracker" id="daily-tracker">
+              <div class="daily-tracker-header">
+                <span class="daily-tracker-icon">&#x1F4C5;</span>
+                <span class="daily-tracker-title">Daily Challenges</span>
+                <span class="daily-tracker-countdown" id="daily-countdown"></span>
+                <span class="daily-tracker-progress" id="daily-progress">0/6</span>
+              </div>
+              <div class="daily-tracker-subtitle" id="daily-tracker-subtitle"></div>
+              <div class="daily-tracker-row" id="daily-tracker-row"></div>
+            </div>
+
+            <!-- Weekly Challenge Progress -->
+            <div class="weekly-tracker" id="weekly-tracker">
+              <div class="daily-tracker-header">
+                <span class="daily-tracker-icon">&#x1F3C6;</span>
+                <span class="daily-tracker-title">Weekly Challenges</span>
+                <span class="weekly-tracker-progress" id="weekly-progress">0/2</span>
+              </div>
+              <div class="weekly-tracker-subtitle" id="weekly-tracker-subtitle"></div>
+              <div class="daily-tracker-row" id="weekly-tracker-row"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Games Grid -->
+        <div class="games-section">
+          <h3 class="ov-section-title">Games</h3>
+          <div class="games-grid" id="games-grid"></div>
+        </div>
+
+        <!-- live-games-grid kept as hidden anchor for compatibility -->
+        <div id="live-games" style="display:none"><div id="live-games-grid"></div></div>
+
+        <!-- Stats & Info Row -->
+        <div class="ov-body">
+          <div class="ov-main">
+            <h3 class="ov-section-title">Player Stats</h3>
+            <div class="ov-stats-grid">
+              <div class="ov-stat-card ov-stat-coins">
+                <div class="ov-stat-icon">🟢</div>
+                <div class="ov-stat-label">XP</div>
+                <div class="ov-stat-value" id="stat-coins">-</div>
+              </div>
+              <div class="ov-stat-card ov-stat-taps">
+                <div class="ov-stat-icon">&#x26A1;</div>
+                <div class="ov-stat-label">Total Taps</div>
+                <div class="ov-stat-value" id="stat-taps">-</div>
+              </div>
+              <div class="ov-stat-card ov-stat-power">
+                <div class="ov-stat-icon">&#x1F4A5;</div>
+                <div class="ov-stat-label">Tap Power</div>
+                <div class="ov-stat-value" id="stat-tap-power">-</div>
+              </div>
+              <div class="ov-stat-card ov-stat-crit">
+                <div class="ov-stat-icon">&#x1F3AF;</div>
+                <div class="ov-stat-label">Crit Chance</div>
+                <div class="ov-stat-value" id="stat-crit">-</div>
+              </div>
+              <div class="ov-stat-card ov-stat-multi">
+                <div class="ov-stat-icon">&#x2728;</div>
+                <div class="ov-stat-label">Multi-Tap</div>
+                <div class="ov-stat-value" id="stat-multitap">-</div>
+              </div>
+            </div>
+
+            <h3 class="ov-section-title">Business Empire</h3>
+            <div id="ov-biz-row" class="ov-biz-row">
+              <div class="loading-placeholder">Loading...</div>
+            </div>
+
+            <h3 class="ov-section-title">Linked Platforms</h3>
+            <div id="platforms-list" class="ov-platforms-list">
+              <div class="loading-placeholder">Loading...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Businesses Tab -->
+      <section id="tab-businesses" class="tab-content">
+        <!-- Hero Banner -->
+        <div class="biz-hero">
+          <div class="biz-hero-bg"></div>
+          <div class="biz-hero-content">
+            <h2 class="biz-hero-title">Business Empire</h2>
+            <p class="biz-hero-sub">Manage your businesses and track your income</p>
+          </div>
+        </div>
+
+        <!-- Earnings Summary Panel -->
+        <div class="biz-earnings-panel">
+          <div class="biz-earnings-header">
+            <span class="biz-earnings-icon">💰</span>
+            <h3 class="biz-earnings-title">Earnings Breakdown</h3>
+          </div>
+          <div class="biz-earnings-body">
+            <div class="biz-earnings-row">
+              <span>Businesses</span>
+              <span id="biz-base-income" class="biz-val">0/sec</span>
+            </div>
+            <div class="biz-earnings-row" id="biz-pizza-row" style="display:none">
+              <span>Pizza Shop</span>
+              <span id="biz-pizza-income" class="biz-val">0/sec</span>
+            </div>
+            <div class="biz-earnings-row" id="biz-news-row" style="display:none">
+              <span>Newspaper Route</span>
+              <span id="biz-news-income" class="biz-val">0/sec</span>
+            </div>
+            <div class="biz-earnings-row biz-earnings-total">
+              <span>Total Income</span>
+              <span id="biz-total-income" class="biz-val-total">0/sec</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Buffs Summary -->
+        <div class="biz-buffs-panel">
+          <h3 class="biz-buffs-title">Active Buffs</h3>
+          <div id="biz-buffs-list" class="biz-buffs-list">
+            <div class="loading-placeholder">No buffs active</div>
+          </div>
+        </div>
+
+        <!-- Business Cards Grid -->
+        <div id="businesses-grid" class="biz-grid">
+          <div class="loading-placeholder">Loading...</div>
+        </div>
+      </section>
+
+      <!-- Pizza Shop (accessed from Businesses) -->
+      <section id="tab-pizza" class="tab-content">
+        <button class="pizza-back-btn" onclick="document.querySelector('[data-tab=businesses]').click()">&larr; Back to Businesses</button>
+        <div id="pizza-container" class="pizza-container">
+          <div class="loading-placeholder">Loading Pizza Shop...</div>
+        </div>
+      </section>
+
+      <!-- Newspaper Route (accessed from Businesses) -->
+      <section id="tab-newspaper" class="tab-content">
+        <button class="news-back-btn" onclick="document.querySelector('[data-tab=businesses]').click()">&larr; Back to Businesses</button>
+        <div id="newspaper-container" class="news-container">
+          <div class="loading-placeholder">Loading Newspaper Route...</div>
+        </div>
+      </section>
+
+      <!-- Library (accessed from Businesses) -->
+      <section id="tab-library" class="tab-content">
+        <button class="lib-back-btn" onclick="document.querySelector('[data-tab=businesses]').click()">&larr; Back to Businesses</button>
+        <div id="library-container" class="lib-container">
+          <div class="loading-placeholder">Loading Library...</div>
+        </div>
+      </section>
+
+      <!-- Store Tab -->
+      <section id="tab-store" class="tab-content">
+        <!-- Store Header -->
+        <div class="store-hero">
+          <div class="store-hero-bg"></div>
+          <div class="store-hero-content">
+            <h2 class="store-hero-title">Cosmetics Store</h2>
+            <p class="store-hero-sub">Upgrade your look. Boost your game.</p>
+            <div class="store-coins-row">
+              <div class="store-coins-display">
+                <span class="store-coins-icon">🟢</span>
+                <span id="store-coin-balance" class="store-coins-value">-</span>
+              </div>
+              <div class="store-coins-display store-gift-coins-display">
+                <span class="store-coins-icon">&#x1F381;</span>
+                <span id="store-gift-balance" class="store-coins-value">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Store Preview Panel -->
+        <div class="store-preview-panel">
+          <div id="store-preview-badge-bg" class="preview-badge-bg"></div>
+          <div class="preview-profile">
+            <div class="preview-avatar-wrap store-preview-avatar-wrap">
+              <img id="store-preview-avatar" class="preview-avatar" src="" alt="">
+            </div>
+            <div class="preview-info">
+              <div id="store-preview-title" class="preview-title-container"></div>
+              <div id="store-preview-name" class="preview-name">Player</div>
+              <div id="store-preview-word" class="preview-word">WORDY</div>
+            </div>
+          </div>
+          <button id="store-preview-reset" class="store-preview-reset-btn">Reset Preview</button>
+        </div>
+
+        <!-- Store Filters -->
+        <div class="store-filters">
+          <div class="store-filter-row">
+            <div class="store-filter-group">
+              <label>Category</label>
+              <select id="store-cat-filter">
+                <option value="all">All Categories</option>
+                <option value="word_color">Word Colors</option>
+                <option value="word_glow">Word Glows</option>
+                <option value="profile_border">Borders</option>
+                <option value="profile_glow">Glows</option>
+                <option value="name_glow">Name Glows</option>
+                <option value="name_color">Name Colors</option>
+                <option value="title">Titles</option>
+                <option value="win_effect">Win Effects</option>
+                <option value="hero_badge">Hero Badge</option>
+                <option value="gift">&#x1F381; Gift Items</option>
+              </select>
+            </div>
+            <div class="store-filter-group">
+              <label>Rarity</label>
+              <select id="store-rarity-filter">
+                <option value="all">All Rarities</option>
+                <option value="common">Common</option>
+                <option value="uncommon">Uncommon</option>
+                <option value="rare">Rare</option>
+                <option value="epic">Epic</option>
+                <option value="legendary">Legendary</option>
+                <option value="ultra">Ultra</option>
+                <option value="aux">AUX</option>
+              </select>
+            </div>
+            <div class="store-filter-group">
+              <label>Set</label>
+              <select id="store-set-filter">
+                <option value="all">All Items</option>
+                <option value="none">No Set</option>
+                <option value="pixel">Pixel</option>
+                <option value="steampunk">Steampunk</option>
+                <option value="sakura">Sakura</option>
+                <option value="storm">Storm</option>
+                <option value="dragon">Dragon</option>
+                <option value="quantum">Quantum</option>
+                <option value="america">Stars & Stripes</option>
+                <option value="canada">Great North</option>
+              </select>
+            </div>
+            <div class="store-filter-group">
+              <label>Buff</label>
+              <select id="store-buff-filter">
+                <option value="all">All Buffs</option>
+                <option value="tap_boost">Tap Power</option>
+                <option value="word_game_boost">Word Game Money</option>
+                <option value="biz_boost">Biz Income</option>
+                <option value="offline_boost">Offline Income</option>
+                <option value="combo_boost">Combo Max</option>
+                <option value="coin_bonus">All XP</option>
+                <option value="prestige">All Income</option>
+                <option value="lucky_bonus">Lucky 2x</option>
+                <option value="library_boost">Library Income</option>
+              </select>
+            </div>
+          </div>
+          <div class="store-filter-row store-sort-row">
+            <div class="store-filter-group">
+              <label>Sort by</label>
+              <select id="store-sort">
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="rarity-asc">Rarity: Common First</option>
+                <option value="rarity-desc">Rarity: Ultra First</option>
+                <option value="buff-desc">Buff: Strongest First</option>
+                <option value="buff-asc">Buff: Weakest First</option>
+                <option value="name-asc">Name: A-Z</option>
+              </select>
+            </div>
+            <div class="store-result-count"><span id="store-count">0</span> items</div>
+          </div>
+        </div>
+
+        <!-- Store Grid -->
+        <div id="store-grid" class="store-grid">
+          <div class="loading-placeholder">Loading store...</div>
+        </div>
+
+        <!-- Store Sets Section -->
+        <div id="store-sets-section"></div>
+      </section>
+
+      <!-- Cosmetics Tab -->
+      <section id="tab-cosmetics" class="tab-content">
+        <div class="cosmetic-preview-panel">
+          <div id="preview-badge-bg" class="preview-badge-bg"></div>
+          <div class="preview-profile">
+            <div class="preview-avatar-wrap">
+              <img id="preview-avatar" class="preview-avatar" src="" alt="">
+            </div>
+            <div class="preview-info">
+              <div id="preview-title-container" class="preview-title-container"></div>
+              <div id="preview-name" class="preview-name">Player</div>
+              <div id="preview-word" class="preview-word">WORDY</div>
+            </div>
+          </div>
+          <div id="preview-platform-selector" class="preview-platform-selector"></div>
+        </div>
+        <div id="visibility-settings" class="visibility-settings"></div>
+        <div class="cosmetics-filters">
+          <select id="cosmetic-category-filter">
+            <option value="all">All Categories</option>
+            <option value="word_color">Word Colors</option>
+            <option value="word_glow">Word Glows</option>
+            <option value="profile_border">Borders</option>
+            <option value="profile_glow">Glows</option>
+            <option value="name_glow">Name Glows</option>
+            <option value="name_color">Name Colors</option>
+            <option value="title">Titles</option>
+            <option value="win_effect">Win Effects</option>
+            <option value="hero_badge">Hero Badge</option>
+          </select>
+          <select id="cosmetic-sort">
+            <option value="default">Sort: Default</option>
+            <option value="rarity-desc">Sort: Rarity ↓</option>
+            <option value="rarity-asc">Sort: Rarity ↑</option>
+            <option value="name">Sort: Name</option>
+          </select>
+          <div class="cosmetics-count"><span id="owned-count">0</span> owned</div>
+        </div>
+        <div id="cosmetics-grid" class="cosmetics-grid">
+          <div class="loading-placeholder">Loading...</div>
+        </div>
+      </section>
+
+      <!-- History Tab -->
+      <section id="tab-history" class="tab-content">
+        <div class="history-filters">
+          <select id="history-type-filter">
+            <option value="">All Types</option>
+            <option value="command">Commands</option>
+            <option value="buy">Purchases</option>
+            <option value="upgrade">Upgrades</option>
+            <option value="cosmetic">Cosmetics</option>
+            <option value="gift">Gifts</option>
+            <option value="reward">Rewards</option>
+          </select>
+          <div class="history-pagination">
+            <button id="history-prev" class="page-btn" disabled>&laquo; Prev</button>
+            <span id="history-page-info">Page 1</span>
+            <button id="history-next" class="page-btn">Next &raquo;</button>
+          </div>
+        </div>
+        <div id="history-list" class="history-list">
+          <div class="loading-placeholder">Loading...</div>
+        </div>
+      </section>
+
+      <!-- Word Games Tab -->
+      <section id="tab-wordgames" class="tab-content">
+        <div class="wg-bubbles" id="wg-bubbles"></div>
+        <div class="wg-panels" id="wg-panels"></div>
+      </section>
+
+      <!-- Live Chat Tab -->
+      <section id="tab-chat" class="tab-content">
+        <div id="chat-feed" class="chat-feed">
+          <div class="chat-empty">Waiting for messages...</div>
+        </div>
+        <div class="chat-input-bar">
+          <input type="text" id="chat-input" placeholder="Type a message..." maxlength="200" autocomplete="off">
+          <button id="chat-send">Send</button>
+        </div>
+      </section>
+
+      <!-- How to Play Tab -->
+      <section id="tab-howtoplay" class="tab-content">
+        <div class="htp-hero">
+          <h2 class="htp-hero-title">How to Play</h2>
+          <p class="htp-hero-sub">Learn the rules for all 9 Word Tycoon games</p>
+        </div>
+
+        <nav class="htp-nav" id="htp-nav">
+          <a href="#htp-searchle" class="htp-nav-btn" style="--htp-c:#4a9eff">Searchle</a>
+          <a href="#htp-rectangled" class="htp-nav-btn" style="--htp-c:#22d3ee">recTangled</a>
+          <a href="#htp-word500" class="htp-nav-btn" style="--htp-c:#9b59b6">Word 500</a>
+          <a href="#htp-wordle" class="htp-nav-btn" style="--htp-c:#6aaa64">Wordle</a>
+          <a href="#htp-betwixt" class="htp-nav-btn" style="--htp-c:#e06c9a">Betwixt</a>
+          <a href="#htp-pixeletters" class="htp-nav-btn" style="--htp-c:#00bcd4">PixeLetters</a>
+          <a href="#htp-spellingbee" class="htp-nav-btn" style="--htp-c:#ffab00">Spelling Bee</a>
+          <a href="#htp-figural" class="htp-nav-btn" style="--htp-c:#ff7043">Figural</a>
+          <a href="#htp-unwordle" class="htp-nav-btn" style="--htp-c:#ff6b6b">UnWordle</a>
+          <a href="#htp-library" class="htp-nav-btn" style="--htp-c:#8b5cf6">Library</a>
+        </nav>
+
+        <!-- Wordle -->
+        <div class="htp-game" id="htp-wordle" style="--htp-c:#6aaa64">
+          <div class="htp-game-header">
+            <h3>Wordle</h3>
+            <a href="/wordle/" class="htp-play-btn" target="_blank">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Guess the Word</h4>
+              <p>Type any <strong>5-letter word</strong> and press <strong>Enter</strong> to guess. You have <strong>6 guesses</strong> to find the word!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Example Guess</div>
+                <div class="gh-tile-row">
+                  <div class="gh-tile highlight">H</div>
+                  <div class="gh-tile highlight">E</div>
+                  <div class="gh-tile highlight">L</div>
+                  <div class="gh-tile highlight">L</div>
+                  <div class="gh-tile highlight">O</div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">💡</span> You can change the word length with the buttons in the top-right corner.</div>
+            </div>
+            <div class="htp-step">
+              <h4>Read the Colors</h4>
+              <p>After each guess, the tiles change color to show how close you are:</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e">W</div><span><strong style="color:#6aaa64">Green</strong> — Correct letter, correct spot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b">I</div><span><strong style="color:#b59f3b">Yellow</strong> — Correct letter, wrong spot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#3a3a3c">X</div><span><strong style="color:#888">Gray</strong> — Letter not in the word</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Use the Clues</h4>
+              <p>Use the color clues to narrow down the answer. The <strong>keyboard</strong> below also updates with colors for each letter.</p>
+              <div class="gh-example">
+                <div class="gh-example-label">If the word is CRISP</div>
+                <div class="gh-tile-row">
+                  <div class="gh-tile absent">G</div>
+                  <div class="gh-tile correct">R</div>
+                  <div class="gh-tile absent">A</div>
+                  <div class="gh-tile present">I</div>
+                  <div class="gh-tile absent">N</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> I is in the word but not here — R is perfect!</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">🎯</span> Daily challenges use the same word for all players. Complete it to earn rewards!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Betwixt -->
+        <div class="htp-game" id="htp-betwixt" style="--htp-c:#e06c9a">
+          <div class="htp-game-header">
+            <h3>Betwixt</h3>
+            <a href="/betwixt/" class="htp-play-btn" target="_blank">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Find the Secret Word</h4>
+              <p>A secret word is hidden <strong>alphabetically</strong> between two boundaries. Type a word and press <strong>Enter</strong> to guess.</p>
+              <div class="gh-example">
+                <div class="gh-example-label">The word is between…</div>
+                <div class="gh-boundary after"><span>⬇ AFTER</span> — <strong>APPLE</strong></div>
+                <div class="gh-boundary secret"><span>🎯 SECRET</span> — <strong>???</strong></div>
+                <div class="gh-boundary before"><span>⬆ BEFORE</span> — <strong>LEMON</strong></div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">💡</span> The secret word comes after APPLE and before LEMON in the dictionary. Guess any word in that range!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Narrow the Range</h4>
+              <p>Each guess <strong>tightens the boundaries</strong>. If your guess is too early, AFTER moves forward. Too late, BEFORE moves back.</p>
+              <div class="gh-example">
+                <div class="gh-example-label">After guessing GRAPE</div>
+                <div class="gh-boundary after"><span>⬇ AFTER</span> — <strong>GRAPE</strong></div>
+                <div class="gh-boundary secret"><span>🎯 SECRET</span> — between here</div>
+                <div class="gh-boundary before"><span>⬆ BEFORE</span> — <strong>LEMON</strong></div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">🔤</span> The <strong>alphabet bar</strong> highlights which starting letters are still possible, helping you eliminate options fast.</div>
+            </div>
+            <div class="htp-step">
+              <h4>Lock in Letters</h4>
+              <p>When both boundaries share the same letter at a position, that letter is <strong>confirmed</strong> and locked in — no more guessing for that spot!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Confirmed letters</div>
+                <div class="gh-tile-row">
+                  <div class="gh-tile correct">H</div>
+                  <div class="gh-tile highlight">?</div>
+                  <div class="gh-tile highlight">?</div>
+                  <div class="gh-tile correct">E</div>
+                  <div class="gh-tile highlight">?</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> H and E are confirmed — only 3 letters left to find!</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">🎯</span> Daily challenges use the same word for all players. Complete it to earn rewards!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PixeLetters -->
+        <div class="htp-game" id="htp-pixeletters" style="--htp-c:#00bcd4">
+          <div class="htp-game-header">
+            <h3>PixeLetters</h3>
+            <a href="/pixeletters/" class="htp-play-btn" target="_blank">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Decode the Pixels</h4>
+              <p>The secret word is hidden as <strong>pixel art</strong>. Each letter is a tiny grid. With each guess, <strong>more pixels are revealed</strong> — figure out what letters they form!</p>
+              <div class="gh-tip"><span class="gh-tip-icon">💡</span> You have <strong>5 guesses</strong> to figure out the word. Each wrong guess reveals more pixels!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Read the Colors</h4>
+              <p>After each guess, the pixels light up to show how close you are:</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#4d96ff">✓</div><span><strong style="color:#4d96ff">Blue</strong> — Correct letter, correct position (fully revealed)</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#4caf50">●</div><span><strong style="color:#4caf50">Green</strong> — Revealed pixels that match the target letter</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#e53935">✗</div><span><strong style="color:#e53935">Red</strong> — Revealed pixels that don't match the target</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#2a2a3a">?</div><span><strong style="color:#888">Gray</strong> — Pixels not yet revealed</span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">🔤</span> The <strong>keyboard</strong> also shows pixel previews for each letter you've guessed, helping you track what you know.</div>
+            </div>
+            <div class="htp-step">
+              <h4>Three Difficulty Modes</h4>
+              <p>Choose how pixels are revealed with each guess:</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#4d96ff;font-size:11px">STD</div><span><strong style="color:#4d96ff">Standard</strong> — Pixels reveal <strong>top to bottom</strong>. Easiest mode!</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#ff9800;font-size:11px">+</div><span><strong style="color:#ff9800">Plus</strong> — Each letter reveals in a <strong>random direction</strong> (↓ ↑ ← →)</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#e53935;font-size:11px">PRO</div><span><strong style="color:#e53935">Pro</strong> — Only <strong>one row/column</strong> shown at a time. Hardest!</span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">🎯</span> Daily challenges use the same word for all players. Complete it to earn rewards!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Figural -->
+        <div class="htp-game" id="htp-figural" style="--htp-c:#ff7043">
+          <div class="htp-game-header">
+            <h3>Figural</h3>
+            <a href="/figural/" class="htp-play-btn" target="_blank">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Guess the Word</h4>
+              <p>Type any word and press <strong>Enter</strong>. After each guess, every letter gets a <strong>colored symbol</strong> — but the symbols are a mystery!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Example feedback</div>
+                <div class="gh-symbol-row">
+                  <div class="gh-symbol cyan">◆</div>
+                  <div class="gh-symbol magenta">▲</div>
+                  <div class="gh-symbol cyan">◆</div>
+                  <div class="gh-symbol lime">●</div>
+                  <div class="gh-symbol magenta">▲</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> Each letter gets a symbol — but what do they mean?</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">💡</span> You have <strong>8 guesses</strong> to find the word. Use each guess to learn about both the word AND the symbols!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Decode the Symbols</h4>
+              <p>Three symbols appear in three colors. Each means one of these — but you must <strong>figure out which is which</strong>:</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e">✓</div><span><strong style="color:#6aaa64">Correct</strong> — Right letter, right position</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b">~</div><span><strong style="color:#b59f3b">Wrong Spot</strong> — Letter is in the word, but elsewhere</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#3a3a3c">✗</div><span><strong style="color:#888">Not Present</strong> — Letter isn't in the word at all</span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">🔮</span> The legend at the top shows <strong>? = ?</strong> for each symbol. As you play, deduce which symbol means what!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Crack the Code</h4>
+              <p>Use <strong>logic</strong> to decode the symbols! If a letter you're sure isn't in the word gets a specific symbol, that symbol must mean "Not Present."</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Deduction example</div>
+                <div class="gh-symbol-row">
+                  <div class="gh-symbol cyan">◆</div>
+                  <div class="gh-symbol magenta">▲</div>
+                  <div class="gh-symbol lime">●</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> If ◆ always appears on wrong letters → ◆ = Not Present</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">🎯</span> Daily challenges use the same word and symbols for all players. Complete it to earn rewards!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Word 500 -->
+        <div class="htp-game" id="htp-word500" style="--htp-c:#9b59b6">
+          <div class="htp-game-header">
+            <h3>Word 500</h3>
+            <a href="/word1000/" class="htp-play-btn" target="_blank">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Guess Any Word</h4>
+              <p>Type a word and press Enter. Word 500 gives you <strong>abstract number clues</strong> instead of colored letters!</p>
+              <div class="gh-example">
+                <div class="gh-color-bar">
+                  <div class="gh-color-segment" style="background:#538d4e">1</div>
+                  <div class="gh-color-segment" style="background:#b59f3b">2</div>
+                  <div class="gh-color-segment" style="background:#3a3a3c">2</div>
+                </div>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Read the Numbers</h4>
+              <p>Three colored counts tell you how close you are:</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e">2</div><span><strong style="color:#6aaa64">Green</strong> &mdash; Letters in the correct position</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b">1</div><span><strong style="color:#b59f3b">Yellow</strong> &mdash; Letters in the word but wrong spot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#3a3a3c">2</div><span><strong style="color:#888">Gray</strong> &mdash; Letters not in the word at all</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Think Strategically</h4>
+              <p>You see counts, not positions &mdash; you won&rsquo;t know <em>which</em> letters are correct. Compare counts across guesses to deduce the word!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Spelling Bee -->
+        <div class="htp-game" id="htp-spellingbee" style="--htp-c:#ffab00">
+          <div class="htp-game-header">
+            <h3>Spelling Bee</h3>
+            <a href="/spellingbee/" class="htp-play-btn" target="_blank">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Make Words from 7 Letters</h4>
+              <p>You're given <strong>7 letters</strong> in a honeycomb. Build words using those letters — the <strong>center letter</strong> must be in every word!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">The Honeycomb</div>
+                <div class="gh-hex-grid">
+                  <div class="gh-hex-row"><div class="gh-hex">T</div><div class="gh-hex">A</div></div>
+                  <div class="gh-hex-row"><div class="gh-hex">R</div><div class="gh-hex center">L</div><div class="gh-hex">E</div></div>
+                  <div class="gh-hex-row"><div class="gh-hex">I</div><div class="gh-hex">N</div></div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> The golden center letter <strong>L</strong> must appear in every word you make</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">💡</span> Words must be at least <strong>4 letters</strong> long. You can reuse letters as many times as you want!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Score Points</h4>
+              <p>Longer words earn more points. Find all the words to complete the puzzle!</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e">4</div><span><strong style="color:#6aaa64">4-letter words</strong> — earn <strong>1 point</strong> each</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b">5+</div><span><strong style="color:#b59f3b">Longer words</strong> — earn <strong>1 point per letter</strong></span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#9b59b6">★</div><span><strong style="color:#c98aff">Rare words</strong> — bonus <strong>+3 points</strong></span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">🔤</span> Click the hex tiles or type on your keyboard. Hit <strong>Enter</strong> to submit!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Find Pangrams!</h4>
+              <p>A <strong>pangram</strong> uses all 7 letters at least once — it's the ultimate find and earns a <strong>+7 bonus</strong>!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Pangram example</div>
+                <div class="gh-tile-row">
+                  <div class="gh-tile correct">L</div>
+                  <div class="gh-tile correct">A</div>
+                  <div class="gh-tile correct">T</div>
+                  <div class="gh-tile correct">E</div>
+                  <div class="gh-tile correct">R</div>
+                  <div class="gh-tile correct">N</div>
+                  <div class="gh-tile correct">I</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> LATERNI uses all 7 letters — that's a pangram! +7 bonus points</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">🎯</span> Use the <strong>shuffle</strong> button (🔄) to rearrange the outer letters — it can help you spot new words!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RecTangled -->
+        <div class="htp-game" id="htp-rectangled" style="--htp-c:#22d3ee">
+          <div class="htp-game-header">
+            <h3><span style="color:#3EC8E8">r</span><span style="color:#F5920A">e</span><span style="color:#EFC000">c</span><span style="color:#1E52C8">T</span><span style="color:#E83020">a</span><span style="color:#42B238">n</span><span style="color:#88AAFF">g</span><span style="color:#C835B8">l</span><span style="color:#F5920A">e</span><span style="color:#1EB8A8">d</span></h3>
+            <a href="https://rectangled.live/" class="htp-play-btn" target="_blank">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Find Words in the Grid</h4>
+              <p>A grid of letters hides many words. <strong>Trace a path</strong> through adjacent letters — horizontally, vertically, or diagonally — to spell words!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Tracing a word</div>
+                <div class="gh-word-grid" style="grid-template-columns:repeat(4,36px)">
+                  <div class="gh-grid-cell traced">R</div><div class="gh-grid-cell">A</div><div class="gh-grid-cell">N</div><div class="gh-grid-cell">K</div>
+                  <div class="gh-grid-cell">L</div><div class="gh-grid-cell traced">O</div><div class="gh-grid-cell">T</div><div class="gh-grid-cell">S</div>
+                  <div class="gh-grid-cell">E</div><div class="gh-grid-cell traced">S</div><div class="gh-grid-cell traced">E</div><div class="gh-grid-cell">P</div>
+                  <div class="gh-grid-cell">W</div><div class="gh-grid-cell">I</div><div class="gh-grid-cell">N</div><div class="gh-grid-cell">D</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> ROSE traced diagonally through adjacent cells</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">💡</span> <strong>Drag</strong> across the grid or <strong>type</strong> words and press Enter. Each cell can only be used once per word!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Common vs Rare Words</h4>
+              <p>Words are split into two categories. Find all <strong>common words</strong> to complete the puzzle!</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e">✓</div><span><strong style="color:#6aaa64">Common words</strong> — must find all of these to win</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b">★</div><span><strong style="color:#b59f3b">Rare words</strong> — optional bonus words for extra credit</span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">🔤</span> Words must be at least <strong>3 letters</strong> long. The progress bar tracks your common word count!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Use the Hints</h4>
+              <p>The grid helps you as you play! Numbers on each cell show how many <strong>unfound words start</strong> with that letter. Cells go dark when no more words use them.</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Grid hints</div>
+                <div class="gh-word-grid" style="grid-template-columns:repeat(3,36px)">
+                  <div class="gh-grid-cell" style="position:relative">C<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">3</span></div>
+                  <div class="gh-grid-cell" style="position:relative">A<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">5</span></div>
+                  <div class="gh-grid-cell" style="position:relative">T<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">2</span></div>
+                  <div class="gh-grid-cell" style="position:relative">O<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">1</span></div>
+                  <div class="gh-grid-cell" style="opacity:0.3">X</div>
+                  <div class="gh-grid-cell" style="position:relative">E<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">4</span></div>
+                  <div class="gh-grid-cell" style="position:relative">R<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">2</span></div>
+                  <div class="gh-grid-cell" style="opacity:0.3">Z</div>
+                  <div class="gh-grid-cell" style="position:relative">S<span style="position:absolute;top:1px;right:3px;font-size:9px;color:#e94560">1</span></div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> Numbers = unfound words starting here. Greyed cells = no words left!</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">🎯</span> Choose from themed puzzles in the selector. Complete the weekly challenge before it rotates!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Searchle -->
+        <div class="htp-game" id="htp-searchle" style="--htp-c:#a855f7">
+          <div class="htp-game-header">
+            <h3>Searchle</h3>
+            <a href="/searchle-single/" class="htp-play-btn" target="_blank">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Guess by Meaning</h4>
+              <p>A secret word is hidden. Type any word and the game tells you how <strong>semantically similar</strong> your guess is — not spelling, but <strong>meaning</strong>!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">If the secret word is OCEAN</div>
+                <div class="gh-rank-list">
+                  <div class="gh-rank-item hot"><span class="gh-rank-num">#12</span> WAVE</div>
+                  <div class="gh-rank-item"><span class="gh-rank-num">#847</span> BOAT</div>
+                  <div class="gh-rank-item"><span class="gh-rank-num">#5,201</span> TREE</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> WAVE is closely related (#12), TREE is far away (#5,201)</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">💡</span> You have <strong>unlimited guesses</strong>. The goal is to reach <strong>rank #1</strong> — the exact word!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Read the Ranks</h4>
+              <p>Every guess gets a <strong>rank number</strong> showing how close it is in meaning. Lower is better!</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:linear-gradient(135deg,#4ade80,#22c55e)">#1</div><span><strong style="color:#4ade80">Rank 1</strong> — You found the word! 🎉</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:linear-gradient(135deg,#ff2d95,#ff6b6b)">Low</div><span><strong style="color:#ff2d95">Hot</strong> (1-1,000) — Very close in meaning</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:linear-gradient(135deg,#a855f7,#6366f1)">Med</div><span><strong style="color:#a855f7">Warm</strong> (1K-10K) — Getting warmer</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:linear-gradient(135deg,#22d3ee,#3b82f6)">High</div><span><strong style="color:#22d3ee">Cool</strong> (10K+) — Not very related</span></div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">🔤</span> Guesses showing <strong>"???"</strong> mean the word isn't recognized. Try a different spelling!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Think in Concepts</h4>
+              <p>This isn't about letters — it's about <strong>ideas</strong>. If your guess is "warm," think of words in the same <strong>topic or category</strong> to get closer.</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Strategy example</div>
+                <div class="gh-rank-list">
+                  <div class="gh-rank-item"><span class="gh-rank-num">#3,400</span> FOOD</div>
+                  <div class="gh-rank-item hot"><span class="gh-rank-num">#180</span> FRUIT</div>
+                  <div class="gh-rank-item winner"><span class="gh-rank-num" style="color:#4ade80">#1</span> <strong>APPLE</strong> ✓</div>
+                </div>
+                <div class="gh-arrow"><span class="gh-arrow-icon">↑</span> Narrow down: FOOD → FRUIT → APPLE! 🎯</div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">🎯</span> Each guess bubble fills with <strong>water</strong> based on closeness — greener and fuller means you're getting hot!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- UnWordle -->
+        <div class="htp-game" id="htp-unwordle" style="--htp-c:#ff6b6b">
+          <div class="htp-game-header">
+            <h3>UnWordle</h3>
+            <a href="/unwordle/" class="htp-play-btn" target="_blank">Play &rarr;</a>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Reverse Wordle</h4>
+              <p>You're given the <strong>answer word</strong> (bottom row in green) and the <strong>color pattern</strong> for each row above it. Fill in words that produce those exact colors!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Example Puzzle</div>
+                <div class="gh-tile-row">
+                  <div class="gh-tile absent">?</div>
+                  <div class="gh-tile absent">?</div>
+                  <div class="gh-tile present">?</div>
+                  <div class="gh-tile absent">?</div>
+                  <div class="gh-tile absent">?</div>
+                </div>
+                <div class="gh-tile-row" style="margin-top:4px">
+                  <div class="gh-tile correct">C</div>
+                  <div class="gh-tile correct">R</div>
+                  <div class="gh-tile correct">A</div>
+                  <div class="gh-tile correct">N</div>
+                  <div class="gh-tile correct">E</div>
+                </div>
+              </div>
+              <div class="gh-tip"><span class="gh-tip-icon">💡</span> The answer is always shown at the bottom in green!</div>
+            </div>
+            <div class="htp-step">
+              <h4>Match the Colors</h4>
+              <p>Each word you enter must produce the <strong>exact color pattern</strong> shown when checked against the answer.</p>
+              <div class="gh-example">
+                <div class="gh-legend">
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#538d4e">W</div><span><strong style="color:#6aaa64">Green</strong> &mdash; Correct letter, correct spot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#b59f3b">I</div><span><strong style="color:#b59f3b">Yellow</strong> &mdash; Correct letter, wrong spot</span></div>
+                  <div class="gh-legend-item"><div class="gh-legend-swatch" style="background:#3a3a3c">X</div><span><strong style="color:#888">Gray</strong> &mdash; Letter not in the word</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Hard Mode Rules</h4>
+              <p>Rows are solved <strong>top to bottom</strong>. Revealed hints carry forward &mdash; green letters must stay in position, yellow letters must appear in later rows. Switch between <strong>Normal</strong> (3 rows) and <strong>Hard</strong> (5 rows).</p>
+              <div class="gh-tip"><span class="gh-tip-icon">⏱️</span> Race the clock &mdash; your solve time is tracked! A new daily puzzle appears each day.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Library -->
+        <div class="htp-game" id="htp-library" style="--htp-c:#8b5cf6">
+          <div class="htp-game-header">
+            <h3>Your Library</h3>
+          </div>
+          <div class="htp-steps">
+            <div class="htp-step">
+              <h4>Collect Words</h4>
+              <p>Every time you <strong>win a game</strong> or <strong>find a valid word</strong>, it gets added to your Library. Words are collected from <strong>all games</strong> &mdash; Wordle, Betwixt, Spelling Bee, and more!</p>
+            </div>
+            <div class="htp-step">
+              <h4>Level Up Your Library</h4>
+              <p>Your Library starts at <strong>Level 1</strong> and levels up as you discover more unique words. Higher levels mean <strong>more XP per second</strong>!</p>
+              <div class="gh-example">
+                <div class="gh-example-label">Level Milestones</div>
+                <div class="gh-rank-list">
+                  <div class="gh-rank-item"><span class="gh-rank-num">Lv.2</span> 100 words</div>
+                  <div class="gh-rank-item"><span class="gh-rank-num">Lv.3</span> 200 words</div>
+                  <div class="gh-rank-item"><span class="gh-rank-num">Lv.5</span> 600 words</div>
+                  <div class="gh-rank-item hot"><span class="gh-rank-num">Lv.100</span> 800,000 words</div>
+                </div>
+              </div>
+            </div>
+            <div class="htp-step">
+              <h4>Each Word Counts Once</h4>
+              <p>Finding the same word twice won't add it again &mdash; only <strong>unique</strong> words grow your library. Try different games to discover new words!</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/portal/js/portal.js?v=13"></script>
+  <script src="/chat-widget.js?v=12"></script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

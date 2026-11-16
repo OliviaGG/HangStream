@@ -1,0 +1,380 @@
+/* ============================================================
+   cosmetics-fx.css — SINGLE SOURCE for cosmetic animation keyframes.
+   Loaded by every surface that renders cosmetics (overlays, win cards,
+   portal, chat widget, store previews).
+
+   Naming:
+     cfx-*       new tier-motion-language keyframes (2026-08 rehaul)
+     cosmetic-*  legacy per-item keyframes (kept for old css payloads
+                 and generated_cosmetics rows already in player hands)
+     gen-*       loot-box generated cosmetic animations
+     aux-*       audio-reactive ambient fallbacks
+
+   OBS safety: every cfx-* keyframe animates ONLY transform, opacity,
+   filter or background-position. No box-shadow / text-shadow keyframing
+   in the cfx-* set — glow pulses are done with filter:brightness over a
+   static shadow so the repaint area stays tiny.
+   ============================================================ */
+
+/* Registered custom property so conic-gradient angles can animate. */
+@property --cfx-a {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* ---------- tier language: shared, color-agnostic ---------- */
+
+/* uncommon — slow breathing (brightens text + its static glow) */
+@keyframes cfx-breath {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.3); }
+}
+
+/* rare+ gradient text — horizontal sweep. Pair with a gradient whose
+   first and last stops match and background-size >= 200% for a seamless loop. */
+@keyframes cfx-sweep {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+/* legendary flame — vertical surge (gradient fills sized 100% x 300%) */
+@keyframes cfx-flame {
+  0%   { background-position: 0% 100%; }
+  100% { background-position: 0% 35%; }
+}
+
+/* conic border / ring rotation.
+   LEGACY: animates a registered custom property, so it silently does nothing
+   on renderers without @property (older OBS CEF). Kept for payloads still
+   applied the old way. New code renders the ring as a .pfpx-disc and uses
+   pfpx-spin below, which needs no registration. */
+@keyframes cfx-spin {
+  0%   { --cfx-a: 0deg; }
+  100% { --cfx-a: 360deg; }
+}
+
+/* ---------- profile ring: filled disc behind the avatar ---------- */
+/* See public/js/pfp-cosmetics.js for the full rationale. The disc carries the
+   ring paint; the avatar sits on top in the shell's padded content box, so the
+   visible ring is the disc's rim. Rotating the disc spins a conic gradient
+   without touching a custom property. */
+@keyframes pfpx-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.pfpx-disc {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  z-index: 0;
+  pointer-events: none;
+  /* the paint itself is set inline from the catalog payload */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pfpx-disc { animation: none !important; }
+}
+
+/* ---------- word cosmetics: transient spawn overlay ---------- */
+/* word_color / word_glow are no longer a permanent tint on a guess list.
+   PfpCosmetics.spawnWord drops this throwaway copy of the word on top of
+   the real one, wearing the cosmetic, then fades it out — so the list
+   settles to its own colour and nothing has to be cleaned up.
+   Absolutely positioned so it never affects layout; padding is copied
+   from the host inline so the copy registers exactly over the original. */
+.cfx-word-spawn {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  white-space: pre;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cfx-word-spawn { display: none !important; }
+}
+
+/* ultra shimmer — subtle scale-free pulse used ALONGSIDE cfx-sweep */
+@keyframes cfx-pulse {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50%      { filter: brightness(1.45) saturate(1.25); }
+}
+
+/* hue cycle for prismatic materials (replaces N shadow-color keyframes) */
+@keyframes cfx-hue {
+  0%   { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* hue cycle + breath combined (single-animation surfaces) */
+@keyframes cfx-hue-breath {
+  0%   { filter: hue-rotate(0deg) brightness(1); }
+  50%  { filter: hue-rotate(180deg) brightness(1.35); }
+  100% { filter: hue-rotate(360deg) brightness(1); }
+}
+
+/* glitch jitter — transform-only remake of cosmetic-glitch */
+@keyframes cfx-glitch {
+  0%, 100% { transform: translate(0, 0); }
+  20%      { transform: translate(-2px, 1px); }
+  40%      { transform: translate(2px, -1px); }
+  60%      { transform: translate(-1px, -1px); }
+  80%      { transform: translate(1px, 1px); }
+}
+
+/* irregular neon flicker (opacity-only) */
+@keyframes cfx-flicker {
+  0%, 7%, 9%, 13%, 100% { opacity: 1; }
+  8%                    { opacity: 0.55; }
+  12%                   { opacity: 0.75; }
+  47%, 51%              { opacity: 1; }
+  49%                   { opacity: 0.6; }
+}
+
+/* ---------- hero-badge scenes (single-element, bg-pos/filter only) ---------- */
+
+/* parallax drift for star/particle gradient layers */
+@keyframes cfx-drift {
+  0%   { background-position: 0px 0px, 0px 0px, 0px 0px, 0px 0px; }
+  100% { background-position: -440px 220px, -280px 140px, -180px 90px, -120px 60px; }
+}
+
+/* fast multi-stop flow — the "alive" replacement for the old 22s pan */
+@keyframes cfx-flow {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+/* vertical rain / ember streak scroll */
+@keyframes cfx-fall {
+  0%   { background-position: 0px 0px, 0px 0px; }
+  100% { background-position: 30px 340px, -20px 220px; }
+}
+
+/* rising motion (embers, bubbles) */
+@keyframes cfx-rise {
+  0%   { background-position: 0px 0px, 0px 0px; }
+  100% { background-position: 20px -340px, -30px -220px; }
+}
+
+/* lightning strikes — brightness spikes on the badge backdrop */
+@keyframes cfx-storm {
+  0%, 84%, 100% { filter: brightness(1); }
+  85%           { filter: brightness(2.4); }
+  86%           { filter: brightness(1); }
+  88%           { filter: brightness(3.2); }
+  89.5%         { filter: brightness(1.2); }
+  91%           { filter: brightness(1); }
+}
+
+/* aurora — slow lateral wash + hue shimmer */
+@keyframes cfx-aurora {
+  0%   { background-position: 0% 50%;   filter: hue-rotate(0deg) brightness(1); }
+  50%  { background-position: 100% 50%; filter: hue-rotate(40deg) brightness(1.2); }
+  100% { background-position: 200% 50%; filter: hue-rotate(0deg) brightness(1); }
+}
+
+/* deep-space slow rotation (galaxy badges) */
+@keyframes cfx-galaxy {
+  0%   { background-position: 0% 0%, 100% 100%, 50% 50%; filter: hue-rotate(0deg); }
+  100% { background-position: 100% 100%, 0% 0%, 50% 50%; filter: hue-rotate(-30deg); }
+}
+
+/* ---------- iridescent collection (2026-08) ---------- */
+
+/* Schiller — the highlight that swims across moonstone and labradorite.
+   The payload carries TWO background layers, in this order:
+     1. a narrow specular band, transparent at both ends of its own tile,
+        at background-size 300%
+     2. the base hue-travelling gradient, first stop == last stop,
+        at background-size 200%
+   One keyframe drives both. Because their background-sizes differ, the
+   same percentage resolves to a different pixel offset per layer, so the
+   band crosses once per cycle while the base loops underneath it.
+
+   The base travel is EXACT, unlike the 250%-size/200%-travel pairing used
+   by the older sweep items: with an image 2x the box, offset = (C - 2C)*p,
+   so p going 0 -> 200% moves it exactly one 2C tile and 0% is identical to
+   100%. Keep base size at 200% or the loop will visibly jump.
+
+   Pair with cfx-breath on a period that shares no small factor with this
+   one, so the highlight pass and the luminance breath keep drifting out of
+   phase instead of locking into a single obvious beat. */
+@keyframes cfx-schiller {
+  0%   { background-position: -50% center, 0% center; }
+  100% { background-position: 150% center, 200% center; }
+}
+
+/* Same inscribed-tile contract as cfx-drift, at a denser scale. A hero badge
+   is only ~240px wide (.ov-hero .ov-hero-bg), so cfx-drift's 440px lead tile
+   shows barely half a blob and the panel reads as one flat smear. These tiles
+   fit two to four across, so the layers actually cross each other and the
+   badge gains depth. Each offset is exactly one whole tile, so 0% and 100%
+   are identical and the loop cannot seam. The four sizes share no common
+   factor — give them one and the blobs re-align periodically and the badge
+   reads as a lattice instead of a drift. */
+@keyframes cfx-shimmer {
+  0%   { background-position: 0px 0px, 0px 0px, 0px 0px, 0px 0px; }
+  100% { background-position: -181px 113px, -127px 79px, -89px 57px, -61px 37px; }
+}
+
+/* ---------- OBS / reduced-motion downgrades ---------- */
+
+/* obs-mode: shorten nothing, but kill the most repaint-hungry legacy
+   animations if a payload still references them. cfx-* stays on (cheap). */
+html.obs-mode .cfx-ambient-canvas { opacity: 0.85; }
+
+@media (prefers-reduced-motion: reduce) {
+  [style*="cfx-"] { animation: none !important; }
+  .cfx-ambient-canvas { display: none !important; }
+}
+
+/* =====================================================================
+   LEGACY KEYFRAMES UNION (auto-extracted) appended below this line.
+   Do not hand-edit the block markers.
+   ===================================================================== */
+/* @legacy-keyframes-start */
+/* NOTE: box-shadow lengths below are multiplied by --pfpx-k so an animated
+   glow scales with the avatar it is on. PfpCosmetics sets that variable
+   (size / 96) on the shell; it defaults to 1 anywhere else, which reproduces
+   the original authored values exactly. An active animation overrides the
+   inline box-shadow, so without this the rescale had no effect at all. */
+@keyframes aux-bassdrop {
+  0%   { text-shadow: 0 0 6px rgba(0,255,204,0.5), 0 0 12px rgba(0,200,255,0.3); }
+  50%  { text-shadow: 0 0 20px rgba(0,255,204,1), 0 0 40px rgba(0,200,255,0.8), 0 0 60px rgba(128,0,255,0.5); }
+  100% { text-shadow: 0 0 6px rgba(0,255,204,0.5), 0 0 12px rgba(0,200,255,0.3); }
+}
+
+@keyframes aux-dj-pulse {
+  0%   { text-shadow: 0 0 6px rgba(0,255,204,0.5), 0 0 12px rgba(0,200,255,0.2); }
+  50%  { text-shadow: 0 0 14px rgba(0,255,204,0.9), 0 0 28px rgba(0,200,255,0.5), 0 0 42px rgba(128,0,255,0.3); }
+  100% { text-shadow: 0 0 6px rgba(0,255,204,0.5), 0 0 12px rgba(0,200,255,0.2); }
+}
+
+@keyframes aux-equalizer {
+  0%   { box-shadow: 0 0 calc(8px * var(--pfpx-k, 1)) rgba(0,255,204,0.4), 0 0 calc(16px * var(--pfpx-k, 1)) rgba(0,200,255,0.2); border-color: #00ffcc; }
+  33%  { box-shadow: 0 0 calc(16px * var(--pfpx-k, 1)) rgba(0,255,204,0.8), 0 0 calc(32px * var(--pfpx-k, 1)) rgba(0,200,255,0.5), inset 0 0 calc(12px * var(--pfpx-k, 1)) rgba(0,255,204,0.3); border-color: #00ccff; }
+  66%  { box-shadow: 0 0 calc(12px * var(--pfpx-k, 1)) rgba(128,0,255,0.6), 0 0 calc(24px * var(--pfpx-k, 1)) rgba(0,200,255,0.4); border-color: #8000ff; }
+  100% { box-shadow: 0 0 calc(8px * var(--pfpx-k, 1)) rgba(0,255,204,0.4), 0 0 calc(16px * var(--pfpx-k, 1)) rgba(0,200,255,0.2); border-color: #00ffcc; }
+}
+
+@keyframes aux-frequency {
+  0%   { color: #00ffcc; text-shadow: 0 0 8px rgba(0,255,204,0.8), 0 0 16px rgba(0,255,128,0.4); }
+  25%  { color: #00ccff; text-shadow: 0 0 12px rgba(0,204,255,0.9), 0 0 20px rgba(0,128,255,0.5); }
+  50%  { color: #8000ff; text-shadow: 0 0 14px rgba(128,0,255,0.9), 0 0 24px rgba(200,0,255,0.4); }
+  75%  { color: #00ff88; text-shadow: 0 0 10px rgba(0,255,136,0.8), 0 0 18px rgba(0,255,204,0.4); }
+  100% { color: #00ffcc; text-shadow: 0 0 8px rgba(0,255,204,0.8), 0 0 16px rgba(0,255,128,0.4); }
+}
+
+@keyframes aux-reverb {
+  0%   { text-shadow: 0 0 8px rgba(0,255,204,0.8), 0 0 16px rgba(0,200,255,0.3); }
+  25%  { text-shadow: 0 0 12px rgba(0,255,204,0.9), 0 0 24px rgba(0,200,255,0.5), 0 0 36px rgba(128,0,255,0.2); }
+  50%  { text-shadow: 0 0 8px rgba(0,200,255,0.6), 0 0 20px rgba(128,0,255,0.4), 0 0 32px rgba(0,255,204,0.2), 0 0 44px rgba(0,200,255,0.1); }
+  75%  { text-shadow: 0 0 10px rgba(128,0,255,0.7), 0 0 20px rgba(0,255,204,0.4), 0 0 30px rgba(0,200,255,0.2); }
+  100% { text-shadow: 0 0 8px rgba(0,255,204,0.8), 0 0 16px rgba(0,200,255,0.3); }
+}
+
+@keyframes aux-sonic-burst {
+  0%   { transform: scale(1); filter: brightness(1); }
+  15%  { transform: scale(1.5); filter: brightness(2.5); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+@keyframes aux-subwoofer {
+  0%   { box-shadow: 0 0 calc(10px * var(--pfpx-k, 1)) rgba(0,255,204,0.5), 0 0 calc(20px * var(--pfpx-k, 1)) rgba(0,200,255,0.3); }
+  50%  { box-shadow: 0 0 calc(30px * var(--pfpx-k, 1)) rgba(0,255,204,0.9), 0 0 calc(60px * var(--pfpx-k, 1)) rgba(0,200,255,0.6), 0 0 calc(90px * var(--pfpx-k, 1)) rgba(128,0,255,0.4); }
+  100% { box-shadow: 0 0 calc(10px * var(--pfpx-k, 1)) rgba(0,255,204,0.5), 0 0 calc(20px * var(--pfpx-k, 1)) rgba(0,200,255,0.3); }
+}
+
+@keyframes aux-synthwave {
+  0%   { color: #00ffcc; text-shadow: 0 0 6px rgba(0,255,204,0.6); }
+  25%  { color: #ff00ff; text-shadow: 0 0 8px rgba(255,0,255,0.6); }
+  50%  { color: #00ccff; text-shadow: 0 0 8px rgba(0,204,255,0.6); }
+  75%  { color: #ff6600; text-shadow: 0 0 6px rgba(255,102,0,0.6); }
+  100% { color: #00ffcc; text-shadow: 0 0 6px rgba(0,255,204,0.6); }
+}
+
+@keyframes aux-tag-glow {
+  0%, 100% { text-shadow: 0 0 6px rgba(0,255,204,0.4); }
+  50%      { text-shadow: 0 0 12px rgba(0,255,204,0.8), 0 0 20px rgba(0,200,255,0.4); }
+}
+
+@keyframes cosmetic-border-rotate { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+
+@keyframes cosmetic-celestial { 0% { filter: hue-rotate(0deg); box-shadow: 0 0 calc(15px * var(--pfpx-k, 1)) rgba(255,215,0,0.6), 0 0 calc(30px * var(--pfpx-k, 1)) rgba(255,150,0,0.3); } 50% { box-shadow: 0 0 calc(20px * var(--pfpx-k, 1)) rgba(255,215,0,0.8), 0 0 calc(40px * var(--pfpx-k, 1)) rgba(255,150,0,0.5); } 100% { filter: hue-rotate(360deg); box-shadow: 0 0 calc(15px * var(--pfpx-k, 1)) rgba(255,215,0,0.6), 0 0 calc(30px * var(--pfpx-k, 1)) rgba(255,150,0,0.3); } }
+
+@keyframes cosmetic-chromatic { 0% { -webkit-text-stroke-color: #ff0000; } 16% { -webkit-text-stroke-color: #ff8800; } 33% { -webkit-text-stroke-color: #ffff00; } 50% { -webkit-text-stroke-color: #00ff00; } 66% { -webkit-text-stroke-color: #0088ff; } 83% { -webkit-text-stroke-color: #8800ff; } 100% { -webkit-text-stroke-color: #ff0000; } }
+
+@keyframes cosmetic-cosmic { 0% { box-shadow: 0 0 calc(15px * var(--pfpx-k, 1)) rgba(100,0,255,0.7), 0 0 calc(30px * var(--pfpx-k, 1)) rgba(200,0,255,0.4); } 33% { box-shadow: 0 0 calc(15px * var(--pfpx-k, 1)) rgba(255,0,200,0.7), 0 0 calc(30px * var(--pfpx-k, 1)) rgba(255,0,100,0.4); } 66% { box-shadow: 0 0 calc(15px * var(--pfpx-k, 1)) rgba(0,200,255,0.7), 0 0 calc(30px * var(--pfpx-k, 1)) rgba(0,100,255,0.4); } 100% { box-shadow: 0 0 calc(15px * var(--pfpx-k, 1)) rgba(100,0,255,0.7), 0 0 calc(30px * var(--pfpx-k, 1)) rgba(200,0,255,0.4); } }
+
+@keyframes cosmetic-divine-glow { 0%, 100% { text-shadow: 0 0 10px rgba(255,255,255,0.9), 0 0 20px rgba(255,215,0,0.6); } 50% { text-shadow: 0 0 15px rgba(255,255,255,1), 0 0 30px rgba(255,215,0,0.8), 0 0 45px rgba(255,180,0,0.4); } }
+
+@keyframes cosmetic-electric-aura { 0%, 100% { box-shadow: 0 0 calc(12px * var(--pfpx-k, 1)) rgba(34,211,238,0.6), 0 0 calc(24px * var(--pfpx-k, 1)) rgba(34,211,238,0.3); } 33% { box-shadow: 0 0 calc(16px * var(--pfpx-k, 1)) rgba(34,211,238,0.8), 0 0 calc(32px * var(--pfpx-k, 1)) rgba(34,211,238,0.4); } 66% { box-shadow: 0 0 calc(10px * var(--pfpx-k, 1)) rgba(34,211,238,0.5), 0 0 calc(20px * var(--pfpx-k, 1)) rgba(34,211,238,0.25); } }
+
+@keyframes cosmetic-glitch { 0% { transform: translate(0); } 20% { transform: translate(-2px, 1px); } 40% { transform: translate(2px, -1px); } 60% { transform: translate(-1px, -1px); } 80% { transform: translate(1px, 2px); } 100% { transform: translate(0); } }
+
+@keyframes cosmetic-glitch-text { 0%, 100% { text-shadow: 2px 0 #ff0040, -2px 0 #00ffff; } 25% { text-shadow: -2px 0 #ff0040, 2px 0 #00ffff; } 50% { text-shadow: 2px 1px #ff0040, -2px -1px #00ffff; } 75% { text-shadow: -1px -1px #ff0040, 1px 1px #00ffff; } }
+
+@keyframes cosmetic-god-pulse { 0%, 100% { opacity: 0.9; text-shadow: 0 0 10px rgba(255,68,68,0.7); } 50% { opacity: 1; text-shadow: 0 0 15px rgba(255,68,68,0.9), 0 0 30px rgba(255,68,68,0.4); } }
+
+@keyframes cosmetic-inferno-pulse { 0%, 100% { box-shadow: 0 0 calc(10px * var(--pfpx-k, 1)) rgba(255,69,0,0.6), 0 0 calc(20px * var(--pfpx-k, 1)) rgba(255,69,0,0.3); } 50% { box-shadow: 0 0 calc(15px * var(--pfpx-k, 1)) rgba(255,69,0,0.8), 0 0 calc(30px * var(--pfpx-k, 1)) rgba(255,69,0,0.5); } }
+
+@keyframes cosmetic-legendary-glow { 0%, 100% { text-shadow: 0 0 8px rgba(255,215,0,0.8), 0 0 16px rgba(255,180,0,0.5); } 50% { text-shadow: 0 0 12px rgba(255,215,0,1), 0 0 24px rgba(255,180,0,0.7); } }
+
+@keyframes cosmetic-neon-flicker { 0%, 100% { opacity: 1; } 92% { opacity: 1; } 93% { opacity: 0.6; } 94% { opacity: 1; } 96% { opacity: 0.7; } 97% { opacity: 1; } }
+
+@keyframes cosmetic-plasma-border { 0%, 100% { box-shadow: 0 0 calc(10px * var(--pfpx-k, 1)) rgba(124,58,237,0.6), 0 0 calc(20px * var(--pfpx-k, 1)) rgba(124,58,237,0.3); } 50% { box-shadow: 0 0 calc(15px * var(--pfpx-k, 1)) rgba(168,85,247,0.8), 0 0 calc(30px * var(--pfpx-k, 1)) rgba(124,58,237,0.5); } }
+
+@keyframes cosmetic-prismatic { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+
+@keyframes cosmetic-supernova { 0%, 100% { box-shadow: 0 0 calc(15px * var(--pfpx-k, 1)) rgba(255,200,0,0.7), 0 0 calc(30px * var(--pfpx-k, 1)) rgba(255,100,0,0.4); } 50% { box-shadow: 0 0 calc(20px * var(--pfpx-k, 1)) rgba(255,200,0,0.9), 0 0 calc(40px * var(--pfpx-k, 1)) rgba(255,100,0,0.6); } }
+
+@keyframes cosmetic-supreme-pulse { 0%, 100% { text-shadow: 0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(255,215,0,0.4); opacity: 0.9; } 50% { text-shadow: 0 0 15px rgba(255,255,255,1), 0 0 30px rgba(255,215,0,0.6), 0 0 45px rgba(255,100,0,0.3); opacity: 1; } }
+
+@keyframes cosmetic-void-aura { 0%, 100% { box-shadow: 0 0 calc(15px * var(--pfpx-k, 1)) rgba(45,27,105,0.8), 0 0 calc(30px * var(--pfpx-k, 1)) rgba(100,0,255,0.5); } 50% { box-shadow: 0 0 calc(20px * var(--pfpx-k, 1)) rgba(100,0,255,0.9), 0 0 calc(40px * var(--pfpx-k, 1)) rgba(180,74,255,0.6), 0 0 calc(60px * var(--pfpx-k, 1)) rgba(180,74,255,0.3); } }
+
+@keyframes cosmetic-void-pulse { 0%, 100% { opacity: 0.9; } 50% { opacity: 1; } }
+
+@keyframes cosmetic-void-ring { 0%, 100% { box-shadow: 0 0 calc(12px * var(--pfpx-k, 1)) rgba(45,27,105,0.8), 0 0 calc(24px * var(--pfpx-k, 1)) rgba(100,0,255,0.4); } 50% { box-shadow: 0 0 calc(18px * var(--pfpx-k, 1)) rgba(100,0,255,0.9), 0 0 calc(36px * var(--pfpx-k, 1)) rgba(180,74,255,0.5); } }
+
+@keyframes cosmetic-wg-aurora { 0% { text-shadow: 0 0 8px rgba(0,255,135,0.7), 0 0 16px rgba(0,188,212,0.5); } 33% { text-shadow: 0 0 8px rgba(0,188,212,0.7), 0 0 16px rgba(124,77,255,0.5); } 66% { text-shadow: 0 0 8px rgba(124,77,255,0.7), 0 0 16px rgba(224,64,251,0.5); } 100% { text-shadow: 0 0 8px rgba(0,255,135,0.7), 0 0 16px rgba(0,188,212,0.5); } }
+
+@keyframes cosmetic-wg-bloodmoon { 0%, 100% { text-shadow: 0 0 8px rgba(220,38,38,0.7), 0 0 16px rgba(180,0,0,0.4); } 50% { text-shadow: 0 0 12px rgba(220,38,38,0.9), 0 0 24px rgba(180,0,0,0.6), 0 0 32px rgba(120,0,0,0.3); } }
+
+@keyframes cosmetic-wg-divine { 0%, 100% { text-shadow: 0 0 10px rgba(255,255,255,0.9), 0 0 20px rgba(255,215,0,0.6); } 50% { text-shadow: 0 0 15px rgba(255,255,255,1), 0 0 30px rgba(255,215,0,0.8), 0 0 45px rgba(255,180,0,0.4); } }
+
+@keyframes cosmetic-wg-fire { 0%, 100% { text-shadow: 0 0 8px rgba(255,100,0,0.7), 0 0 16px rgba(255,50,0,0.4); } 50% { text-shadow: 0 0 12px rgba(255,100,0,0.9), 0 0 24px rgba(255,50,0,0.6); } }
+
+@keyframes cosmetic-wg-frost { 0%, 100% { text-shadow: 0 0 8px rgba(103,232,249,0.6), 0 0 16px rgba(103,232,249,0.3); } 50% { text-shadow: 0 0 12px rgba(103,232,249,0.8), 0 0 24px rgba(103,232,249,0.5); } }
+
+@keyframes cosmetic-wg-galaxy { 0%, 100% { text-shadow: 0 0 10px rgba(180,74,255,0.7), 0 0 20px rgba(100,0,200,0.4); } 50% { text-shadow: 0 0 14px rgba(180,74,255,0.9), 0 0 28px rgba(100,0,200,0.6), 0 0 36px rgba(50,0,150,0.3); } }
+
+@keyframes cosmetic-wg-golden { 0%, 100% { text-shadow: 0 0 8px rgba(255,215,0,0.8), 0 0 16px rgba(255,180,0,0.5); } 50% { text-shadow: 0 0 12px rgba(255,215,0,1), 0 0 24px rgba(255,180,0,0.7); } }
+
+@keyframes cosmetic-wg-void { 0%, 100% { text-shadow: 0 0 10px rgba(180,74,255,0.8), 0 0 20px rgba(100,0,255,0.5); } 50% { text-shadow: 0 0 15px rgba(180,74,255,1), 0 0 30px rgba(100,0,255,0.7), 0 0 40px rgba(50,0,200,0.4); } }
+
+@keyframes gen-prismatic { 0% { filter: hue-rotate(0deg) brightness(1); } 33% { filter: hue-rotate(120deg) brightness(1.3); } 66% { filter: hue-rotate(240deg) brightness(1.1); } 100% { filter: hue-rotate(360deg) brightness(1); } }
+
+@keyframes gen-pulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.25); } }
+
+@keyframes gen-shift { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+
+@keyframes ov-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes ov-gradient-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes ov-sparkle {
+  0%, 100% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 1; transform: scale(1); }
+}
+/* @legacy-keyframes-end */

@@ -1,0 +1,49 @@
+<svg width="1200" height="480" viewBox="0 0 1200 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="pookieBg" x1="0" y1="0" x2="1200" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#171126"/>
+      <stop offset="0.48" stop-color="#2B1B3E"/>
+      <stop offset="1" stop-color="#21132F"/>
+    </linearGradient>
+    <radialGradient id="pookieBloom" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(874 146) rotate(90) scale(230 390)">
+      <stop stop-color="#FFD96B" stop-opacity="0.34"/>
+      <stop offset="0.54" stop-color="#A76BFF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#A76BFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="sigilStroke" x1="760" y1="96" x2="992" y2="236" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF0B5"/>
+      <stop offset="0.42" stop-color="#FFD96B"/>
+      <stop offset="0.78" stop-color="#B67DFF"/>
+      <stop offset="1" stop-color="#8A58FF"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="480" rx="36" fill="url(#pookieBg)"/>
+  <rect width="1200" height="480" rx="36" fill="url(#pookieBloom)"/>
+
+  <path d="M132 326C272 248 382 214 576 214C770 214 870 246 1010 326" stroke="#FFD96B" stroke-opacity="0.24" stroke-width="16" stroke-linecap="round"/>
+  <path d="M168 368C316 288 418 254 586 254C756 254 850 288 992 368" stroke="#A76BFF" stroke-opacity="0.22" stroke-width="10" stroke-linecap="round"/>
+  <path d="M232 142C338 108 436 94 566 94" stroke="rgba(255,255,255,0.12)" stroke-width="6" stroke-linecap="round"/>
+
+  <circle cx="872" cy="154" r="108" stroke="rgba(255,217,107,0.2)" stroke-width="8"/>
+  <circle cx="872" cy="154" r="84" stroke="rgba(167,107,255,0.18)" stroke-width="6"/>
+  <circle cx="872" cy="154" r="58" stroke="rgba(255,255,255,0.12)" stroke-width="4"/>
+
+  <path d="M872 66L888 112L934 112L898 140L912 186L872 158L832 186L846 140L810 112L856 112L872 66Z" fill="rgba(255,217,107,0.12)" stroke="url(#sigilStroke)" stroke-width="8" stroke-linejoin="round"/>
+  <circle cx="872" cy="154" r="22" fill="rgba(255,217,107,0.18)" stroke="#FFD96B" stroke-width="4"/>
+  <path d="M872 114V194" stroke="rgba(255,255,255,0.38)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M832 154H912" stroke="rgba(255,255,255,0.38)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M844 126L900 182" stroke="rgba(255,243,196,0.34)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M900 126L844 182" stroke="rgba(255,243,196,0.34)" stroke-width="3.5" stroke-linecap="round"/>
+
+  <circle cx="872" cy="66" r="9" fill="#FFF7D8"/>
+  <circle cx="934" cy="112" r="7" fill="#FFE38A"/>
+  <circle cx="912" cy="186" r="7" fill="#A76BFF"/>
+  <circle cx="832" cy="186" r="7" fill="#FFE38A"/>
+  <circle cx="810" cy="112" r="7" fill="#A76BFF"/>
+
+  <circle cx="744" cy="100" r="4" fill="rgba(255,255,255,0.72)"/>
+  <circle cx="1020" cy="118" r="4" fill="rgba(255,255,255,0.64)"/>
+  <circle cx="984" cy="80" r="3" fill="rgba(255,217,107,0.82)"/>
+  <circle cx="1038" cy="236" r="3" fill="rgba(167,107,255,0.78)"/>
+</svg>

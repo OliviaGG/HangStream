@@ -1,0 +1,19 @@
+{
+  "name": "TycoonIO",
+  "short_name": "TycoonIO",
+  "description": "The account and progression hub for Word Tycoon games.",
+  "id": "/?source=pwa",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d1320",
+  "theme_color": "#0d1320",
+  "icons": [
+    {
+      "src": "/app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

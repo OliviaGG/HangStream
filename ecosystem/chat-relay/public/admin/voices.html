@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice Assignments — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f14;
+    --surface: #1a1a24;
+    --surface-2: #232330;
+    --border: #2a2a3a;
+    --text: #e0e0e0;
+    --text-dim: #888;
+    --blue: #4a9eff;
+    --blue-hover: #3a8eef;
+    --green: #4fc34f;
+    --green-hover: #3eb33e;
+    --red: #e94560;
+    --red-hover: #d03450;
+    --amber: #f5b942;
+    --purple: #a78bfa;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 80px; }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(15,15,20,0.95); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .topbar h1 { font-size: 18px; font-weight: 700; }
+  .topbar .grow { flex: 1; }
+  .topbar .status { font-size: 13px; color: var(--text-dim); }
+  .topbar .status.error { color: var(--red); }
+  .topbar .status.ok { color: var(--green); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-bottom: 16px; overflow: hidden;
+  }
+  .card-header {
+    padding: 12px 16px; background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px; font-weight: 600; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .card-body { padding: 16px; }
+
+  .field-row {
+    display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .field { display: flex; flex-direction: column; gap: 6px; min-width: 220px; flex: 1; }
+  .field label { font-size: 12px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; }
+  .field input, .field select {
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 12px; border-radius: var(--radius-sm); font-size: 14px; outline: none;
+  }
+  .field input:focus, .field select:focus { border-color: var(--blue); }
+  .field select { cursor: pointer; }
+
+  .btn {
+    background: var(--blue); color: white; border: none; padding: 10px 16px;
+    border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;
+    font-size: 14px; transition: background 0.15s; white-space: nowrap;
+  }
+  .btn:hover { background: var(--blue-hover); }
+  .btn.primary { background: var(--green); }
+  .btn.primary:hover { background: var(--green-hover); }
+  .btn.danger { background: var(--red); }
+  .btn.danger:hover { background: var(--red-hover); }
+  .btn.ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+  .btn.ghost:hover { color: var(--text); border-color: var(--text-dim); }
+  .btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+  .hint { font-size: 12px; color: var(--text-dim); margin-top: 8px; }
+
+  .result-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;
+  }
+  .result-box {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px;
+  }
+  .result-box .label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+  .result-box .value { font-size: 14px; font-weight: 600; word-break: break-word; }
+  .result-box .value.muted { color: var(--text-dim); font-weight: 400; }
+  .result-box .value.green { color: var(--green); }
+  .result-box .value.amber { color: var(--amber); }
+  .result-box .value.red { color: var(--red); }
+
+  .voice-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(74,158,255,0.12); color: var(--blue);
+    padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 600;
+  }
+  .voice-chip.free { background: rgba(245,185,66,0.12); color: var(--amber); }
+  .voice-chip.premium { background: rgba(167,139,250,0.12); color: var(--purple); }
+
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-dim); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  tr:hover td { background: rgba(255,255,255,0.015); }
+  td.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
+  }
+  .badge.override { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .badge.none { background: var(--surface-2); color: var(--text-dim); }
+
+  .empty { padding: 32px; text-align: center; color: var(--text-dim); }
+
+  audio { width: 100%; margin-top: 12px; }
+
+  @media (max-width: 640px) {
+    .field-row { flex-direction: column; align-items: stretch; }
+    .field { min-width: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>🎙️ Voice Assignments</h1>
+  <span class="status" id="status">Ready</span>
+  <span class="grow"></span>
+  <a class="btn ghost" href="/admin/voice-volumes.html">Voice Volumes</a>
+  <a class="btn ghost" href="/admin/superfans.html">Super Fans</a>
+</div>
+
+<main>
+
+  <!-- Lookup -->
+  <section class="card">
+    <div class="card-header">Find Viewer</div>
+    <div class="card-body">
+      <div class="field-row">
+        <div class="field">
+          <label for="lookupInput">Discord ID, TikTok @handle, or platform key</label>
+          <input id="lookupInput" type="text" placeholder="123456789012345678 or @cuteliltoes or tiktok:..." autofocus>
+        </div>
+        <button class="btn primary" id="lookupBtn" type="button">Look up</button>
+      </div>
+      <p class="hint">Discord IDs are auto-detected. TikTok handles resolve to <code>tiktok:&lt;userId&gt;</code> if the viewer has ever chatted. Platform keys can be pasted directly.</p>
+    </div>
+  </section>
+
+  <!-- Current state -->
+  <section class="card" id="viewerCard" hidden>
+    <div class="card-header">Current Voice State</div>
+    <div class="card-body">
+      <div class="result-grid" id="viewerGrid"></div>
+
+      <div class="actions">
+        <button class="btn danger" id="revokePrefBtn" type="button">Revoke preference</button>
+        <button class="btn danger" id="revokeOverrideBtn" type="button">Revoke override</button>
+        <button class="btn danger" id="revokeBothBtn" type="button">Revoke both</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Assignment -->
+  <section class="card" id="assignCard" hidden>
+    <div class="card-header">Assign Voice</div>
+    <div class="card-body">
+      <div class="field-row">
+        <div class="field">
+          <label for="voiceSelect">Voice</label>
+          <select id="voiceSelect">
+            <option value="" disabled selected>Loading catalog…</option>
+          </select>
+        </div>
+        <button class="btn" id="previewBtn" type="button" disabled>▶ Preview</button>
+        <button class="btn primary" id="assignBtn" type="button" disabled>Assign</button>
+      </div>
+      <p class="hint" id="assignHint">For Discord IDs, premium voices also grant an access override. For unlinked TikTok platform keys, only the preference is set (platform keys are skipped by the reconcile job).</p>
+      <audio id="previewAudio" controls hidden></audio>
+    </div>
+  </section>
+
+  <!-- All assignments -->
+  <section class="card">
+    <div class="card-header">Recent Assignments</div>
+    <div class="card-body">
+      <div class="actions" style="margin-top:0; margin-bottom:12px;">
+        <button class="btn ghost" id="loadAssignmentsBtn" type="button">Load all</button>
+      </div>
+      <div class="table-wrap">
+        <table id="assignmentsTable">
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Voice</th>
+              <th>Type</th>
+              <th>Override</th>
+              <th>Updated</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="empty" id="assignmentsEmpty">Click "Load all" to fetch current assignments.</div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+const statusEl = document.getElementById('status');
+const lookupInput = document.getElementById('lookupInput');
+const lookupBtn = document.getElementById('lookupBtn');
+const viewerCard = document.getElementById('viewerCard');
+const viewerGrid = document.getElementById('viewerGrid');
+const assignCard = document.getElementById('assignCard');
+const voiceSelect = document.getElementById('voiceSelect');
+const previewBtn = document.getElementById('previewBtn');
+const assignBtn = document.getElementById('assignBtn');
+const previewAudio = document.getElementById('previewAudio');
+const assignmentsTable = document.getElementById('assignmentsTable');
+const assignmentsEmpty = document.getElementById('assignmentsEmpty');
+
+let currentKey = null;
+let allVoices = [];
+
+function status(text, cls) {
+  statusEl.textContent = text;
+  statusEl.className = 'status' + (cls ? ' ' + cls : '');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+function looksLikeDiscordId(s) {
+  return /^\d{17,20}$/.test(String(s).trim());
+}
+
+function parseLookup(raw) {
+  const s = String(raw).trim();
+  if (looksLikeDiscordId(s)) return { discord_id: s };
+  return { tiktok_handle: s.replace(/^@+/, '') }; // handles & platform keys
+}
+
+async function api(path, opts) {
+  const r = await fetch(path, { credentials: 'include', ...opts });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+  return data;
+}
+
+async function loadCatalog() {
+  try {
+    const data = await api('/api/voice/catalog');
+    allVoices = data.voices || [];
+    renderVoiceSelect();
+  } catch (e) {
+    voiceSelect.innerHTML = '<option value="" disabled selected>Failed to load catalog</option>';
+    status('Catalog load failed: ' + e.message, 'error');
+  }
+}
+
+function renderVoiceSelect() {
+  const free = allVoices.filter(v => v.kind === 'web');
+  const premium = allVoices.filter(v => v.kind !== 'web' && !isCustom(v));
+  const custom = allVoices.filter(isCustom);
+
+  voiceSelect.innerHTML = '<option value="" disabled selected>Pick a voice…</option>';
+  voiceSelect.appendChild(group('Free voices', free));
+  voiceSelect.appendChild(group('Premium voices', premium));
+  if (custom.length) voiceSelect.appendChild(group('Custom clones', custom));
+
+  previewBtn.disabled = false;
+  assignBtn.disabled = false;
+}
+
+function isCustom(v) {
+  return v.kind !== 'web' && (Array.isArray(v.allowedDiscordIds) || v.ownerLabel);
+}
+
+function group(label, voices) {
+  const g = document.createElement('optgroup');
+  g.label = label;
+  for (const v of voices) {
+    const o = document.createElement('option');
+    o.value = v.id;
+    o.textContent = `${v.label} · ${v.accent || ''} ${v.gender === 'female' ? '♀' : (v.gender === 'male' ? '♂' : '⚪')}`.trim();
+    g.appendChild(o);
+  }
+  return g;
+}
+
+async function lookup() {
+  const raw = lookupInput.value;
+  if (!raw.trim()) return;
+  lookupBtn.disabled = true;
+  status('Looking up…');
+  try {
+    const params = new URLSearchParams(parseLookup(raw));
+    const data = await api(`/api/admin/voice-user?${params}`);
+    currentKey = data.key;
+    renderViewer(data);
+    viewerCard.hidden = false;
+    assignCard.hidden = false;
+    status('Found viewer', 'ok');
+  } catch (e) {
+    status(e.message, 'error');
+    viewerCard.hidden = true;
+    assignCard.hidden = true;
+    currentKey = null;
+  } finally {
+    lookupBtn.disabled = false;
+  }
+}
+
+function renderViewer(data) {
+  const pref = data.preference;
+  const override = data.override;
+  const access = data.access || {};
+  const isPlatform = data.kind === 'platform';
+
+  const accessText = isPlatform
+    ? '<span class="value amber">Platform key (unlinked)</span>'
+    : (access.canSaveVoice
+        ? `<span class="value green">${access.tier || 'premium'} (${access.source || ''})</span>`
+        : `<span class="value red">${access.reason || 'no access'}</span>`);
+
+  const prefHtml = pref
+    ? `<span class="voice-chip ${pref.voice?.kind === 'web' ? 'free' : 'premium'}">${escapeHtml(pref.voice?.label || pref.voice_id)}</span>`
+    : '<span class="value muted">None</span>';
+
+  const overrideHtml = override
+    ? `<span class="badge override">Granted</span><br><span class="value" style="font-size:12px">${escapeHtml(override.note || '')}</span>`
+    : '<span class="badge none">No override</span>';
+
+  const keyLabel = isPlatform ? 'Platform key' : 'Discord ID';
+
+  viewerGrid.innerHTML = `
+    <div class="result-box"><div class="label">${keyLabel}</div><div class="value mono">${escapeHtml(data.key)}</div></div>
+    ${data.tiktok_handle ? `<div class="result-box"><div class="label">TikTok</div><div class="value">@${escapeHtml(data.tiktok_handle)}</div></div>` : ''}
+    ${data.platform_user_id ? `<div class="result-box"><div class="label">TikTok user id</div><div class="value mono">${escapeHtml(data.platform_user_id)}</div></div>` : ''}
+    <div class="result-box"><div class="label">Voice access</div>${accessText}</div>
+    <div class="result-box"><div class="label">Saved voice</div>${prefHtml}</div>
+    ${!isPlatform ? `<div class="result-box"><div class="label">Admin override</div>${overrideHtml}</div>` : ''}
+    ${pref ? `<div class="result-box"><div class="label">Updated</div><div class="value muted">${escapeHtml(pref.updated_at || '')}</div></div>` : ''}
+  `;
+}
+
+async function previewVoice() {
+  const voiceId = voiceSelect.value;
+  if (!voiceId) return;
+  previewAudio.hidden = false;
+  previewAudio.src = `/api/voice/preview?voice_id=${encodeURIComponent(voiceId)}&_=${Date.now()}`;
+  previewAudio.play().catch(() => {});
+}
+
+async function assignVoice() {
+  if (!currentKey) return;
+  const voiceId = voiceSelect.value;
+  if (!voiceId) return;
+  assignBtn.disabled = true;
+  status('Assigning…');
+  try {
+    await api('/api/admin/voice-assign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: currentKey, voice_id: voiceId }),
+    });
+    status('Assigned', 'ok');
+    await lookup(); // refresh
+  } catch (e) {
+    status(e.message, 'error');
+  } finally {
+    assignBtn.disabled = false;
+  }
+}
+
+async function revoke(what) {
+  if (!currentKey) return;
+  if (!confirm(`Revoke ${what.replace(/_/g, ' ')} for ${currentKey}?`)) return;
+  try {
+    await api('/api/admin/voice-revoke', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: currentKey, what }),
+    });
+    status(`Revoked ${what}`, 'ok');
+    await lookup(); // refresh
+  } catch (e) {
+    status(e.message, 'error');
+  }
+}
+
+async function loadAssignments() {
+  assignmentsEmpty.textContent = 'Loading…';
+  try {
+    const data = await api('/api/admin/voice-assignments');
+    const list = data.assignments || [];
+    assignmentsEmpty.hidden = list.length > 0;
+    assignmentsEmpty.textContent = list.length ? '' : 'No assignments yet.';
+
+    const tbody = assignmentsTable.querySelector('tbody');
+    tbody.innerHTML = '';
+    for (const a of list.slice().reverse().slice(0, 200)) {
+      const voice = allVoices.find(v => v.id === a.voice_id);
+      const tr = document.createElement('tr');
+      const keyDisplay = a.is_platform
+        ? `<span class="value amber" style="font-size:12px">${escapeHtml(a.key)}</span>`
+        : escapeHtml(a.key);
+      tr.innerHTML = `
+        <td class="mono">${keyDisplay}</td>
+        <td>${escapeHtml(voice?.label || a.voice_id)}</td>
+        <td>${voice?.kind === 'web' ? 'Free' : 'Premium'}</td>
+        <td>${a.override ? `<span class="badge override">${escapeHtml(a.override.note?.slice(0, 30) || 'yes')}</span>` : '<span class="badge none">no</span>'}</td>
+        <td>${escapeHtml(a.updated_at || '')}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+  } catch (e) {
+    assignmentsEmpty.textContent = 'Failed to load: ' + e.message;
+  }
+}
+
+lookupBtn.addEventListener('click', lookup);
+lookupInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') lookup(); });
+previewBtn.addEventListener('click', previewVoice);
+assignBtn.addEventListener('click', assignVoice);
+document.getElementById('revokePrefBtn').addEventListener('click', () => revoke('preference'));
+document.getElementById('revokeOverrideBtn').addEventListener('click', () => revoke('override'));
+document.getElementById('revokeBothBtn').addEventListener('click', () => revoke('both'));
+document.getElementById('loadAssignmentsBtn').addEventListener('click', loadAssignments);
+
+loadCatalog();
+</script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

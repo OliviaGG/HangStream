@@ -1,0 +1,175 @@
+/* ═══════════════════════════════════════════════════════════════════
+   HANGSTREAM SKIN — re-tokenizes the Word Tycoon "toon" design system
+   with the HangStream palette (hangstream.me):
+     dark  → #0e0e12 bg, #1a1a22 cards, #ff4d6d / #7c5cff accents
+     light → #f8fafc bg, #ffffff cards, same accents
+   Load AFTER toon.css. Only token + font overrides — every toon
+   component (topbar, elevator, buttons, chips, toasts) picks the
+   new palette up automatically.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* HangStream accents */
+  --pink: #ff4d6d;
+  --purple: #7c5cff;
+  --accent: #ff4d6d;
+  --accent-2: #ff6b85;
+  --accent-3: #7c5cff;
+
+  /* DAY = HangStream light theme */
+  --ink: #0f1724;
+  --paper: #f8fafc;
+  --paper-2: #eef2f7;
+  --card: #ffffff;
+  --text: #0f1724;
+  --muted: #64748b;
+  --sky-top: #bfdbfe;
+  --sky-mid: #dbeafe;
+  --sky-low: #eff6ff;
+  --bldg: #cbd5e1;
+  --bldg-2: #b6c2d2;
+  --win-off: #e2e8f0;
+  --win-on: #e2e8f0;
+  --win-glow: none;
+  --street: #94a3b8;
+  --sidewalk: #e2e8f0;
+  --lamp-glow: transparent;
+  --star-op: 0;
+  --sunmoon-day: 1;
+  --sunmoon-night: 0;
+  --marquee-bg: #fff1f2;
+  --chart-bg: #f8fafc;
+  --landing-bg: #eef2f7;
+  --tint: transparent;
+}
+
+body.night {
+  /* NIGHT = HangStream dark theme */
+  --ink: #f0ede8;
+  --paper: #0e0e12;
+  --paper-2: #14141c;
+  --card: #1a1a22;
+  --text: #f0ede8;
+  --muted: #92a0af;
+  --sky-top: #0b0b12;
+  --sky-mid: #141422;
+  --sky-low: #1e1e30;
+  --bldg: #1e1e2c;
+  --bldg-2: #181824;
+  --win-off: #26263a;
+  --win-on: #ffd84d;
+  --win-glow: 0 0 8px rgba(255, 216, 77, .8);
+  --street: #101018;
+  --sidewalk: #1c1c28;
+  --lamp-glow: rgba(255, 180, 120, .5);
+  --star-op: 1;
+  --sunmoon-day: 0;
+  --sunmoon-night: 1;
+  --marquee-bg: #17131f;
+  --chart-bg: #12121a;
+  --landing-bg: #14141c;
+  --tint: rgba(0, 0, 0, .25);
+}
+
+/* HangStream typography */
+body {
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+/* ─── DECLUTTER ──────────────────────────────────────────────────────
+   HangStream has no Toon Tower scenery — strip the elevator rail,
+   stars, blimp, neighbors, walkers, clouds, ticker, butlers, cats,
+   doors transition and landing floor-plates so pages read as clean
+   HangStream cards. */
+.elevator,
+.landing,
+.floor-plate,
+.neighbor,
+.stars,
+#lobbyStars,
+.blimp,
+.walkers,
+.walker,
+.cloud-layer,
+.ticker-wrap,
+.butler,
+.cat,
+.doors,
+.doors-floorcard,
+.lobby-sky {
+  display: none !important;
+}
+
+/* ─── FLATTEN TOON PRIMITIVES → HangStream cards ─────────────────────
+   The toon look is 2.5px ink outlines + hard offset shadows. HangStream
+   uses 1px subtle borders, 12–20px radii and soft shadows. */
+.toon,
+.stat,
+.plate,
+.chip,
+.btn,
+.dir-btn,
+.dir-here-tag,
+.marquee,
+.chart-card,
+.panel,
+.card,
+.toast,
+.modal-card,
+.keycard {
+  border-width: 1px !important;
+  border-color: var(--card-border) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16) !important;
+}
+
+.toon,
+.stat,
+.plate,
+.marquee,
+.chart-card,
+.panel,
+.card {
+  border-radius: 16px !important;
+}
+
+.btn {
+  border-radius: 12px !important;
+}
+
+.chip {
+  border-radius: 999px;
+}
+
+/* Kill the glossy two-tone 45% fills — HangStream uses flat accents */
+.btn-hero,
+.btn-blue,
+.btn-purp,
+.btn-green,
+.btn-red {
+  background: var(--accent) !important;
+  color: #fff !important;
+  text-shadow: none !important;
+}
+
+.btn-ghost {
+  background: var(--card) !important;
+  color: var(--text) !important;
+}
+
+/* Pages relied on the elevator for section nav — give the topbar a
+   plain link row instead of a dead gap. */
+.topbar nav {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* HangStream-flavored focus rings & selection */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+::selection {
+  background: rgba(255, 77, 109, .35);
+}

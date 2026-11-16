@@ -1,0 +1,35 @@
+<svg width="1200" height="480" viewBox="0 0 1200 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mooncourtBg" x1="0" y1="0" x2="1200" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#171025"/>
+      <stop offset="0.5" stop-color="#2A193D"/>
+      <stop offset="1" stop-color="#20122F"/>
+    </linearGradient>
+    <radialGradient id="mooncourtBloom" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(882 152) rotate(90) scale(232 396)">
+      <stop stop-color="#FFD96B" stop-opacity="0.28"/>
+      <stop offset="0.56" stop-color="#A76BFF" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#A76BFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="480" rx="36" fill="url(#mooncourtBg)"/>
+  <rect width="1200" height="480" rx="36" fill="url(#mooncourtBloom)"/>
+
+  <path d="M126 330C286 248 398 216 578 216C756 216 868 248 1028 330" stroke="#FFD96B" stroke-opacity="0.2" stroke-width="16" stroke-linecap="round"/>
+  <path d="M172 372C322 294 432 258 592 258C754 258 860 294 1004 372" stroke="#A76BFF" stroke-opacity="0.18" stroke-width="10" stroke-linecap="round"/>
+
+  <path d="M812 210C812 142 846 92 882 92C918 92 952 142 952 210" stroke="rgba(255,217,107,0.8)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M836 210C836 154 862 118 882 118C902 118 928 154 928 210" stroke="rgba(255,255,255,0.32)" stroke-width="5" stroke-linecap="round"/>
+  <path d="M778 224H986" stroke="rgba(255,217,107,0.26)" stroke-width="14" stroke-linecap="round"/>
+  <path d="M804 248H960" stroke="rgba(167,107,255,0.22)" stroke-width="10" stroke-linecap="round"/>
+
+  <path d="M846 154L882 124L918 154" stroke="rgba(255,255,255,0.56)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M882 124V208" stroke="rgba(255,255,255,0.42)" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M856 168H908" stroke="rgba(255,217,107,0.5)" stroke-width="4" stroke-linecap="round"/>
+
+  <circle cx="882" cy="92" r="8" fill="#FFF2B8"/>
+  <circle cx="952" cy="210" r="7" fill="#A76BFF"/>
+  <circle cx="812" cy="210" r="7" fill="#FFD96B"/>
+  <circle cx="986" cy="224" r="6" fill="rgba(255,255,255,0.76)"/>
+  <circle cx="778" cy="224" r="6" fill="rgba(255,255,255,0.76)"/>
+</svg>

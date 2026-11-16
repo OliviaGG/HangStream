@@ -1,0 +1,49 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="prismStroke" x1="22" y1="18" x2="234" y2="238" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F0FBFF"/>
+      <stop offset="0.34" stop-color="#9EE0FF"/>
+      <stop offset="0.7" stop-color="#7E79FF"/>
+      <stop offset="1" stop-color="#A067FF"/>
+    </linearGradient>
+    <radialGradient id="prismAura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(128 128) rotate(90) scale(126)">
+      <stop stop-color="#9EE0FF" stop-opacity="0.18"/>
+      <stop offset="0.56" stop-color="#7E79FF" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#7E79FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <circle cx="128" cy="128" r="118" fill="url(#prismAura)"/>
+  <rect x="18" y="18" width="220" height="220" rx="68" stroke="url(#prismStroke)" stroke-width="8"/>
+  <rect x="28" y="28" width="200" height="200" rx="60" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+  <rect x="40" y="40" width="176" height="176" rx="54" stroke="rgba(158,224,255,0.18)" stroke-width="1.5"/>
+
+  <path d="M62 48L96 34L122 56" stroke="url(#prismStroke)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M194 48L160 34L134 56" stroke="url(#prismStroke)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M208 62L222 96L200 122" stroke="url(#prismStroke)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M208 194L222 160L200 134" stroke="url(#prismStroke)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M62 208L96 222L122 200" stroke="url(#prismStroke)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M194 208L160 222L134 200" stroke="url(#prismStroke)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M48 62L34 96L56 122" stroke="url(#prismStroke)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M48 194L34 160L56 134" stroke="url(#prismStroke)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <path d="M74 62L98 74" stroke="rgba(240,251,255,0.7)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M182 74L158 62" stroke="rgba(240,251,255,0.7)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M194 182L182 158" stroke="rgba(160,103,255,0.56)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M74 182L62 158" stroke="rgba(160,103,255,0.56)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M98 220L112 198" stroke="rgba(255,255,255,0.34)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M158 220L144 198" stroke="rgba(255,255,255,0.34)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M220 98L198 112" stroke="rgba(158,224,255,0.42)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M220 158L198 144" stroke="rgba(158,224,255,0.42)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M36 98L58 112" stroke="rgba(158,224,255,0.42)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M36 158L58 144" stroke="rgba(158,224,255,0.42)" stroke-width="3.5" stroke-linecap="round"/>
+
+  <circle cx="96" cy="34" r="5" fill="#F0FBFF"/>
+  <circle cx="160" cy="34" r="5" fill="#9EE0FF"/>
+  <circle cx="222" cy="96" r="5" fill="#7E79FF"/>
+  <circle cx="222" cy="160" r="5" fill="#A067FF"/>
+  <circle cx="160" cy="222" r="5" fill="#A067FF"/>
+  <circle cx="96" cy="222" r="5" fill="#9EE0FF"/>
+  <circle cx="34" cy="160" r="5" fill="#7E79FF"/>
+  <circle cx="34" cy="96" r="5" fill="#F0FBFF"/>
+</svg>

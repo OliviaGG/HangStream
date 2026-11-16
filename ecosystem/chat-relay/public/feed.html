@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Feed — Word Tycoon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #06080e;
+    --surface: rgba(14, 18, 28, 0.78);
+    --surface2: rgba(20, 26, 38, 0.72);
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #edf0f7;
+    --text-dim: #94a0b8;
+    --accent: #a5e1ff;
+    --accent-mint: #86efac;
+    --accent-gold: #fde68a;
+    --accent-coral: #fda4af;
+    --accent-lavender: #c4b5fd;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { min-height: 100%; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(6,8,14,0.92);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+  }
+  .topbar-inner {
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .topbar h1 { font-size: 17px; font-weight: 700; }
+  .topbar .grow { flex: 1; }
+  .live-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent-mint);
+    box-shadow: 0 0 0 0 rgba(134,239,172,0.5);
+    animation: pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(134,239,172,0.4); }
+    50% { opacity: 0.5; box-shadow: 0 0 0 6px rgba(134,239,172,0); }
+  }
+  .topbar a { color: var(--accent); text-decoration: none; font-size: 13px; font-weight: 600; }
+  .topbar a:hover { text-decoration: underline; }
+
+  main { max-width: 720px; margin: 0 auto; padding: 22px 16px 60px; }
+
+  .hero {
+    text-align: center;
+    margin-bottom: 22px;
+  }
+  .hero h2 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+  .hero p { color: var(--text-dim); font-size: 14px; }
+
+  .composer, .signin-prompt {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px;
+    margin-bottom: 18px;
+  }
+  .composer-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .composer textarea {
+    flex: 1;
+    min-width: 0;
+    min-height: 74px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+    resize: vertical;
+    outline: none;
+  }
+  .composer textarea:focus { border-color: rgba(165,225,255,0.45); }
+  .composer-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 10px;
+  }
+  .composer-limit {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .composer-limit.near { color: var(--accent-gold); }
+  .composer-limit.over { color: var(--accent-coral); }
+  .composer button {
+    background: var(--accent);
+    color: #06080e;
+    border: none;
+    border-radius: var(--radius);
+    padding: 8px 18px;
+    font: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .composer button:disabled { opacity: 0.45; cursor: default; }
+  .composer-error {
+    color: var(--accent-coral);
+    font-size: 13px;
+    margin-top: 8px;
+  }
+  .signin-prompt {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+  .signin-prompt a {
+    color: var(--accent);
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .signin-prompt a:hover { text-decoration: underline; }
+
+  .feed-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .feed-card {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px 12px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .feed-card::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: var(--feed-accent, var(--accent));
+    opacity: 0.85;
+  }
+  .feed-card[data-etype="win"]      { --feed-accent: var(--accent-mint); }
+  .feed-card[data-etype="jackpot"]  { --feed-accent: var(--accent-gold); }
+  .feed-card[data-etype="daily"]    { --feed-accent: var(--accent); }
+  .feed-card[data-etype="streak"]   { --feed-accent: var(--accent-coral); }
+  .feed-card[data-etype="buy"],
+  .feed-card[data-etype="levelup"]  { --feed-accent: var(--accent-lavender); }
+  .feed-card[data-etype="cosmetic"],
+  .feed-card[data-etype="lootbox"]  { --feed-accent: var(--accent-gold); }
+  .feed-card[data-etype="post"]     { --feed-accent: var(--accent); }
+
+  .feed-avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--surface2);
+  }
+  .feed-avatar-fallback {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 15px;
+    background: var(--surface2);
+    color: var(--text-dim);
+  }
+  .feed-body { min-width: 0; flex: 1; }
+  .feed-line { font-size: 14px; line-height: 1.45; }
+  .feed-icon { margin-right: 4px; }
+  .feed-name { font-weight: 700; color: var(--text); }
+  .feed-value { color: var(--accent-mint); font-weight: 700; }
+  .feed-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .feed-game-chip {
+    background: var(--surface2);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+
+  .empty, .loading, .error {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+  .error { color: var(--accent-coral); }
+
+  .load-more {
+    display: block;
+    width: 100%;
+    margin-top: 14px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .load-more:hover { background: var(--surface2); }
+  .load-more:disabled { opacity: 0.5; cursor: default; }
+
+  footer {
+    max-width: 720px;
+    margin: 28px auto 0;
+    padding: 0 16px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 520px) {
+    .hero h2 { font-size: 19px; }
+    main { padding: 18px 12px 50px; }
+  }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <span class="live-dot" aria-hidden="true"></span>
+      <h1>Live Feed</h1>
+      <span class="grow"></span>
+      <a href="/">← Word Tycoon</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="hero">
+      <h2>What's happening in the tower</h2>
+      <p>Wins, jackpots, dailies, business upgrades, and unlocks from across Word Tycoon.</p>
+    </div>
+
+    <div id="composer" class="composer" style="display:none">
+      <div class="composer-row">
+        <span id="composerAvatar"></span>
+        <textarea id="postText" maxlength="280" placeholder="Share something with the tower…"></textarea>
+      </div>
+      <div class="composer-actions">
+        <span id="charLimit" class="composer-limit">0 / 280</span>
+        <button id="postBtn" type="button">Post</button>
+      </div>
+      <div id="composerError" class="composer-error" style="display:none"></div>
+    </div>
+
+    <div id="signinPrompt" class="signin-prompt" style="display:none">
+      <a href="/portal/index.html">Sign in</a> to post an update.
+    </div>
+
+    <div id="feed" class="feed-list">
+      <div class="loading">Loading the feed…</div>
+    </div>
+    <button id="loadMore" class="load-more" style="display:none">Load more</button>
+  </main>
+
+  <footer>
+    <a href="/">Return to the tower</a> · <a href="/portal/index.html">Open the portal</a>
+  </footer>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var ICONS = {
+      win: '🏆', jackpot: '💰', daily: '📅', streak: '🔥',
+      buy: '🏢', levelup: '📈', cosmetic: '💎', lootbox: '🎁',
+      post: '💬'
+    };
+
+    var feedEl = document.getElementById('feed');
+    var loadMoreBtn = document.getElementById('loadMore');
+    var composerEl = document.getElementById('composer');
+    var signinEl = document.getElementById('signinPrompt');
+    var postTextEl = document.getElementById('postText');
+    var postBtnEl = document.getElementById('postBtn');
+    var charLimitEl = document.getElementById('charLimit');
+    var composerAvatarEl = document.getElementById('composerAvatar');
+    var composerErrorEl = document.getElementById('composerError');
+    var oldestId = null;
+    var latestId = null;
+    var seenIds = {};
+    var loading = false;
+    var exhausted = false;
+    var initialLoaded = false;
+    var currentUser = null;
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    function timeAgo(ts) {
+      var s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+      if (s < 45) return 'just now';
+      if (s < 3600) return Math.floor(s / 60) + 'm ago';
+      if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+      var d = Math.floor(s / 86400);
+      return d === 1 ? 'yesterday' : d + 'd ago';
+    }
+
+    function avatarHtml(user) {
+      var name = (user && (user.displayName || user.username)) || 'P';
+      var initial = esc(String(name).charAt(0).toUpperCase());
+      if (user && user.profilePic) {
+        return '<img class="feed-avatar" src="' + esc(user.profilePic) + '" alt="" loading="lazy" ' +
+          'onerror="this.outerHTML=\'<span class=&quot;feed-avatar-fallback&quot;>' + initial + '</span>\'">';
+      }
+      return '<span class="feed-avatar-fallback">' + initial + '</span>';
+    }
+
+    function sentenceFor(evt) {
+      var d = evt.detail || {};
+      var game = esc(evt.gameName || evt.game || '');
+      var val = '';
+      if (evt.eventType === 'win') {
+        var guesses = (typeof d.guessCount === 'number' && d.guessCount > 0) ? ' in ' + d.guessCount + (d.guessCount === 1 ? ' guess' : ' guesses') : '';
+        if (evt.value != null) val = ' <span class="feed-value">+' + Math.round(evt.value).toLocaleString() + ' ' + esc(evt.valueLabel || 'pts') + '</span>';
+        return 'won ' + game + guesses + val;
+      }
+      if (evt.eventType === 'jackpot') {
+        if (evt.value != null) val = ' <span class="feed-value">+' + Math.round(evt.value).toLocaleString() + ' coins</span>';
+        return 'hit the ' + game + ' JACKPOT!' + val;
+      }
+      if (evt.eventType === 'daily') {
+        if (evt.value != null) val = ' <span class="feed-value">+' + Math.round(evt.value).toLocaleString() + ' coins</span>';
+        return 'completed the ' + game + ' daily' + val;
+      }
+      if (evt.eventType === 'streak') {
+        var n = evt.value != null ? Math.round(evt.value) : '';
+        return 'is on a ' + n + '-win streak in ' + game + '!';
+      }
+      if (evt.eventType === 'buy') {
+        return 'bought ' + esc(d.businessName || 'a business');
+      }
+      if (evt.eventType === 'levelup') {
+        return 'leveled ' + esc(d.businessName || 'a business') + ' to <span class="feed-value">Lv.' + esc(String(d.level || evt.value || '?')) + '</span>';
+      }
+      if (evt.eventType === 'cosmetic') {
+        return 'unlocked ' + esc(d.cosmeticName || 'a cosmetic');
+      }
+      if (evt.eventType === 'lootbox') {
+        return 'unboxed ' + esc(d.cosmeticName || 'a cosmetic');
+      }
+      if (evt.eventType === 'post') {
+        return 'posted: <span style="color:var(--text-dim)">' + esc(d.text || '') + '</span>';
+      }
+      return esc(evt.eventType);
+    }
+
+    function renderCard(evt) {
+      var name = (evt.user && (evt.user.displayName || evt.user.username)) || 'Player';
+      var chip = evt.gameName || evt.game || '';
+      var card = document.createElement('article');
+      card.className = 'feed-card';
+      card.dataset.etype = evt.eventType;
+      card.innerHTML =
+        avatarHtml(evt.user) +
+        '<div class="feed-body">' +
+          '<div class="feed-line"><span class="feed-icon">' + (ICONS[evt.eventType] || '⭐') + '</span>' +
+            '<span class="feed-name">' + esc(name) + '</span> ' + sentenceFor(evt) + '</div>' +
+          '<div class="feed-meta">' +
+            (chip ? '<span class="feed-game-chip">' + esc(chip) + '</span>' : '') +
+            '<span class="feed-time" data-ts="' + evt.ts + '">' + timeAgo(evt.ts) + '</span>' +
+          '</div>' +
+        '</div>';
+      return card;
+    }
+
+    function updateTimes() {
+      document.querySelectorAll('.feed-time').forEach(function (el) {
+        el.textContent = timeAgo(parseInt(el.dataset.ts, 10));
+      });
+    }
+
+    // Prepend new events (newest-first API order) so the very latest ends up at the top.
+    function prependEvents(events) {
+      for (var i = events.length - 1; i >= 0; i--) {
+        var evt = events[i];
+        if (seenIds[evt.id]) continue;
+        seenIds[evt.id] = true;
+        feedEl.insertBefore(renderCard(evt), feedEl.firstChild);
+      }
+    }
+
+    // Append events in API order (newest-first) so older items land at the bottom.
+    function appendEvents(events) {
+      events.forEach(function (evt) {
+        if (seenIds[evt.id]) return;
+        seenIds[evt.id] = true;
+        feedEl.appendChild(renderCard(evt));
+      });
+    }
+
+    function setEmpty() {
+      feedEl.innerHTML = '<div class="empty">The tower is quiet right now. Go make some noise.</div>';
+      loadMoreBtn.style.display = 'none';
+    }
+
+    function setError() {
+      feedEl.innerHTML = '<div class="error">Could not load the feed.</div>';
+      loadMoreBtn.style.display = 'none';
+    }
+
+    function updateIds(events) {
+      if (!events.length) return;
+      if (latestId == null || events[0].id > latestId) latestId = events[0].id;
+      if (oldestId == null || events[events.length - 1].id < oldestId) oldestId = events[events.length - 1].id;
+    }
+
+    function updateCharLimit() {
+      var len = postTextEl.value.length;
+      charLimitEl.textContent = len + ' / 280';
+      charLimitEl.className = 'composer-limit' + (len >= 260 ? ' near' : '') + (len >= 280 ? ' over' : '');
+      postBtnEl.disabled = len === 0 || len > 280;
+    }
+
+    function submitPost() {
+      var text = postTextEl.value.trim();
+      if (!text || postBtnEl.disabled) return;
+      postBtnEl.disabled = true;
+      postBtnEl.textContent = 'Posting…';
+      composerErrorEl.style.display = 'none';
+
+      fetch('/api/feed/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          postBtnEl.disabled = false;
+          postBtnEl.textContent = 'Post';
+          if (!j || !j.ok) {
+            composerErrorEl.textContent = (j && j.reason) || (j && j.error) || 'Post failed.';
+            composerErrorEl.style.display = 'block';
+            return;
+          }
+          postTextEl.value = '';
+          updateCharLimit();
+          if (j.event) {
+            prependEvents([j.event]);
+            if (latestId == null || j.event.id > latestId) latestId = j.event.id;
+            var emptyEl = feedEl.querySelector('.empty');
+            if (emptyEl) emptyEl.remove();
+          }
+        })
+        .catch(function () {
+          postBtnEl.disabled = false;
+          postBtnEl.textContent = 'Post';
+          composerErrorEl.textContent = 'Post failed. Please try again.';
+          composerErrorEl.style.display = 'block';
+        });
+    }
+
+    function initComposer(user) {
+      currentUser = user;
+      if (!user) {
+        signinEl.style.display = 'block';
+        return;
+      }
+      composerAvatarEl.innerHTML = avatarHtml(user);
+      composerEl.style.display = 'block';
+      postTextEl.addEventListener('input', updateCharLimit);
+      postBtnEl.addEventListener('click', submitPost);
+      postTextEl.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submitPost();
+      });
+      updateCharLimit();
+    }
+
+    function loadMore() {
+      if (loading || exhausted || !oldestId) return;
+      loading = true;
+      loadMoreBtn.disabled = true;
+      loadMoreBtn.textContent = 'Loading…';
+
+      fetch('/api/feed?limit=30&before=' + encodeURIComponent(oldestId))
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          loading = false;
+          loadMoreBtn.disabled = false;
+          loadMoreBtn.textContent = 'Load more';
+
+          if (!j || !j.ok || !Array.isArray(j.events)) return;
+          appendEvents(j.events);
+          updateIds(j.events);
+
+          if (j.events.length < 30) {
+            exhausted = true;
+            loadMoreBtn.style.display = 'none';
+          }
+        })
+        .catch(function () {
+          loading = false;
+          loadMoreBtn.disabled = false;
+          loadMoreBtn.textContent = 'Load more';
+        });
+    }
+
+    function refresh() {
+      if (loading || latestId == null) return;
+      fetch('/api/feed?limit=30')
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (!j || !j.ok || !Array.isArray(j.events) || !j.events.length) return;
+          if (j.events[0].id === latestId) return; // nothing new
+          prependEvents(j.events);
+          updateIds(j.events);
+        })
+        .catch(function () {});
+    }
+
+    function init() {
+      fetch('/api/me/session')
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          initComposer(j && j.ok ? j.user : null);
+        })
+        .catch(function () {
+          initComposer(null);
+        });
+
+      loading = true;
+      fetch('/api/feed?limit=30')
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          loading = false;
+          if (!j || !j.ok || !Array.isArray(j.events)) {
+            return setError();
+          }
+
+          feedEl.innerHTML = '';
+          if (!j.events.length) {
+            return setEmpty();
+          }
+
+          appendEvents(j.events);
+          updateIds(j.events);
+          initialLoaded = true;
+
+          if (j.events.length < 30) {
+            exhausted = true;
+            loadMoreBtn.style.display = 'none';
+          } else {
+            loadMoreBtn.style.display = 'block';
+          }
+        })
+        .catch(function () {
+          loading = false;
+          setError();
+        });
+    }
+
+    loadMoreBtn.addEventListener('click', loadMore);
+
+    init();
+    setInterval(refresh, 90000);
+    setInterval(updateTimes, 60000);
+  })();
+  </script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

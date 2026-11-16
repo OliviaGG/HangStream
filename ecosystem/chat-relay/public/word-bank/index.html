@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Word Bank Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header id="header">
+      <h1>Word Bank</h1>
+      <div class="header-stats">
+        <span id="total-targets" class="stat-badge">0 targets</span>
+        <span id="total-dictionary" class="stat-badge dim">0 dictionary</span>
+      </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div id="main">
+      <!-- Left Panel: Controls + Quick Add -->
+      <aside id="sidebar">
+        <!-- Length Selector -->
+        <div class="panel">
+          <h3>Word Length</h3>
+          <div id="length-tabs" class="length-tabs"></div>
+        </div>
+
+        <!-- Quick Add -->
+        <div class="panel">
+          <h3>Quick Add</h3>
+          <div class="quick-add">
+            <input type="text" id="quick-add-input" placeholder="Type a word..." autocomplete="off" spellcheck="false">
+            <button id="quick-add-btn" class="btn btn-add" disabled>Add</button>
+          </div>
+          <div id="quick-add-status" class="status-msg"></div>
+        </div>
+
+        <!-- Filters -->
+        <div class="panel">
+          <h3>Filters</h3>
+          <label class="checkbox-row">
+            <input type="checkbox" id="filter-plurals" checked>
+            <span>Hide plurals</span>
+          </label>
+          <div class="search-row">
+            <input type="text" id="search-input" placeholder="Search..." autocomplete="off" spellcheck="false">
+          </div>
+        </div>
+
+        <!-- Stats for current length -->
+        <div class="panel">
+          <h3>Stats</h3>
+          <div id="length-stats" class="length-stats">
+            <div class="stat-row">
+              <span class="stat-label">Targets</span>
+              <span id="stat-targets" class="stat-value">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Dictionary</span>
+              <span id="stat-dict" class="stat-value">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Candidates</span>
+              <span id="stat-candidates" class="stat-value">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Batch Actions -->
+        <div class="panel" id="batch-panel" style="display:none">
+          <h3>Batch Actions</h3>
+          <div id="selection-count" class="selection-count">0 selected</div>
+          <div class="batch-buttons">
+            <button id="batch-add" class="btn btn-add">Add Selected</button>
+            <button id="batch-clear" class="btn btn-dim">Clear Selection</button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Center: Word Lists -->
+      <div id="content">
+        <!-- Tab bar for Candidates vs Current Targets -->
+        <div class="content-tabs">
+          <button class="content-tab active" data-view="candidates">Candidates</button>
+          <button class="content-tab" data-view="targets">Current Targets</button>
+        </div>
+
+        <!-- Candidates View -->
+        <div id="candidates-view" class="word-view active">
+          <div class="word-grid" id="candidates-grid"></div>
+          <div class="pagination" id="candidates-pagination"></div>
+        </div>
+
+        <!-- Current Targets View -->
+        <div id="targets-view" class="word-view">
+          <div class="word-grid" id="targets-grid"></div>
+          <div class="pagination" id="targets-pagination"></div>
+        </div>
+      </div>
+
+      <!-- Right Panel: Recent Activity -->
+      <aside id="activity-panel">
+        <div class="panel">
+          <h3>Recent Activity</h3>
+          <div id="activity-feed" class="activity-feed">
+            <div class="feed-empty">No activity yet</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

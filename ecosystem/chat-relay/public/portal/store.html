@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Vault — Word Tycoon</title>
+<meta name="description" content="The Word Tycoon cosmetics store — word colors, glows, borders, titles, win effects, hero badges, gift sets and the Fan Club collections.">
+<link rel="canonical" href="https://wordtycoon.live/store">
+<meta name="robots" content="noindex, follow">
+<meta name="theme-color" content="#fdf6e9">
+<link rel="manifest" href="/portal/manifest.webmanifest?v=4">
+<link rel="icon" href="/portal/img/logo-favicon.png?v=2">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link rel="stylesheet" href="/portal/css/toon.css?v=6">
+  <link rel="stylesheet" href="/portal/css/hangstream-skin.css">
+<!-- cfx-* keyframes the cosmetic payloads reference by name. Without this
+     every animated cosmetic renders static and nothing errors. -->
+<link rel="stylesheet" href="/css/cosmetics-fx.css?v=2">
+<!-- Store components + Fan Club heroes, extracted VERBATIM from portal.css.
+     All dark-theme vars are scoped under .vault-room so they can't fight
+     toon.css (both define --text). -->
+<link rel="stylesheet" href="/portal/css/store.css?v=2">
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   THE VAULT — /store
+   Floor V of the tower. The shell (topbar, plate, elevator, footer) is
+   toon paper; the store itself is a dark vault interior — cosmetics are
+   previewed on dark everywhere else in the game, so the room they're
+   sold in keeps the same light. store.css carries the room's fittings.
+   ════════════════════════════════════════════════════════════════════ */
+main { position: relative; z-index: 2; }
+
+/* ══ FLOOR PLATE ═════════════════════════════════════════════════════ */
+.vault-plate {
+  position: relative; margin: 18px 0 0;
+  background: var(--landing-bg);
+  background-image: repeating-linear-gradient(90deg, transparent 0 42px, rgba(27,20,48,.043) 42px 84px);
+  border-top: 2.5px solid var(--ink); border-bottom: 2.5px solid var(--ink);
+  box-shadow: inset 0 4px 0 rgba(255,255,255,.3), inset 0 -8px 14px rgba(27,20,48,.06);
+  height: 74px; overflow: hidden;
+  transition: background 1s ease;
+}
+.vault-plate .fp {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%) rotate(-2deg);
+  display: flex; align-items: center; gap: 10px;
+  border: 2.5px solid var(--ink); border-radius: 12px;
+  padding: 8px 20px; font-weight: 900; font-size: .88rem;
+  letter-spacing: 1px; text-transform: uppercase; color: #fff;
+  text-shadow: 0 1.5px 0 rgba(0,0,0,.25);
+  background: linear-gradient(180deg, #b3a6f6 0 45%, var(--purple) 45%);
+  box-shadow: 0 4px 0 var(--ink); white-space: nowrap;
+}
+.vault-plate .fp b {
+  display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid var(--ink); background: var(--card); color: var(--ink);
+  text-shadow: none; font-size: .82rem;
+}
+
+/* ══ DAY / NIGHT BUTTON ══════════════════════════════════════════════ */
+.sky-btn { padding: 9px 14px; font-size: 1rem; line-height: 1; }
+.sky-btn .sky-day { display: none; }
+.sky-btn .sky-night { display: inline; }
+body.night .sky-btn .sky-day { display: inline; }
+body.night .sky-btn .sky-night { display: none; }
+
+/* ══ THE VAULT ROOM ══════════════════════════════════════════════════
+   A toon-framed dark interior. Component styles + scoped dark vars come
+   from store.css; this is just the room's outer wall. */
+.vault-room {
+  border: 2.5px solid var(--ink); border-radius: 20px;
+  background: var(--bg);
+  box-shadow: 0 7px 0 var(--ink), inset 0 0 0 2px var(--border), inset 0 30px 60px rgba(0,0,0,.08);
+  padding: 22px; overflow: hidden;
+}
+body.night .vault-room {
+  box-shadow: 0 7px 0 var(--ink), inset 0 0 0 2px rgba(255,255,255,.04), inset 0 30px 60px rgba(0,0,0,.4);
+}
+.vr-sets-title {
+  margin: 36px 0 14px; font-size: 1.1rem; font-weight: 900;
+  letter-spacing: .6px; color: var(--text);
+}
+
+/* ══ GUEST / LOADING ═════════════════════════════════════════════════ */
+.loading-note { text-align: center; color: var(--muted); font-weight: 700; padding: 26px 0; }
+.guest { text-align: center; max-width: 620px; margin: 0 auto; }
+.guest .keycards { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 22px; }
+.guest .keycard {
+  border: 2.5px solid var(--ink); border-radius: 16px; padding: 16px 18px 15px;
+  background: var(--card); box-shadow: 0 6px 0 var(--ink), inset 0 4px 0 rgba(255,255,255,.4);
+  width: 200px; text-align: center; font-weight: 800;
+  transition: transform .12s, box-shadow .12s, background 1s ease;
+}
+.guest .keycard:hover { transform: translateY(-3px); box-shadow: 0 9px 0 var(--ink), inset 0 4px 0 rgba(255,255,255,.4); }
+.guest .keycard .kc-dot {
+  width: 34px; height: 34px; border-radius: 50%; margin: 0 auto 9px;
+  border: 2.5px solid var(--ink); background: var(--kc, var(--amber));
+  box-shadow: 0 3px 0 var(--ink);
+}
+
+/* ══ REDUCED MOTION ══════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .guest .keycard { transition: none; }
+}
+</style>
+</head>
+<body>
+<!-- Restore the visitor's time of day before anything paints. Inline and
+     first-thing-in-body on purpose: an external or deferred script would
+     let the page flash daylight before flipping to night. -->
+<script>try{var t=localStorage.getItem('wt-night');var p=(localStorage.getItem('wordtycoon_theme')||localStorage.getItem('portal-theme'));var n=t===null?p!=='light':t==='1';if(n)document.body.classList.add('night')}catch(e){}</script>
+<noscript><p style="padding:24px;text-align:center;font-weight:700">The vault needs JavaScript. <a href="/">Back to the tower</a>.</p></noscript>
+
+<!-- ═══ ELEVATOR ═══ -->
+<aside class="elevator" id="elevator" aria-label="Floor navigation">
+  <div class="elev-label">Floor</div>
+  <div class="elev-btns">
+    <a class="elev-btn eb-r" href="/#rooftop" title="Rooftop" aria-label="Ride to the Rooftop">R</a>
+    <a class="elev-btn eb-p" href="/#penthouse" title="Penthouse" aria-label="Ride to the Penthouse">P</a>
+    <a class="elev-btn eb-v lit" href="/#vault" title="The Vault" aria-label="Ride to the Vault">V</a>
+    <a class="elev-btn eb-2" href="/#empire" title="The Empire" aria-label="Ride to the Empire">2</a>
+    <a class="elev-btn eb-1" href="/#games" title="The Game Floor" aria-label="Ride to the Game Floor">1</a>
+    <a class="elev-btn eb-l" href="/" title="Lobby" aria-label="Ride to the Lobby">L</a>
+  </div>
+  <div class="elev-floorname">The Vault</div>
+</aside>
+
+<div class="shell">
+  <!-- ═══ TOPBAR ═══ -->
+  <header class="topbar">
+    <a class="brand" href="/">
+      <span class="brand-mark"><img src="/portal/img/wt-logo.svg?v=1" alt="" width="46" height="46"></span>
+      <span>Word<b>Tycoon</b></span>
+    </a>
+    <nav>
+      <a class="btn btn-ghost btn-nav-sec" href="/profile">🛎️ Your Suite</a>
+      <a class="btn btn-ghost btn-nav-sec" href="/membership">👑 Membership</a>
+      <!-- This floor has no sky, so the day/night toggle lives in the
+           topbar — otherwise night mode could never be undone here. -->
+      <button class="btn btn-ghost sky-btn" id="skyToggle" type="button" aria-pressed="false" title="Toggle day / night">
+        <span class="sky-day">☀️</span><span class="sky-night">🌙</span>
+      </button>
+      <a class="btn" href="/">🏢 The Tower</a>
+    </nav>
+  </header>
+</div>
+
+<div class="vault-plate"><span class="fp"><b>V</b>The Vault</span></div>
+
+<main>
+  <section class="floor" id="vault-floor">
+    <div class="shell">
+      <div class="sec-head">
+        <span class="sec-kicker" style="background:linear-gradient(180deg,#b3a6f6 0 45%,var(--purple) 45%)">Floor V</span>
+        <h2 class="sec-title">The <span class="cd">Vault</span></h2>
+        <p class="sec-sub">Word colors, glows, borders, titles, win effects and hero badges — preview anything on your own profile before you spend a coin.</p>
+      </div>
+
+      <!-- ═══ SIGNED OUT ═══ -->
+      <div id="vaultGuest" hidden>
+        <div class="guest">
+          <p class="sec-sub" style="margin:0">The vault door only opens for account holders — sign in and your XP is ready to spend.</p>
+          <div class="keycards">
+            <a class="keycard" href="/auth/google?returnTo=%2Fstore" style="--kc:#ea4335"><div class="kc-dot"></div>Continue with Google</a>
+            <a class="keycard" href="/auth/discord?returnTo=%2Fstore" style="--kc:#5865f2"><div class="kc-dot"></div>Continue with Discord</a>
+            <a class="keycard" href="/auth/github?returnTo=%2Fstore" style="--kc:#24292f"><div class="kc-dot"></div>Continue with GitHub</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ LOADING ═══ -->
+      <p class="loading-note" id="vaultBooting">Spinning the vault door…</p>
+
+      <!-- ═══ THE STORE (SPA structure, same ids — store.js drives it) ═══ -->
+      <div class="vault-room" id="vaultRoom" hidden>
+        <!-- Store Header -->
+        <div class="store-hero">
+          <div class="store-hero-bg"></div>
+          <div class="store-hero-content">
+            <h2 class="store-hero-title">Cosmetics Store</h2>
+            <p class="store-hero-sub">Upgrade your look. Boost your game.</p>
+            <div class="store-coins-row">
+              <div class="store-coins-display">
+                <span class="store-coins-icon"><span class="wt-symbol wt-symbol-sm wt-symbol-xp"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="13" r="4.1" fill="currentColor"/><circle cx="14.8" cy="9" r="3.6" fill="#79d7ff"/><circle cx="16.5" cy="15.2" r="2.8" fill="#b88cff"/><circle cx="7.2" cy="8.3" r="2.4" fill="#ffd36e"/></svg></span></span>
+                <span id="store-coin-balance" class="store-coins-value">-</span>
+              </div>
+              <div class="store-coins-display store-gift-coins-display">
+                <span class="store-coins-icon">&#x1F381;</span>
+                <span id="store-gift-balance" class="store-coins-value">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <section id="store-guidance" class="reward-guide-card reward-guide-card-store">
+          <div class="loading-placeholder">Loading store guide...</div>
+        </section>
+
+        <!-- Store Preview Panel -->
+        <div class="store-preview-panel">
+          <div id="store-preview-badge-bg" class="preview-badge-bg"></div>
+          <div class="preview-profile">
+            <div class="preview-avatar-wrap store-preview-avatar-wrap">
+              <img id="store-preview-avatar" class="preview-avatar" src="" alt="">
+            </div>
+            <div class="preview-info">
+              <div id="store-preview-title" class="preview-title-container"></div>
+              <div id="store-preview-name" class="preview-name">Player</div>
+              <div id="store-preview-word" class="preview-word">WORDY</div>
+            </div>
+          </div>
+          <button id="store-preview-reset" class="store-preview-reset-btn">Reset Preview</button>
+        </div>
+
+        <!-- Store Filters -->
+        <div class="store-filters">
+          <div class="store-filter-row">
+            <div class="store-filter-group">
+              <label>Category</label>
+              <select id="store-cat-filter">
+                <option value="all">All Categories</option>
+                <option value="word_color">Word Colors</option>
+                <option value="word_glow">Word Glows</option>
+                <option value="profile_border">Borders</option>
+                <option value="profile_glow">Glows</option>
+                <option value="name_glow">Name Glows</option>
+                <option value="name_color">Name Colors</option>
+                <option value="title">Titles</option>
+                <option value="win_effect">Win Effects</option>
+                <option value="hero_badge">Hero Badge</option>
+                <option value="gift">&#x1F381; Gift Items</option>
+              </select>
+            </div>
+            <div class="store-filter-group">
+              <label>Rarity</label>
+              <select id="store-rarity-filter">
+                <option value="all">All Rarities</option>
+                <option value="common">Common</option>
+                <option value="uncommon">Uncommon</option>
+                <option value="rare">Rare</option>
+                <option value="epic">Epic</option>
+                <option value="legendary">Legendary</option>
+                <option value="ultra">Ultra</option>
+                <option value="aux">AUX</option>
+              </select>
+            </div>
+            <div class="store-filter-group">
+              <label>Set</label>
+              <select id="store-set-filter">
+                <option value="all">All Items</option>
+                <option value="none">No Set</option>
+                <option value="pixel">Pixel</option>
+                <option value="steampunk">Steampunk</option>
+                <option value="sakura">Sakura</option>
+                <option value="storm">Storm</option>
+                <option value="dragon">Dragon</option>
+                <option value="quantum">Quantum</option>
+                <option value="america">Stars &amp; Stripes</option>
+                <option value="canada">Great North</option>
+              </select>
+            </div>
+            <div class="store-filter-group">
+              <label>Buff</label>
+              <select id="store-buff-filter">
+                <option value="all">All Buffs</option>
+                <option value="tap_boost">Tap Power</option>
+                <option value="word_game_boost">Word Game Money</option>
+                <option value="biz_boost">Biz Income</option>
+                <option value="offline_boost">Offline Income</option>
+                <option value="combo_boost">Combo Max</option>
+                <option value="coin_bonus">All XP</option>
+                <option value="prestige">All Income</option>
+                <option value="lucky_bonus">Lucky 2x</option>
+                <option value="library_boost">Library Income</option>
+              </select>
+            </div>
+          </div>
+          <div class="store-filter-row store-sort-row">
+            <div class="store-filter-group">
+              <label>Sort by</label>
+              <select id="store-sort">
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="rarity-asc">Rarity: Common First</option>
+                <option value="rarity-desc">Rarity: Ultra First</option>
+                <option value="buff-desc">Buff: Strongest First</option>
+                <option value="buff-asc">Buff: Weakest First</option>
+                <option value="name-asc">Name: A-Z</option>
+              </select>
+            </div>
+            <div class="store-result-count"><span id="store-count">0</span> items</div>
+          </div>
+        </div>
+
+        <!-- Store Grid -->
+        <div id="store-grid" class="store-grid">
+          <div class="loading-placeholder">Loading store...</div>
+        </div>
+
+        <!-- Store Sets Section -->
+        <div id="store-sets-section"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="foot-walk">🚶‍♀️ 🚶 🐈‍⬛</div>
+  <a href="/">The Tower</a> · <a href="/profile">Your Suite</a> · <a href="/membership">Membership</a> · <a href="/goat">GOAT</a> · <a href="/how-to-play">How to Play</a> · <a href="/library">Library</a>
+  <div style="margin-top:8px">
+    <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="https://discord.gg/C8Nm2jEZFC" target="_blank" rel="noopener">Discord</a> · <span>&copy; 2026 Word Tycoon</span>
+  </div>
+</footer>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="/portal/js/toon.js?v=5"></script>
+<!-- The Switchboard: Lobby chat (site-only) + Live Feed (stream relay). -->
+<script src="/chat-widget.js?v=21" defer></script>
+<!-- The canonical cosmetic pipeline, same files the portal SPA loads.
+     win-effects.js powers the in-card win effect previews; the appliers
+     make gradients, conic rings and titles render exactly as in game. -->
+<script src="/win-effects.js?v=3"></script>
+<script src="/js/ambient-fx.js?v=3"></script>
+<script src="/js/pfp-cosmetics.js?v=15"></script>
+<script src="/portal/js/cosmetic-renderer.js?v=8"></script>
+<script src="/portal/js/store.js?v=1"></script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>

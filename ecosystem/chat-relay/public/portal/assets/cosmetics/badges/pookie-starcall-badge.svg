@@ -1,0 +1,38 @@
+<svg width="1200" height="480" viewBox="0 0 1200 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="starcallBg" x1="0" y1="0" x2="1200" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#171126"/>
+      <stop offset="0.48" stop-color="#2A193F"/>
+      <stop offset="1" stop-color="#21132F"/>
+    </linearGradient>
+    <radialGradient id="starcallBloom" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(884 150) rotate(90) scale(234 396)">
+      <stop stop-color="#FFE08A" stop-opacity="0.3"/>
+      <stop offset="0.58" stop-color="#A76BFF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#A76BFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="480" rx="36" fill="url(#starcallBg)"/>
+  <rect width="1200" height="480" rx="36" fill="url(#starcallBloom)"/>
+
+  <path d="M138 326C292 248 396 214 582 214C768 214 872 248 1024 326" stroke="#FFE08A" stroke-opacity="0.2" stroke-width="16" stroke-linecap="round"/>
+  <path d="M170 366C324 292 430 258 594 258C758 258 858 292 996 366" stroke="#A76BFF" stroke-opacity="0.18" stroke-width="10" stroke-linecap="round"/>
+
+  <circle cx="884" cy="150" r="106" stroke="rgba(255,217,107,0.18)" stroke-width="8"/>
+  <circle cx="884" cy="150" r="74" stroke="rgba(167,107,255,0.18)" stroke-width="6"/>
+
+  <path d="M884 84L896 126L940 126L904 150L918 196L884 170L850 196L864 150L828 126L872 126L884 84Z" fill="rgba(255,217,107,0.14)" stroke="rgba(255,233,164,0.88)" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M884 112L892 136L918 136L896 150L904 176L884 162L864 176L872 150L850 136L876 136L884 112Z" fill="rgba(255,255,255,0.1)" stroke="rgba(169,116,255,0.86)" stroke-width="5.5" stroke-linejoin="round"/>
+
+  <path d="M796 154H836" stroke="rgba(255,255,255,0.34)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M932 154H972" stroke="rgba(255,255,255,0.34)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M884 62V40" stroke="rgba(255,255,255,0.3)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M846 90L822 68" stroke="rgba(255,217,107,0.32)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M922 90L946 68" stroke="rgba(167,107,255,0.42)" stroke-width="4" stroke-linecap="round"/>
+
+  <circle cx="884" cy="40" r="5" fill="#FFF4CC"/>
+  <circle cx="822" cy="68" r="5" fill="#FFE08A"/>
+  <circle cx="946" cy="68" r="5" fill="#A76BFF"/>
+  <circle cx="796" cy="154" r="5" fill="rgba(255,255,255,0.72)"/>
+  <circle cx="972" cy="154" r="5" fill="rgba(255,255,255,0.72)"/>
+</svg>

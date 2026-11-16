@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Library — Word Tycoon</title>
+<meta name="description" content="Your Word Tycoon library — every unique word you've found across all sixteen games, and what each one pays.">
+<link rel="canonical" href="https://wordtycoon.live/library">
+<meta name="robots" content="noindex, follow">
+<meta name="theme-color" content="#fdf6e9">
+<link rel="manifest" href="/portal/manifest.webmanifest?v=4">
+<link rel="icon" href="/portal/img/logo-favicon.png?v=2">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link rel="stylesheet" href="/portal/css/toon.css?v=6">
+  <link rel="stylesheet" href="/portal/css/hangstream-skin.css">
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   THE LIBRARY — /library
+   The stacks: every unique word the player has ever found, plus the
+   scoring ledger that explains what each one pays. Tokens, primitives,
+   topbar, elevator and footer come from /portal/css/toon.css; below is
+   only this page's own shelving.
+   ════════════════════════════════════════════════════════════════════ */
+main { position: relative; z-index: 2; }
+
+/* ══ FLOOR PLATE ═════════════════════════════════════════════════════ */
+.lib-plate {
+  position: relative; margin: 18px 0 0;
+  background: var(--landing-bg);
+  background-image: repeating-linear-gradient(90deg, transparent 0 42px, rgba(27,20,48,.043) 42px 84px);
+  border-top: 2.5px solid var(--ink); border-bottom: 2.5px solid var(--ink);
+  box-shadow: inset 0 4px 0 rgba(255,255,255,.3), inset 0 -8px 14px rgba(27,20,48,.06);
+  height: 74px; overflow: hidden;
+  transition: background 1s ease;
+}
+.lib-plate .fp {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%) rotate(-2deg);
+  display: flex; align-items: center; gap: 10px;
+  border: 2.5px solid var(--ink); border-radius: 12px;
+  padding: 8px 20px; font-weight: 900; font-size: .88rem;
+  letter-spacing: 1px; text-transform: uppercase; color: #123c24;
+  background: linear-gradient(180deg, #b7f3cf 0 45%, var(--mint) 45%);
+  box-shadow: 0 4px 0 var(--ink); white-space: nowrap;
+}
+.lib-plate .fp b {
+  display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid var(--ink); background: var(--card); color: var(--ink);
+  font-size: .82rem;
+}
+
+/* ══ DAY / NIGHT BUTTON ══════════════════════════════════════════════ */
+.sky-btn { padding: 9px 14px; font-size: 1rem; line-height: 1; }
+.sky-btn .sky-day { display: none; }
+.sky-btn .sky-night { display: inline; }
+body.night .sky-btn .sky-day { display: inline; }
+body.night .sky-btn .sky-night { display: none; }
+
+/* ══ THE CARD CATALOG (hero) ═════════════════════════════════════════ */
+.lib-hero {
+  display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center;
+  max-width: 720px; margin: 0 auto 22px;
+  border: 2.5px solid var(--ink); border-radius: 18px;
+  background: var(--card);
+  box-shadow: 0 6px 0 var(--ink), inset 0 4px 0 rgba(255,255,255,.35);
+  padding: 20px 22px;
+  transition: background 1s ease;
+}
+.lib-hero-icon {
+  width: 84px; height: 84px; display: grid; place-items: center;
+  font-size: 2.6rem; border: 2.5px solid var(--ink); border-radius: 18px;
+  background: linear-gradient(180deg, #b3a6f6 0 45%, var(--purple) 45%);
+  box-shadow: 0 4px 0 var(--ink);
+}
+.lib-hero h2 { font-size: 1.35rem; font-weight: 900; letter-spacing: -.3px; }
+.lib-hero-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+.lib-bar {
+  height: 20px; border: 2.5px solid var(--ink); border-radius: 999px;
+  background: var(--paper-2); overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(27,20,48,.14);
+}
+.lib-bar-fill {
+  height: 100%; width: 0;
+  background: linear-gradient(180deg, #ffd84d 0 45%, var(--amber) 45%);
+  border-right: 2.5px solid var(--ink);
+  transition: width .6s cubic-bezier(.2,1,.4,1);
+}
+.lib-bar-fill.full { border-right: none; }
+.lib-bar-label { font-size: .74rem; font-weight: 800; color: var(--muted); margin-top: 6px; }
+
+/* ══ TABS ════════════════════════════════════════════════════════════ */
+.lib-tabs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 720px; margin: 0 auto 20px; }
+.lib-tab {
+  border: 2px solid var(--ink); border-radius: 999px;
+  padding: 7px 18px; font-size: .84rem; font-weight: 900; cursor: pointer;
+  background: var(--card); color: var(--text);
+  box-shadow: 0 3px 0 var(--ink);
+  transition: transform .1s, box-shadow .1s, background .15s;
+}
+.lib-tab:hover { transform: translateY(-2px); box-shadow: 0 5px 0 var(--ink); }
+.lib-tab.on {
+  background: linear-gradient(180deg, #ffd84d 0 45%, var(--amber) 45%); color: #3d2c00;
+  box-shadow: 0 3px 0 var(--ink), 0 0 0 2px rgba(255,216,77,.5);
+}
+
+/* ══ WORDS TAB ═══════════════════════════════════════════════════════ */
+.lib-pane { max-width: 720px; margin: 0 auto; }
+.lib-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.lib-search {
+  flex: 1 1 220px; min-width: 0;
+  border: 2.5px solid var(--ink); border-radius: 999px;
+  padding: 9px 16px; font: inherit; font-weight: 700; font-size: .9rem;
+  background: var(--card); color: var(--text);
+  box-shadow: inset 0 2px 4px rgba(27,20,48,.14);
+}
+.lib-search:focus { outline: none; box-shadow: inset 0 2px 4px rgba(27,20,48,.14), 0 0 0 3px rgba(255,216,77,.55); }
+.lib-game-filter {
+  border: 2px solid var(--ink); border-radius: 999px;
+  padding: 5px 12px; font: inherit; font-size: .8rem; font-weight: 800;
+  background: var(--card); color: var(--text);
+  box-shadow: 0 3px 0 var(--ink); cursor: pointer;
+}
+.lib-word-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.lib-word-card {
+  border: 2.5px solid var(--ink); border-radius: 14px;
+  background: var(--card);
+  box-shadow: 0 4px 0 var(--ink), inset 0 3px 0 rgba(255,255,255,.32);
+  padding: 12px 10px 10px; text-align: center;
+  transform: rotate(var(--rr, 0deg));
+  transition: transform .12s, box-shadow .12s, background 1s ease;
+}
+.lib-word-card:hover { transform: rotate(0deg) translateY(-3px); box-shadow: 0 7px 0 var(--ink), inset 0 3px 0 rgba(255,255,255,.32); }
+.lib-word-card:nth-child(4n+1) { --rr: -1deg; }
+.lib-word-card:nth-child(4n+2) { --rr: 1deg; }
+.lib-word-card:nth-child(4n+3) { --rr: -1.5deg; }
+.lib-word-card:nth-child(4n+4) { --rr: 1.5deg; }
+.lib-word-text { font-weight: 900; font-size: 1.02rem; letter-spacing: 1px; word-break: break-word; }
+.lib-word-meta { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 5px; font-size: .64rem; font-weight: 800; color: var(--muted); }
+.lib-word-game { text-transform: uppercase; letter-spacing: .5px; }
+.lib-pagination { display: flex; justify-content: center; gap: 10px; margin-top: 18px; }
+.lib-page-btn {
+  border: 2.5px solid var(--ink); border-radius: 999px;
+  padding: 7px 18px; font-size: .8rem; font-weight: 900; cursor: pointer;
+  background: var(--card); color: var(--text);
+  box-shadow: 0 4px 0 var(--ink);
+  transition: transform .12s, box-shadow .12s;
+}
+.lib-page-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 var(--ink); }
+
+/* ══ STATS TAB ═══════════════════════════════════════════════════════ */
+.lib-section { margin: 0 0 26px; }
+.lib-section-title {
+  font-size: .8rem; font-weight: 900; letter-spacing: 1.4px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 12px; text-align: center;
+}
+.lib-stat-row { display: grid; grid-template-columns: 130px 1fr 56px; gap: 10px; align-items: center; margin-bottom: 9px; }
+.lib-stat-label { font-size: .8rem; font-weight: 800; text-align: right; }
+.lib-stat-bar-bg {
+  height: 16px; border: 2px solid var(--ink); border-radius: 999px;
+  background: var(--paper-2); overflow: hidden;
+}
+.lib-stat-bar-fill { height: 100%; background: linear-gradient(180deg, #7cc0ff 0 45%, var(--blue) 45%); border-right: 2px solid var(--ink); }
+.lib-stat-count { font-size: .8rem; font-weight: 900; color: var(--muted); }
+.lib-recent-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+
+/* ══ SCORING TAB ═════════════════════════════════════════════════════ */
+.lib-scoring-desc { font-size: .86rem; font-weight: 600; color: var(--muted); margin: 0 0 10px; text-align: center; }
+.lib-formula {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center;
+  margin: 12px 0 4px;
+}
+.lib-formula-part {
+  border: 2px solid var(--ink); border-radius: 999px; padding: 5px 13px;
+  font-size: .78rem; font-weight: 800; background: var(--paper-2);
+  box-shadow: 0 3px 0 var(--ink);
+}
+.lib-formula-op { font-weight: 900; font-size: 1.1rem; color: var(--muted); }
+.lib-formula-result {
+  border: 2.5px solid var(--ink); border-radius: 999px; padding: 6px 15px;
+  font-size: .8rem; font-weight: 900; color: #3d2c00;
+  background: linear-gradient(180deg, #ffd84d 0 45%, var(--amber) 45%);
+  box-shadow: 0 3px 0 var(--ink);
+}
+.lib-table-wrap { overflow-x: auto; }
+.lib-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.lib-table th {
+  text-align: left; padding: 8px; font-size: .68rem; font-weight: 900;
+  text-transform: uppercase; letter-spacing: .8px; color: var(--muted);
+  border-bottom: 2.5px solid var(--ink);
+}
+.lib-table td { padding: 8px; border-bottom: 2px solid rgba(27,20,48,.12); font-weight: 600; }
+body.night .lib-table td { border-bottom-color: rgba(242,237,255,.14); }
+.lib-table tr:last-child td { border-bottom: none; }
+.lib-scoring-pts { font-weight: 900; white-space: nowrap; }
+.lib-letter-chip {
+  display: inline-grid; place-items: center; width: 26px; height: 26px;
+  border: 2.5px solid; border-radius: 8px; margin: 1px;
+  font-weight: 900; font-size: .78rem; background: var(--card);
+}
+.lib-tier-badge {
+  display: inline-block; padding: 2px 10px; border-radius: 999px;
+  border: 2px solid var(--ink); font-size: .64rem; font-weight: 900;
+  text-transform: uppercase; letter-spacing: .5px; color: #fff;
+  text-shadow: 0 1px 0 rgba(0,0,0,.35);
+}
+.lib-tier-badge-sm { font-size: .58rem; padding: 1px 8px; }
+.lib-example {
+  max-width: 420px; margin: 0 auto;
+  border: 2.5px solid var(--ink); border-radius: 14px;
+  background: var(--paper-2); padding: 12px 16px;
+  box-shadow: inset 0 3px 0 rgba(255,255,255,.35);
+}
+.lib-example-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 5px 0; font-size: .84rem; font-weight: 700; }
+.lib-example-row + .lib-example-row { border-top: 2px dashed rgba(27,20,48,.15); }
+body.night .lib-example-row + .lib-example-row { border-top-color: rgba(242,237,255,.16); }
+.lib-example-total { font-weight: 900; font-size: .95rem; }
+.lib-example-total .lib-example-val { color: var(--amber); }
+
+/* ══ EMPIRE CTA ══════════════════════════════════════════════════════ */
+.lib-cta {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 16px;
+  max-width: 720px; margin: 34px auto 0;
+  border: 2.5px solid var(--ink); border-radius: 18px;
+  background: var(--card);
+  box-shadow: 0 6px 0 var(--ink), inset 0 4px 0 rgba(255,255,255,.35);
+  padding: 16px 20px;
+  transition: background 1s ease;
+}
+.lib-cta-icon { font-size: 2rem; }
+.lib-cta-copy { flex: 1 1 260px; }
+.lib-cta-title { font-weight: 900; }
+.lib-cta-text { font-size: .84rem; font-weight: 600; color: var(--muted); }
+
+/* ══ GUEST / EMPTY / LOADING ═════════════════════════════════════════ */
+.lib-empty, .loading-note { text-align: center; color: var(--muted); font-weight: 700; padding: 26px 0; }
+.guest { text-align: center; max-width: 620px; margin: 0 auto; }
+.guest .keycards { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 22px; }
+.guest .keycard {
+  border: 2.5px solid var(--ink); border-radius: 16px; padding: 16px 18px 15px;
+  background: var(--card); box-shadow: 0 6px 0 var(--ink), inset 0 4px 0 rgba(255,255,255,.4);
+  width: 200px; text-align: center; font-weight: 800;
+  transition: transform .12s, box-shadow .12s, background 1s ease;
+}
+.guest .keycard:hover { transform: translateY(-3px); box-shadow: 0 9px 0 var(--ink), inset 0 4px 0 rgba(255,255,255,.4); }
+.guest .keycard .kc-dot {
+  width: 34px; height: 34px; border-radius: 50%; margin: 0 auto 9px;
+  border: 2.5px solid var(--ink); background: var(--kc, var(--amber));
+  box-shadow: 0 3px 0 var(--ink);
+}
+
+/* ══ RESPONSIVE ══════════════════════════════════════════════════════ */
+@media (max-width: 620px) {
+  .lib-hero { grid-template-columns: 1fr; text-align: center; }
+  .lib-hero-icon { margin: 0 auto; }
+  .lib-hero-chips { justify-content: center; }
+  .lib-stat-row { grid-template-columns: 96px 1fr 46px; }
+  .lib-stat-label { font-size: .7rem; }
+}
+
+/* ══ REDUCED MOTION ══════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .lib-word-card, .lib-tab, .lib-page-btn, .lib-bar-fill { transition: none; }
+}
+</style>
+</head>
+<body>
+<!-- Restore the visitor's time of day before anything paints. Inline and
+     first-thing-in-body on purpose: an external or deferred script would
+     let the page flash daylight before flipping to night. -->
+<script>try{var t=localStorage.getItem('wt-night');var p=(localStorage.getItem('wordtycoon_theme')||localStorage.getItem('portal-theme'));var n=t===null?p!=='light':t==='1';if(n)document.body.classList.add('night')}catch(e){}</script>
+<noscript><p style="padding:24px;text-align:center;font-weight:700">The library needs JavaScript. <a href="/">Back to the tower</a>.</p></noscript>
+
+<!-- ═══ ELEVATOR ═══ -->
+<aside class="elevator" id="elevator" aria-label="Floor navigation">
+  <div class="elev-label">Floor</div>
+  <div class="elev-btns">
+    <a class="elev-btn eb-r" href="/#rooftop" title="Rooftop" aria-label="Ride to the Rooftop">R</a>
+    <a class="elev-btn eb-p" href="/#penthouse" title="Penthouse" aria-label="Ride to the Penthouse">P</a>
+    <a class="elev-btn eb-v" href="/#vault" title="The Vault" aria-label="Ride to the Vault">V</a>
+    <a class="elev-btn eb-2" href="/#empire" title="The Empire" aria-label="Ride to the Empire">2</a>
+    <a class="elev-btn eb-1" href="/#games" title="The Game Floor" aria-label="Ride to the Game Floor">1</a>
+    <a class="elev-btn eb-l lit" href="/" title="Lobby" aria-label="Ride to the Lobby">L</a>
+  </div>
+  <div class="elev-floorname">The Library</div>
+</aside>
+
+<div class="shell">
+  <!-- ═══ TOPBAR ═══ -->
+  <header class="topbar">
+    <a class="brand" href="/">
+      <span class="brand-mark"><img src="/portal/img/wt-logo.svg?v=1" alt="" width="46" height="46"></span>
+      <span>Word<b>Tycoon</b></span>
+    </a>
+    <nav>
+      <a class="btn btn-ghost btn-nav-sec" href="/goat">🐐 GOAT</a>
+      <a class="btn btn-ghost btn-nav-sec" href="/how-to-play">📖 How to Play</a>
+      <!-- This floor has no sky, so the day/night toggle lives in the
+           topbar — otherwise night mode could never be undone here. -->
+      <button class="btn btn-ghost sky-btn" id="skyToggle" type="button" aria-pressed="false" title="Toggle day / night">
+        <span class="sky-day">☀️</span><span class="sky-night">🌙</span>
+      </button>
+      <a class="btn" href="/">🏢 The Tower</a>
+    </nav>
+  </header>
+</div>
+
+<div class="lib-plate"><span class="fp"><b>B</b>The Library</span></div>
+
+<main>
+  <section class="floor" id="library-floor">
+    <div class="shell">
+      <div class="sec-head">
+        <span class="sec-kicker" style="background:linear-gradient(180deg,#b3a6f6 0 45%,var(--purple) 45%)">Floor B</span>
+        <h2 class="sec-title">The <span class="cd">Library</span></h2>
+        <p class="sec-sub">Every unique word you've ever found, filed across all sixteen games — and the scoring ledger that shows what each one pays.</p>
+      </div>
+
+      <!-- ═══ HERO / CARD CATALOG ═══ -->
+      <div class="lib-hero" id="libHero" hidden>
+        <div class="lib-hero-icon">📚</div>
+        <div>
+          <h2>Your Library</h2>
+          <div class="lib-hero-chips">
+            <span class="chip">📖 <b id="libWords">–</b> words</span>
+            <span class="chip">⭐ Level <b id="libLevel">–</b></span>
+          </div>
+          <div class="lib-bar"><div class="lib-bar-fill" id="libBarFill"></div></div>
+          <div class="lib-bar-label" id="libBarLabel"></div>
+        </div>
+      </div>
+
+      <!-- ═══ TABS ═══ -->
+      <div class="lib-tabs" id="libTabs" hidden>
+        <button class="lib-tab on" data-tab="words" type="button">📖 Words</button>
+        <button class="lib-tab" data-tab="stats" type="button">📊 Stats</button>
+        <button class="lib-tab" data-tab="scoring" type="button">🪙 Scoring</button>
+      </div>
+
+      <!-- ═══ SIGNED OUT ═══ -->
+      <div id="libGuest" hidden>
+        <div class="guest">
+          <p class="sec-sub" style="margin-bottom:0">The stacks are members-only — sign in and every word you've ever found is waiting on the shelves. The <b>Scoring</b> ledger below is open to everyone.</p>
+          <div class="keycards">
+            <a class="keycard" href="/auth/google?returnTo=%2Flibrary" style="--kc:#ea4335"><div class="kc-dot"></div>Continue with Google</a>
+            <a class="keycard" href="/auth/discord?returnTo=%2Flibrary" style="--kc:#5865f2"><div class="kc-dot"></div>Continue with Discord</a>
+            <a class="keycard" href="/auth/github?returnTo=%2Flibrary" style="--kc:#24292f"><div class="kc-dot"></div>Continue with GitHub</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ CONTENT ═══ -->
+      <div class="lib-pane" id="libContent">
+        <p class="loading-note">Dusting off the shelves…</p>
+      </div>
+
+      <!-- ═══ EMPIRE CTA ═══ -->
+      <div class="lib-cta">
+        <div class="lib-cta-icon">🏢</div>
+        <div class="lib-cta-copy">
+          <div class="lib-cta-title">Tycoon Empire</div>
+          <div class="lib-cta-text">Your library levels feed your empire — manage your businesses, collect earnings, and grow.</div>
+        </div>
+        <a class="btn btn-hero" href="/#empire">Open the Empire</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="foot-walk">🚶‍♀️ 🚶 🐈‍⬛</div>
+  <a href="/">The Tower</a> · <a href="/goat">GOAT</a> · <a href="/profile">Your Suite</a> · <a href="/how-to-play">How to Play</a>
+  <div style="margin-top:8px">
+    <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="https://discord.gg/C8Nm2jEZFC" target="_blank" rel="noopener">Discord</a> · <span>&copy; 2026 Word Tycoon</span>
+  </div>
+</footer>
+
+<script src="/portal/js/toon.js?v=5"></script>
+<!-- The Switchboard: Lobby chat (site-only) + Live Feed (stream relay). -->
+<script src="/chat-widget.js?v=21" defer></script>
+<script src="/portal/js/library.js?v=2"></script>
+  <script src="/js/hangstream-brand.js" defer></script>
+</body>
+</html>
