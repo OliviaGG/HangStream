@@ -4243,6 +4243,16 @@ const owner = session.ownerId;
     return;
   }
 
+  if (urlPath === '/favicon.svg') {
+    sendFile(res, path.join(__dirname, '..', 'public', 'favicon.svg'), 'image/svg+xml');
+    return;
+  }
+
+  if (urlPath === '/og-image.png') {
+    sendFile(res, path.join(__dirname, '..', 'public', 'og-image.png'), 'image/png');
+    return;
+  }
+
   if (urlPath === '/streamer' || urlPath === '/streamer/' || urlPath === '/streamer-settings.html') {
     sendFile(res, settingsPath, 'text/html; charset=utf-8');
     return;
