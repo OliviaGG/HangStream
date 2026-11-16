@@ -229,7 +229,10 @@ validateEnvironment();
 // Security headers middleware
 function addSecurityHeaders(res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
+  // Framing is allowed only from HangStream origins — game pages are iframed
+  // inside play.hangstream.me. CSP frame-ancestors replaces XFO DENY since
+  // XFO cannot express an origin whitelist.
+  res.setHeader('Content-Security-Policy', "frame-ancestors 'self' https://play.hangstream.me https://www.play.hangstream.me");
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   // Only add HSTS in production

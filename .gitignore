@@ -18,3 +18,5 @@ server/searchle/data/fasttext/
 # Word-bank build inputs are vendored sources and must be committed so
 # `npm run build:word-bank` reproduces public/word-bank.json anywhere.
 !server/games/data/
+
+word-tycoon-ecosystem/
