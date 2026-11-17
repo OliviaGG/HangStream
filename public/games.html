@@ -535,7 +535,10 @@ async function loadLiveDirectory() {
                 <strong>${escapeHtml(stream.username)}</strong>
                 <div class="player-count">${escapeHtml(stream.platform)} live</div>
               </div>
-              <a class="mode-btn online" style="flex:0 0 auto;padding:10px 12px;" href="${liveGamePath(game, stream.owner)}">Join</a>
+              <div style="display:flex;gap:8px;flex:0 0 auto;">
+                ${stream.discord ? `<a class="mode-btn" style="padding:10px 12px;text-decoration:none;" href="${escapeHtml(/^https?:\/\//i.test(stream.discord) ? stream.discord : 'https://' + stream.discord)}" target="_blank" rel="noopener">Discord</a>` : ''}
+                <a class="mode-btn online" style="padding:10px 12px;" href="${liveGamePath(game, stream.owner)}">Join</a>
+              </div>
             </div>
           `).join('')}
         </div>

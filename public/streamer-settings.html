@@ -581,7 +581,18 @@
               </div>
               <p id="tiktok-connect-status" style="color:var(--text-muted);font-size:13px;margin:10px 0 0;">Enter your TikTok username. HangStream connects when you go live.</p>
             </div>
-            
+
+            <!-- Discord community -->
+            <div style="margin-top:20px;padding:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;">
+              <h3 style="margin:0 0 6px 0;font-size:15px;">Discord community <span style="color:var(--text-muted);font-weight:400;font-size:12px;">(optional)</span></h3>
+              <p style="color:var(--text-muted);font-size:13px;margin:0 0 12px;">Paste your Discord invite link (discord.gg/… or discord.com/invite/…). Viewers see a "Join Discord" button on your game page and in the live directory.</p>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input id="discord-community-input" class="setting-input" type="text" placeholder="https://discord.gg/yourserver" maxlength="200" style="flex:1;">
+                <button class="btn btn-secondary" type="button" onclick="saveDiscordCommunity()">Save</button>
+              </div>
+              <p id="discord-community-status" style="color:var(--text-muted);font-size:12px;margin:8px 0 0;"></p>
+            </div>
+
             <!-- Optional Spotify -->
             <details style="margin-top:24px;" id="spotify-section">
               <summary style="cursor:pointer;color:var(--text-muted);font-size:14px;padding:8px 0;">Optional: Enable music requests</summary>
@@ -1759,6 +1770,28 @@
 
       window.connectTikTok = connectTikTok;
 
+      async function saveDiscordCommunity() {
+        const input = document.getElementById('discord-community-input');
+        const status = document.getElementById('discord-community-status');
+        const value = input ? input.value.trim() : '';
+        if (status) status.textContent = 'Saving...';
+        try {
+          const response = await fetch('/streamer/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ discordCommunity: value })
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || 'Could not save');
+          if (status) status.textContent = value ? 'Discord link saved — viewers can join your community.' : 'Discord link removed.';
+        } catch (error) {
+          console.error('Discord community save failed:', error);
+          if (status) status.textContent = error.message || 'Could not save';
+        }
+      }
+      window.saveDiscordCommunity = saveDiscordCommunity;
+
       async function connectTwitch(inputId) {
         const input = document.getElementById(inputId || 'twitch-username-input');
         const status = document.getElementById('twitch-connect-status');
@@ -1860,6 +1893,8 @@
                 radio.checked = radio.value === data.difficulty;
               });
             }
+            const discordInput = document.getElementById('discord-community-input');
+            if (discordInput && data.discordCommunity && !discordInput.value) discordInput.value = data.discordCommunity;
             const tiktok = data.tiktok || {};
             updateLiveIndicator('tiktok', tiktok.connected, tiktok.username, tiktok.live);
             if (input && tiktok.username && !input.value) input.value = tiktok.username;

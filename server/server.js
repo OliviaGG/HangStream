@@ -2749,7 +2749,7 @@ const owner = session.ownerId;
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
       try {
-        const { scoreCombination, selectedGame, gameDifficulty, tiktokGift, tiktokCustomCoins, twitchGift, twitchCustomBits, layout, layoutSetups, activeLayoutName } = JSON.parse(body);
+        const { scoreCombination, selectedGame, gameDifficulty, tiktokGift, tiktokCustomCoins, twitchGift, twitchCustomBits, layout, layoutSetups, activeLayoutName, discordCommunity } = JSON.parse(body);
         const owner = requireOwnerSession(req, res);
         if (!owner) return;
 
@@ -2777,6 +2777,11 @@ const owner = session.ownerId;
         if (tiktokCustomCoins) accounts[accountKey].tiktok_custom_coins = tiktokCustomCoins;
         if (twitchGift) accounts[accountKey].twitch_gift = twitchGift;
         if (twitchCustomBits) accounts[accountKey].twitch_custom_bits = twitchCustomBits;
+        if (discordCommunity !== undefined) {
+          const dc = String(discordCommunity || '').trim().slice(0, 200);
+          const isDiscordInvite = /^(https?:\/\/)?(www\.)?(discord\.gg|discord\.com\/invite|discordapp\.com\/invite)\/[A-Za-z0-9-]+\/?$/i.test(dc);
+          accounts[accountKey].discord_community = isDiscordInvite ? dc : '';
+        }
         if (layout !== undefined) accounts[accountKey].layout = JSON.stringify(normalizeOverlayLayout(layout));
         // Named overlay layout setups ("FPS mode", "Just Chatting", ...). Each
         // entry is normalized like the live layout; capped so the account file
@@ -3579,17 +3584,18 @@ const owner = session.ownerId;
       owner: String(account.handle || '').replace(/^@+/, '').toLowerCase(),
       game: String(account.selected_game || 'hangman').toLowerCase(),
       twitch: normalizeTwitchUsername(account.twitch_username),
-      tiktok: normalizeTikTokUsername(account.tiktok_username)
+      tiktok: normalizeTikTokUsername(account.tiktok_username),
+      discord: String(account.discord_community || '')
     })).filter((entry) => entry.owner && (entry.twitch || entry.tiktok));
     const twitchNames = entries.map((entry) => entry.twitch).filter(Boolean);
     lookupTwitchLiveChannels(twitchNames).then((liveTwitch) => {
       const streams = [];
       for (const entry of entries) {
         if (entry.twitch && liveTwitch.has(entry.twitch)) {
-          streams.push({ owner: entry.owner, platform: 'Twitch', username: entry.twitch, game: entry.game });
+          streams.push({ owner: entry.owner, platform: 'Twitch', username: entry.twitch, game: entry.game, discord: entry.discord || '' });
         }
         if (entry.tiktok && liveTikTokChannels.has(entry.tiktok)) {
-          streams.push({ owner: entry.owner, platform: 'TikTok', username: entry.tiktok, game: entry.game });
+          streams.push({ owner: entry.owner, platform: 'TikTok', username: entry.tiktok, game: entry.game, discord: entry.discord || '' });
         }
       }
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -3599,6 +3605,21 @@ const owner = session.ownerId;
       res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ error: 'Could not load live streams' }));
     });
+    return;
+  }
+
+  // Public streamer links (Discord community etc.) for game pages.
+  if (pathname === '/api/streamer-links' && req.method === 'GET') {
+    const owner = String(reqUrl.searchParams.get('owner') || '').replace(/^@+/, '').trim().toLowerCase();
+    const accounts = loadStreamerAccounts();
+    const account = Object.values(accounts).find((entry) =>
+      String(entry.handle || '').replace(/^@+/, '').toLowerCase() === owner
+    );
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'public, max-age=60' });
+    res.end(JSON.stringify({
+      owner,
+      discord: account ? String(account.discord_community || '') : ''
+    }));
     return;
   }
 
@@ -3621,7 +3642,8 @@ const owner = session.ownerId;
         game: String(owner.account.selected_game || 'hangman').toLowerCase(),
         difficulty: String(owner.account.game_difficulty || 'normal').toLowerCase(),
         tiktok: { username: tiktokUsername, connected: tiktokConnected, live: tiktokConnected, status: tiktokConnected ? 'live' : 'offline' },
-        twitch: { username: twitchUsername, connected: twitchConnected, live: twitchLive, status: twitchLive ? 'live' : (twitchConnected ? 'connected' : 'offline') }
+        twitch: { username: twitchUsername, connected: twitchConnected, live: twitchLive, status: twitchLive ? 'live' : (twitchConnected ? 'connected' : 'offline') },
+        discordCommunity: String(owner.account.discord_community || '')
       }));
     }).catch((error) => {
       console.error('Streamer status lookup failed:', error);
@@ -3630,7 +3652,8 @@ const owner = session.ownerId;
         game: String(owner.account.selected_game || 'hangman').toLowerCase(),
         difficulty: String(owner.account.game_difficulty || 'normal').toLowerCase(),
         tiktok: { username: tiktokUsername, connected: Boolean(tiktokUsername && tiktok.rooms.has(tiktokUsername)), live: false, status: 'offline' },
-        twitch: { username: twitchUsername, connected: Boolean(twitchUsername && twitch.watched.has(twitchUsername)), live: false, status: 'unknown' }
+        twitch: { username: twitchUsername, connected: Boolean(twitchUsername && twitch.watched.has(twitchUsername)), live: false, status: 'unknown' },
+        discordCommunity: String(owner.account.discord_community || '')
       }));
     });
     return;

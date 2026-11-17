@@ -237,7 +237,7 @@
         card.innerHTML = `
           <div class="name">${escapeHtml(tier.displayName)}</div>
           <div class="price">$${tier.priceUsd}<span>/month</span></div>
-          <ul>${PERKS.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>
+          <ul>${(Array.isArray(tier.perks) && tier.perks.length ? tier.perks : PERKS).map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>
           <button class="btn ${i === tiers.length - 1 ? 'gold' : ''}" data-tier="${tier.id}">Subscribe</button>
         `;
         wrap.appendChild(card);

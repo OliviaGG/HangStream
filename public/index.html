@@ -1086,7 +1086,8 @@
     <div class="sidebar-head">
       <div class="live-dot"></div>
       Chat feed
-      <span style="margin-left:auto;" class="twitch-status">
+      <span style="margin-left:auto;display:flex;align-items:center;gap:10px;" class="twitch-status">
+        <a id="discord-community-link" href="#" target="_blank" rel="noopener" style="display:none;color:#5865F2;text-decoration:none;font-size:12px;font-weight:700;" title="Join the streamer's Discord">Discord</a>
         <span class="twitch-dot" id="twitch-dot"></span>
         <span id="twitch-label">DEMO MODE</span>
       </span>
@@ -1498,6 +1499,24 @@ function renderViewerProfile() {
     if (loginBtn) loginBtn.style.display = 'block';
     if (profileDropdown) profileDropdown.style.display = 'none';
   }
+}
+
+function loadDiscordCommunityLink() {
+  const link = document.getElementById('discord-community-link');
+  if (!link) return;
+  const owner = getStreamerNamespace();
+  if (!owner || owner === 'default') return;
+  fetch(`/api/streamer-links?owner=${encodeURIComponent(owner)}`)
+    .then(res => res.json())
+    .then(data => {
+      let url = data && data.discord ? String(data.discord).trim() : '';
+      if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
+      if (/^https?:\/\//i.test(url)) {
+        link.href = url;
+        link.style.display = 'inline';
+      }
+    })
+    .catch(() => {});
 }
 
 function checkDonorStatus() {
@@ -2208,6 +2227,8 @@ function initMobileUI() {
 
 // ── EVENT LISTENERS (replacing all inline onclick="...") ──
 document.addEventListener('DOMContentLoaded', () => {
+  loadDiscordCommunityLink();
+
   // Buttons
   const viewerLoginBtn = document.getElementById('viewer-login-btn');
   if (viewerLoginBtn) {

@@ -18,6 +18,12 @@
       "priceUsd": 2,
       "vipLevel": 1,
       "premiumPassUnlocked": true,
+      "perks": [
+        "All premium difficulty levels in every streamer's games",
+        "Chat hints with /hint",
+        "Multi-letter guesses in chat",
+        "Supporter badge on your profile"
+      ],
       "theme": {
         "primary": "#60a5fa",
         "secondary": "#8b5cf6",
@@ -30,6 +36,12 @@
       "priceUsd": 10,
       "vipLevel": 2,
       "premiumPassUnlocked": true,
+      "perks": [
+        "Everything in Supporter",
+        "Tycoon profile theme & badge",
+        "VIP status across every HangStream community",
+        "Founding supporter recognition"
+      ],
       "theme": {
         "primary": "#facc15",
         "secondary": "#a855f7",
